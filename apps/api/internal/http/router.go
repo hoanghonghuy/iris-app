@@ -54,8 +54,9 @@ func NewRouter(repos *repo.Repositories, jwtSecret string, ttlMinutes int) *gin.
 		protected.Use(middleware.AuthJWT(jwtSecret))
 		protected.GET("/me", h.Me)
 
-		// route admin (yêu cầu role "admin")
+		// route admin (yêu cầu token hợp lệ và role "admin")
 		admin := v1.Group("/admin")
+		admin.Use(middleware.AuthJWT(jwtSecret))
 		admin.Use(middleware.RequireRole("ADMIN"))
 		admin.GET("/ping", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
