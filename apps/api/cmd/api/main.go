@@ -23,8 +23,12 @@ func main() {
 		log.Fatal(err)
 	}
 	defer pool.Close()
-
-	r := httpapi.NewRouter(repo.NewUserRepo(pool), cfg.JWTSecret, cfg.JWTTTLMinutes)
+	
+	repos := &repo.Repositories{
+		UserRepo: repo.NewUserRepo(pool),
+		SchoolRepo: repo.NewSchoolRepo(pool),
+	}
+	r := httpapi.NewRouter(repos, cfg.JWTSecret, cfg.JWTTTLMinutes)
 
 	log.Println("listening on :" + cfg.Port)
 	log.Fatal(r.Run(":" + cfg.Port))

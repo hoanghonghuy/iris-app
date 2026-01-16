@@ -27,55 +27,65 @@ type LoginReq struct {
 // NewRouter tạo và cấu hình một router HTTP sử dụng Gin.
 // Hàm này nhận vào một UserRepo để thao tác với dữ liệu người dùng,
 // một chuỗi bí mật JWT để ký token, và thời gian sống (TTL) của token tính bằng phút.
-//
-// Các endpoint được định nghĩa gồm:
-// 	- /health: kiểm tra trạng thái server (không cần xác thực)
-// 	- /auth/login: đăng nhập, trả về JWT nếu thành công (không cần xác thực)
-// 	- /me: trả về thông tin người dùng hiện tại (cần xác thực JWT)
-// 	- /admin/ping: endpoint chỉ dành cho admin (cần xác thực JWT và role ADMIN)
-//
 // Các middleware được sử dụng để kiểm tra JWT và quyền truy cập.
-func NewRouter(userRepo *repo.UserRepo, jwtSecret string, ttlMinutes int) *gin.Engine {
+func NewRouter(repos *repo.Repositories, jwtSecret string, ttlMinutes int) *gin.Engine {
 	r := gin.Default()
 	h := &Handlers{
-		UserRepo: userRepo,
+		UserRepo:  repos.UserRepo,
 		JWTSecret: jwtSecret,
-		TTL: time.Duration(ttlMinutes) * time.Minute,
+		TTL:       time.Duration(ttlMinutes) * time.Minute,
 	}
 
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"ok": true,
-		}) 
-	})
-	r.POST("/auth/login", h.Login)
+	adminSchoolHandler := &AdminSchoolHandler{
+		Schools: repos.SchoolRepo,
+	}
 
-	protected := r.Group("/")
-	protected.Use(middleware.AuthJWT(jwtSecret))
-	protected.GET("/me", h.Me)
+	v1 := r.Group("/api/v1")
+	{
+		v1.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"ok": true,
+			})
+		})
+		v1.POST("/auth/login", h.Login)
 
-	admin := r.Group("/admin")
-	admin.Use(middleware.AuthJWT(jwtSecret), middleware.RequireRole("ADMIN"))
-	admin.GET("/ping", func(c *gin.Context) { c.JSON(200, gin.H{"pong": "admin"}) })
-	
+		// route yêu cầu xác thực (JWT)
+		protected := v1.Group("/")
+		protected.Use(middleware.AuthJWT(jwtSecret))
+		protected.GET("/me", h.Me)
+
+		// route admin (yêu cầu role "admin")
+		admin := v1.Group("/admin")
+		admin.Use(middleware.RequireRole("ADMIN"))
+		admin.GET("/ping", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{
+				"pong": "admin",
+			})
+		})
+
+		schools := admin.Group("/schools")
+		schools.POST("", adminSchoolHandler.Create)
+		schools.GET("", adminSchoolHandler.List)
+	}
+
 	return r
 }
 
 // Login là handler xử lý yêu cầu đăng nhập của người dùng.
-// 	- Nhận vào JSON gồm email và password.
-// 	- Kiểm tra tính hợp lệ của dữ liệu đầu vào.
-// 	- Tìm người dùng theo email trong cơ sở dữ liệu.
-// 	- Kiểm tra trạng thái tài khoản (ví dụ: bị khóa).
-// 	- Xác thực mật khẩu bằng cách so sánh với hash lưu trong DB.
-// 	- Lấy danh sách vai trò (roles) của người dùng.
-// 	- Nếu hợp lệ, tạo JWT token chứa thông tin người dùng và roles.
-// 	- Trả về access_token, loại token và thời gian hết hạn.
+//   - Nhận vào JSON gồm email và password.
+//   - Kiểm tra tính hợp lệ của dữ liệu đầu vào.
+//   - Tìm người dùng theo email trong cơ sở dữ liệu.
+//   - Kiểm tra trạng thái tài khoản (ví dụ: bị khóa).
+//   - Xác thực mật khẩu bằng cách so sánh với hash lưu trong DB.
+//   - Lấy danh sách vai trò (roles) của người dùng.
+//   - Nếu hợp lệ, tạo JWT token chứa thông tin người dùng và roles.
+//   - Trả về access_token, loại token và thời gian hết hạn.
 //
 // Các trường hợp lỗi được xử lý gồm:
-//   + Thiếu email/password hoặc dữ liệu không hợp lệ: trả về 400.
-//   + Không tìm thấy người dùng hoặc mật khẩu sai: trả về 401.
-//   + Tài khoản bị khóa: trả về 403.
-//   + Lỗi hệ thống hoặc DB: trả về 500.
+//   - Thiếu email/password hoặc dữ liệu không hợp lệ: trả về 400.
+//   - Không tìm thấy người dùng hoặc mật khẩu sai: trả về 401.
+//   - Tài khoản bị khóa: trả về 403.
+//   - Lỗi hệ thống hoặc DB: trả về 500.
 func (h *Handlers) Login(c *gin.Context) {
 	var req LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil || req.Email == "" || req.Password == "" {
