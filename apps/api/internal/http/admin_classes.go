@@ -48,7 +48,7 @@ func (h *AdminClassesHandler) Create(c *gin.Context) {
 }
 
 func (h *AdminClassesHandler) ListBySchool(c *gin.Context) {
-	schoolId, err := uuid.Parse(c.Param("school_id"))
+	schoolID, err := uuid.Parse(c.Param("school_id"))
 	if err != nil {
 		fail(c, http.StatusBadRequest, "invalid school_id")
 		return
@@ -57,7 +57,7 @@ func (h *AdminClassesHandler) ListBySchool(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	classes, err := h.Classes.List(ctx, schoolId)
+	classes, err := h.Classes.List(ctx, schoolID)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "db error")
 		return

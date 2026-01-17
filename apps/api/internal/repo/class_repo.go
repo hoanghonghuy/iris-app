@@ -27,7 +27,7 @@ func NewClassRepo(pool *pgxpool.Pool) *ClassRepo {
 func (r ClassRepo) Create(ctx context.Context, schoolID uuid.UUID, name, schoolYear string) (uuid.UUID, error) {
 	const q = `
 		INSERT INTO classes (school_id, name, school_year)
-		VALUE ($1, $2, $3)
+		VALUES ($1, $2, $3)
 		RETURNING class_id;
 	`
 	var id uuid.UUID
@@ -40,7 +40,7 @@ func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]Class, error
 		SELECT class_id, school_id, name, school_year
 		FROM classes
 		WHERE school_id = $1
-		ORDER BY create_at DESC;
+		ORDER BY created_at DESC;
 	`
 	rows, err := r.pool.Query(ctx, q, schoolID)
 	if err != nil {
@@ -51,7 +51,7 @@ func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]Class, error
 	var classes []Class
 	for rows.Next() {
 		var c Class
-		if err := rows.Scan(&c.ID, &c.SchoolID, c.Name, c.SchoolYear); err != nil {
+		if err := rows.Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear); err != nil {
 			return nil, err
 		}
 		classes = append(classes, c)
