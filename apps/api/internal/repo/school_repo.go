@@ -4,14 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type School struct {
-	ID uuid.UUID
-	Name string
-	Address string
-}
 
 // SchoolRepo là một struct dùng để quản lý các thao tác với cơ sở dữ liệu liên quan đến trường học (School).
 // Trường pool *pgxpool.Pool là một connection pool tới cơ sở dữ liệu PostgreSQL, giúp tái sử dụng kết nối và tối ưu hiệu suất.
@@ -20,12 +15,10 @@ type SchoolRepo struct {
 	pool *pgxpool.Pool
 }
 
-//
 // NewSchoolRepo là một hàm khởi tạo (constructor) cho struct SchoolRepo.
 // Hàm này nhận vào một đối tượng *pgxpool.Pool (connection pool tới PostgreSQL)
 // và trả về một con trỏ tới SchoolRepo đã được gán pool này.
 // Việc sử dụng connection pool giúp tối ưu hiệu suất khi truy cập cơ sở dữ liệu.
-//
 func NewSchoolRepo(pool *pgxpool.Pool) *SchoolRepo {
 	return &SchoolRepo{
 		pool: pool,
@@ -36,7 +29,7 @@ func (r *SchoolRepo) Create(ctx context.Context, name, address string) (uuid.UUI
 	const q = `
 		INSERT INTO schools (name, address)
 		VALUES ($1, $2)
-		RETURNING schools_id;
+		RETURNING school_id;
 	`
 	var id uuid.UUID
 	// QueryRow được sử dụng để thực hiện một truy vấn SQL mà chỉ trả về một dòng kết quả.
@@ -47,9 +40,9 @@ func (r *SchoolRepo) Create(ctx context.Context, name, address string) (uuid.UUI
 	return id, err
 }
 
-func (r SchoolRepo) List(ctx context.Context) ([]School, error) {
+func (r SchoolRepo) List(ctx context.Context) ([]model.School, error) {
 	const q = `
-		SELECT schools_id, name, COALESCE(address, '')
+		SELECT school_id, name, COALESCE(address, '')
 		FROM schools
 		ORDER BY created_at DESC;
 	`
@@ -58,10 +51,10 @@ func (r SchoolRepo) List(ctx context.Context) ([]School, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	
-	var schools []School
+
+	var schools []model.School
 	for rows.Next() {
-		var s School
+		var s model.School
 		if err := rows.Scan(&s.ID, &s.Name, &s.Address); err != nil {
 			return nil, err
 		}

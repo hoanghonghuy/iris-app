@@ -8,7 +8,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrInvalidToken = errors.New("invalid token")
+var (
+	ErrInvalidToken     = errors.New("invalid token")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserLocked       = errors.New("user locked")
+)
 
 type Claims struct {
 	UserID string   `json:"user_id"`
@@ -17,9 +21,34 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+type Authenticator struct {
+	Secret string
+	TTLSeconds int
+}
+
+// NewAuthenticator tạo mới authenticator
+func NewAuthenticator(secret string, ttlMinutes int) *Authenticator {
+	return &Authenticator{
+		Secret:     secret,
+		TTLSeconds: ttlMinutes * 60,
+	}
+}
+
+// SignToken tạo JWT token bằng Authenticator
+func (a *Authenticator) SignToken(userID, email string, roles []string) (string, error) {
+	return Sign(a.Secret, time.Duration(a.TTLSeconds)*time.Second, userID, email, roles)
+}
+
+// ParseToken giải mã JWT token bằng Authenticator
+func (a *Authenticator) ParseToken(tokenStr string) (*Claims, error) {
+	return Parse(a.Secret, tokenStr)
+}
+
 func VerifyPassword(hash, plain string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
 }
+
+// TODO: kiểm tra file code chuẩn chưa
 
 // Sign tạo ra một JWT token sử dụng thuật toán HS256 để ký với thông tin người dùng.
 // Các tham số:

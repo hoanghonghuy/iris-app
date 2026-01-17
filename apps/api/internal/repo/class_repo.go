@@ -4,15 +4,9 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type Class struct {
-	ID uuid.UUID `json:"class_id"`
-	SchoolID uuid.UUID `json:"school_id"`
-	Name string `json:"name"`
-	SchoolYear string `json:"school_year"`
-}
 
 type ClassRepo struct {
 	pool *pgxpool.Pool
@@ -35,7 +29,7 @@ func (r ClassRepo) Create(ctx context.Context, schoolID uuid.UUID, name, schoolY
 	return id, err
 }
 
-func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]Class, error) {
+func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]model.Class, error) {
 	const q = `
 		SELECT class_id, school_id, name, school_year
 		FROM classes
@@ -48,9 +42,9 @@ func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]Class, error
 	}
 	defer rows.Close()
 	
-	var classes []Class
+	var classes []model.Class
 	for rows.Next() {
-		var c Class
+		var c model.Class
 		if err := rows.Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear); err != nil {
 			return nil, err
 		}
