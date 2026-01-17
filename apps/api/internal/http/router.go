@@ -39,6 +39,10 @@ func NewRouter(repos *repo.Repositories, jwtSecret string, ttlMinutes int) *gin.
 	adminSchoolHandler := &AdminSchoolHandler{
 		Schools: repos.SchoolRepo,
 	}
+	
+	adminClassesHandler := &AdminClassesHandler{
+		Classes: repos.ClassRepo,
+	}
 
 	v1 := r.Group("/api/v1")
 	{
@@ -67,6 +71,10 @@ func NewRouter(repos *repo.Repositories, jwtSecret string, ttlMinutes int) *gin.
 		schools := admin.Group("/schools")
 		schools.POST("", adminSchoolHandler.Create)
 		schools.GET("", adminSchoolHandler.List)
+		
+		classes := admin.Group("/classes")
+		classes.POST("/school/:school_id", adminClassesHandler.Create)
+		classes.GET("/school/:school_id", adminClassesHandler.ListBySchool)
 	}
 
 	return r
