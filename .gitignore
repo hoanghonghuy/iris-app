@@ -1,3 +1,71 @@
-**/.env
-.local
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+bin/
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go module cache
+/vendor/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local
+.local/
+.git/info/exclude
+
+# Notes and temporary files
 **/.note
+*.tmp
+*.temp
+
+# Test coverage
+*.cover
+*.coverprofile
+coverage.txt
+coverage.html
+
+# Air
+.air.toml
+.tmpdir/
+
+# Delve (debugger)
+.debug
+__debug_bin
+
+# Go workspace file
+go.work
