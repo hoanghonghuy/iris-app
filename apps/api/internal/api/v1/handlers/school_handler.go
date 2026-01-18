@@ -23,7 +23,7 @@ type CreateSchoolRequest struct {
 func (h *SchoolHandler) Create(c *gin.Context) {
 	var req CreateSchoolRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid payload")
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -32,7 +32,7 @@ func (h *SchoolHandler) Create(c *gin.Context) {
 
 	school, err := h.SchoolService.Create(ctx, req.Name, req.Address)
 	if err != nil {
-		response.Fail(c, http.StatusInternalServerError, "db error")
+		response.Fail(c, http.StatusInternalServerError, "failed to create school")
 		return
 	}
 

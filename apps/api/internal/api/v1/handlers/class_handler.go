@@ -30,7 +30,7 @@ func (h *ClassHandler) Create(c *gin.Context) {
 
 	var req CreateClassRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid payload")
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *ClassHandler) Create(c *gin.Context) {
 	class, err := h.ClassService.Create(ctx, schoolID, req.Name, req.SchoolYear)
 	if err != nil {
 		// FK fail -> school_id not found
-		response.Fail(c, http.StatusInternalServerError, "db error")
+		response.Fail(c, http.StatusInternalServerError, "failed to create class")
 		return
 	}
 

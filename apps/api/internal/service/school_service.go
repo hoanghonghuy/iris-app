@@ -8,12 +8,12 @@ import (
 )
 
 type SchoolService struct {
-	Repo *repo.SchoolRepo
+	SchoolRepo *repo.SchoolRepo
 }
 
 // Create tạo mới trường học
 func (s *SchoolService) Create(ctx context.Context, name, addr string) (*model.School, error) {
-	id, err := s.Repo.Create(ctx, name, addr)
+	id, err := s.SchoolRepo.Create(ctx, name, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -27,5 +27,5 @@ func (s *SchoolService) Create(ctx context.Context, name, addr string) (*model.S
 
 // List lấy danh sách tất cả trường học
 func (s *SchoolService) List(ctx context.Context) ([]model.School, error) {
-	return s.Repo.List(ctx)
+	return s.SchoolRepo.List(ctx)
 }

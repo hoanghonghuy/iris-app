@@ -11,12 +11,12 @@ import (
 
 // NewRouter tạo và cấu hình router HTTP sử dụng Gin
 func NewRouter(
-	repos interface{}, // giữ cho tương thích với main.go, không dùng
 	jwtSecret string,
 	ttlMinutes int,
 	authHandler *v1handlers.AuthHandler,
 	schoolHandler *v1handlers.SchoolHandler,
 	classHandler *v1handlers.ClassHandler,
+	studentHandler *v1handlers.StudentHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -51,8 +51,13 @@ func NewRouter(
 
 		// Class routes
 		classes := admin.Group("/classes")
-		classes.POST("/school/:school_id", classHandler.Create)
+		classes.POST("/school", classHandler.Create)
 		classes.GET("/school/:school_id", classHandler.ListBySchool)
+		
+		// Student routes
+		students := admin.Group("/students")
+		students.POST("/student", studentHandler.Create)
+		students.GET("/student/:class_id", studentHandler.ListByClass)
 	}
 
 	return r

@@ -27,7 +27,7 @@ type LoginRequest struct {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid credentials format")
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 

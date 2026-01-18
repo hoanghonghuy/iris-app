@@ -29,9 +29,10 @@ func main() {
 	defer pool.Close()
 
 	repos := &repo.Repositories{
-		UserRepo:   repo.NewUserRepo(pool),
-		SchoolRepo: repo.NewSchoolRepo(pool),
-		ClassRepo:  repo.NewClassRepo(pool),
+		UserRepo:    repo.NewUserRepo(pool),
+		SchoolRepo:  repo.NewSchoolRepo(pool),
+		ClassRepo:   repo.NewClassRepo(pool),
+		StudentRepo: repo.NewStudentRepo(pool),
 	}
 
 	// Khởi tạo Authenticator
@@ -44,11 +45,15 @@ func main() {
 	}
 
 	schoolService := &service.SchoolService{
-		Repo: repos.SchoolRepo,
+		SchoolRepo: repos.SchoolRepo,
 	}
 
 	classService := &service.ClassService{
 		ClassRepo: repos.ClassRepo,
+	}
+
+	studentService := &service.StudentService{
+		StudentRepo: repos.StudentRepo,
 	}
 
 	// Khởi tạo Handlers
@@ -64,8 +69,12 @@ func main() {
 		ClassService: classService,
 	}
 
+	studentHandler := &v1handlers.StudentHandler{
+		StudentService: studentService,
+	}
+
 	// Khởi tạo router với handlers đã được tạo
-	r := httpapi.NewRouter(repos, cfg.JWTSecret, cfg.JWTTTLMinutes, authHandler, schoolHandler, classHandler)
+	r := httpapi.NewRouter(cfg.JWTSecret, cfg.JWTTTLMinutes, authHandler, schoolHandler, classHandler, studentHandler)
 
 	log.Println("listening on :" + cfg.Port)
 	log.Fatal(r.Run(":" + cfg.Port))

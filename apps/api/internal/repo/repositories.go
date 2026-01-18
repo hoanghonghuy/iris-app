@@ -1,7 +1,8 @@
 package repo
 
 type Repositories struct {
-	UserRepo   *UserRepo
-	SchoolRepo *SchoolRepo
-	ClassRepo  *ClassRepo
+	UserRepo    *UserRepo
+	SchoolRepo  *SchoolRepo
+	ClassRepo   *ClassRepo
+	StudentRepo *StudentRepo
 }
