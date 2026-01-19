@@ -40,7 +40,7 @@ func (r *SchoolRepo) Create(ctx context.Context, name, address string) (uuid.UUI
 	return id, err
 }
 
-func (r SchoolRepo) List(ctx context.Context) ([]model.School, error) {
+func (r *SchoolRepo) List(ctx context.Context) ([]model.School, error) {
 	const q = `
 		SELECT school_id, name, COALESCE(address, '')
 		FROM schools

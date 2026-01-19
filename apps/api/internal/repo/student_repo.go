@@ -43,7 +43,7 @@ func (r *StudentRepo) ListByClass(ctx context.Context, classID uuid.UUID) ([]mod
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var students []model.Student
 	for rows.Next() {
 		var s model.Student

@@ -18,7 +18,7 @@ func NewClassRepo(pool *pgxpool.Pool) *ClassRepo {
 	}
 }
 
-func (r ClassRepo) Create(ctx context.Context, schoolID uuid.UUID, name, schoolYear string) (uuid.UUID, error) {
+func (r *ClassRepo) Create(ctx context.Context, schoolID uuid.UUID, name, schoolYear string) (uuid.UUID, error) {
 	const q = `
 		INSERT INTO classes (school_id, name, school_year)
 		VALUES ($1, $2, $3)
@@ -29,7 +29,7 @@ func (r ClassRepo) Create(ctx context.Context, schoolID uuid.UUID, name, schoolY
 	return id, err
 }
 
-func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]model.Class, error) {
+func (r *ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]model.Class, error) {
 	const q = `
 		SELECT class_id, school_id, name, school_year
 		FROM classes
@@ -41,7 +41,7 @@ func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]model.Class,
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	var classes []model.Class
 	for rows.Next() {
 		var c model.Class
@@ -51,4 +51,4 @@ func (r ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]model.Class,
 		classes = append(classes, c)
 	}
 	return classes, rows.Err()
-} 
+}
