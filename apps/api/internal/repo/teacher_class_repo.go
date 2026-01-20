@@ -80,5 +80,13 @@ func (r *TeacherClassRepo) Unassign(ctx context.Context, teacherID, classID uuid
 	return err
 }
 
+// kiểm tra xem một giáo viên có được gán cho một lớp hay không
+func (r *TeacherClassRepo) IsTeacherAssignedToClass(ctx context.Context, teacherID, classID uuid.UUID) (bool, error) {
+	const q = `SELECT EXISTS(SELECT 1 FROM teacher_classes WHERE teacher_id=$1 AND class_id=$2);`
+	var exists bool
+	err := r.pool.QueryRow(ctx, q, teacherID, classID).Scan(&exists)
+	return exists, err
+}
+
 // TODO:
 // func (r *TeacherClassRepo) ListTeacherDetailsOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error)
