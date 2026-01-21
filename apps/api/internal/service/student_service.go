@@ -31,5 +31,5 @@ func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID
 }
 
 func (s *StudentService) ListByClass(ctx context.Context, classID uuid.UUID) ([]model.Student, error) {
-	return s.ListByClass(ctx, classID)
+	return s.StudentRepo.ListByClass(ctx, classID)
 }
