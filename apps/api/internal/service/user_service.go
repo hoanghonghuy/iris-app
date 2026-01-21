@@ -16,60 +16,68 @@ type UserService struct {
 	JWTAuth  *auth.Authenticator
 }
 
-// CreateUserInput chứa input để tạo user mới
-type CreateUserInput struct {
-	Email    string   `json:"email"`
-	Password string   `json:"password"`
-	Roles    []string `json:"roles"`
-}
-
-// CreateUserResponse chứa response sau khi tạo user thành công
-type CreateUserResponse struct {
-	UserID  uuid.UUID `json:"user_id"`
-	Email   string    `json:"email"`
-	Status  string    `json:"status"`
-	Roles   []string  `json:"roles"`
-	Message string    `json:"message"`
-}
-
-// Create tạo mới user với password được hash và assign roles
-func (s *UserService) Create(ctx context.Context, input *CreateUserInput) (*CreateUserResponse, error) {
+// CreateUserWithoutPassword tạo user mới không cần password (cho admin)
+func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email string, roles []string) (*model.UserInfo, error) {
 	// Validate input
-	if input.Email == "" {
+	if email == "" {
 		return nil, errors.New("email cannot be empty")
 	}
-	if input.Password == "" {
-		return nil, errors.New("password cannot be empty")
+	if len(roles) == 0 {
+		return nil, errors.New("roles cannot be empty")
 	}
 
-	// Hash password
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	// Generate temporary password hash (user sẽ thay đổi khi activate)
+	tempPassword := uuid.New().String()
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, errors.New("failed to hash password")
+		return nil, errors.New("failed to generate temporary password")
 	}
 
 	// Create user
-	userID, err := s.UserRepo.Create(ctx, input.Email, string(passwordHash))
+	userID, err := s.UserRepo.Create(ctx, email, string(passwordHash))
 	if err != nil {
 		return nil, errors.New("failed to create user")
 	}
 
-	// Assign roles nếu có
-	if len(input.Roles) > 0 {
-		for _, role := range input.Roles {
-			if err := s.UserRepo.AssignRole(ctx, userID, role); err != nil {
-				return nil, errors.New("failed to assign role: " + role)
-			}
+	// Assign roles
+	for _, role := range roles {
+		if err := s.UserRepo.AssignRole(ctx, userID, role); err != nil {
+			return nil, errors.New("failed to assign role: " + role)
 		}
 	}
 
-	return &CreateUserResponse{
-		UserID:  userID,
-		Email:   input.Email,
-		Status:  "active",
-		Roles:   input.Roles,
-		Message: "user created successfully",
-	}, nil
+	return s.FindByID(ctx, userID)
+}
+
+// ActivateUser kích hoạt tài khoản user (set password)
+func (s *UserService) ActivateUser(ctx context.Context, email, password string) error {
+	// Validate input
+	if email == "" {
+		return errors.New("email cannot be empty")
+	}
+	if password == "" {
+		return errors.New("password cannot be empty")
+	}
+
+	// Check user exists
+	user, err := s.UserRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Hash password
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("failed to hash password")
+	}
+
+	// Update password and status
+	err = s.UserRepo.Update(ctx, user.ID, user.Email, string(passwordHash))
+	if err != nil {
+		return errors.New("failed to activate user")
+	}
+
+	return nil
 }
 
 // AssignRole gán role cho user
