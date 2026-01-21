@@ -56,7 +56,7 @@ func (r *UserRepo) RolesOfUser(ctx context.Context, userID uuid.UUID) ([]string,
 func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error) {
 	// Get user info
 	const userQuery = `SELECT user_id, email, status FROM users WHERE user_id = $1;`
-	
+
 	info := &model.UserInfo{}
 	if err := r.pool.QueryRow(ctx, userQuery, userID).Scan(&info.ID, &info.Email, &info.Status); err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 		JOIN user_roles ur ON r.role_id = ur.role_id
 		WHERE ur.user_id = $1;
 	`
-	
+
 	rows, err := r.pool.Query(ctx, rolesQuery, userID)
 	if err != nil {
 		return nil, err
@@ -83,6 +83,69 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 		}
 		info.Roles = append(info.Roles, role)
 	}
-	
+
 	return info, rows.Err()
+}
+
+// Create tạo mới user trong cơ sở dữ liệu
+func (r *UserRepo) Create(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
+	const q = `
+		INSERT INTO users (email, password_hash, status)
+		VALUES ($1, $2, 'active')
+		RETURNING user_id;
+	`
+	var id uuid.UUID
+	err := r.pool.QueryRow(ctx, q, email, passwordHash).Scan(&id)
+	return id, err
+}
+
+// AssignRole gán role cho user
+func (r *UserRepo) AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error {
+	const q = `
+		INSERT INTO user_roles (user_id, role_id)
+		SELECT $1, role_id FROM roles WHERE name = $2
+		ON CONFLICT (user_id, role_id) DO NOTHING;
+	`
+	_, err := r.pool.Exec(ctx, q, userID, roleName)
+	return err
+}
+
+// Update cập nhật thông tin user
+func (r *UserRepo) Update(ctx context.Context, userID uuid.UUID, email, passwordHash string) error {
+	const q = `
+		UPDATE users
+		SET email = $1, password_hash = $2, updated_at = now()
+		WHERE user_id = $3;
+	`
+	_, err := r.pool.Exec(ctx, q, email, passwordHash, userID)
+	return err
+}
+
+// Delete xóa user (hard delete)
+func (r *UserRepo) Delete(ctx context.Context, userID uuid.UUID) error {
+	const q = `DELETE FROM users WHERE user_id = $1;`
+	_, err := r.pool.Exec(ctx, q, userID)
+	return err
+}
+
+// Lock khóa user
+func (r *UserRepo) Lock(ctx context.Context, userID uuid.UUID) error {
+	const q = `
+		UPDATE users
+		SET status = 'locked', updated_at = now()
+		WHERE user_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, userID)
+	return err
+}
+
+// Unlock mở khóa user
+func (r *UserRepo) Unlock(ctx context.Context, userID uuid.UUID) error {
+	const q = `
+		UPDATE users
+		SET status = 'active', updated_at = now()
+		WHERE user_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, userID)
+	return err
 }
