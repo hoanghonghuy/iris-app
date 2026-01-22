@@ -66,7 +66,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	c.Header("Location", "/api/v1/users/"+resp.ID.String())
+	c.Header("Location", c.Request.URL.Path+"/"+resp.ID.String())
 	response.Created(c, gin.H{
 		"user":    resp,
 		"message": "user created successfully. User needs to activate account.",
