@@ -106,6 +106,11 @@ func (s *UserService) FindByID(ctx context.Context, userID uuid.UUID) (*model.Us
 	return s.UserRepo.FindByID(ctx, userID)
 }
 
+// List lấy danh sách tất cả users
+func (s *UserService) List(ctx context.Context) ([]model.UserInfo, error) {
+	return s.UserRepo.List(ctx)
+}
+
 // Update cập nhật thông tin user (email và password) - hỗ trợ partial update
 func (s *UserService) Update(ctx context.Context, userID uuid.UUID, email, password string) error {
 	// Validate input

@@ -17,6 +17,7 @@ func NewRouter(
 	schoolHandler *v1handlers.SchoolHandler,
 	classHandler *v1handlers.ClassHandler,
 	studentHandler *v1handlers.StudentHandler,
+	userHandler *v1handlers.UserHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -28,10 +29,12 @@ func NewRouter(
 			response.OK(c, gin.H{"ok": true})
 		})
 		v1.POST("/auth/login", authHandler.Login)
+		v1.POST("/users/activate", userHandler.ActivateUser)
 
 		// Protected routes (require valid JWT)
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthJWT(jwtSecret))
+		// /me endpoint trả về thông tin user hiện tại từ JWT claims (không cần query DB)
 		protected.GET("/me", authHandler.Me)
 
 		// Admin routes (require ADMIN role)
@@ -53,11 +56,26 @@ func NewRouter(
 		classes := admin.Group("/classes")
 		classes.POST("/school", classHandler.Create)
 		classes.GET("/school/:school_id", classHandler.ListBySchool)
-		
+
 		// Student routes
 		students := admin.Group("/students")
 		students.POST("/student", studentHandler.Create)
 		students.GET("/student/:class_id", studentHandler.ListByClass)
+
+		// User routes (ADMIN only - quản lý users)
+		// Pattern:
+		//   - GET /api/v1/admin/users - list all users
+		//   - GET /api/v1/admin/users/:userid - get user by ID
+		//   - POST /api/v1/admin/users/:userid/lock - lock user account
+		//   - POST /api/v1/admin/users/:userid/unlock - unlock user account
+		//   - POST /api/v1/admin/users/:userid/roles - assign role to user
+		users := admin.Group("/users")
+		users.POST("", userHandler.CreateUser)
+		users.GET("", userHandler.List)
+		users.GET("/:userid", userHandler.GetByID)
+		users.POST("/:userid/lock", userHandler.Lock)
+		users.POST("/:userid/unlock", userHandler.Unlock)
+		users.POST("/:userid/roles", userHandler.AssignRole)
 	}
 
 	return r

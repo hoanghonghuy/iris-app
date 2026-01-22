@@ -87,6 +87,35 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 	return info, rows.Err()
 }
 
+// List lấy danh sách tất cả users kèm roles
+func (r *UserRepo) List(ctx context.Context) ([]model.UserInfo, error) {
+	const q = `
+		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles
+		FROM users u
+		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
+		LEFT JOIN roles r ON r.role_id = ur.role_id
+		GROUP BY u.user_id, u.email, u.status
+		ORDER BY u.created_at DESC;
+	`
+
+	rows, err := r.pool.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.UserInfo
+	for rows.Next() {
+		var u model.UserInfo
+		if err := rows.Scan(&u.ID, &u.Email, &u.Status, &u.Roles); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, rows.Err()
+}
+
 // Create tạo mới user trong cơ sở dữ liệu
 func (r *UserRepo) Create(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
 	const q = `

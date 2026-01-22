@@ -188,6 +188,20 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"message": "user deleted successfully"})
 }
 
+// List lấy danh sách tất cả users (admin only)
+func (h *UserHandler) List(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	users, err := h.UserService.List(ctx)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch users")
+		return
+	}
+
+	response.OK(c, users)
+}
+
 // Lock khóa tài khoản user
 func (h *UserHandler) Lock(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)

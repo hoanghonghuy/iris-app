@@ -55,6 +55,10 @@ func main() {
 	studentService := &service.StudentService{
 		StudentRepo: repos.StudentRepo,
 	}
+	
+	userService := &service.UserService{
+		UserRepo: repos.UserRepo,
+	}
 
 	// Khởi tạo Handlers
 	authHandler := &v1handlers.AuthHandler{
@@ -72,9 +76,13 @@ func main() {
 	studentHandler := &v1handlers.StudentHandler{
 		StudentService: studentService,
 	}
+	
+	userHandler := &v1handlers.UserHandler{
+		UserService: userService,
+	}
 
 	// Khởi tạo router với handlers đã được tạo
-	r := httpapi.NewRouter(cfg.JWTSecret, cfg.JWTTTLMinutes, authHandler, schoolHandler, classHandler, studentHandler)
+	r := httpapi.NewRouter(cfg.JWTSecret, cfg.JWTTTLMinutes, authHandler, schoolHandler, classHandler, studentHandler, userHandler)
 
 	log.Println("listening on :" + cfg.Port)
 	log.Fatal(r.Run(":" + cfg.Port))
