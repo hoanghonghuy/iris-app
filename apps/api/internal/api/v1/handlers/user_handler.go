@@ -207,8 +207,7 @@ func (h *UserHandler) Lock(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userIDStr := c.Param("userid")
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := uuid.Parse(c.Param("userid"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
@@ -227,8 +226,7 @@ func (h *UserHandler) Unlock(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userIDStr := c.Param("userid")
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := uuid.Parse(c.Param("userid"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
@@ -253,8 +251,8 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userIDStr := c.Param("userid")
-	userID, err := uuid.Parse(userIDStr)
+	userIDString := c.Param("userid")
+	userID, err := uuid.Parse(userIDString)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
@@ -267,7 +265,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 
 	response.OK(c, gin.H{
 		"message":   "role assigned successfully",
-		"user_id":   userIDStr,
+		"user_id":   userIDString,
 		"role_name": req.RoleName,
 	})
 }
