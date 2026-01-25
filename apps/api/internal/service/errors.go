@@ -22,4 +22,5 @@ var (
 	ErrFailedToAssignRole           = errors.New("failed to assign role")
 	ErrInvalidRoleName              = errors.New("invalid role name")
 	ErrForbidden                    = errors.New("forbidden action")
+	ErrTeacherNotAssigned           = errors.New("teacher is not assigned to this class")
 )

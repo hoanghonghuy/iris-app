@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -71,7 +70,7 @@ func (s *TeacherService) Unassign(ctx context.Context, teacherID, classID uuid.U
 	}
 	// nếu chưa assign (exists == false)
 	if !exists {
-		return errors.New("teacher is not assigned to this class")
+		return ErrTeacherNotAssigned
 	}
 
 	return s.TeacherClassRepo.Unassign(ctx, teacherID, classID)
