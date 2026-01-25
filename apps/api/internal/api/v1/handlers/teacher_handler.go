@@ -33,10 +33,10 @@ func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
-	
+
 	teachers, err := h.TeacherService.ListTeachersOfClass(ctx, classID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teachers of class")
@@ -51,10 +51,10 @@ func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
-	
+
 	teacher, err := h.TeacherService.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teacher")
@@ -74,19 +74,19 @@ func (h *TeacherHandler) Assign(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
-	
+
 	err = h.TeacherService.Assign(ctx, teacherID, classID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to assign teacher to class")
 		return
 	}
 	response.OK(c, gin.H{
-		"message": "teacher assigned to class successfully",
+		"message":    "teacher assigned to class successfully",
 		"teacher_id": teacherID,
-		"class_id": classID,
+		"class_id":   classID,
 	})
 }
 
@@ -101,18 +101,47 @@ func (h *TeacherHandler) Unassign(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
 		return
 	}
-	
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
-	
+
 	err = h.TeacherService.Unassign(ctx, teacherID, classID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to unassign teacher from class")
 		return
 	}
 	response.OK(c, gin.H{
-		"message": "teacher unassigned from class successfully",
+		"message":    "teacher unassigned from class successfully",
 		"teacher_id": teacherID,
-		"class_id": classID,
+		"class_id":   classID,
+	})
+}
+
+// Update updates a teacher's information (admin only - can update all fields)
+func (h *TeacherHandler) Update(c *gin.Context) {
+	teacherID, err := uuid.Parse(c.Param("teacher_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
+		return
+	}
+
+	var req service.UpdateTeacherRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	err = h.TeacherService.Update(ctx, teacherID, req)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "failed to update teacher")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message":    "teacher updated successfully",
+		"teacher_id": teacherID.String(),
 	})
 }

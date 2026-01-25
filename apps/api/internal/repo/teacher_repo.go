@@ -22,7 +22,7 @@ func (r *TeacherRepo) List(ctx context.Context) ([]model.Teacher, error) {
 	const q = `
 		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
 		FROM teachers t
-		JORN users u ON u.user_id = t.user_id
+		JOIN users u ON u.user_id = t.user_id
 		ORDER BY t.full_name;
 	`
 	rows, err := r.pool.Query(ctx, q)
@@ -48,6 +48,41 @@ func (r *TeacherRepo) GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (
 	teacher := &model.Teacher{}
 
 	err := r.pool.QueryRow(ctx, q, teacherID).Scan(&teacher.TeacherID, &teacher.UserID, &teacher.Email,
+		&teacher.FullName, &teacher.Phone, &teacher.SchoolID)
+	if err != nil {
+		return nil, err
+	}
+	return teacher, nil
+}
+
+// Update cập nhật thông tin teacher (admin có thể update tất cả fields)
+func (r *TeacherRepo) Update(ctx context.Context, teacherID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
+	const q = `
+		UPDATE teachers
+		SET full_name = $2, phone = $3, school_id = $4, updated_at = now()
+		WHERE teacher_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, teacherID, fullName, phone, schoolID)
+	return err
+}
+
+// UpdatePhone chỉ cập nhật phone (teacher chỉ có thể update phone của chính mình)
+func (r *TeacherRepo) UpdatePhone(ctx context.Context, teacherID uuid.UUID, phone string) error {
+	const q = `
+		UPDATE teachers
+		SET phone = $2, updated_at = now()
+		WHERE teacher_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, teacherID, phone)
+	return err
+}
+
+// GetByUserID lấy thông tin teacher theo user_id
+func (r *TeacherRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*model.Teacher, error) {
+	const q = `SELECT teacher_id, user_id, email, full_name, phone, school_id FROM teachers WHERE user_id=$1 LIMIT 1;`
+	teacher := &model.Teacher{}
+
+	err := r.pool.QueryRow(ctx, q, userID).Scan(&teacher.TeacherID, &teacher.UserID, &teacher.Email,
 		&teacher.FullName, &teacher.Phone, &teacher.SchoolID)
 	if err != nil {
 		return nil, err

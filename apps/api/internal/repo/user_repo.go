@@ -178,3 +178,25 @@ func (r *UserRepo) Unlock(ctx context.Context, userID uuid.UUID) error {
 	_, err := r.pool.Exec(ctx, q, userID)
 	return err
 }
+
+// UpdateEmail cập nhật email của user (admin only)
+func (r *UserRepo) UpdateEmail(ctx context.Context, userID uuid.UUID, email string) error {
+	const q = `
+		UPDATE users
+		SET email = $2, updated_at = now()
+		WHERE user_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, userID, email)
+	return err
+}
+
+// UpdatePassword cập nhật password của user (self-service)
+func (r *UserRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, email, passwordHash string) error {
+	const q = `
+		UPDATE users
+		SET password_hash = $3, updated_at = now()
+		WHERE user_id = $1 AND email = $2;
+	`
+	_, err := r.pool.Exec(ctx, q, userID, email, passwordHash)
+	return err
+}

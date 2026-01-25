@@ -4,7 +4,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -13,15 +12,6 @@ import (
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
-)
-
-var (
-	ErrInvalidUserID   = errors.New("invalid user ID")
-	ErrInvalidClassID  = errors.New("invalid class ID")
-	ErrInvalidDate     = errors.New("invalid date format, use YYYY-MM-DD")
-	ErrInvalidStatus   = errors.New("invalid attendance status, must be: present, absent, late, or excused")
-	ErrForbidden       = errors.New("forbidden: teacher can only access their assigned classes/students")
-	ErrTeacherNotFound = errors.New("teacher not found")
 )
 
 // UpdateMyProfileRequest represents the request to update teacher's own profile (teacher only - can only update phone)

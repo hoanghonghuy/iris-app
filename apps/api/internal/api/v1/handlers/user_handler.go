@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -33,7 +34,6 @@ type ActivateUserRequest struct {
 
 // UpdateRequest input để cập nhật user
 type UpdateRequest struct {
-	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -58,12 +58,14 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 	resp, err := h.UserService.CreateUserWithoutPassword(ctx, req.Email, req.Roles)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			response.Fail(c, http.StatusBadRequest, "invalid role")
+		switch {
+		case errors.Is(err, service.ErrFailedToAssignRole):
+			response.Fail(c, http.StatusBadRequest, "failed to assign role")
+			return
+		default:
+			response.Fail(c, http.StatusInternalServerError, "failed to create user")
 			return
 		}
-		response.Fail(c, http.StatusInternalServerError, "failed to create user")
-		return
 	}
 
 	c.Header("Location", c.Request.URL.Path+"/"+resp.ID.String())
@@ -85,12 +87,26 @@ func (h *UserHandler) ActivateUser(c *gin.Context) {
 	defer cancel()
 
 	if err := h.UserService.ActivateUser(ctx, req.Email, req.Password); err != nil {
-		if err == pgx.ErrNoRows {
+		switch {
+		case errors.Is(err, service.ErrEmailCannotBeEmpty):
+			response.Fail(c, http.StatusBadRequest, "email cannot be empty")
+			return
+		case errors.Is(err, service.ErrPasswordCannotBeEmpty):
+			response.Fail(c, http.StatusBadRequest, "password cannot be empty")
+			return
+		case errors.Is(err, service.ErrUserNotFound):
 			response.Fail(c, http.StatusNotFound, "user not found")
 			return
+		case errors.Is(err, service.ErrFailedToHashPassword):
+			response.Fail(c, http.StatusInternalServerError, "failed to hash password")
+			return
+		case errors.Is(err, service.ErrFailedToActivateUser):
+			response.Fail(c, http.StatusInternalServerError, "failed to activate user")
+			return
+		default:
+			response.Fail(c, http.StatusInternalServerError, "failed to activate user")
+			return
 		}
-		response.Fail(c, http.StatusBadRequest, err.Error())
-		return
 	}
 
 	response.OK(c, gin.H{"message": "account activated successfully"})
@@ -128,8 +144,8 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	response.OK(c, userInfo)
 }
 
-// Update cập nhật thông tin user
-func (h *UserHandler) Update(c *gin.Context) {
+// UpdateMyPassword cập nhật mật khẩu của người dùng (self-service only)
+func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
 	var req UpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
@@ -153,12 +169,34 @@ func (h *UserHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if err := h.UserService.Update(ctx, userID, req.Email, req.Password); err != nil {
-		response.Fail(c, http.StatusInternalServerError, "failed to update user")
-		return
+	updateReq := service.UpdateMyPasswordRequest{
+		Password: req.Password,
 	}
 
-	response.OK(c, gin.H{"message": "user updated successfully"})
+	if err := h.UserService.UpdateMyPassword(ctx, userID, updateReq); err != nil {
+		switch {
+		case errors.Is(err, service.ErrInvalidUserID):
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
+			return
+		case errors.Is(err, service.ErrUserNotFound):
+			response.Fail(c, http.StatusNotFound, "user not found")
+			return
+		case errors.Is(err, service.ErrInvalidPassword):
+			response.Fail(c, http.StatusBadRequest, "password cannot be empty")
+			return
+		case errors.Is(err, service.ErrFailedToHashPassword):
+			response.Fail(c, http.StatusInternalServerError, "failed to hash password")
+			return
+		case errors.Is(err, service.ErrFailedToUpdatePassword):
+			response.Fail(c, http.StatusInternalServerError, "failed to update password")
+			return
+		default:
+			response.Fail(c, http.StatusInternalServerError, "failed to update password")
+			return
+		}
+	}
+
+	response.OK(c, gin.H{"message": "password updated successfully"})
 }
 
 // Delete xóa user
@@ -259,8 +297,14 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 	}
 
 	if err := h.UserService.AssignRole(ctx, userID, req.RoleName); err != nil {
-		response.Fail(c, http.StatusBadRequest, "failed to assign role")
-		return
+		switch {
+		case errors.Is(err, service.ErrInvalidRoleName):
+			response.Fail(c, http.StatusBadRequest, "invalid role name")
+			return
+		default:
+			response.Fail(c, http.StatusInternalServerError, "failed to assign role")
+			return
+		}
 	}
 
 	response.OK(c, gin.H{

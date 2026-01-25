@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
@@ -16,33 +16,38 @@ type UserService struct {
 	JWTAuth  *auth.Authenticator
 }
 
-// CreateUserWithoutPassword tạo user mới không cần password (cho admin)
+// yêu cầu cập nhật mật khẩu của người dùng. (self-service)
+type UpdateMyPasswordRequest struct {
+	Password string `json:"password"`
+}
+
+// CreateUserWithoutPassword tạo user mới không cần password (admin only)
 func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email string, roles []string) (*model.UserInfo, error) {
 	// Validate input
 	if email == "" {
-		return nil, errors.New("email cannot be empty")
+		return nil, ErrEmailCannotBeEmpty
 	}
 	if len(roles) == 0 {
-		return nil, errors.New("roles cannot be empty")
+		return nil, ErrRolesCannotBeEmpty
 	}
 
 	// Generate temporary password hash (user sẽ thay đổi khi activate)
 	tempPassword := uuid.New().String()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, errors.New("failed to generate temporary password")
+		return nil, ErrFailedToGenerateTempPassword
 	}
 
 	// Create user
 	userID, err := s.UserRepo.Create(ctx, email, string(passwordHash))
 	if err != nil {
-		return nil, errors.New("failed to create user")
+		return nil, ErrFailedToCreateUser
 	}
 
 	// Assign roles
 	for _, role := range roles {
 		if err := s.UserRepo.AssignRole(ctx, userID, role); err != nil {
-			return nil, errors.New("failed to assign role: " + role)
+			return nil, fmt.Errorf("%w: %s", ErrFailedToAssignRole, role)
 		}
 	}
 
@@ -53,28 +58,28 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email strin
 func (s *UserService) ActivateUser(ctx context.Context, email, password string) error {
 	// Validate input
 	if email == "" {
-		return errors.New("email cannot be empty")
+		return ErrEmailCannotBeEmpty
 	}
 	if password == "" {
-		return errors.New("password cannot be empty")
+		return ErrPasswordCannotBeEmpty
 	}
 
 	// Check user exists
 	user, err := s.UserRepo.FindByEmail(ctx, email)
 	if err != nil {
-		return errors.New("user not found")
+		return ErrUserNotFound
 	}
 
 	// Hash password
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return errors.New("failed to hash password")
+		return ErrFailedToHashPassword
 	}
 
 	// Update password and status
 	err = s.UserRepo.Update(ctx, user.ID, user.Email, string(passwordHash))
 	if err != nil {
-		return errors.New("failed to activate user")
+		return ErrFailedToActivateUser
 	}
 
 	return nil
@@ -85,7 +90,7 @@ func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName
 	// Validate role name
 	validRoles := map[string]bool{"ADMIN": true, "TEACHER": true, "PARENT": true}
 	if !validRoles[roleName] {
-		return errors.New("invalid role name: " + roleName)
+		return fmt.Errorf("%w: %s", ErrInvalidRoleName, roleName)
 	}
 
 	return s.UserRepo.AssignRole(ctx, userID, roleName)
@@ -111,43 +116,52 @@ func (s *UserService) List(ctx context.Context) ([]model.UserInfo, error) {
 	return s.UserRepo.List(ctx)
 }
 
-// Update cập nhật thông tin user (email và password) - hỗ trợ partial update
-func (s *UserService) Update(ctx context.Context, userID uuid.UUID, email, password string) error {
+// UpdateEmail cập nhật email của user (admin only)
+func (s *UserService) UpdateEmail(ctx context.Context, userID uuid.UUID, email string) error {
 	// Validate input
-	if email == "" && password == "" {
-		return errors.New("email or password must be provided")
-	}
-
-	// Lấy user hiện tại
-	currentUser, err := s.UserRepo.FindByID(ctx, userID)
-	if err != nil {
-		return errors.New("failed to get current user")
-	}
-
-	// Xử lý email - nếu không có email mới, giữ nguyên email hiện tại
 	if email == "" {
-		email = currentUser.Email
+		return ErrEmailCannotBeEmpty
 	}
 
-	// Xử lý password
-	var passwordHash string
-	if password != "" {
-		// Hash password mới
-		passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			return errors.New("failed to hash password")
-		}
-		passwordHash = string(passwordHashBytes)
-	} else {
-		// Lấy current password hash từ user hiện tại
-		user, err := s.UserRepo.FindByEmail(ctx, currentUser.Email)
-		if err != nil {
-			return errors.New("failed to get current password hash")
-		}
-		passwordHash = user.PasswordHash
+	// check user exists
+	_, err := s.UserRepo.FindByID(ctx, userID)
+	if err != nil {
+		return ErrUserNotFound
 	}
 
-	return s.UserRepo.Update(ctx, userID, email, passwordHash)
+	return s.UserRepo.UpdateEmail(ctx, userID, email)
+}
+
+// UpdateMyPassword cập nhật mật khẩu của người dùng (user)
+func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, req UpdateMyPasswordRequest) error {
+	// Validate userID
+	if userID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	// validate password
+	if req.Password == "" {
+		return ErrInvalidPassword
+	}
+
+	// check if user exists
+	userInfo, err := s.UserRepo.FindByID(ctx, userID)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	// Hash password
+	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return ErrFailedToHashPassword
+	}
+
+	err = s.UserRepo.UpdatePassword(ctx, userID, userInfo.Email, string(passwordHashBytes))
+	if err != nil {
+		return ErrFailedToUpdatePassword
+	}
+
+	return nil
 }
 
 // Delete xóa user (hard delete)
