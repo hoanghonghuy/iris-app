@@ -71,7 +71,8 @@ func (s *TeacherScopeService) ListMyStudentsInClass(ctx context.Context, teacher
 
 // UpsertAttendance marks or updates attendance for a student
 // Teacher can only mark attendance for students in their assigned classes
-func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserID, studentID uuid.UUID, date string, status, note string) error {
+func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	date string, status string, checkInAt, checkOutAt *time.Time, note string) error {
 	// Validate teacherUserID
 	if teacherUserID == uuid.Nil {
 		return ErrInvalidUserID
@@ -100,7 +101,7 @@ func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserI
 	}
 
 	// Call repo to upsert attendance
-	err = s.teacherScopeRepo.UpsertAttendance(ctx, teacherUserID, studentID, parsedDate, status, note)
+	err = s.teacherScopeRepo.UpsertAttendance(ctx, teacherUserID, studentID, parsedDate, status, checkInAt, checkOutAt, note)
 	if err != nil {
 		if err == repo.ErrForbidden {
 			return ErrForbidden

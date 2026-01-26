@@ -77,12 +77,12 @@ func (r *TeacherScopeRepo) ListMyStudentsInClass(ctx context.Context, teacherUse
 	return students, rows.Err()
 }
 
-// Cập nhật điểm danh: Giáo viên chỉ có thể điểm danh cho học sinh trong lớp của mình.
+// UpsertAttendance: Giáo viên chỉ có thể điểm danh cho học sinh trong lớp của mình.
 func (r *TeacherScopeRepo) UpsertAttendance(ctx context.Context, teacherUserID, studentID uuid.UUID,
-	date time.Time, status, note string) error {
+	date time.Time, status string, checkInAt, checkOutAt *time.Time, note string) error {
 	const q = `
-			INSERT INTO attendance_records (student_id, date, status, note, recorded_by)
-			SELECT s.student_id, $3, $4, $5, $1
+			INSERT INTO attendance_records (student_id, date, status, check_in_at, check_out_at, note, recorded_by)
+			SELECT s.student_id, $3, $4, $5, $6, $7, $1
 			FROM students s
 			JOIN teacher_classes tc ON tc.class_id = s.current_class_id
 			JOIN teachers t ON t.teacher_id = tc.teacher_id
@@ -90,15 +90,18 @@ func (r *TeacherScopeRepo) UpsertAttendance(ctx context.Context, teacherUserID, 
 			ON CONFLICT (student_id, date)
 			DO UPDATE SET
 			  status = EXCLUDED.status,
+			  check_in_at = EXCLUDED.check_in_at,
+			  check_out_at = EXCLUDED.check_out_at,
 			  note = EXCLUDED.note,
 			  recorded_by = EXCLUDED.recorded_by,
 			  updated_at = now();
 		`
-	tag, err := r.pool.Exec(ctx, q, teacherUserID, studentID, date, status, note)
+	
+	tag, err := r.pool.Exec(ctx, q, teacherUserID, studentID, date, status, checkInAt, checkOutAt, note)
 	if err != nil {
 		return err
 	}
-
+	
 	if tag.RowsAffected() == 0 { // không có hàng nào được cập nhật, điều kiện WHERE không thỏa mãn
 		return ErrForbidden
 	}

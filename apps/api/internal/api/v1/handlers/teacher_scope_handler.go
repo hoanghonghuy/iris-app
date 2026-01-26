@@ -19,10 +19,12 @@ type TeacherScopeHandler struct {
 }
 
 type MarkAttendanceRequest struct {
-	StudentID string `json:"student_id" binding:"required"`
-	Date      string `json:"date" binding:"required"`   // YYYY-MM-DD
-	Status    string `json:"status" binding:"required"` // present/absent/late/excused
-	Note      string `json:"note"`
+	StudentID  string     `json:"student_id" binding:"required"`
+	Date       string     `json:"date" binding:"required"`   // YYYY-MM-DD
+	Status     string     `json:"status" binding:"required"` // present/absent/late/excused
+	CheckInAt  *time.Time `json:"check_in_at,omitempty"`     // optional
+	CheckOutAt *time.Time `json:"check_out_at,omitempty"`    // optional
+	Note       string     `json:"note"`
 }
 
 // MyClasses returns list of classes that the teacher is assigned to teach
@@ -131,7 +133,7 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 		return
 	}
 
-	err = h.TeacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, req.Note)
+	err = h.TeacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, req.CheckInAt, req.CheckOutAt, req.Note)
 	if err != nil {
 		if err == service.ErrInvalidUserID || err == service.ErrInvalidDate || err == service.ErrInvalidStatus {
 			response.Fail(c, http.StatusBadRequest, err.Error())
@@ -146,10 +148,13 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 	}
 
 	response.OK(c, gin.H{
-		"message":    "attendance marked successfully",
-		"student_id": studentID.String(),
-		"date":       req.Date,
-		"status":     req.Status,
+		"message":      "attendance marked successfully",
+		"student_id":   studentID.String(),
+		"date":         req.Date,
+		"status":       req.Status,
+		"check_in_at":  req.CheckInAt,
+		"check_out_at": req.CheckOutAt,
+		"note":         req.Note,
 	})
 }
 
