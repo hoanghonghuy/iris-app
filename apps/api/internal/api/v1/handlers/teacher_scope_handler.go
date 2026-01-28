@@ -19,12 +19,12 @@ type TeacherScopeHandler struct {
 }
 
 type MarkAttendanceRequest struct {
-	StudentID  string     `json:"student_id" binding:"required"`
-	Date       string     `json:"date" binding:"required"`   // YYYY-MM-DD
-	Status     string     `json:"status" binding:"required"` // present/absent/late/excused
-	CheckInAt  *time.Time `json:"check_in_at,omitempty"`     // optional
-	CheckOutAt *time.Time `json:"check_out_at,omitempty"`    // optional
-	Note       string     `json:"note"`
+	StudentID  string  `json:"student_id" binding:"required"`
+	Date       string  `json:"date" binding:"required"`   // YYYY-MM-DD
+	Status     string  `json:"status" binding:"required"` // present/absent/late/excused
+	CheckInAt  *string `json:"check_in_at,omitempty"`     // RFC3339 or empty
+	CheckOutAt *string `json:"check_out_at,omitempty"`    // RFC3339 or empty
+	Note       string  `json:"note"`
 }
 
 // MyClasses returns list of classes that the teacher is assigned to teach
@@ -133,7 +133,27 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 		return
 	}
 
-	err = h.TeacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, req.CheckInAt, req.CheckOutAt, req.Note)
+	var checkIn *time.Time
+	if req.CheckInAt != nil && *req.CheckInAt != "" {
+		t, err := time.Parse(time.RFC3339, *req.CheckInAt)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid check_in_at (RFC3339)")
+			return
+		}
+		checkIn = &t
+	}
+
+	var checkOut *time.Time
+	if req.CheckOutAt != nil && *req.CheckOutAt != "" {
+		t, err := time.Parse(time.RFC3339, *req.CheckOutAt)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid check_out_at (RFC3339)")
+			return
+		}
+		checkOut = &t
+	}
+
+	err = h.TeacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, checkIn, checkOut, req.Note)
 	if err != nil {
 		if err == service.ErrInvalidUserID || err == service.ErrInvalidDate || err == service.ErrInvalidStatus {
 			response.Fail(c, http.StatusBadRequest, err.Error())
