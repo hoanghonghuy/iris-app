@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS attendance_records (
   student_id    uuid NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
   date          date NOT NULL,
   status        varchar(20) NOT NULL DEFAULT 'present'
-    CHECK (status IN ('present','absent')),
+    CHECK (status IN ('present','absent','late','excused')),
   check_in_at   timestamptz,
   check_out_at  timestamptz,
   note          text,
