@@ -20,7 +20,13 @@ func NewStudentService(studentRepo *repo.StudentRepo) *StudentService {
 }
 
 func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID,
-	fullName string, dob time.Time, gender string) (*model.Student, error) {
+	fullName string, dobStr string, gender string) (*model.Student, error) {
+	// Parse DOB from YYYY-MM-DD string
+	dob, err := time.Parse("2006-01-02", dobStr)
+	if err != nil {
+		return nil, ErrInvalidValue
+	}
+
 	id, err := s.studentRepo.Create(ctx, schoolID, classID, fullName, dob, gender)
 	if err != nil {
 		return nil, err

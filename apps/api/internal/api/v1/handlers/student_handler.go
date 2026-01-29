@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -25,7 +26,7 @@ type CreateStudentReq struct {
 	SchoolID       uuid.UUID `json:"school_id" binding:"required"` // TODO: gửi từ UI hoặc lấy từ class
 	CurrentClassID uuid.UUID `json:"current_class_id" binding:"required"`
 	FullName       string    `json:"full_name" binding:"required,min=1,max=120"`
-	DOB            time.Time `json:"dob" binding:"required"`    // YYYY-MM-DD
+	DOB            string    `json:"dob" binding:"required"`    // YYYY-MM-DD
 	Gender         string    `json:"gender" binding:"required"` // male/female/other
 }
 
@@ -41,6 +42,10 @@ func (s *StudentHandler) Create(c *gin.Context) {
 
 	student, err := s.studentService.Create(ctx, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
 	if err != nil {
+		if errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, "invalid dob format (expected YYYY-MM-DD)")
+			return
+		}
 		response.Fail(c, http.StatusBadRequest, "failed to create student")
 		return
 	}
