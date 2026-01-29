@@ -168,3 +168,121 @@ func (r *TeacherScopeRepo) ListHealthLogsByStudent(ctx context.Context, teacherU
 	}
 	return out, rows.Err()
 }
+
+// CreateClassPost tạo bài đăng cho một lớp học nếu giáo viên được phân công dạy lớp đó.
+func (r *TeacherScopeRepo) CreateClassPost(ctx context.Context, teacherUserID, classID uuid.UUID,
+	postType, content string) (uuid.UUID, error) {
+	const q = `
+		INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
+		SELECT $1, 'class', $2, $3, $4
+		FROM teacher_classes tc
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1 AND tc.class_id = $2
+		RETURNING post_id;
+	`
+
+	var id uuid.UUID
+	err := r.pool.QueryRow(ctx, q, teacherUserID, classID, postType, content).Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return uuid.Nil, ErrForbidden
+		}
+		return uuid.Nil, err
+	}
+
+	return id, nil
+}
+
+// CreateStudentPost tạo bài đăng cho một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
+func (r *TeacherScopeRepo) CreateStudentPost(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	postType, content string) (uuid.UUID, error) {
+	const q = `
+		INSERT INTO posts (author_user_id, scope_type, student_id, type, content)
+		SELECT $1, 'student', $2, $3, $4
+		FROM students s
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1 AND s.student_id = $2
+		RETURNING post_id;
+	`
+
+	var id uuid.UUID
+	err := r.pool.QueryRow(ctx, q, teacherUserID, studentID, postType, content).Scan(&id)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return uuid.Nil, ErrForbidden
+		}
+		return uuid.Nil, err
+	}
+
+	return id, nil
+}
+
+// ListClassPosts liệt kê bài đăng của một lớp nếu giáo viên được phân công dạy lớp đó.
+func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
+	limit, offset int) ([]model.Post, error) {
+	const q = `
+		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
+			p.type, p.content, p.created_at, p.updated_at
+		FROM posts p
+		JOIN teacher_classes tc ON tc.class_id = p.class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1 AND p.class_id = $2 AND p.scope_type = 'class'
+		ORDER BY p.created_at DESC
+		LIMIT $3 OFFSET $4;
+	`
+
+	rows, err := r.pool.Query(ctx, q, teacherUserID, classID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []model.Post
+	for rows.Next() {
+		var p model.Post
+		if err := rows.Scan(
+			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
+	return posts, rows.Err()
+}
+
+// ListStudentPosts liệt kê bài đăng của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
+func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	limit, offset int) ([]model.Post, error) {
+	const q = `
+		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
+			p.type, p.content, p.created_at, p.updated_at
+		FROM posts p
+		JOIN students s ON s.student_id = p.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1 AND p.student_id = $2 AND p.scope_type = 'student'
+		ORDER BY p.created_at DESC
+		LIMIT $3 OFFSET $4;
+	`
+
+	rows, err := r.pool.Query(ctx, q, teacherUserID, studentID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []model.Post
+	for rows.Next() {
+		var p model.Post
+		if err := rows.Scan(
+			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
+	return posts, rows.Err()
+}

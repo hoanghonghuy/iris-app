@@ -67,6 +67,11 @@ func NewRouter(
 
 				// giáo viên cập nhật hồ sơ cá nhân của mình
 				teacherScope.PUT("/profile", teacherScopeHandler.UpdateMyProfile)
+
+				// bài đăng (posts)
+				teacherScope.POST("/posts", teacherScopeHandler.CreatePost)
+				teacherScope.GET("/classes/:class_id/posts", teacherScopeHandler.ListClassPosts)
+				teacherScope.GET("/students/:student_id/posts", teacherScopeHandler.ListStudentPosts)
 			}
 
 			// admin routes (require ADMIN role)

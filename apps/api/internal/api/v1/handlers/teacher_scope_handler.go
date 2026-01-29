@@ -42,6 +42,19 @@ type CreateHealthRequest struct {
 	Note        string   `json:"note"`
 }
 
+type CreatePostRequest struct {
+	ScopeType string `json:"scope_type" binding:"required"` // class|student
+	ClassID   string `json:"class_id"`                      // required if scope_type=class
+	StudentID string `json:"student_id"`                    // required if scope_type=student
+	Type      string `json:"type" binding:"required"`       // announcement|activity|daily_note|health_note
+	Content   string `json:"content" binding:"required"`
+}
+
+type ListPostsRequest struct {
+	Limit  int `form:"limit"`
+	Offset int `form:"offset"`
+}
+
 // MyClasses trả về danh sách các lớp mà giáo viên được phân công giảng dạy.
 func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
@@ -368,4 +381,189 @@ func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
 	}
 
 	response.OK(c, healthLogs)
+}
+
+// CreatePost tạo bài đăng mới cho lớp hoặc học sinh
+func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
+	var req CreatePostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	// Get userID from JWT claims
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	// Validate type
+	switch req.Type {
+	case "announcement", "activity", "daily_note", "health_note":
+	default:
+		response.Fail(c, http.StatusBadRequest, "invalid type (announcement|activity|daily_note|health_note)")
+		return
+	}
+
+	var postID uuid.UUID
+
+	switch req.ScopeType {
+	case "class":
+		classID, err := uuid.Parse(req.ClassID)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid class_id")
+			return
+		}
+		postID, err = h.teacherScopeService.CreateClassPost(ctx, userID, classID, req.Type, req.Content)
+		if err != nil {
+			if err == service.ErrInvalidUserID || err == service.ErrInvalidClassID {
+				response.Fail(c, http.StatusBadRequest, err.Error())
+				return
+			}
+			if err == service.ErrForbidden {
+				response.Fail(c, http.StatusForbidden, "forbidden: you can only create posts for your assigned classes")
+				return
+			}
+			response.Fail(c, http.StatusInternalServerError, "failed to create post")
+			return
+		}
+
+	case "student":
+		studentID, err := uuid.Parse(req.StudentID)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid student_id")
+			return
+		}
+		postID, err = h.teacherScopeService.CreateStudentPost(ctx, userID, studentID, req.Type, req.Content)
+		if err != nil {
+			if err == service.ErrInvalidUserID {
+				response.Fail(c, http.StatusBadRequest, err.Error())
+				return
+			}
+			if err == service.ErrForbidden {
+				response.Fail(c, http.StatusForbidden, "forbidden: you can only create posts for students in your assigned classes")
+				return
+			}
+			response.Fail(c, http.StatusInternalServerError, "failed to create post")
+			return
+		}
+
+	default:
+		response.Fail(c, http.StatusBadRequest, "invalid scope_type (class|student)")
+		return
+	}
+
+	response.Created(c, gin.H{
+		"message":    "post created successfully",
+		"post_id":    postID.String(),
+		"scope_type": req.ScopeType,
+		"type":       req.Type,
+	})
+}
+
+// ListClassPosts liệt kê bài đăng của một lớp học
+func (h *TeacherScopeHandler) ListClassPosts(c *gin.Context) {
+	classID, err := uuid.Parse(c.Param("class_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid class_id")
+		return
+	}
+
+	var req ListPostsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	// Get userID from JWT claims
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	posts, err := h.teacherScopeService.ListClassPosts(ctx, userID, classID, req.Limit, req.Offset)
+	if err != nil {
+		if err == service.ErrInvalidUserID || err == service.ErrInvalidClassID {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err == service.ErrForbidden {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts from your assigned classes")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch posts")
+		return
+	}
+
+	response.OK(c, posts)
+}
+
+// ListStudentPosts liệt kê bài đăng của một học sinh
+func (h *TeacherScopeHandler) ListStudentPosts(c *gin.Context) {
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id")
+		return
+	}
+
+	var req ListPostsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	// Get userID from JWT claims
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	posts, err := h.teacherScopeService.ListStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
+	if err != nil {
+		if err == service.ErrInvalidUserID {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if err == service.ErrForbidden {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for students in your assigned classes")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch posts")
+		return
+	}
+
+	response.OK(c, posts)
 }

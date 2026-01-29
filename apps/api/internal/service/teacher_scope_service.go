@@ -123,7 +123,7 @@ func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID
 		return uuid.Nil, ErrInvalidUserID
 	}
 
-	// Validate severity 
+	// Validate severity
 	if severity != nil {
 		s := *severity
 		if s != "normal" && s != "watch" && s != "urgent" {
@@ -190,4 +190,146 @@ func (s *TeacherScopeService) UpdateMyProfile(ctx context.Context, teacherUserID
 	}
 
 	return nil
+}
+
+// CreateClassPost tạo bài đăng cho một lớp học
+func (s *TeacherScopeService) CreateClassPost(ctx context.Context, teacherUserID, classID uuid.UUID,
+	postType, content string) (uuid.UUID, error) {
+	// Validate teacherUserID
+	if teacherUserID == uuid.Nil {
+		return uuid.Nil, ErrInvalidUserID
+	}
+
+	// Validate classID
+	if classID == uuid.Nil {
+		return uuid.Nil, ErrInvalidClassID
+	}
+
+	// Validate postType
+	if !isValidPostType(postType) {
+		return uuid.Nil, fmt.Errorf("%w: type must be announcement|activity|daily_note|health_note", ErrInvalidValue)
+	}
+
+	// Validate content
+	if content == "" {
+		return uuid.Nil, fmt.Errorf("%w: content cannot be empty", ErrInvalidValue)
+	}
+
+	id, err := s.teacherScopeRepo.CreateClassPost(ctx, teacherUserID, classID, postType, content)
+	if err != nil {
+		if err == repo.ErrForbidden {
+			return uuid.Nil, ErrForbidden
+		}
+		return uuid.Nil, fmt.Errorf("failed to create class post: %w", err)
+	}
+
+	return id, nil
+}
+
+// CreateStudentPost tạo bài đăng cho một học sinh
+func (s *TeacherScopeService) CreateStudentPost(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	postType, content string) (uuid.UUID, error) {
+	// Validate teacherUserID
+	if teacherUserID == uuid.Nil {
+		return uuid.Nil, ErrInvalidUserID
+	}
+
+	// Validate studentID
+	if studentID == uuid.Nil {
+		return uuid.Nil, ErrInvalidUserID
+	}
+
+	// Validate postType
+	if !isValidPostType(postType) {
+		return uuid.Nil, fmt.Errorf("%w: type must be announcement|activity|daily_note|health_note", ErrInvalidValue)
+	}
+
+	// Validate content
+	if content == "" {
+		return uuid.Nil, fmt.Errorf("%w: content cannot be empty", ErrInvalidValue)
+	}
+
+	id, err := s.teacherScopeRepo.CreateStudentPost(ctx, teacherUserID, studentID, postType, content)
+	if err != nil {
+		if err == repo.ErrForbidden {
+			return uuid.Nil, ErrForbidden
+		}
+		return uuid.Nil, fmt.Errorf("failed to create student post: %w", err)
+	}
+
+	return id, nil
+}
+
+// ListClassPosts liệt kê bài đăng của một lớp học
+func (s *TeacherScopeService) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
+	limit, offset int) ([]model.Post, error) {
+	// Validate teacherUserID
+	if teacherUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	// Validate classID
+	if classID == uuid.Nil {
+		return nil, ErrInvalidClassID
+	}
+
+	// Default limit
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	posts, err := s.teacherScopeRepo.ListClassPosts(ctx, teacherUserID, classID, limit, offset)
+	if err != nil {
+		if err == repo.ErrForbidden {
+			return nil, ErrForbidden
+		}
+		return nil, fmt.Errorf("failed to list class posts: %w", err)
+	}
+
+	return posts, nil
+}
+
+// ListStudentPosts liệt kê bài đăng của một học sinh
+func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	limit, offset int) ([]model.Post, error) {
+	// Validate teacherUserID
+	if teacherUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	// Validate studentID
+	if studentID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	// Default limit
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	posts, err := s.teacherScopeRepo.ListStudentPosts(ctx, teacherUserID, studentID, limit, offset)
+	if err != nil {
+		if err == repo.ErrForbidden {
+			return nil, ErrForbidden
+		}
+		return nil, fmt.Errorf("failed to list student posts: %w", err)
+	}
+
+	return posts, nil
+}
+
+// isValidPostType kiểm tra postType có hợp lệ không
+func isValidPostType(postType string) bool {
+	switch postType {
+	case "announcement", "activity", "daily_note", "health_note":
+		return true
+	default:
+		return false
+	}
 }
