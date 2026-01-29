@@ -11,7 +11,13 @@ import (
 )
 
 type SchoolHandler struct {
-	SchoolService *service.SchoolService
+	schoolService *service.SchoolService
+}
+
+func NewSchoolHandler(schoolService *service.SchoolService) *SchoolHandler {
+	return &SchoolHandler{
+		schoolService: schoolService,
+	}
 }
 
 type CreateSchoolRequest struct {
@@ -30,7 +36,7 @@ func (h *SchoolHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	school, err := h.SchoolService.Create(ctx, req.Name, req.Address)
+	school, err := h.schoolService.Create(ctx, req.Name, req.Address)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to create school")
 		return
@@ -44,7 +50,7 @@ func (h *SchoolHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	schools, err := h.SchoolService.List(ctx)
+	schools, err := h.schoolService.List(ctx)
 	switch err {
 	case nil:
 		response.OK(c, schools)

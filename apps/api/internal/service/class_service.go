@@ -9,12 +9,18 @@ import (
 )
 
 type ClassService struct {
-	ClassRepo *repo.ClassRepo
+	classRepo *repo.ClassRepo
+}
+
+func NewClassService(classRepo *repo.ClassRepo) *ClassService {
+	return &ClassService{
+		classRepo: classRepo,
+	}
 }
 
 // Create tạo mới lớp học
 func (s *ClassService) Create(ctx context.Context, schoolID uuid.UUID, name, schoolYear string) (*model.Class, error) {
-	id, err := s.ClassRepo.Create(ctx, schoolID, name, schoolYear)
+	id, err := s.classRepo.Create(ctx, schoolID, name, schoolYear)
 	if err != nil {
 		return nil, err
 	}
@@ -29,5 +35,5 @@ func (s *ClassService) Create(ctx context.Context, schoolID uuid.UUID, name, sch
 
 // ListBySchool lấy danh sách lớp học theo trường
 func (s *ClassService) ListBySchool(ctx context.Context, schoolID uuid.UUID) ([]model.Class, error) {
-	return s.ClassRepo.List(ctx, schoolID)
+	return s.classRepo.List(ctx, schoolID)
 }

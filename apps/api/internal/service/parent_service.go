@@ -9,17 +9,23 @@ import (
 )
 
 type ParentService struct {
-	ParentRepo *repo.ParentRepo
+	parentRepo *repo.ParentRepo
+}
+
+func NewParentService(parentRepo *repo.ParentRepo) *ParentService {
+	return &ParentService{
+		parentRepo: parentRepo,
+	}
 }
 
 // List lấy danh sách tất cả phụ huynh
 func (s *ParentService) List(ctx context.Context) ([]model.Parent, error) {
-	return s.ParentRepo.List(ctx)
+	return s.parentRepo.List(ctx)
 }
 
 // Create tạo mới phụ huynh
 func (s *ParentService) Create(ctx context.Context, userID, schoolID uuid.UUID, fullName, phone string) (*model.Parent, error) {
-	id, err := s.ParentRepo.Create(ctx, userID, schoolID, fullName, phone)
+	id, err := s.parentRepo.Create(ctx, userID, schoolID, fullName, phone)
 	if err != nil {
 		return nil, err
 	}
@@ -35,5 +41,5 @@ func (s *ParentService) Create(ctx context.Context, userID, schoolID uuid.UUID, 
 
 // GetByParentID lấy thông tin phụ huynh theo parent_id
 func (s *ParentService) GetByParentID(ctx context.Context, parentID uuid.UUID) (*model.Parent, error) {
-	return s.ParentRepo.GetByParentID(ctx, parentID)
+	return s.parentRepo.GetByParentID(ctx, parentID)
 }

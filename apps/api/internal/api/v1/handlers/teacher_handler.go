@@ -12,14 +12,20 @@ import (
 )
 
 type TeacherHandler struct {
-	TeacherService *service.TeacherService
+	teacherService *service.TeacherService
+}
+
+func NewTeacherHandler(teacherService *service.TeacherService) *TeacherHandler {
+	return &TeacherHandler{
+		teacherService: teacherService,
+	}
 }
 
 func (h *TeacherHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teachers, err := h.TeacherService.List(ctx)
+	teachers, err := h.teacherService.List(ctx)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teachers")
 		return
@@ -37,7 +43,7 @@ func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teachers, err := h.TeacherService.ListTeachersOfClass(ctx, classID)
+	teachers, err := h.teacherService.ListTeachersOfClass(ctx, classID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teachers of class")
 		return
@@ -55,7 +61,7 @@ func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teacher, err := h.TeacherService.GetByTeacherID(ctx, teacherID)
+	teacher, err := h.teacherService.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teacher")
 		return
@@ -78,7 +84,7 @@ func (h *TeacherHandler) Assign(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.TeacherService.Assign(ctx, teacherID, classID)
+	err = h.teacherService.Assign(ctx, teacherID, classID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to assign teacher to class")
 		return
@@ -105,7 +111,7 @@ func (h *TeacherHandler) Unassign(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.TeacherService.Unassign(ctx, teacherID, classID)
+	err = h.teacherService.Unassign(ctx, teacherID, classID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to unassign teacher from class")
 		return
@@ -134,7 +140,7 @@ func (h *TeacherHandler) Update(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.TeacherService.Update(ctx, teacherID, req)
+	err = h.teacherService.Update(ctx, teacherID, req)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to update teacher")
 		return

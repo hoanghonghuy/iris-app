@@ -15,7 +15,13 @@ import (
 )
 
 type AuthHandler struct {
-	AuthService *service.AuthService
+	authService *service.AuthService
+}
+
+func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+	return &AuthHandler{
+		authService: authService,
+	}
 }
 
 type LoginRequest struct {
@@ -34,7 +40,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.AuthService.Login(ctx, req.Email, req.Password)
+	resp, err := h.authService.Login(ctx, req.Email, req.Password)
 	switch err {
 	case pgx.ErrNoRows:
 		response.Fail(c, http.StatusUnauthorized, "invalid credentials")

@@ -12,8 +12,15 @@ import (
 )
 
 type UserService struct {
-	UserRepo *repo.UserRepo
-	JWTAuth  *auth.Authenticator
+	userRepo *repo.UserRepo
+	jwtAuth  *auth.Authenticator
+}
+
+func NewUserService(userRepo *repo.UserRepo, jwtAuth *auth.Authenticator) *UserService {
+	return &UserService{
+		userRepo: userRepo,
+		jwtAuth:  jwtAuth,
+	}
 }
 
 // yêu cầu cập nhật mật khẩu của người dùng. (self-service)
@@ -39,14 +46,14 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email strin
 	}
 
 	// Create user
-	userID, err := s.UserRepo.Create(ctx, email, string(passwordHash))
+	userID, err := s.userRepo.Create(ctx, email, string(passwordHash))
 	if err != nil {
 		return nil, ErrFailedToCreateUser
 	}
 
 	// Assign roles
 	for _, role := range roles {
-		if err := s.UserRepo.AssignRole(ctx, userID, role); err != nil {
+		if err := s.userRepo.AssignRole(ctx, userID, role); err != nil {
 			return nil, fmt.Errorf("%w: %s", ErrFailedToAssignRole, role)
 		}
 	}
@@ -65,7 +72,7 @@ func (s *UserService) ActivateUser(ctx context.Context, email, password string) 
 	}
 
 	// Check user exists
-	user, err := s.UserRepo.FindByEmail(ctx, email)
+	user, err := s.userRepo.FindByEmail(ctx, email)
 	if err != nil {
 		return ErrUserNotFound
 	}
@@ -77,7 +84,7 @@ func (s *UserService) ActivateUser(ctx context.Context, email, password string) 
 	}
 
 	// Update password and status
-	err = s.UserRepo.Update(ctx, user.ID, user.Email, string(passwordHash))
+	err = s.userRepo.Update(ctx, user.ID, user.Email, string(passwordHash))
 	if err != nil {
 		return ErrFailedToActivateUser
 	}
@@ -93,27 +100,27 @@ func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName
 		return fmt.Errorf("%w: %s", ErrInvalidRoleName, roleName)
 	}
 
-	return s.UserRepo.AssignRole(ctx, userID, roleName)
+	return s.userRepo.AssignRole(ctx, userID, roleName)
 }
 
 // FindByEmail tìm user theo email
 func (s *UserService) FindByEmail(ctx context.Context, email string) (*model.User, error) {
-	return s.UserRepo.FindByEmail(ctx, email)
+	return s.userRepo.FindByEmail(ctx, email)
 }
 
 // RolesOfUser lấy danh sách roles của user
 func (s *UserService) RolesOfUser(ctx context.Context, userID uuid.UUID) ([]string, error) {
-	return s.UserRepo.RolesOfUser(ctx, userID)
+	return s.userRepo.RolesOfUser(ctx, userID)
 }
 
 // FindByID lấy thông tin user theo ID
 func (s *UserService) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error) {
-	return s.UserRepo.FindByID(ctx, userID)
+	return s.userRepo.FindByID(ctx, userID)
 }
 
 // List lấy danh sách tất cả users
 func (s *UserService) List(ctx context.Context) ([]model.UserInfo, error) {
-	return s.UserRepo.List(ctx)
+	return s.userRepo.List(ctx)
 }
 
 // UpdateEmail cập nhật email của user (admin only)
@@ -124,12 +131,12 @@ func (s *UserService) UpdateEmail(ctx context.Context, userID uuid.UUID, email s
 	}
 
 	// check user exists
-	_, err := s.UserRepo.FindByID(ctx, userID)
+	_, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return ErrUserNotFound
 	}
 
-	return s.UserRepo.UpdateEmail(ctx, userID, email)
+	return s.userRepo.UpdateEmail(ctx, userID, email)
 }
 
 // UpdateMyPassword cập nhật mật khẩu của người dùng (user)
@@ -145,7 +152,7 @@ func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, re
 	}
 
 	// check if user exists
-	userInfo, err := s.UserRepo.FindByID(ctx, userID)
+	userInfo, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return ErrUserNotFound
 	}
@@ -156,7 +163,7 @@ func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, re
 		return ErrFailedToHashPassword
 	}
 
-	err = s.UserRepo.UpdatePassword(ctx, userID, userInfo.Email, string(passwordHashBytes))
+	err = s.userRepo.UpdatePassword(ctx, userID, userInfo.Email, string(passwordHashBytes))
 	if err != nil {
 		return ErrFailedToUpdatePassword
 	}
@@ -166,15 +173,15 @@ func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, re
 
 // Delete xóa user (hard delete)
 func (s *UserService) Delete(ctx context.Context, userID uuid.UUID) error {
-	return s.UserRepo.Delete(ctx, userID)
+	return s.userRepo.Delete(ctx, userID)
 }
 
 // Lock khóa tài khoản user
 func (s *UserService) Lock(ctx context.Context, userID uuid.UUID) error {
-	return s.UserRepo.Lock(ctx, userID)
+	return s.userRepo.Lock(ctx, userID)
 }
 
 // Unlock mở khóa tài khoản user
 func (s *UserService) Unlock(ctx context.Context, userID uuid.UUID) error {
-	return s.UserRepo.Unlock(ctx, userID)
+	return s.userRepo.Unlock(ctx, userID)
 }

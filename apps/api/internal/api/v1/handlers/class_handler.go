@@ -12,7 +12,13 @@ import (
 )
 
 type ClassHandler struct {
-	ClassService *service.ClassService
+	classService *service.ClassService
+}
+
+func NewClassHandler(classService *service.ClassService) *ClassHandler {
+	return &ClassHandler{
+		classService: classService,
+	}
 }
 
 type CreateClassRequest struct {
@@ -37,7 +43,7 @@ func (h *ClassHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	class, err := h.ClassService.Create(ctx, schoolID, req.Name, req.SchoolYear)
+	class, err := h.classService.Create(ctx, schoolID, req.Name, req.SchoolYear)
 	if err != nil {
 		// FK fail -> school_id not found
 		response.Fail(c, http.StatusInternalServerError, "failed to create class")
@@ -58,7 +64,7 @@ func (h *ClassHandler) ListBySchool(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	classes, err := h.ClassService.ListBySchool(ctx, schoolID)
+	classes, err := h.classService.ListBySchool(ctx, schoolID)
 	switch err {
 	case nil:
 		response.OK(c, classes)

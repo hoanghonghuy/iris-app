@@ -10,12 +10,18 @@ import (
 )
 
 type StudentService struct {
-	StudentRepo *repo.StudentRepo
+	studentRepo *repo.StudentRepo
+}
+
+func NewStudentService(studentRepo *repo.StudentRepo) *StudentService {
+	return &StudentService{
+		studentRepo: studentRepo,
+	}
 }
 
 func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID,
 	fullName string, dob time.Time, gender string) (*model.Student, error) {
-	id, err := s.StudentRepo.Create(ctx, schoolID, classID, fullName, dob, gender)
+	id, err := s.studentRepo.Create(ctx, schoolID, classID, fullName, dob, gender)
 	if err != nil {
 		return nil, err
 	}
@@ -31,5 +37,5 @@ func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID
 }
 
 func (s *StudentService) ListByClass(ctx context.Context, classID uuid.UUID) ([]model.Student, error) {
-	return s.StudentRepo.ListByClass(ctx, classID)
+	return s.studentRepo.ListByClass(ctx, classID)
 }

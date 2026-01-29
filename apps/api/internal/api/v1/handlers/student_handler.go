@@ -12,7 +12,13 @@ import (
 )
 
 type StudentHandler struct {
-	StudentService *service.StudentService
+	studentService *service.StudentService
+}
+
+func NewStudentHandler(studentService *service.StudentService) *StudentHandler {
+	return &StudentHandler{
+		studentService: studentService,
+	}
 }
 
 type CreateStudentReq struct {
@@ -33,7 +39,7 @@ func (s *StudentHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	student, err := s.StudentService.Create(ctx, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
+	student, err := s.studentService.Create(ctx, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "failed to create student")
 	}
@@ -55,7 +61,7 @@ func (s *StudentHandler) ListByClass(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	students, err := s.StudentService.ListByClass(ctx, classID)
+	students, err := s.studentService.ListByClass(ctx, classID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "failed to fetch students")
 	}

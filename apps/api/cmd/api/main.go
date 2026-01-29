@@ -49,25 +49,25 @@ func main() {
 	// Services
 	// TODO: tách ra hàm helper initServices(repos, jwtAuth) *Services
 	var (
-		authService         = &service.AuthService{UserRepo: repos.UserRepo, JWTAuth: jwtAuth}
-		schoolService       = &service.SchoolService{SchoolRepo: repos.SchoolRepo}
-		classService        = &service.ClassService{ClassRepo: repos.ClassRepo}
-		studentService      = &service.StudentService{StudentRepo: repos.StudentRepo}
-		userService         = &service.UserService{UserRepo: repos.UserRepo}
-		teacherService      = &service.TeacherService{TeacherRepo: repos.TeacherRepo, TeacherClassRepo: repos.TeacherClassRepo}
+		authService         = service.NewAuthService(repos.UserRepo, jwtAuth)
+		schoolService       = service.NewSchoolService(repos.SchoolRepo)
+		classService        = service.NewClassService(repos.ClassRepo)
+		studentService      = service.NewStudentService(repos.StudentRepo)
+		userService         = service.NewUserService(repos.UserRepo, jwtAuth)
+		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo)
 		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo)
 	)
 
 	// Handlers
 	// TODO: tách ra hàm helper initHandlers(services) *Handlers
 	var (
-		authHandler         = &v1handlers.AuthHandler{AuthService: authService}
-		schoolHandler       = &v1handlers.SchoolHandler{SchoolService: schoolService}
-		classHandler        = &v1handlers.ClassHandler{ClassService: classService}
-		studentHandler      = &v1handlers.StudentHandler{StudentService: studentService}
-		userHandler         = &v1handlers.UserHandler{UserService: userService}
-		teacherHandler      = &v1handlers.TeacherHandler{TeacherService: teacherService}
-		teacherScopeHandler = &v1handlers.TeacherScopeHandler{TeacherScopeService: teacherScopeService}
+		authHandler         = v1handlers.NewAuthHandler(authService)
+		schoolHandler       = v1handlers.NewSchoolHandler(schoolService)
+		classHandler        = v1handlers.NewClassHandler(classService)
+		studentHandler      = v1handlers.NewStudentHandler(studentService)
+		userHandler         = v1handlers.NewUserHandler(userService)
+		teacherHandler      = v1handlers.NewTeacherHandler(teacherService)
+		teacherScopeHandler = v1handlers.NewTeacherScopeHandler(teacherScopeService)
 	)
 
 	// Router

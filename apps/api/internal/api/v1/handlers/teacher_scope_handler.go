@@ -15,7 +15,13 @@ import (
 )
 
 type TeacherScopeHandler struct {
-	TeacherScopeService *service.TeacherScopeService
+	teacherScopeService *service.TeacherScopeService
+}
+
+func NewTeacherScopeHandler(teacherScopeService *service.TeacherScopeService) *TeacherScopeHandler {
+	return &TeacherScopeHandler{
+		teacherScopeService: teacherScopeService,
+	}
 }
 
 type MarkAttendanceRequest struct {
@@ -55,7 +61,7 @@ func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 		return
 	}
 
-	classes, err := h.TeacherScopeService.ListMyClasses(ctx, userID)
+	classes, err := h.teacherScopeService.ListMyClasses(ctx, userID)
 	if err != nil {
 		if err == service.ErrInvalidUserID {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -93,7 +99,7 @@ func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 		return
 	}
 
-	students, err := h.TeacherScopeService.ListMyStudentsInClass(ctx, userID, classID)
+	students, err := h.teacherScopeService.ListMyStudentsInClass(ctx, userID, classID)
 	if err != nil {
 		if err == service.ErrInvalidUserID || err == service.ErrInvalidClassID {
 			response.Fail(c, http.StatusBadRequest, err.Error())
@@ -162,7 +168,7 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 		checkOut = &t
 	}
 
-	err = h.TeacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, checkIn, checkOut, req.Note)
+	err = h.teacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, checkIn, checkOut, req.Note)
 	if err != nil {
 		if err == service.ErrInvalidUserID || err == service.ErrInvalidDate || err == service.ErrInvalidStatus {
 			response.Fail(c, http.StatusBadRequest, err.Error())
@@ -212,7 +218,7 @@ func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	err = h.TeacherScopeService.UpdateMyProfile(ctx, userID, req)
+	err = h.teacherScopeService.UpdateMyProfile(ctx, userID, req)
 	if err != nil {
 		if err == service.ErrInvalidUserID {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -281,7 +287,7 @@ func (h *TeacherScopeHandler) CreateHealth(c *gin.Context) {
 		}
 	}
 
-	id, err := h.TeacherScopeService.CreateHealthLog(ctx, userID, studentID, recordedAt, req.Temperature, req.Symptoms, req.Note, req.Severity)
+	id, err := h.teacherScopeService.CreateHealthLog(ctx, userID, studentID, recordedAt, req.Temperature, req.Symptoms, req.Note, req.Severity)
 	if err != nil {
 		if err == service.ErrInvalidUserID {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -347,7 +353,7 @@ func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
 		}
 	}
 
-	healthLogs, err := h.TeacherScopeService.ListHealthLogs(ctx, userID, studentID, from, to)
+	healthLogs, err := h.teacherScopeService.ListHealthLogs(ctx, userID, studentID, from, to)
 	if err != nil {
 		if err == service.ErrInvalidUserID {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")

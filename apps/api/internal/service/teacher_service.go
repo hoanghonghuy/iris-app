@@ -9,8 +9,15 @@ import (
 )
 
 type TeacherService struct {
-	TeacherRepo      *repo.TeacherRepo
-	TeacherClassRepo *repo.TeacherClassRepo
+	teacherRepo      *repo.TeacherRepo
+	teacherClassRepo *repo.TeacherClassRepo
+}
+
+func NewTeacherService(teacherRepo *repo.TeacherRepo, teacherClassRepo *repo.TeacherClassRepo) *TeacherService {
+	return &TeacherService{
+		teacherRepo:      teacherRepo,
+		teacherClassRepo: teacherClassRepo,
+	}
 }
 
 // UpdateTeacherRequest represents the request to update a teacher (admin only)
@@ -21,12 +28,12 @@ type UpdateTeacherRequest struct {
 }
 
 func (s *TeacherService) List(ctx context.Context) ([]model.Teacher, error) {
-	return s.TeacherRepo.List(ctx)
+	return s.teacherRepo.List(ctx)
 }
 
 func (s *TeacherService) Assign(ctx context.Context, teacherID, classID uuid.UUID) error {
 	// kiểm tra teacher có tồn tại không
-	_, err := s.TeacherRepo.GetByTeacherID(ctx, teacherID)
+	_, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		return err
 	}
@@ -36,11 +43,11 @@ func (s *TeacherService) Assign(ctx context.Context, teacherID, classID uuid.UUI
 	//    return errors.New("teacher không active")
 	// }
 
-	return s.TeacherClassRepo.Assign(ctx, teacherID, classID)
+	return s.teacherClassRepo.Assign(ctx, teacherID, classID)
 }
 
 func (s *TeacherService) ListTeachersOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error) {
-	teacherIDs, err := s.TeacherClassRepo.ListTeachersOfClass(ctx, classID)
+	teacherIDs, err := s.teacherClassRepo.ListTeachersOfClass(ctx, classID)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +59,7 @@ func (s *TeacherService) ListTeachersOfClass(ctx context.Context, classID uuid.U
 	// lỗi khi lấy thông tin giáo viên => trả về lỗi.
 	// không lỗi => giáo viên được thêm vào danh sách teachers.
 	for _, teacherID := range teacherIDs {
-		teacher, err := s.TeacherRepo.GetByTeacherID(ctx, teacherID)
+		teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 		if err != nil {
 			// continue
 			return nil, err
@@ -64,7 +71,7 @@ func (s *TeacherService) ListTeachersOfClass(ctx context.Context, classID uuid.U
 }
 
 func (s *TeacherService) Unassign(ctx context.Context, teacherID, classID uuid.UUID) error {
-	exists, err := s.TeacherClassRepo.IsTeacherAssignedToClass(ctx, teacherID, classID)
+	exists, err := s.teacherClassRepo.IsTeacherAssignedToClass(ctx, teacherID, classID)
 	if err != nil {
 		return err
 	}
@@ -73,21 +80,21 @@ func (s *TeacherService) Unassign(ctx context.Context, teacherID, classID uuid.U
 		return ErrTeacherNotAssigned
 	}
 
-	return s.TeacherClassRepo.Unassign(ctx, teacherID, classID)
+	return s.teacherClassRepo.Unassign(ctx, teacherID, classID)
 }
 
 func (s *TeacherService) GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (*model.Teacher, error) {
-	return s.TeacherRepo.GetByTeacherID(ctx, teacherID)
+	return s.teacherRepo.GetByTeacherID(ctx, teacherID)
 }
 
 // Update updates a teacher's information (admin only - can update all fields)
 func (s *TeacherService) Update(ctx context.Context, teacherID uuid.UUID, req UpdateTeacherRequest) error {
 	// Check if teacher exists
-	_, err := s.TeacherRepo.GetByTeacherID(ctx, teacherID)
+	_, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		return err
 	}
 
 	// Admin can update all fields
-	return s.TeacherRepo.Update(ctx, teacherID, req.FullName, req.Phone, req.SchoolID)
+	return s.teacherRepo.Update(ctx, teacherID, req.FullName, req.Phone, req.SchoolID)
 }

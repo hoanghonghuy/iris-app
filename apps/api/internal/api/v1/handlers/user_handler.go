@@ -17,7 +17,13 @@ import (
 )
 
 type UserHandler struct {
-	UserService *service.UserService
+	userService *service.UserService
+}
+
+func NewUserHandler(userService *service.UserService) *UserHandler {
+	return &UserHandler{
+		userService: userService,
+	}
 }
 
 // CreateUserRequest input để admin tạo user mới (không cần password)
@@ -56,7 +62,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	resp, err := h.UserService.CreateUserWithoutPassword(ctx, req.Email, req.Roles)
+	resp, err := h.userService.CreateUserWithoutPassword(ctx, req.Email, req.Roles)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrFailedToAssignRole):
@@ -86,7 +92,7 @@ func (h *UserHandler) ActivateUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	if err := h.UserService.ActivateUser(ctx, req.Email, req.Password); err != nil {
+	if err := h.userService.ActivateUser(ctx, req.Email, req.Password); err != nil {
 		switch {
 		case errors.Is(err, service.ErrEmailCannotBeEmpty):
 			response.Fail(c, http.StatusBadRequest, "email cannot be empty")
@@ -131,7 +137,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := h.UserService.FindByID(ctx, userID)
+	userInfo, err := h.userService.FindByID(ctx, userID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			response.Fail(c, http.StatusNotFound, "user not found")
@@ -173,7 +179,7 @@ func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
 		Password: req.Password,
 	}
 
-	if err := h.UserService.UpdateMyPassword(ctx, userID, updateReq); err != nil {
+	if err := h.userService.UpdateMyPassword(ctx, userID, updateReq); err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidUserID):
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -218,7 +224,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := h.UserService.Delete(ctx, userID); err != nil {
+	if err := h.userService.Delete(ctx, userID); err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to delete user")
 		return
 	}
@@ -231,7 +237,7 @@ func (h *UserHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	users, err := h.UserService.List(ctx)
+	users, err := h.userService.List(ctx)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch users")
 		return
@@ -251,7 +257,7 @@ func (h *UserHandler) Lock(c *gin.Context) {
 		return
 	}
 
-	if err := h.UserService.Lock(ctx, userID); err != nil {
+	if err := h.userService.Lock(ctx, userID); err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to lock user")
 		return
 	}
@@ -270,7 +276,7 @@ func (h *UserHandler) Unlock(c *gin.Context) {
 		return
 	}
 
-	if err := h.UserService.Unlock(ctx, userID); err != nil {
+	if err := h.userService.Unlock(ctx, userID); err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to unlock user")
 		return
 	}
@@ -296,7 +302,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 		return
 	}
 
-	if err := h.UserService.AssignRole(ctx, userID, req.RoleName); err != nil {
+	if err := h.userService.AssignRole(ctx, userID, req.RoleName); err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidRoleName):
 			response.Fail(c, http.StatusBadRequest, "invalid role name")
