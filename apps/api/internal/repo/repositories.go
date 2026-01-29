@@ -9,4 +9,5 @@ type Repositories struct {
 	ParentRepo        *ParentRepo
 	TeacherRepo       *TeacherRepo
 	TeacherClassRepo  *TeacherClassRepo
+	TeacherScopeRepo  *TeacherScopeRepo
 }
