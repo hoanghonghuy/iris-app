@@ -42,6 +42,7 @@ func (s *StudentHandler) Create(c *gin.Context) {
 	student, err := s.studentService.Create(ctx, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "failed to create student")
+		return
 	}
 
 	response.Created(c, gin.H{"student_id": student.ID})
@@ -64,6 +65,7 @@ func (s *StudentHandler) ListByClass(c *gin.Context) {
 	students, err := s.studentService.ListByClass(ctx, classID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "failed to fetch students")
+		return
 	}
 
 	response.OK(c, students)
