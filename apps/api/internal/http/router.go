@@ -20,6 +20,7 @@ func NewRouter(
 	userHandler *v1handlers.UserHandler,
 	teacherScopeHandler *v1handlers.TeacherScopeHandler,
 	teacherHandler *v1handlers.TeacherHandler,
+	parentScopeHandler *v1handlers.ParentScopeHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -72,6 +73,23 @@ func NewRouter(
 				teacherScope.POST("/posts", teacherScopeHandler.CreatePost)
 				teacherScope.GET("/classes/:class_id/posts", teacherScopeHandler.ListClassPosts)
 				teacherScope.GET("/students/:student_id/posts", teacherScopeHandler.ListStudentPosts)
+			}
+
+			// parent routes (phụ huynh xem thông tin con mình)
+			parentScope := protected.Group("/parent")
+			parentScope.Use(middleware.RequireRole("PARENT"))
+			{
+				// phụ huynh xem danh sách con của mình
+				parentScope.GET("/children", parentScopeHandler.MyChildren)
+
+				// phụ huynh xem bài đăng của lớp con mình
+				parentScope.GET("/children/:student_id/class-posts", parentScopeHandler.ListMyChildClassPosts)
+
+				// phụ huynh xem bài đăng riêng của con mình (student scope)
+				parentScope.GET("/children/:student_id/student-posts", parentScopeHandler.ListMyChildStudentPosts)
+
+				// phụ huynh xem tất cả bài đăng liên quan đến con mình
+				parentScope.GET("/children/:student_id/posts", parentScopeHandler.ListAllMyChildPosts)
 			}
 
 			// admin routes (require ADMIN role)

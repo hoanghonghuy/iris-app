@@ -41,6 +41,7 @@ func main() {
 		TeacherRepo:       repo.NewTeacherRepo(pool),
 		TeacherClassRepo:  repo.NewTeacherClassRepo(pool),
 		TeacherScopeRepo:  repo.NewTeacherScopeRepo(pool),
+		ParentScopeRepo:   repo.NewParentScopeRepo(pool),
 	}
 
 	// Authenticator
@@ -56,6 +57,7 @@ func main() {
 		userService         = service.NewUserService(repos.UserRepo, jwtAuth)
 		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo)
 		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo)
+		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo)
 	)
 
 	// Handlers
@@ -68,6 +70,7 @@ func main() {
 		userHandler         = v1handlers.NewUserHandler(userService)
 		teacherHandler      = v1handlers.NewTeacherHandler(teacherService)
 		teacherScopeHandler = v1handlers.NewTeacherScopeHandler(teacherScopeService)
+		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService)
 	)
 
 	// Router
@@ -81,6 +84,7 @@ func main() {
 		userHandler,
 		teacherScopeHandler,
 		teacherHandler,
+		parentScopeHandler,
 	)
 
 	// Start server
