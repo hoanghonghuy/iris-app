@@ -27,7 +27,16 @@ type MarkAttendanceRequest struct {
 	Note       string  `json:"note"`
 }
 
-// MyClasses returns list of classes that the teacher is assigned to teach
+type CreateHealthRequest struct {
+	StudentID   string   `json:"student_id" binding:"required"`
+	RecordedAt  *string  `json:"recorded_at"` // RFC3339 optional
+	Temperature *float64 `json:"temperature"`
+	Symptoms    string   `json:"symptoms"`
+	Severity    *string  `json:"severity"` // normal|watch|urgent optional
+	Note        string   `json:"note"`
+}
+
+// MyClasses trả về danh sách các lớp mà giáo viên được phân công giảng dạy.
 func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
@@ -59,7 +68,7 @@ func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 	response.OK(c, classes)
 }
 
-// MyStudentsInClass returns list of students in a class if the teacher is assigned to that class
+// MyStudentsInClass trả về danh sách học sinh trong một lớp nếu giáo viên đó được phân công dạy lớp đó.
 func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
@@ -101,8 +110,8 @@ func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 	response.OK(c, students)
 }
 
-// MarkAttendance marks or updates attendance for a student
-// Teacher can only mark attendance for students in their assigned classes
+// MarkAttendance đánh dấu hoặc cập nhật điểm danh cho học sinh
+// Teacher chỉ có thể điểm danh cho sinh viên trong các lớp được phân công.
 func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 	var req MarkAttendanceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -178,7 +187,7 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 	})
 }
 
-// UpdateMyProfile updates teacher's own profile (teacher only - can only update phone)
+// UpdateMyProfile cập nhật hồ sơ cá nhân của giáo viên (teacher only - chỉ có thể cập nhật số điện thoại)
 func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 	var req service.UpdateMyProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -221,4 +230,136 @@ func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 		"message": "profile updated successfully",
 		"phone":   req.Phone,
 	})
+}
+
+// CreateHealth tạo nhật ký sức khỏe mới cho học sinh
+func (h *TeacherScopeHandler) CreateHealth(c *gin.Context) {
+	var req CreateHealthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	studentID, err := uuid.Parse(req.StudentID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	// Get userID from JWT claims
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	var recordedAt *time.Time
+	if req.RecordedAt != nil && *req.RecordedAt != "" {
+		t, err := time.Parse(time.RFC3339, *req.RecordedAt)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid recorded_at (RFC3339)")
+			return
+		}
+		recordedAt = &t
+	}
+
+	if req.Severity != nil {
+		s := *req.Severity
+		if s != "normal" && s != "watch" && s != "urgent" {
+			response.Fail(c, http.StatusBadRequest, "invalid severity (normal|watch|urgent)")
+			return
+		}
+	}
+
+	id, err := h.TeacherScopeService.CreateHealthLog(ctx, userID, studentID, recordedAt, req.Temperature, req.Symptoms, req.Note, req.Severity)
+	if err != nil {
+		if err == service.ErrInvalidUserID {
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
+			return
+		}
+		if err == service.ErrForbidden {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only create health logs for students in your assigned classes")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to create health log")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message":       "health log created successfully",
+		"health_log_id": id.String(),
+		"student_id":    req.StudentID,
+		"recorded_at":   req.RecordedAt,
+		"temperature":   req.Temperature,
+		"symptoms":      req.Symptoms,
+		"severity":      req.Severity,
+		"note":          req.Note,
+	})
+}
+
+// ListHealth liệt kê nhật ký sức khỏe của học sinh nếu giáo viên đó được phân công dạy lớp của học sinh đó.
+func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	// Get userID from JWT claims
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	// default 30 ngày
+	to := time.Now()
+	from := to.AddDate(0, 0, -30)
+
+	if v := c.Query("from"); v != "" {
+		if t, e := time.Parse(time.RFC3339, v); e == nil {
+			from = t
+		}
+	}
+	if v := c.Query("to"); v != "" {
+		if t, e := time.Parse(time.RFC3339, v); e == nil {
+			to = t
+		}
+	}
+
+	healthLogs, err := h.TeacherScopeService.ListHealthLogs(ctx, userID, studentID, from, to)
+	if err != nil {
+		if err == service.ErrInvalidUserID {
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
+			return
+		}
+		if err == service.ErrForbidden {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only view health logs for students in your assigned classes")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch health logs")
+		return
+	}
+
+	response.OK(c, healthLogs)
 }

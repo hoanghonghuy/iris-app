@@ -1,5 +1,3 @@
-//go:build !test
-
 package service
 
 import (
@@ -110,6 +108,63 @@ func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserI
 	}
 
 	return nil
+}
+
+// CreateHealthLog tạo nhật ký sức khỏe mới cho học sinh
+func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	recordedAt *time.Time, temperature *float64, symptoms, note string, severity *string) (uuid.UUID, error) {
+	// Validate teacherUserID
+	if teacherUserID == uuid.Nil {
+		return uuid.Nil, ErrInvalidUserID
+	}
+
+	// Validate studentID
+	if studentID == uuid.Nil {
+		return uuid.Nil, ErrInvalidUserID
+	}
+
+	// Validate severity 
+	if severity != nil {
+		s := *severity
+		if s != "normal" && s != "watch" && s != "urgent" {
+			return uuid.Nil, fmt.Errorf("%w: severity must be normal|watch|urgent", ErrInvalidValue)
+		}
+	}
+
+	// xác minh giáo viên có quyền truy cập
+	id, err := s.teacherScopeRepo.CreateHealthLog(ctx, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note)
+	if err != nil {
+		if err == repo.ErrForbidden {
+			return uuid.Nil, ErrForbidden
+		}
+		return uuid.Nil, fmt.Errorf("failed to create health log: %w", err)
+	}
+
+	return id, nil
+}
+
+// ListHealthLogs liệt kê nhật ký sức khỏe của một học sinh.
+func (s *TeacherScopeService) ListHealthLogs(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	from, to time.Time) ([]model.HealthLog, error) {
+	// Validate teacherUserID
+	if teacherUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	// Validate studentID
+	if studentID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	healthLogs, err := s.teacherScopeRepo.ListHealthLogsByStudent(ctx, teacherUserID, studentID, from, to)
+	if err != nil {
+		if err == pgx.ErrNoRows || err == repo.ErrForbidden {
+			return []model.HealthLog{}, nil
+		}
+		return nil, fmt.Errorf("failed to list health logs: %w", err)
+	}
+
+	return healthLogs, nil
 }
 
 // UpdateMyProfile updates teacher's own profile (teacher only - can only update phone)
