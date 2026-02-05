@@ -252,6 +252,41 @@ func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, cl
 	return posts, rows.Err()
 }
 
+// ListAttendanceByStudent liệt kê lịch sử điểm danh của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
+func (r *TeacherScopeRepo) ListAttendanceByStudent(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	from, to time.Time) ([]model.AttendanceRecord, error) {
+	const q = `
+		SELECT ar.attendance_id, ar.student_id, ar.date, ar.status,
+			ar.check_in_at, ar.check_out_at, COALESCE(ar.note,''), ar.recorded_by
+		FROM attendance_records ar
+		JOIN students s ON s.student_id = ar.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+			AND ar.student_id = $2
+			AND ar.date BETWEEN $3 AND $4
+		ORDER BY ar.date DESC;
+	`
+	rows, err := r.pool.Query(ctx, q, teacherUserID, studentID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.AttendanceRecord
+	for rows.Next() {
+		var x model.AttendanceRecord
+		if err := rows.Scan(
+			&x.AttendanceID, &x.StudentID, &x.Date, &x.Status,
+			&x.CheckInAt, &x.CheckOutAt, &x.Note, &x.RecordedBy,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, x)
+	}
+	return out, rows.Err()
+}
+
 // ListStudentPosts liệt kê bài đăng của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
 func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, error) {

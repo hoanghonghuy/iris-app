@@ -383,6 +383,61 @@ func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
 	response.OK(c, healthLogs)
 }
 
+func (h *TeacherScopeHandler) ListAttendance(c *gin.Context) {
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	// Default 30 ngày
+	to := time.Now()
+	from := to.AddDate(0, 0, -30)
+
+	if v := c.Query("from"); v != "" {
+		if t, e := time.Parse("2006-01-02", v); e == nil {
+			from = t
+		}
+	}
+	if v := c.Query("to"); v != "" {
+		if t, e := time.Parse("2006-01-02", v); e == nil {
+			to = t
+		}
+	}
+
+	attendanceRecords, err := h.teacherScopeService.ListAttendanceByStudent(ctx, userID, studentID, from, to)
+	if err != nil {
+		if err == service.ErrInvalidUserID {
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
+			return
+		}
+		if err == service.ErrForbidden {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only view attendance for students in your assigned classes")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch attendance records")
+		return
+	}
+
+	response.OK(c, attendanceRecords)
+}
+
 // CreatePost tạo bài đăng mới cho lớp hoặc học sinh
 func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 	var req CreatePostRequest

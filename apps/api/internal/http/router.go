@@ -66,6 +66,9 @@ func NewRouter(
 				// giáo viên xem nhật ký sức khỏe của một học sinh cụ thể trong lớp của mình
 				teacherScope.GET("/students/:student_id/health", teacherScopeHandler.ListHealth)
 
+				// giáo viên xem lịch sử điểm danh của một học sinh trong lớp của mình
+				teacherScope.GET("/students/:student_id/attendance", teacherScopeHandler.ListAttendance)
+
 				// giáo viên cập nhật hồ sơ cá nhân của mình
 				teacherScope.PUT("/profile", teacherScopeHandler.UpdateMyProfile)
 

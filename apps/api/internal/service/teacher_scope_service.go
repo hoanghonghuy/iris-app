@@ -110,6 +110,27 @@ func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserI
 	return nil
 }
 
+// ListAttendanceByStudent liệt kê lịch sử điểm danh của một học sinh.
+// Giáo viên chỉ có thể xem điểm danh của học sinh trong các lớp được phân công.
+func (s *TeacherScopeService) ListAttendanceByStudent(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	from, to time.Time) ([]model.AttendanceRecord, error) {
+		
+	if teacherUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	if studentID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	records, err := s.teacherScopeRepo.ListAttendanceByStudent(ctx, teacherUserID, studentID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attendance: %w", err)
+	}
+
+	return records, nil
+}
+
 // CreateHealthLog tạo nhật ký sức khỏe mới cho học sinh
 func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	recordedAt *time.Time, temperature *float64, symptoms, note string, severity *string) (uuid.UUID, error) {
