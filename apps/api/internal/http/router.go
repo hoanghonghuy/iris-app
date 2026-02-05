@@ -82,6 +82,9 @@ func NewRouter(
 				// phụ huynh xem danh sách con của mình
 				parentScope.GET("/children", parentScopeHandler.MyChildren)
 
+				// phụ huynh xem feed tổng hợp của tất cả con (aggregated feed)
+				parentScope.GET("/feed", parentScopeHandler.GetMyFeed)
+
 				// phụ huynh xem bài đăng của lớp con mình
 				parentScope.GET("/children/:student_id/class-posts", parentScopeHandler.ListMyChildClassPosts)
 

@@ -29,6 +29,11 @@ type ListChildPostsRequest struct {
 	Offset int `form:"offset"`
 }
 
+type GetMyFeedRequest struct {
+	Limit  int `form:"limit"`
+	Offset int `form:"offset"`
+}
+
 // MyChildren trả về danh sách các học sinh (con) của phụ huynh
 func (h *ParentScopeHandler) MyChildren(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
@@ -199,6 +204,43 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch posts")
+		return
+	}
+
+	response.OK(c, posts)
+}
+
+func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
+	var req GetMyFeedRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	// Get userID from JWT claims
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	posts, err := h.parentScopeService.GetMyFeed(ctx, userID, req.Limit, req.Offset)
+	if err != nil {
+		if err == service.ErrInvalidUserID {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch feed")
 		return
 	}
 

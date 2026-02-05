@@ -159,6 +159,46 @@ func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID,
 	return posts, rows.Err()
 }
 
+func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
+	limit, offset int) ([]model.Post, error) {
+	const q = `
+		SELECT DISTINCT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
+			p.type, p.content, p.created_at, p.updated_at
+		FROM posts p
+		JOIN student_parents sp ON (
+			(p.scope_type = 'student' AND p.student_id = sp.student_id)
+			OR (p.scope_type = 'class' AND p.class_id IN (
+				SELECT s.current_class_id
+				FROM students s
+				WHERE s.student_id = sp.student_id
+			))
+		)
+		JOIN parents pa ON pa.parent_id = sp.parent_id
+		WHERE pa.user_id = $1
+		ORDER BY p.created_at DESC
+		LIMIT $2 OFFSET $3;
+	`
+
+	rows, err := r.pool.Query(ctx, q, parentUserID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []model.Post
+	for rows.Next() {
+		var p model.Post
+		if err := rows.Scan(
+			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
+	return posts, rows.Err()
+}
+
 // IsParentOfStudent kiểm tra xem user có phải là parent của student không
 func (r *ParentScopeRepo) IsParentOfStudent(ctx context.Context, parentUserID, studentID uuid.UUID) (bool, error) {
 	const q = `

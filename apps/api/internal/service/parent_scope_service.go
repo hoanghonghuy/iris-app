@@ -148,3 +148,27 @@ func (s *ParentScopeService) ListAllMyChildPosts(ctx context.Context, parentUser
 
 	return posts, nil
 }
+
+// GetMyFeed lấy tất cả bài đăng liên quan đến tất cả con của phụ huynh (aggregated feed)
+func (s *ParentScopeService) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
+	limit, offset int) ([]model.Post, error) {
+
+	if parentUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	// default limit
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	posts, err := s.parentScopeRepo.GetMyFeed(ctx, parentUserID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get feed: %w", err)
+	}
+
+	return posts, nil
+}
