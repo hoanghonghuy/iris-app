@@ -57,6 +57,7 @@ func main() {
 		userService         = service.NewUserService(repos.UserRepo, jwtAuth)
 		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo)
 		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo)
+		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo)
 		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo)
 	)
 
@@ -70,6 +71,7 @@ func main() {
 		userHandler         = v1handlers.NewUserHandler(userService)
 		teacherHandler      = v1handlers.NewTeacherHandler(teacherService)
 		teacherScopeHandler = v1handlers.NewTeacherScopeHandler(teacherScopeService)
+		parentHandler       = v1handlers.NewParentHandler(parentService)
 		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService)
 	)
 
@@ -84,6 +86,7 @@ func main() {
 		userHandler,
 		teacherScopeHandler,
 		teacherHandler,
+		parentHandler,
 		parentScopeHandler,
 	)
 

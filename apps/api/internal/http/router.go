@@ -20,6 +20,7 @@ func NewRouter(
 	userHandler *v1handlers.UserHandler,
 	teacherScopeHandler *v1handlers.TeacherScopeHandler,
 	teacherHandler *v1handlers.TeacherHandler,
+	parentHandler *v1handlers.ParentHandler,
 	parentScopeHandler *v1handlers.ParentScopeHandler,
 ) *gin.Engine {
 	r := gin.Default()
@@ -157,6 +158,22 @@ func NewRouter(
 
 					// hủy gán giáo viên khỏi lớp
 					teachers.DELETE("/:teacher_id/classes/:class_id", teacherHandler.Unassign)
+				}
+
+				// parent routes (ADMIN only - quản lý phụ huynh)
+				parents := admin.Group("/parents")
+				{
+					// lấy danh sách tất cả phụ huynh
+					parents.GET("", parentHandler.List)
+
+					// lấy thông tin phụ huynh theo ID
+					parents.GET("/:parent_id", parentHandler.GetByID)
+
+					// gán phụ huynh cho học sinh
+					parents.POST("/:parent_id/students/:student_id", parentHandler.AssignStudent)
+
+					// hủy gán phụ huynh khỏi học sinh
+					parents.DELETE("/:parent_id/students/:student_id", parentHandler.UnassignStudent)
 				}
 			}
 		}

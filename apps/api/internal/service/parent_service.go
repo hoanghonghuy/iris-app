@@ -9,12 +9,14 @@ import (
 )
 
 type ParentService struct {
-	parentRepo *repo.ParentRepo
+	parentRepo        *repo.ParentRepo
+	studentParentRepo *repo.StudentParentRepo
 }
 
-func NewParentService(parentRepo *repo.ParentRepo) *ParentService {
+func NewParentService(parentRepo *repo.ParentRepo, studentParentRepo *repo.StudentParentRepo) *ParentService {
 	return &ParentService{
-		parentRepo: parentRepo,
+		parentRepo:        parentRepo,
+		studentParentRepo: studentParentRepo,
 	}
 }
 
@@ -42,4 +44,33 @@ func (s *ParentService) Create(ctx context.Context, userID, schoolID uuid.UUID, 
 // GetByParentID lấy thông tin phụ huynh theo parent_id
 func (s *ParentService) GetByParentID(ctx context.Context, parentID uuid.UUID) (*model.Parent, error) {
 	return s.parentRepo.GetByParentID(ctx, parentID)
+}
+
+// AssignStudent gán phụ huynh cho học sinh
+func (s *ParentService) AssignStudent(ctx context.Context, parentID, studentID uuid.UUID, relationship string) error {
+	if parentID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	if studentID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	// Validate relationship
+	// Relationship examples: "father", "mother", "guardian", etc.
+
+	return s.studentParentRepo.Assign(ctx, studentID, parentID, relationship)
+}
+
+// UnassignStudent hủy gán phụ huynh khỏi học sinh
+func (s *ParentService) UnassignStudent(ctx context.Context, parentID, studentID uuid.UUID) error {
+	if parentID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	if studentID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	return s.studentParentRepo.Unassign(ctx, studentID, parentID)
 }
