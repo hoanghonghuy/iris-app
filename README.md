@@ -245,9 +245,25 @@ These endpoints require authentication and TEACHER role:
 | GET | `/api/v1/teacher/classes` | List assigned classes |
 | GET | `/api/v1/teacher/classes/:class_id/students` | List students in class |
 | POST | `/api/v1/teacher/attendance` | Mark student attendance |
+| GET | `/api/v1/teacher/students/:student_id/attendance` | List student attendance history |
 | POST | `/api/v1/teacher/health` | Create health log |
 | GET | `/api/v1/teacher/students/:student_id/health` | List student health logs |
 | PUT | `/api/v1/teacher/profile` | Update own profile |
+| POST | `/api/v1/teacher/posts` | Create post (class or student scope) |
+| GET | `/api/v1/teacher/classes/:class_id/posts` | List class posts |
+| GET | `/api/v1/teacher/students/:student_id/posts` | List student posts |
+
+### Parent Endpoints
+
+These endpoints require authentication and PARENT role:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/parent/children` | List own children |
+| GET | `/api/v1/parent/feed` | Get aggregated feed of all children's posts |
+| GET | `/api/v1/parent/children/:student_id/class-posts` | List class posts for child |
+| GET | `/api/v1/parent/children/:student_id/student-posts` | List student-specific posts for child |
+| GET | `/api/v1/parent/children/:student_id/posts` | List all posts related to child |
 
 ### Admin Endpoints
 
@@ -260,7 +276,7 @@ These endpoints require authentication and ADMIN role:
 | POST | `/api/v1/admin/classes/school` | Create class |
 | GET | `/api/v1/admin/classes/school/:school_id` | List classes by school |
 | POST | `/api/v1/admin/students/student` | Create student |
-| GET | `/api/v1/admin/students/student/:class_id` | List students by class |
+| GET | `/api/v1/admin/students/student/:current_class_id` | List students by class |
 | POST | `/api/v1/admin/users` | Create user |
 | GET | `/api/v1/admin/users` | List users |
 | GET | `/api/v1/admin/users/:userid` | Get user by ID |
@@ -273,6 +289,10 @@ These endpoints require authentication and ADMIN role:
 | GET | `/api/v1/admin/teachers/class/:class_id` | List teachers of class |
 | POST | `/api/v1/admin/teachers/:teacher_id/classes/:class_id` | Assign teacher to class |
 | DELETE | `/api/v1/admin/teachers/:teacher_id/classes/:class_id` | Unassign teacher from class |
+| GET | `/api/v1/admin/parents` | List parents |
+| GET | `/api/v1/admin/parents/:parent_id` | Get parent by ID |
+| POST | `/api/v1/admin/parents/:parent_id/students/:student_id` | Assign parent to student |
+| DELETE | `/api/v1/admin/parents/:parent_id/students/:student_id` | Unassign parent from student |
 
 ## Database Schema
 
