@@ -7,6 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// const (
+// 	DefaultErrorType = "about:blank"
+// )
+
+// TODO: RFC 7807 standard
+
+// type ProblemDetail struct {
+// 	Type     string            `json:"type"`
+// 	Title    string            `json:"title`
+// 	Status   int               `json:"status"` // http status code
+// 	Detail   string            `json:"detail`
+// 	Instance string            `json:"instance,omitempty"`
+// 	Errors   map[string]string `string,omitempty"`
+// }
+
 // OK trả về response HTTP 200 OK với data
 func OK(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, gin.H{"data": data})
