@@ -14,8 +14,18 @@ build/
 *.test
 *.out
 apps/api/cmd/api/api
+
 # Go module cache
 /vendor/
+
+# Frontend (Next.js)
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/
+coverage/
 
 # Database files
 *.db
