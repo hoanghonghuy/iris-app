@@ -54,3 +54,14 @@ func (r *StudentRepo) ListByClass(ctx context.Context, classID uuid.UUID) ([]mod
 	}
 	return students, rows.Err()
 }
+
+// GetSchoolIDByStudentID lấy school_id của student
+func (r *StudentRepo) GetSchoolIDByStudentID(ctx context.Context, studentID uuid.UUID) (uuid.UUID, error) {
+	const q = `SELECT school_id FROM students WHERE student_id = $1;`
+	var schoolID uuid.UUID
+	err := r.pool.QueryRow(ctx, q, studentID).Scan(&schoolID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return schoolID, nil
+}
