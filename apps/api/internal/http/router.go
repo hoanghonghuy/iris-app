@@ -22,6 +22,7 @@ func NewRouter(
 	teacherHandler *v1handlers.TeacherHandler,
 	parentHandler *v1handlers.ParentHandler,
 	parentScopeHandler *v1handlers.ParentScopeHandler,
+	parentCodeHandler *v1handlers.ParentCodeHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -33,7 +34,8 @@ func NewRouter(
 			response.OK(c, gin.H{"ok": true})
 		})
 		v1.POST("/auth/login", authHandler.Login)
-		v1.POST("/users/activate", userHandler.ActivateUser)
+		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
+		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
 
 		// Protected routes (require valid JWT)
 		protected := v1.Group("/")
@@ -174,6 +176,13 @@ func NewRouter(
 
 					// hủy gán phụ huynh khỏi học sinh
 					parents.DELETE("/:parent_id/students/:student_id", parentHandler.UnassignStudent)
+				}
+
+				// parent code routes (ADMIN only - tạo parent codes)
+				parentCodes := admin.Group("/students")
+				{
+					// tạo parent code cho student
+					parentCodes.POST("/:student_id/generate-parent-code", parentCodeHandler.GenerateCodeForStudent)
 				}
 			}
 		}

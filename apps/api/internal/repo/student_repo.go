@@ -55,6 +55,19 @@ func (r *StudentRepo) ListByClass(ctx context.Context, classID uuid.UUID) ([]mod
 	return students, rows.Err()
 }
 
+// GetByStudentID lấy thông tin student theo ID
+func (r *StudentRepo) GetByStudentID(ctx context.Context, studentID uuid.UUID) (*model.Student, error) {
+	const q = `SELECT student_id, school_id, current_class_id, full_name, dob, gender
+			   FROM students WHERE student_id = $1;`
+	var student model.Student
+	err := r.pool.QueryRow(ctx, q, studentID).Scan(&student.ID, &student.SchoolID,
+		&student.CurrentClassID, &student.FullName, &student.DOB, &student.Gender)
+	if err != nil {
+		return nil, err
+	}
+	return &student, nil
+}
+
 // GetSchoolIDByStudentID lấy school_id của student
 func (r *StudentRepo) GetSchoolIDByStudentID(ctx context.Context, studentID uuid.UUID) (uuid.UUID, error) {
 	const q = `SELECT school_id FROM students WHERE student_id = $1;`

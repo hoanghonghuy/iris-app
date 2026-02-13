@@ -155,6 +155,11 @@ func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password,
 	}, nil
 }
 
+// GetStudentInfo lấy thông tin student cho VerifyCode endpoint
+func (s *ParentCodeService) GetStudentInfo(ctx context.Context, studentID uuid.UUID) (*model.Student, error) {
+	return s.studentRepo.GetByStudentID(ctx, studentID)
+}
+
 // generateRandomCode generate random alphanumeric code có độ dài n
 func generateRandomCode(length int) string {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
