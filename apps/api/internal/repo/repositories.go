@@ -7,6 +7,7 @@ type Repositories struct {
 	StudentRepo       *StudentRepo
 	StudentParentRepo *StudentParentRepo
 	ParentRepo        *ParentRepo
+	ParentCodeRepo    *ParentCodeRepo
 	TeacherRepo       *TeacherRepo
 	TeacherClassRepo  *TeacherClassRepo
 	TeacherScopeRepo  *TeacherScopeRepo

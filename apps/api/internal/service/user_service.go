@@ -45,8 +45,23 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email strin
 		return nil, ErrFailedToGenerateTempPassword
 	}
 
-	// Create user
-	userID, err := s.userRepo.Create(ctx, email, string(passwordHash))
+	// Check if user có role TEACHER → tạo với pending status
+	hasTeacherRole := false
+	for _, role := range roles {
+		if role == "TEACHER" {
+			hasTeacherRole = true
+			break
+		}
+	}
+
+	// Create user với status phù hợp
+	var userID uuid.UUID
+	if hasTeacherRole {
+		userID, err = s.userRepo.CreatePending(ctx, email, string(passwordHash))
+	} else {
+		// Admin và Parent tạo trực tiếp với status active
+		userID, err = s.userRepo.CreateActive(ctx, email, string(passwordHash))
+	}
 	if err != nil {
 		return nil, ErrFailedToCreateUser
 	}
