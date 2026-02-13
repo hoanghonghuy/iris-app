@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
@@ -100,6 +101,42 @@ func (s *UserService) ActivateUser(ctx context.Context, email, password string) 
 
 	// Update password and status
 	err = s.userRepo.Update(ctx, user.ID, user.Email, string(passwordHash))
+	if err != nil {
+		return ErrFailedToActivateUser
+	}
+
+	return nil
+}
+
+// ActivateUserWithToken kích hoạt tài khoản bằng token (cho teacher activation flow)
+func (s *UserService) ActivateUserWithToken(ctx context.Context, token, password string) error {
+	// Validate input
+	if token == "" {
+		return ErrActivationTokenRequired
+	}
+	if password == "" {
+		return ErrPasswordCannotBeEmpty
+	}
+
+	// Find user by activation token
+	user, err := s.userRepo.FindByActivationToken(ctx, token)
+	if err != nil {
+		return ErrInvalidActivationToken
+	}
+
+	// Check token không hết hạn
+	if user.TokenExpiresAt.Before(time.Now()) {
+		return ErrActivationTokenExpired
+	}
+
+	// Hash password
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return ErrFailedToHashPassword
+	}
+
+	// Activate user + update password
+	err = s.userRepo.ActivateWithPassword(ctx, user.ID, string(passwordHash))
 	if err != nil {
 		return ErrFailedToActivateUser
 	}

@@ -24,4 +24,7 @@ var (
 	ErrForbidden                    = errors.New("forbidden action")
 	ErrTeacherNotAssigned           = errors.New("teacher is not assigned to this class")
 	ErrInvalidValue                 = errors.New("invalid value")
+	ErrActivationTokenRequired      = errors.New("activation token is required")
+	ErrInvalidActivationToken       = errors.New("invalid activation token")
+	ErrActivationTokenExpired       = errors.New("activation token has expired")
 )
