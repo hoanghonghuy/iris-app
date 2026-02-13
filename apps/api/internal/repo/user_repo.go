@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -116,8 +117,8 @@ func (r *UserRepo) List(ctx context.Context) ([]model.UserInfo, error) {
 	return users, rows.Err()
 }
 
-// Create tạo mới user trong cơ sở dữ liệu
-func (r *UserRepo) Create(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
+// CreateActive tạo mới user với status='active'
+func (r *UserRepo) CreateActive(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
 	const q = `
 		INSERT INTO users (email, password_hash, status)
 		VALUES ($1, $2, 'active')
@@ -198,5 +199,65 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, email, 
 		WHERE user_id = $1 AND email = $2;
 	`
 	_, err := r.pool.Exec(ctx, q, userID, email, passwordHash)
+	return err
+}
+
+// CreatePending tạo user với status='pending'
+func (r *UserRepo) CreatePending(ctx context.Context, email, passwordHash string) (uuid.UUID, error) {
+	const q = `
+		INSERT INTO users (email, password_hash, status)
+		VALUES ($1, $2, 'pending')
+		RETURNING user_id;
+	`
+	var id uuid.UUID
+	err := r.pool.QueryRow(ctx, q, email, passwordHash).Scan(&id)
+	return id, err
+}
+
+// SetActivationToken lưu activation token
+func (r *UserRepo) SetActivationToken(ctx context.Context, userID uuid.UUID, token string, expiresAt time.Time) error {
+	const q = `
+		UPDATE users
+		SET activation_token = $2, token_expires_at = $3, updated_at = now()
+		WHERE user_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, userID, token, expiresAt)
+	return err
+}
+
+// FindByActivationToken tìm user theo activation token
+func (r *UserRepo) FindByActivationToken(ctx context.Context, token string) (*model.UserWithToken, error) {
+	const q = `
+		SELECT user_id, email, password_hash, status, activation_token, token_expires_at
+		FROM users
+		WHERE activation_token = $1;
+	`
+	u := &model.UserWithToken{}
+	err := r.pool.QueryRow(ctx, q, token).Scan(
+		&u.ID,
+		&u.Email,
+		&u.PasswordHash,
+		&u.Status,
+		&u.ActivationToken,
+		&u.TokenExpiresAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+// ActivateWithPassword activate user + set password
+func (r *UserRepo) ActivateWithPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error {
+	const q = `
+		UPDATE users
+		SET password_hash = $2,
+			status = 'active',
+			activation_token = NULL,
+			token_expires_at = NULL,
+			updated_at = now()
+		WHERE user_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, userID, passwordHash)
 	return err
 }
