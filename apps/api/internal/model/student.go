@@ -14,3 +14,13 @@ type Student struct {
 	DOB            time.Time `json:"dob"`
 	Gender         string    `json:"gender"`
 }
+
+// StudentParentCode thông tin parent code của student
+type StudentParentCode struct {
+	CodeID     uuid.UUID
+	StudentID  uuid.UUID
+	Code       string
+	UsageCount int
+	MaxUsage   int
+	ExpiresAt  time.Time
+}

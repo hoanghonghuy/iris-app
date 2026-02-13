@@ -1,6 +1,10 @@
 package model
 
-import "github.com/google/uuid"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // User đại diện cho bản ghi users trong database
 type User struct {
@@ -16,4 +20,14 @@ type UserInfo struct {
 	Email  string    `json:"email"`
 	Status string    `json:"status"`
 	Roles  []string  `json:"roles"`
+}
+
+// UserWithToken dùng cho activation flow
+type UserWithToken struct {
+	ID              uuid.UUID
+	Email           string
+	PasswordHash    string
+	Status          string
+	ActivationToken string
+	TokenExpiresAt  time.Time
 }
