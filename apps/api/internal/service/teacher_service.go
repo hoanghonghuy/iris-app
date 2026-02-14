@@ -47,27 +47,7 @@ func (s *TeacherService) Assign(ctx context.Context, teacherID, classID uuid.UUI
 }
 
 func (s *TeacherService) ListTeachersOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error) {
-	teacherIDs, err := s.teacherClassRepo.ListTeachersOfClass(ctx, classID)
-	if err != nil {
-		return nil, err
-	}
-
-	var teachers []model.Teacher
-
-	// duyệt qua danh sách các ID giáo viên (teacherIDs) của một lớp học cụ thể.
-	// với mỗi teacherID, gọi hàm GetByTeacherID để lấy thông tin chi tiết của giáo viên từ repository.
-	// lỗi khi lấy thông tin giáo viên => trả về lỗi.
-	// không lỗi => giáo viên được thêm vào danh sách teachers.
-	for _, teacherID := range teacherIDs {
-		teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
-		if err != nil {
-			// continue
-			return nil, err
-		}
-		teachers = append(teachers, *teacher)
-	}
-
-	return teachers, nil
+	return s.teacherClassRepo.ListTeacherDetailsOfClass(ctx, classID)
 }
 
 func (s *TeacherService) Unassign(ctx context.Context, teacherID, classID uuid.UUID) error {
