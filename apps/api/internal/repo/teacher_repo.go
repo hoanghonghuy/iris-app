@@ -44,7 +44,13 @@ func (r *TeacherRepo) List(ctx context.Context) ([]model.Teacher, error) {
 
 // lấy thông tin giáo viên theo teacher_id.
 func (r *TeacherRepo) GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (*model.Teacher, error) {
-	const q = `SELECT teacher_id, user_id, email, full_name, phone, school_id FROM teachers WHERE teacher_id=$1 LIMIT 1;`
+	const q = `
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
+		FROM teachers t
+		JOIN users u ON u.user_id = t.user_id
+		WHERE t.teacher_id = $1
+		LIMIT 1;
+	`
 	teacher := &model.Teacher{}
 
 	err := r.pool.QueryRow(ctx, q, teacherID).Scan(&teacher.TeacherID, &teacher.UserID, &teacher.Email,
@@ -79,7 +85,13 @@ func (r *TeacherRepo) UpdatePhone(ctx context.Context, teacherID uuid.UUID, phon
 
 // GetByUserID lấy thông tin teacher theo user_id
 func (r *TeacherRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*model.Teacher, error) {
-	const q = `SELECT teacher_id, user_id, email, full_name, phone, school_id FROM teachers WHERE user_id=$1 LIMIT 1;`
+	const q = `
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
+		FROM teachers t
+		JOIN users u ON u.user_id = t.user_id
+		WHERE t.user_id = $1
+		LIMIT 1;
+	`
 	teacher := &model.Teacher{}
 
 	err := r.pool.QueryRow(ctx, q, userID).Scan(&teacher.TeacherID, &teacher.UserID, &teacher.Email,
