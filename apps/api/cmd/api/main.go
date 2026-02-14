@@ -43,6 +43,7 @@ func main() {
 		TeacherClassRepo:  repo.NewTeacherClassRepo(pool),
 		TeacherScopeRepo:  repo.NewTeacherScopeRepo(pool),
 		ParentScopeRepo:   repo.NewParentScopeRepo(pool),
+		SchoolAdminRepo:   repo.NewSchoolAdminRepo(pool),
 	}
 
 	// Authenticator
