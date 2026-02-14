@@ -38,6 +38,7 @@ func main() {
 		StudentRepo:       repo.NewStudentRepo(pool),
 		StudentParentRepo: repo.NewStudentParentRepo(pool),
 		ParentRepo:        repo.NewParentRepo(pool),
+		ParentCodeRepo:    repo.NewParentCodeRepo(pool),
 		TeacherRepo:       repo.NewTeacherRepo(pool),
 		TeacherClassRepo:  repo.NewTeacherClassRepo(pool),
 		TeacherScopeRepo:  repo.NewTeacherScopeRepo(pool),

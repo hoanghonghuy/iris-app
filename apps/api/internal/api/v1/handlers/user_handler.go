@@ -167,20 +167,13 @@ func (h *UserHandler) ActivateUserWithToken(c *gin.Context) {
 	})
 }
 
-// GetByID lấy thông tin user theo ID
+// GetByID lấy thông tin user theo ID (admin only - lấy từ URL param)
 func (h *UserHandler) GetByID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Lấy userID từ middleware AuthJWT
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
+	// Lấy userID từ URL param (admin xem thông tin user bất kỳ)
+	userID, err := uuid.Parse(c.Param("userid"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
