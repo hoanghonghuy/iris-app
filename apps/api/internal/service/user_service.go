@@ -34,6 +34,14 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email strin
 		return nil, ErrRolesCannotBeEmpty
 	}
 
+	// Validate tên role hợp lệ trước khi tạo user (tránh silent failure khi role không tồn tại trong DB)
+	validRoles := map[string]bool{"SUPER_ADMIN": true, "SCHOOL_ADMIN": true, "TEACHER": true, "PARENT": true}
+	for _, role := range roles {
+		if !validRoles[role] {
+			return nil, fmt.Errorf("%w: %s", ErrInvalidRoleName, role)
+		}
+	}
+
 	// Generate temporary password hash (user sẽ thay đổi khi activate)
 	tempPassword := uuid.New().String()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)
@@ -143,10 +151,10 @@ func (s *UserService) ActivateUserWithToken(ctx context.Context, token, password
 func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error {
 	// Validate role name
 	validRoles := map[string]bool{
-		"SUPER_ADMIN": true,
+		"SUPER_ADMIN":  true,
 		"SCHOOL_ADMIN": true,
-		"TEACHER": true,
-		"PARENT": true,
+		"TEACHER":      true,
+		"PARENT":       true,
 	}
 	if !validRoles[roleName] {
 		return fmt.Errorf("%w: %s", ErrInvalidRoleName, roleName)
