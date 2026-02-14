@@ -117,13 +117,13 @@ func NewRouter(
 
 				// Class routes
 				classes := admin.Group("/classes")
-				classes.POST("/school", classHandler.Create)
-				classes.GET("/school/:school_id", classHandler.ListBySchool)
+				classes.POST("", classHandler.Create)
+				classes.GET("/by-school/:school_id", classHandler.ListBySchool)
 
 				// Student routes
 				students := admin.Group("/students")
-				students.POST("/student", studentHandler.Create)
-				students.GET("/student/:current_class_id", studentHandler.ListByClass)
+				students.POST("", studentHandler.Create)
+				students.GET("/by-class/:class_id", studentHandler.ListByClass)
 
 				// User routes (ADMIN only - quản lý users)
 				// Pattern:

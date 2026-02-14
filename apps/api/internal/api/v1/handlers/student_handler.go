@@ -58,9 +58,9 @@ func (s *StudentHandler) Create(c *gin.Context) {
 }
 
 func (s *StudentHandler) ListByClass(c *gin.Context) {
-	classID, err := uuid.Parse(c.Param("current_class_id"))
+	classID, err := uuid.Parse(c.Param("class_id"))
 	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid current_class_id format")
+		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
 		return
 	}
 

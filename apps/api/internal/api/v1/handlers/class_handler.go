@@ -22,18 +22,13 @@ func NewClassHandler(classService *service.ClassService) *ClassHandler {
 }
 
 type CreateClassRequest struct {
-	Name       string `json:"name" binding:"required,min=1,max=100"`
-	SchoolYear string `json:"school_year" binding:"required,min=4,max=20"`
+	SchoolID   uuid.UUID `json:"school_id" binding:"required"`
+	Name       string    `json:"name" binding:"required,min=1,max=100"`
+	SchoolYear string    `json:"school_year" binding:"required,min=4,max=20"`
 }
 
 // Create tạo mới lớp học
 func (h *ClassHandler) Create(c *gin.Context) {
-	schoolID, err := uuid.Parse(c.Param("school_id"))
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid school_id format")
-		return
-	}
-
 	var req CreateClassRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
@@ -43,7 +38,7 @@ func (h *ClassHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	class, err := h.classService.Create(ctx, schoolID, req.Name, req.SchoolYear)
+	class, err := h.classService.Create(ctx, req.SchoolID, req.Name, req.SchoolYear)
 	if err != nil {
 		// FK fail -> school_id not found
 		response.Fail(c, http.StatusInternalServerError, "failed to create class")

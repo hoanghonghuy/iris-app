@@ -293,18 +293,10 @@ func (h *TeacherScopeHandler) CreateHealth(c *gin.Context) {
 		recordedAt = &t
 	}
 
-	if req.Severity != nil {
-		s := *req.Severity
-		if s != "normal" && s != "watch" && s != "urgent" {
-			response.Fail(c, http.StatusBadRequest, "invalid severity (normal|watch|urgent)")
-			return
-		}
-	}
-
 	id, err := h.teacherScopeService.CreateHealthLog(ctx, userID, studentID, recordedAt, req.Temperature, req.Symptoms, req.Note, req.Severity)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidUserID) {
-			response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
@@ -465,14 +457,6 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 		return
 	}
 
-	// Validate type
-	switch req.Type {
-	case "announcement", "activity", "daily_note", "health_note":
-	default:
-		response.Fail(c, http.StatusBadRequest, "invalid type (announcement|activity|daily_note|health_note)")
-		return
-	}
-
 	var postID uuid.UUID
 
 	switch req.ScopeType {
@@ -484,7 +468,7 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 		}
 		postID, err = h.teacherScopeService.CreateClassPost(ctx, userID, classID, req.Type, req.Content)
 		if err != nil {
-			if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) {
+			if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) || errors.Is(err, service.ErrInvalidValue) {
 				response.Fail(c, http.StatusBadRequest, err.Error())
 				return
 			}
@@ -504,7 +488,7 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 		}
 		postID, err = h.teacherScopeService.CreateStudentPost(ctx, userID, studentID, req.Type, req.Content)
 		if err != nil {
-			if errors.Is(err, service.ErrInvalidUserID) {
+			if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
 				response.Fail(c, http.StatusBadRequest, err.Error())
 				return
 			}
