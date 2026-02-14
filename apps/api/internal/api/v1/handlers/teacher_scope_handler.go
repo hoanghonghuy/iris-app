@@ -357,13 +357,14 @@ func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
 	from := to.AddDate(0, 0, -30)
 
 	if v := c.Query("from"); v != "" {
-		if t, e := time.Parse(time.RFC3339, v); e == nil {
+		if t, e := time.Parse("2006-01-02", v); e == nil {
 			from = t
 		}
 	}
 	if v := c.Query("to"); v != "" {
-		if t, e := time.Parse(time.RFC3339, v); e == nil {
-			to = t
+		if t, e := time.Parse("2006-01-02", v); e == nil {
+			// end-of-day: recorded_at là TIMESTAMP, cần bao gồm cả ngày cuối
+			to = t.Add(24*time.Hour - time.Nanosecond)
 		}
 	}
 
