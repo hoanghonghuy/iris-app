@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -88,9 +89,13 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 	return info, rows.Err()
 }
 
-// List lấy danh sách tất cả users kèm roles
-func (r *UserRepo) List(ctx context.Context, limit, offset int) ([]model.UserInfo, int, error) {
-	const q = `
+// List lấy danh sách users kèm roles (có thể lọc theo school_id).
+// 
+// schoolID == nil: tất cả users (SUPER_ADMIN).
+// 
+// schoolID != nil: chỉ users thuộc trường đó qua teachers/parents (SCHOOL_ADMIN).
+func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.UserInfo, int, error) {
+	const qAll = `
 		-- ARRAY_AGG(): gom nhiều dòng thành một array
 		-- COUNT(*) OVER(): tính tổng số dòng mà không bị ảnh hưởng bởi LIMIT/OFFSET
 		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
@@ -102,8 +107,29 @@ func (r *UserRepo) List(ctx context.Context, limit, offset int) ([]model.UserInf
 		ORDER BY u.created_at DESC
 		LIMIT $1 OFFSET $2;
 	`
+	const qBySchool = `
+		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
+		       COUNT(*) OVER() as total_count
+		FROM users u
+		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
+		LEFT JOIN roles r ON r.role_id = ur.role_id
+		WHERE u.user_id IN (
+			SELECT user_id FROM teachers WHERE school_id = $3
+			UNION
+			SELECT user_id FROM parents WHERE school_id = $3
+		)
+		GROUP BY u.user_id, u.email, u.status
+		ORDER BY u.created_at DESC
+		LIMIT $1 OFFSET $2;
+	`
 
-	rows, err := r.pool.Query(ctx, q, limit, offset)
+	var rows pgx.Rows
+	var err error
+	if schoolID != nil {
+		rows, err = r.pool.Query(ctx, qBySchool, limit, offset, *schoolID)
+	} else {
+		rows, err = r.pool.Query(ctx, qAll, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, err
 	}
@@ -228,6 +254,32 @@ func (r *UserRepo) SetActivationToken(ctx context.Context, userID uuid.UUID, tok
 	`
 	_, err := r.pool.Exec(ctx, q, userID, token, expiresAt)
 	return err
+}
+
+// IsUserInSchool kiểm tra user có thuộc trường hay không (qua teachers/parents)
+func (r *UserRepo) IsUserInSchool(ctx context.Context, userID, schoolID uuid.UUID) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1 FROM teachers WHERE user_id = $1 AND school_id = $2
+			-- UNION ALL: gộp (nối) kết quả
+			UNION ALL
+			SELECT 1 FROM parents WHERE user_id = $1 AND school_id = $2
+		);
+	`
+	
+	// const q = `
+	// 	SELECT
+	// 		EXISTS (SELECT 1 FROM teachers WHERE user_id = $1 AND school_id = $2)
+	// 		OR
+	// 		EXISTS (SELECT 1 FROM parents  WHERE user_id = $1 AND school_id = $2);
+	// `
+
+	var exists bool
+	err := r.pool.QueryRow(ctx, q, userID, schoolID).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 // FindByActivationToken tìm user theo activation token

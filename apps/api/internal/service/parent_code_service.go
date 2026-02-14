@@ -36,8 +36,18 @@ func NewParentCodeService(parentCodeRepo *repo.ParentCodeRepo, userRepo *repo.Us
 }
 
 // GenerateCodeForStudent tạo parent code cho student (admin only)
-func (s *ParentCodeService) GenerateCodeForStudent(ctx context.Context, studentID uuid.UUID) (string, error) {
-	// Check student tồn tại không (optional - có thể validate ở handler)
+func (s *ParentCodeService) GenerateCodeForStudent(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID) (string, error) {
+	// SCHOOL_ADMIN: validate student thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		student, err := s.studentRepo.GetByStudentID(ctx, studentID)
+		if err != nil {
+			return "", ErrFailedToGetStudent
+		}
+		if student.SchoolID != *adminSchoolID {
+			return "", ErrSchoolAccessDenied
+		}
+	}
 
 	// Generate random code
 	code := generateRandomCode(8) // 8 ký tự

@@ -24,8 +24,9 @@ func NewUserService(userRepo *repo.UserRepo, jwtAuth *auth.Authenticator) *UserS
 	}
 }
 
-// CreateUserWithoutPassword tạo user mới không cần password (admin only)
-func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email string, roles []string) (*model.UserInfo, error) {
+// CreateUserWithoutPassword tạo user mới không cần password (admin only).
+// adminSchoolID != nil → SCHOOL_ADMIN: chỉ được tạo user với role TEACHER hoặc PARENT
+func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchoolID *uuid.UUID, email string, roles []string) (*model.UserInfo, error) {
 	// Validate input
 	if email == "" {
 		return nil, ErrEmailCannotBeEmpty
@@ -39,6 +40,16 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email strin
 	for _, role := range roles {
 		if !validRoles[role] {
 			return nil, fmt.Errorf("%w: %s", ErrInvalidRoleName, role)
+		}
+	}
+
+	// SCHOOL_ADMIN: chỉ được tạo user với role TEACHER hoặc PARENT (không thể tự nâng quyền)
+	if adminSchoolID != nil {
+		allowedForSchoolAdmin := map[string]bool{"TEACHER": true, "PARENT": true}
+		for _, role := range roles {
+			if !allowedForSchoolAdmin[role] {
+				return nil, fmt.Errorf("%w: %s", ErrCannotAssignRole, role)
+			}
 		}
 	}
 
@@ -77,7 +88,7 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email strin
 		}
 	}
 
-	return s.FindByID(ctx, userID)
+	return s.FindByID(ctx, nil, userID)
 }
 
 // ActivateUser kích hoạt tài khoản user (set password)
@@ -173,13 +184,30 @@ func (s *UserService) RolesOfUser(ctx context.Context, userID uuid.UUID) ([]stri
 	return s.userRepo.RolesOfUser(ctx, userID)
 }
 
-// FindByID lấy thông tin user theo ID
-func (s *UserService) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error) {
-	return s.userRepo.FindByID(ctx, userID)
+// FindByID lấy thông tin user theo ID.
+func (s *UserService) FindByID(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) (*model.UserInfo, error) {
+	info, err := s.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// SCHOOL_ADMIN: validate user thuộc cùng school với admin (qua teachers/parents)
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		belongs, err := s.userRepo.IsUserInSchool(ctx, userID, *adminSchoolID)
+		if err != nil {
+			return nil, err
+		}
+		if !belongs {
+			return nil, ErrSchoolAccessDenied
+		}
+	}
+
+	return info, nil
 }
 
-// List lấy danh sách tất cả users
-func (s *UserService) List(ctx context.Context, limit, offset int) ([]model.UserInfo, int, error) {
+// List lấy danh sách users.
+func (s *UserService) List(ctx context.Context, adminSchoolID *uuid.UUID, limit, offset int) ([]model.UserInfo, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -189,7 +217,7 @@ func (s *UserService) List(ctx context.Context, limit, offset int) ([]model.User
 	if offset < 0 {
 		offset = 0
 	}
-	return s.userRepo.List(ctx, limit, offset)
+	return s.userRepo.List(ctx, adminSchoolID, limit, offset)
 }
 
 // UpdateEmail cập nhật email của user (admin only)
@@ -245,12 +273,36 @@ func (s *UserService) Delete(ctx context.Context, userID uuid.UUID) error {
 	return s.userRepo.Delete(ctx, userID)
 }
 
-// Lock khóa tài khoản user
-func (s *UserService) Lock(ctx context.Context, userID uuid.UUID) error {
+// Lock khóa tài khoản user.
+func (s *UserService) Lock(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) error {
+	// SCHOOL_ADMIN: validate user thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		belongs, err := s.userRepo.IsUserInSchool(ctx, userID, *adminSchoolID)
+		if err != nil {
+			return err
+		}
+		if !belongs {
+			return ErrSchoolAccessDenied
+		}
+	}
+
 	return s.userRepo.Lock(ctx, userID)
 }
 
-// Unlock mở khóa tài khoản user
-func (s *UserService) Unlock(ctx context.Context, userID uuid.UUID) error {
+// Unlock mở khóa tài khoản user.
+func (s *UserService) Unlock(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) error {
+	// SCHOOL_ADMIN: validate user thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		belongs, err := s.userRepo.IsUserInSchool(ctx, userID, *adminSchoolID)
+		if err != nil {
+			return err
+		}
+		if !belongs {
+			return ErrSchoolAccessDenied
+		}
+	}
+
 	return s.userRepo.Unlock(ctx, userID)
 }

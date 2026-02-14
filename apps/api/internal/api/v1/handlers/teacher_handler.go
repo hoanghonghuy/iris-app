@@ -14,6 +14,8 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
+// NOTE: extractAdminSchoolID is defined in admin_helpers.go (same package)
+
 type TeacherHandler struct {
 	teacherService *service.TeacherService
 }
@@ -32,6 +34,8 @@ func NewTeacherHandler(teacherService *service.TeacherService) *TeacherHandler {
 }
 
 func (h *TeacherHandler) List(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var params PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
@@ -41,8 +45,12 @@ func (h *TeacherHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teachers, total, err := h.teacherService.List(ctx, params.Limit, params.Offset)
+	teachers, total, err := h.teacherService.List(ctx, adminSchoolID, params.Limit, params.Offset)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teachers")
 		return
 	}
@@ -56,6 +64,8 @@ func (h *TeacherHandler) List(c *gin.Context) {
 }
 
 func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	classID, err := uuid.Parse(c.Param("class_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
@@ -65,8 +75,12 @@ func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teachers, err := h.teacherService.ListTeachersOfClass(ctx, classID)
+	teachers, err := h.teacherService.ListTeachersOfClass(ctx, adminSchoolID, classID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teachers of class")
 		return
 	}
@@ -74,6 +88,8 @@ func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {
 }
 
 func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
@@ -83,8 +99,12 @@ func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teacher, err := h.teacherService.GetByTeacherID(ctx, teacherID)
+	teacher, err := h.teacherService.GetByTeacherID(ctx, adminSchoolID, teacherID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		if errors.Is(err, pgx.ErrNoRows) {
 			response.Fail(c, http.StatusNotFound, "teacher not found")
 			return
@@ -96,6 +116,8 @@ func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
 }
 
 func (h *TeacherHandler) Assign(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
@@ -110,8 +132,12 @@ func (h *TeacherHandler) Assign(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.teacherService.Assign(ctx, teacherID, classID)
+	err = h.teacherService.Assign(ctx, adminSchoolID, teacherID, classID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to assign teacher to class")
 		return
 	}
@@ -123,6 +149,8 @@ func (h *TeacherHandler) Assign(c *gin.Context) {
 }
 
 func (h *TeacherHandler) Unassign(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
@@ -137,8 +165,12 @@ func (h *TeacherHandler) Unassign(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.teacherService.Unassign(ctx, teacherID, classID)
+	err = h.teacherService.Unassign(ctx, adminSchoolID, teacherID, classID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to unassign teacher from class")
 		return
 	}
@@ -151,6 +183,8 @@ func (h *TeacherHandler) Unassign(c *gin.Context) {
 
 // Update updates a teacher's information (admin only - can update all fields)
 func (h *TeacherHandler) Update(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
@@ -166,8 +200,12 @@ func (h *TeacherHandler) Update(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.teacherService.Update(ctx, teacherID, req.FullName, req.Phone, req.SchoolID)
+	err = h.teacherService.Update(ctx, adminSchoolID, teacherID, req.FullName, req.Phone, req.SchoolID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to update teacher")
 		return
 	}

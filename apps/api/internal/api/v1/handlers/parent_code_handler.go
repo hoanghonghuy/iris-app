@@ -37,6 +37,8 @@ type RegisterParentRequest struct {
 
 // GenerateCodeForStudent tạo parent code cho student (admin only)
 func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var uriParams GenerateCodeForStudentRequest
 	if err := c.ShouldBindUri(&uriParams); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid student ID")
@@ -46,8 +48,12 @@ func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	code, err := h.parentCodeService.GenerateCodeForStudent(ctx, uriParams.StudentID)
+	code, err := h.parentCodeService.GenerateCodeForStudent(ctx, adminSchoolID, uriParams.StudentID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to generate parent code")
 		return
 	}

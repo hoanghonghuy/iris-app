@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -31,6 +32,8 @@ type CreateStudentReq struct {
 }
 
 func (s *StudentHandler) Create(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var req CreateStudentReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
@@ -40,8 +43,12 @@ func (s *StudentHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	student, err := s.studentService.Create(ctx, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
+	student, err := s.studentService.Create(ctx, adminSchoolID, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		if errors.Is(err, service.ErrInvalidValue) {
 			response.Fail(c, http.StatusBadRequest, "invalid dob format (expected YYYY-MM-DD)")
 			return
@@ -58,6 +65,8 @@ func (s *StudentHandler) Create(c *gin.Context) {
 }
 
 func (s *StudentHandler) ListByClass(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	classID, err := uuid.Parse(c.Param("class_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
@@ -73,8 +82,12 @@ func (s *StudentHandler) ListByClass(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	students, total, err := s.studentService.ListByClass(ctx, classID, params.Limit, params.Offset)
+	students, total, err := s.studentService.ListByClass(ctx, adminSchoolID, classID, params.Limit, params.Offset)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch students")
 		return
 	}

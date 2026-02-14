@@ -56,6 +56,8 @@ type AssignRoleRequest struct {
 
 // CreateUser tạo user mới (admin only)
 func (h *UserHandler) CreateUser(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var req CreateUserRequest
 
 	// Bind dữ liệu JSON từ request body vào struct req
@@ -68,9 +70,12 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	resp, err := h.userService.CreateUserWithoutPassword(ctx, req.Email, req.Roles)
+	resp, err := h.userService.CreateUserWithoutPassword(ctx, adminSchoolID, req.Email, req.Roles)
 	if err != nil {
 		switch {
+		case errors.Is(err, service.ErrCannotAssignRole):
+			response.Fail(c, http.StatusForbidden, "insufficient permissions to assign this role")
+			return
 		case errors.Is(err, service.ErrFailedToAssignRole):
 			response.Fail(c, http.StatusBadRequest, "failed to assign role")
 			return
@@ -169,6 +174,8 @@ func (h *UserHandler) ActivateUserWithToken(c *gin.Context) {
 
 // GetByID lấy thông tin user theo ID (admin only - lấy từ URL param)
 func (h *UserHandler) GetByID(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
@@ -179,8 +186,12 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	userInfo, err := h.userService.FindByID(ctx, userID)
+	userInfo, err := h.userService.FindByID(ctx, adminSchoolID, userID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		if errors.Is(err, pgx.ErrNoRows) {
 			response.Fail(c, http.StatusNotFound, "user not found")
 			return
@@ -270,8 +281,10 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	response.OK(c, gin.H{"message": "user deleted successfully"})
 }
 
-// List lấy danh sách tất cả users (admin only)
+// List lấy danh sách users (admin only)
 func (h *UserHandler) List(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var params PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
@@ -281,8 +294,12 @@ func (h *UserHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	users, total, err := h.userService.List(ctx, params.Limit, params.Offset)
+	users, total, err := h.userService.List(ctx, adminSchoolID, params.Limit, params.Offset)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch users")
 		return
 	}
@@ -297,6 +314,8 @@ func (h *UserHandler) List(c *gin.Context) {
 
 // Lock khóa tài khoản user
 func (h *UserHandler) Lock(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
@@ -306,7 +325,11 @@ func (h *UserHandler) Lock(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.Lock(ctx, userID); err != nil {
+	if err := h.userService.Lock(ctx, adminSchoolID, userID); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to lock user")
 		return
 	}
@@ -316,6 +339,8 @@ func (h *UserHandler) Lock(c *gin.Context) {
 
 // Unlock mở khóa tài khoản user
 func (h *UserHandler) Unlock(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
@@ -325,7 +350,11 @@ func (h *UserHandler) Unlock(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.Unlock(ctx, userID); err != nil {
+	if err := h.userService.Unlock(ctx, adminSchoolID, userID); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to unlock user")
 		return
 	}

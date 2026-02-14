@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -29,6 +30,8 @@ type CreateClassRequest struct {
 
 // Create tạo mới lớp học
 func (h *ClassHandler) Create(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var req CreateClassRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
@@ -38,9 +41,12 @@ func (h *ClassHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	class, err := h.classService.Create(ctx, req.SchoolID, req.Name, req.SchoolYear)
+	class, err := h.classService.Create(ctx, adminSchoolID, req.SchoolID, req.Name, req.SchoolYear)
 	if err != nil {
-		// FK fail -> school_id not found
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to create class")
 		return
 	}
@@ -50,6 +56,8 @@ func (h *ClassHandler) Create(c *gin.Context) {
 
 // ListBySchool lấy danh sách lớp theo trường
 func (h *ClassHandler) ListBySchool(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	schoolID, err := uuid.Parse(c.Param("school_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid school_id format")
@@ -65,8 +73,12 @@ func (h *ClassHandler) ListBySchool(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	classes, total, err := h.classService.ListBySchool(ctx, schoolID, params.Limit, params.Offset)
+	classes, total, err := h.classService.ListBySchool(ctx, adminSchoolID, schoolID, params.Limit, params.Offset)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch classes")
 		return
 	}

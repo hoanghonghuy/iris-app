@@ -18,8 +18,14 @@ func NewClassService(classRepo *repo.ClassRepo) *ClassService {
 	}
 }
 
-// Create tạo mới lớp học
-func (s *ClassService) Create(ctx context.Context, schoolID uuid.UUID, name, schoolYear string) (*model.Class, error) {
+// Create tạo mới lớp học.
+func (s *ClassService) Create(ctx context.Context, adminSchoolID *uuid.UUID, schoolID uuid.UUID, name, schoolYear string) (*model.Class, error) {
+	// SCHOOL_ADMIN: validate school_id trong request phải khớp school của admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && *adminSchoolID != schoolID {
+		return nil, ErrSchoolAccessDenied
+	}
+
 	id, err := s.classRepo.Create(ctx, schoolID, name, schoolYear)
 	if err != nil {
 		return nil, err
@@ -34,7 +40,13 @@ func (s *ClassService) Create(ctx context.Context, schoolID uuid.UUID, name, sch
 }
 
 // ListBySchool lấy danh sách lớp học theo trường
-func (s *ClassService) ListBySchool(ctx context.Context, schoolID uuid.UUID, limit, offset int) ([]model.Class, int, error) {
+func (s *ClassService) ListBySchool(ctx context.Context, adminSchoolID *uuid.UUID, schoolID uuid.UUID, limit, offset int) ([]model.Class, int, error) {
+	// SCHOOL_ADMIN: validate school_id param phải khớp school của admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && *adminSchoolID != schoolID {
+		return nil, 0, ErrSchoolAccessDenied
+	}
+
 	if limit <= 0 {
 		limit = 20
 	}

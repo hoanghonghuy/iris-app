@@ -65,3 +65,18 @@ func (r *SchoolRepo) List(ctx context.Context, limit, offset int) ([]model.Schoo
 	}
 	return schools, total, rows.Err()
 }
+
+// GetByID lấy thông tin trường học theo school_id
+func (r *SchoolRepo) GetByID(ctx context.Context, schoolID uuid.UUID) (*model.School, error) {
+	const q = `
+		SELECT school_id, name, COALESCE(address, '')
+		FROM schools
+		WHERE school_id = $1;
+	`
+	var s model.School
+	err := r.pool.QueryRow(ctx, q, schoolID).Scan(&s.ID, &s.Name, &s.Address)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}

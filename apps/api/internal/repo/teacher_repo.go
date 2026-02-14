@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,8 +19,8 @@ func NewTeacherRepo(pool *pgxpool.Pool) *TeacherRepo {
 	}
 }
 
-func (r *TeacherRepo) List(ctx context.Context, limit, offset int) ([]model.Teacher, int, error) {
-	const q = `
+func (r *TeacherRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.Teacher, int, error) {
+	const qAll = `
 		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
 		       COUNT(*) OVER() as total_count
 		FROM teachers t
@@ -27,7 +28,23 @@ func (r *TeacherRepo) List(ctx context.Context, limit, offset int) ([]model.Teac
 		ORDER BY t.full_name
 		LIMIT $1 OFFSET $2;
 	`
-	rows, err := r.pool.Query(ctx, q, limit, offset)
+	const qBySchool = `
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
+		       COUNT(*) OVER() as total_count
+		FROM teachers t
+		JOIN users u ON u.user_id = t.user_id
+		WHERE t.school_id = $3
+		ORDER BY t.full_name
+		LIMIT $1 OFFSET $2;
+	`
+
+	var rows pgx.Rows
+	var err error
+	if schoolID != nil {
+		rows, err = r.pool.Query(ctx, qBySchool, limit, offset, *schoolID)
+	} else {
+		rows, err = r.pool.Query(ctx, qAll, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, err
 	}

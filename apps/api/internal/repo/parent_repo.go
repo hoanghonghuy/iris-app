@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,8 +19,8 @@ func NewParentRepo(pool *pgxpool.Pool) *ParentRepo {
 	}
 }
 
-func (r *ParentRepo) List(ctx context.Context, limit, offset int) ([]model.Parent, int, error) {
-	const q = `
+func (r *ParentRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.Parent, int, error) {
+	const qAll = `
 		SELECT p.parent_id, p.user_id, u.email, p.full_name, COALESCE(p.phone,''), p.school_id,
 		       COUNT(*) OVER() as total_count
 		FROM parents p
@@ -27,7 +28,23 @@ func (r *ParentRepo) List(ctx context.Context, limit, offset int) ([]model.Paren
 		ORDER BY p.full_name
 		LIMIT $1 OFFSET $2;
 	`
-	rows, err := r.pool.Query(ctx, q, limit, offset)
+	const qBySchool = `
+		SELECT p.parent_id, p.user_id, u.email, p.full_name, COALESCE(p.phone,''), p.school_id,
+		       COUNT(*) OVER() as total_count
+		FROM parents p
+		JOIN users u ON u.user_id = p.user_id
+		WHERE p.school_id = $3
+		ORDER BY p.full_name
+		LIMIT $1 OFFSET $2;
+	`
+
+	var rows pgx.Rows
+	var err error
+	if schoolID != nil { // => chỉ lấy phụ huynh thuộc trường cụ thể
+		rows, err = r.pool.Query(ctx, qBySchool, limit, offset, *schoolID)
+	} else { // => lấy tất cả phụ huynh
+		rows, err = r.pool.Query(ctx, qAll, limit, offset)
+	}
 	if err != nil {
 		return nil, 0, err
 	}

@@ -45,6 +45,7 @@ var (
 var (
 	ErrSchoolAdminNotFound = errors.New("school admin not found")
 	ErrCannotAssignRole    = errors.New("insufficient permissions to assign this role")
+	ErrSchoolAccessDenied  = errors.New("access denied: resource does not belong to your school")
 )
 
 // Business logic errors

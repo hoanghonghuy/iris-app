@@ -11,16 +11,37 @@ import (
 
 type StudentService struct {
 	studentRepo *repo.StudentRepo
+	classRepo   *repo.ClassRepo
 }
 
-func NewStudentService(studentRepo *repo.StudentRepo) *StudentService {
+func NewStudentService(studentRepo *repo.StudentRepo, classRepo *repo.ClassRepo) *StudentService {
 	return &StudentService{
 		studentRepo: studentRepo,
+		classRepo:   classRepo,
 	}
 }
 
-func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID,
+// Create tạo mới học sinh.
+func (s *StudentService) Create(ctx context.Context, adminSchoolID *uuid.UUID, schoolID, classID uuid.UUID,
 	fullName string, dobStr string, gender string) (*model.Student, error) {
+	// SCHOOL_ADMIN: validate school_id trong request phải khớp school của admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && *adminSchoolID != schoolID {
+		return nil, ErrSchoolAccessDenied
+	}
+
+	// SCHOOL_ADMIN: validate class thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		class, err := s.classRepo.GetByClassID(ctx, classID)
+		if err != nil {
+			return nil, ErrInvalidClassID
+		}
+		if class.SchoolID != *adminSchoolID {
+			return nil, ErrSchoolAccessDenied
+		}
+	}
+
 	// Parse DOB from YYYY-MM-DD string
 	dob, err := time.Parse("2006-01-02", dobStr)
 	if err != nil {
@@ -42,7 +63,20 @@ func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID
 	}, nil
 }
 
-func (s *StudentService) ListByClass(ctx context.Context, classID uuid.UUID, limit, offset int) ([]model.Student, int, error) {
+// ListByClass lấy danh sách học sinh theo lớp.
+func (s *StudentService) ListByClass(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID, limit, offset int) ([]model.Student, int, error) {
+	// SCHOOL_ADMIN: validate class thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		class, err := s.classRepo.GetByClassID(ctx, classID)
+		if err != nil {
+			return nil, 0, ErrInvalidClassID
+		}
+		if class.SchoolID != *adminSchoolID {
+			return nil, 0, ErrSchoolAccessDenied
+		}
+	}
+
 	if limit <= 0 {
 		limit = 20
 	}

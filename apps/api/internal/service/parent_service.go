@@ -11,17 +11,21 @@ import (
 type ParentService struct {
 	parentRepo        *repo.ParentRepo
 	studentParentRepo *repo.StudentParentRepo
+	studentRepo       *repo.StudentRepo
 }
 
-func NewParentService(parentRepo *repo.ParentRepo, studentParentRepo *repo.StudentParentRepo) *ParentService {
+func NewParentService(parentRepo *repo.ParentRepo,
+	studentParentRepo *repo.StudentParentRepo,
+	studentRepo *repo.StudentRepo) *ParentService {
 	return &ParentService{
 		parentRepo:        parentRepo,
 		studentParentRepo: studentParentRepo,
+		studentRepo:       studentRepo,
 	}
 }
 
-// List lấy danh sách tất cả phụ huynh
-func (s *ParentService) List(ctx context.Context, limit, offset int) ([]model.Parent, int, error) {
+// List lấy danh sách phụ huynh.
+func (s *ParentService) List(ctx context.Context, adminSchoolID *uuid.UUID, limit, offset int) ([]model.Parent, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -31,7 +35,7 @@ func (s *ParentService) List(ctx context.Context, limit, offset int) ([]model.Pa
 	if offset < 0 {
 		offset = 0
 	}
-	return s.parentRepo.List(ctx, limit, offset)
+	return s.parentRepo.List(ctx, adminSchoolID, limit, offset)
 }
 
 // Create tạo mới phụ huynh
@@ -50,13 +54,24 @@ func (s *ParentService) Create(ctx context.Context, userID, schoolID uuid.UUID, 
 	}, nil
 }
 
-// GetByParentID lấy thông tin phụ huynh theo parent_id
-func (s *ParentService) GetByParentID(ctx context.Context, parentID uuid.UUID) (*model.Parent, error) {
-	return s.parentRepo.GetByParentID(ctx, parentID)
+// GetByParentID lấy thông tin phụ huynh theo parent_id.
+func (s *ParentService) GetByParentID(ctx context.Context, adminSchoolID *uuid.UUID, parentID uuid.UUID) (*model.Parent, error) {
+	parent, err := s.parentRepo.GetByParentID(ctx, parentID)
+	if err != nil {
+		return nil, err
+	}
+
+	// SCHOOL_ADMIN: validate parent thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && parent.SchoolID != *adminSchoolID {
+		return nil, ErrSchoolAccessDenied
+	}
+
+	return parent, nil
 }
 
-// AssignStudent gán phụ huynh cho học sinh
-func (s *ParentService) AssignStudent(ctx context.Context, parentID, studentID uuid.UUID, relationship string) error {
+// AssignStudent gán phụ huynh cho học sinh.
+func (s *ParentService) AssignStudent(ctx context.Context, adminSchoolID *uuid.UUID, parentID, studentID uuid.UUID, relationship string) error {
 	if parentID == uuid.Nil {
 		return ErrInvalidUserID
 	}
@@ -65,20 +80,63 @@ func (s *ParentService) AssignStudent(ctx context.Context, parentID, studentID u
 		return ErrInvalidUserID
 	}
 
-	// Validate relationship
-	// Relationship examples: "father", "mother", "guardian", etc.
+	// SCHOOL_ADMIN: validate parent thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		parent, err := s.parentRepo.GetByParentID(ctx, parentID)
+		if err != nil {
+			return err
+		}
+		if parent.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+
+		// validate student thuộc cùng school với admin
+		student, err := s.studentRepo.GetByStudentID(ctx, studentID)
+		if err != nil {
+			return err
+		}
+		if student.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+	}
 
 	return s.studentParentRepo.Assign(ctx, studentID, parentID, relationship)
 }
 
-// UnassignStudent hủy gán phụ huynh khỏi học sinh
-func (s *ParentService) UnassignStudent(ctx context.Context, parentID, studentID uuid.UUID) error {
+// UnassignStudent hủy gán phụ huynh khỏi học sinh.
+//
+// adminSchoolID == nil → SUPER_ADMIN: không giới hạn
+//
+// adminSchoolID != nil → SCHOOL_ADMIN: validate cả parent AND student thuộc cùng school với admin
+func (s *ParentService) UnassignStudent(ctx context.Context, adminSchoolID *uuid.UUID, parentID, studentID uuid.UUID) error {
 	if parentID == uuid.Nil {
 		return ErrInvalidUserID
 	}
 
 	if studentID == uuid.Nil {
 		return ErrInvalidUserID
+	}
+
+	// SCHOOL_ADMIN: validate parent thuộc school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		parent, err := s.parentRepo.GetByParentID(ctx, parentID)
+		if err != nil {
+			return err
+		}
+		if parent.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+
+		// validate student thuộc cùng school với admin
+		student, err := s.studentRepo.GetByStudentID(ctx, studentID)
+		if err != nil {
+			return err
+		}
+		if student.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
 	}
 
 	return s.studentParentRepo.Unassign(ctx, studentID, parentID)

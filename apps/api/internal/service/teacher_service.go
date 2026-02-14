@@ -11,16 +11,19 @@ import (
 type TeacherService struct {
 	teacherRepo      *repo.TeacherRepo
 	teacherClassRepo *repo.TeacherClassRepo
+	classRepo        *repo.ClassRepo
 }
 
-func NewTeacherService(teacherRepo *repo.TeacherRepo, teacherClassRepo *repo.TeacherClassRepo) *TeacherService {
+func NewTeacherService(teacherRepo *repo.TeacherRepo, teacherClassRepo *repo.TeacherClassRepo, classRepo *repo.ClassRepo) *TeacherService {
 	return &TeacherService{
 		teacherRepo:      teacherRepo,
 		teacherClassRepo: teacherClassRepo,
+		classRepo:        classRepo,
 	}
 }
 
-func (s *TeacherService) List(ctx context.Context, limit, offset int) ([]model.Teacher, int, error) {
+// List lấy danh sách giáo viên.
+func (s *TeacherService) List(ctx context.Context, adminSchoolID *uuid.UUID, limit, offset int) ([]model.Teacher, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -30,29 +33,78 @@ func (s *TeacherService) List(ctx context.Context, limit, offset int) ([]model.T
 	if offset < 0 {
 		offset = 0
 	}
-	return s.teacherRepo.List(ctx, limit, offset)
+	return s.teacherRepo.List(ctx, adminSchoolID, limit, offset)
 }
 
-func (s *TeacherService) Assign(ctx context.Context, teacherID, classID uuid.UUID) error {
+// Assign gán giáo viên vào lớp.
+func (s *TeacherService) Assign(ctx context.Context, adminSchoolID *uuid.UUID, teacherID, classID uuid.UUID) error {
 	// kiểm tra teacher có tồn tại không
-	_, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
+	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		return err
 	}
 
-	// validate teacher (status active, etc.)
-	// if teacher.Status != "active" {
-	//    return errors.New("teacher không active")
-	// }
+	// SCHOOL_ADMIN: validate teacher thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && teacher.SchoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+
+	// SCHOOL_ADMIN: validate class thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		class, err := s.classRepo.GetByClassID(ctx, classID)
+		if err != nil {
+			return ErrInvalidClassID
+		}
+		if class.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+	}
 
 	return s.teacherClassRepo.Assign(ctx, teacherID, classID)
 }
 
-func (s *TeacherService) ListTeachersOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error) {
+// ListTeachersOfClass lấy danh sách giáo viên của một lớp.
+func (s *TeacherService) ListTeachersOfClass(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID) ([]model.Teacher, error) {
+	// SCHOOL_ADMIN: validate class thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		class, err := s.classRepo.GetByClassID(ctx, classID)
+		if err != nil {
+			return nil, ErrInvalidClassID
+		}
+		if class.SchoolID != *adminSchoolID {
+			return nil, ErrSchoolAccessDenied
+		}
+	}
+
 	return s.teacherClassRepo.ListTeacherDetailsOfClass(ctx, classID)
 }
 
-func (s *TeacherService) Unassign(ctx context.Context, teacherID, classID uuid.UUID) error {
+// Unassign hủy gán giáo viên khỏi lớp.
+func (s *TeacherService) Unassign(ctx context.Context, adminSchoolID *uuid.UUID, teacherID, classID uuid.UUID) error {
+	// SCHOOL_ADMIN: validate teacher thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil {
+		teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
+		if err != nil {
+			return err
+		}
+		if teacher.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+
+		// validate class thuộc cùng school với admin
+		class, err := s.classRepo.GetByClassID(ctx, classID)
+		if err != nil {
+			return ErrInvalidClassID
+		}
+		if class.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+	}
+
 	exists, err := s.teacherClassRepo.IsTeacherAssignedToClass(ctx, teacherID, classID)
 	if err != nil {
 		return err
@@ -65,18 +117,40 @@ func (s *TeacherService) Unassign(ctx context.Context, teacherID, classID uuid.U
 	return s.teacherClassRepo.Unassign(ctx, teacherID, classID)
 }
 
-func (s *TeacherService) GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (*model.Teacher, error) {
-	return s.teacherRepo.GetByTeacherID(ctx, teacherID)
+// GetByTeacherID lấy thông tin giáo viên theo ID.
+func (s *TeacherService) GetByTeacherID(ctx context.Context, adminSchoolID *uuid.UUID, teacherID uuid.UUID) (*model.Teacher, error) {
+	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
+	if err != nil {
+		return nil, err
+	}
+
+	// SCHOOL_ADMIN: validate teacher thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && teacher.SchoolID != *adminSchoolID {
+		return nil, ErrSchoolAccessDenied
+	}
+
+	return teacher, nil
 }
 
-// Update updates a teacher's information (admin only - can update all fields)
-func (s *TeacherService) Update(ctx context.Context, teacherID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
-	// Check if teacher exists
-	_, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
+// Update cập nhật thông tin giáo viên (admin only).
+func (s *TeacherService) Update(ctx context.Context, adminSchoolID *uuid.UUID, teacherID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
+	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		return err
 	}
 
-	// Admin can update all fields
+	// SCHOOL_ADMIN: validate teacher thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && teacher.SchoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+
+	// SCHOOL_ADMIN: không được đổi school_id sang school khác
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && schoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+
 	return s.teacherRepo.Update(ctx, teacherID, fullName, phone, schoolID)
 }

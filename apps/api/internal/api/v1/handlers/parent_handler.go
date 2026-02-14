@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 	"github.com/jackc/pgx/v5"
@@ -29,6 +30,8 @@ type AssignStudentRequest struct {
 
 // AssignStudent gán phụ huynh cho học sinh (admin only)
 func (h *ParentHandler) AssignStudent(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	parentID, err := uuid.Parse(c.Param("parent_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid parent_id format")
@@ -50,8 +53,12 @@ func (h *ParentHandler) AssignStudent(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.parentService.AssignStudent(ctx, parentID, studentID, req.Relationship)
+	err = h.parentService.AssignStudent(ctx, adminSchoolID, parentID, studentID, req.Relationship)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to assign parent to student")
 		return
 	}
@@ -66,6 +73,8 @@ func (h *ParentHandler) AssignStudent(c *gin.Context) {
 
 // UnassignStudent hủy gán phụ huynh khỏi học sinh (admin only)
 func (h *ParentHandler) UnassignStudent(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	parentID, err := uuid.Parse(c.Param("parent_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid parent_id format")
@@ -81,8 +90,12 @@ func (h *ParentHandler) UnassignStudent(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.parentService.UnassignStudent(ctx, parentID, studentID)
+	err = h.parentService.UnassignStudent(ctx, adminSchoolID, parentID, studentID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to unassign parent from student")
 		return
 	}
@@ -94,8 +107,10 @@ func (h *ParentHandler) UnassignStudent(c *gin.Context) {
 	})
 }
 
-// List lấy danh sách tất cả phụ huynh (admin only)
+// List lấy danh sách phụ huynh (admin only)
 func (h *ParentHandler) List(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var params PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
@@ -105,8 +120,12 @@ func (h *ParentHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	parents, total, err := h.parentService.List(ctx, params.Limit, params.Offset)
+	parents, total, err := h.parentService.List(ctx, adminSchoolID, params.Limit, params.Offset)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch parents")
 		return
 	}
@@ -121,6 +140,8 @@ func (h *ParentHandler) List(c *gin.Context) {
 
 // GetByID lấy thông tin phụ huynh theo parent_id (admin only)
 func (h *ParentHandler) GetByID(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	parentID, err := uuid.Parse(c.Param("parent_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid parent_id format")
@@ -130,8 +151,12 @@ func (h *ParentHandler) GetByID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	parent, err := h.parentService.GetByParentID(ctx, parentID)
+	parent, err := h.parentService.GetByParentID(ctx, adminSchoolID, parentID)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		if errors.Is(err, pgx.ErrNoRows) {
 			response.Fail(c, http.StatusNotFound, "parent not found")
 			return

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -47,6 +48,8 @@ func (h *SchoolHandler) Create(c *gin.Context) {
 
 // List lấy danh sách trường học
 func (h *SchoolHandler) List(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
 	var params PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
@@ -56,8 +59,12 @@ func (h *SchoolHandler) List(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	schools, total, err := h.schoolService.List(ctx, params.Limit, params.Offset)
+	schools, total, err := h.schoolService.List(ctx, adminSchoolID, params.Limit, params.Offset)
 	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch schools")
 		return
 	}
