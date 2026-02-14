@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -76,7 +77,7 @@ func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 
 	classes, err := h.teacherScopeService.ListMyClasses(ctx, userID)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
@@ -114,11 +115,11 @@ func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 
 	students, err := h.teacherScopeService.ListMyStudentsInClass(ctx, userID, classID)
 	if err != nil {
-		if err == service.ErrInvalidUserID || err == service.ErrInvalidClassID {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view students in your assigned classes")
 			return
 		}
@@ -183,11 +184,11 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 
 	err = h.teacherScopeService.UpsertAttendance(ctx, userID, studentID, req.Date, req.Status, checkIn, checkOut, req.Note)
 	if err != nil {
-		if err == service.ErrInvalidUserID || err == service.ErrInvalidDate || err == service.ErrInvalidStatus {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidDate) || errors.Is(err, service.ErrInvalidStatus) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only mark attendance for students in your assigned classes")
 			return
 		}
@@ -233,11 +234,11 @@ func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 
 	err = h.teacherScopeService.UpdateMyProfile(ctx, userID, req)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
-		if err == service.ErrTeacherNotFound {
+		if errors.Is(err, service.ErrTeacherNotFound) {
 			response.Fail(c, http.StatusNotFound, "teacher profile not found")
 			return
 		}
@@ -302,11 +303,11 @@ func (h *TeacherScopeHandler) CreateHealth(c *gin.Context) {
 
 	id, err := h.teacherScopeService.CreateHealthLog(ctx, userID, studentID, recordedAt, req.Temperature, req.Symptoms, req.Note, req.Severity)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only create health logs for students in your assigned classes")
 			return
 		}
@@ -368,11 +369,11 @@ func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
 
 	healthLogs, err := h.teacherScopeService.ListHealthLogs(ctx, userID, studentID, from, to)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view health logs for students in your assigned classes")
 			return
 		}
@@ -423,11 +424,11 @@ func (h *TeacherScopeHandler) ListAttendance(c *gin.Context) {
 
 	attendanceRecords, err := h.teacherScopeService.ListAttendanceByStudent(ctx, userID, studentID, from, to)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view attendance for students in your assigned classes")
 			return
 		}
@@ -482,11 +483,11 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 		}
 		postID, err = h.teacherScopeService.CreateClassPost(ctx, userID, classID, req.Type, req.Content)
 		if err != nil {
-			if err == service.ErrInvalidUserID || err == service.ErrInvalidClassID {
+			if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) {
 				response.Fail(c, http.StatusBadRequest, err.Error())
 				return
 			}
-			if err == service.ErrForbidden {
+			if errors.Is(err, service.ErrForbidden) {
 				response.Fail(c, http.StatusForbidden, "forbidden: you can only create posts for your assigned classes")
 				return
 			}
@@ -502,11 +503,11 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 		}
 		postID, err = h.teacherScopeService.CreateStudentPost(ctx, userID, studentID, req.Type, req.Content)
 		if err != nil {
-			if err == service.ErrInvalidUserID {
+			if errors.Is(err, service.ErrInvalidUserID) {
 				response.Fail(c, http.StatusBadRequest, err.Error())
 				return
 			}
-			if err == service.ErrForbidden {
+			if errors.Is(err, service.ErrForbidden) {
 				response.Fail(c, http.StatusForbidden, "forbidden: you can only create posts for students in your assigned classes")
 				return
 			}
@@ -560,11 +561,11 @@ func (h *TeacherScopeHandler) ListClassPosts(c *gin.Context) {
 
 	posts, err := h.teacherScopeService.ListClassPosts(ctx, userID, classID, req.Limit, req.Offset)
 	if err != nil {
-		if err == service.ErrInvalidUserID || err == service.ErrInvalidClassID {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts from your assigned classes")
 			return
 		}
@@ -608,11 +609,11 @@ func (h *TeacherScopeHandler) ListStudentPosts(c *gin.Context) {
 
 	posts, err := h.teacherScopeService.ListStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for students in your assigned classes")
 			return
 		}

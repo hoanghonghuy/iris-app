@@ -125,7 +125,7 @@ func (r *TeacherScopeRepo) CreateHealthLog(ctx context.Context, teacherUserID, s
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, q, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note).Scan(&id)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return uuid.Nil, ErrForbidden
 		}
 		return uuid.Nil, err
@@ -184,7 +184,7 @@ func (r *TeacherScopeRepo) CreateClassPost(ctx context.Context, teacherUserID, c
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, q, teacherUserID, classID, postType, content).Scan(&id)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return uuid.Nil, ErrForbidden
 		}
 		return uuid.Nil, err
@@ -209,7 +209,7 @@ func (r *TeacherScopeRepo) CreateStudentPost(ctx context.Context, teacherUserID,
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, q, teacherUserID, studentID, postType, content).Scan(&id)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return uuid.Nil, ErrForbidden
 		}
 		return uuid.Nil, err

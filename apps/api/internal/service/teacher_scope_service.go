@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -58,7 +59,7 @@ func (s *TeacherScopeService) ListMyStudentsInClass(ctx context.Context, teacher
 
 	students, err := s.teacherScopeRepo.ListMyStudentsInClass(ctx, teacherUserID, classID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrForbidden
 		}
 		return nil, fmt.Errorf("failed to list students: %w", err)
@@ -101,7 +102,7 @@ func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserI
 	// Call repo to upsert attendance
 	err = s.teacherScopeRepo.UpsertAttendance(ctx, teacherUserID, studentID, parsedDate, status, checkInAt, checkOutAt, note)
 	if err != nil {
-		if err == repo.ErrForbidden {
+		if errors.Is(err, repo.ErrForbidden) {
 			return ErrForbidden
 		}
 		return fmt.Errorf("failed to mark attendance: %w", err)
@@ -114,7 +115,7 @@ func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserI
 // Giáo viên chỉ có thể xem điểm danh của học sinh trong các lớp được phân công.
 func (s *TeacherScopeService) ListAttendanceByStudent(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	from, to time.Time) ([]model.AttendanceRecord, error) {
-		
+
 	if teacherUserID == uuid.Nil {
 		return nil, ErrInvalidUserID
 	}
@@ -155,7 +156,7 @@ func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID
 	// xác minh giáo viên có quyền truy cập
 	id, err := s.teacherScopeRepo.CreateHealthLog(ctx, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note)
 	if err != nil {
-		if err == repo.ErrForbidden {
+		if errors.Is(err, repo.ErrForbidden) {
 			return uuid.Nil, ErrForbidden
 		}
 		return uuid.Nil, fmt.Errorf("failed to create health log: %w", err)
@@ -179,7 +180,7 @@ func (s *TeacherScopeService) ListHealthLogs(ctx context.Context, teacherUserID,
 
 	healthLogs, err := s.teacherScopeRepo.ListHealthLogsByStudent(ctx, teacherUserID, studentID, from, to)
 	if err != nil {
-		if err == pgx.ErrNoRows || err == repo.ErrForbidden {
+		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, repo.ErrForbidden) {
 			return []model.HealthLog{}, nil
 		}
 		return nil, fmt.Errorf("failed to list health logs: %w", err)
@@ -198,7 +199,7 @@ func (s *TeacherScopeService) UpdateMyProfile(ctx context.Context, teacherUserID
 	// Get teacherID from teacherUserID
 	teacher, err := s.teacherRepo.GetByUserID(ctx, teacherUserID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrTeacherNotFound
 		}
 		return fmt.Errorf("failed to get teacher: %w", err)
@@ -238,7 +239,7 @@ func (s *TeacherScopeService) CreateClassPost(ctx context.Context, teacherUserID
 
 	id, err := s.teacherScopeRepo.CreateClassPost(ctx, teacherUserID, classID, postType, content)
 	if err != nil {
-		if err == repo.ErrForbidden {
+		if errors.Is(err, repo.ErrForbidden) {
 			return uuid.Nil, ErrForbidden
 		}
 		return uuid.Nil, fmt.Errorf("failed to create class post: %w", err)
@@ -272,7 +273,7 @@ func (s *TeacherScopeService) CreateStudentPost(ctx context.Context, teacherUser
 
 	id, err := s.teacherScopeRepo.CreateStudentPost(ctx, teacherUserID, studentID, postType, content)
 	if err != nil {
-		if err == repo.ErrForbidden {
+		if errors.Is(err, repo.ErrForbidden) {
 			return uuid.Nil, ErrForbidden
 		}
 		return uuid.Nil, fmt.Errorf("failed to create student post: %w", err)
@@ -304,7 +305,7 @@ func (s *TeacherScopeService) ListClassPosts(ctx context.Context, teacherUserID,
 
 	posts, err := s.teacherScopeRepo.ListClassPosts(ctx, teacherUserID, classID, limit, offset)
 	if err != nil {
-		if err == repo.ErrForbidden {
+		if errors.Is(err, repo.ErrForbidden) {
 			return nil, ErrForbidden
 		}
 		return nil, fmt.Errorf("failed to list class posts: %w", err)
@@ -336,7 +337,7 @@ func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserI
 
 	posts, err := s.teacherScopeRepo.ListStudentPosts(ctx, teacherUserID, studentID, limit, offset)
 	if err != nil {
-		if err == repo.ErrForbidden {
+		if errors.Is(err, repo.ErrForbidden) {
 			return nil, ErrForbidden
 		}
 		return nil, fmt.Errorf("failed to list student posts: %w", err)

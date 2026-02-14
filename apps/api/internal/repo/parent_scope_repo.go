@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -212,7 +213,7 @@ func (r *ParentScopeRepo) IsParentOfStudent(ctx context.Context, parentUserID, s
 	var exists bool
 	err := r.pool.QueryRow(ctx, q, parentUserID, studentID).Scan(&exists)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
 		}
 		return false, err

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -41,23 +42,24 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	defer cancel()
 
 	resp, err := h.authService.Login(ctx, req.Email, req.Password)
-	switch err {
-	case pgx.ErrNoRows:
-		response.Fail(c, http.StatusUnauthorized, "invalid credentials")
-		return
-	case auth.ErrInvalidCredentials:
-		response.Fail(c, http.StatusUnauthorized, "email or password incorrect")
-		return
-	case auth.ErrUserLocked:
-		response.Fail(c, http.StatusForbidden, "user account locked")
-		return
-	case nil:
-		response.OK(c, resp)
-		return
-	default:
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusUnauthorized, "invalid credentials")
+			return
+		}
+		if errors.Is(err, auth.ErrInvalidCredentials) {
+			response.Fail(c, http.StatusUnauthorized, "email or password incorrect")
+			return
+		}
+		if errors.Is(err, auth.ErrUserLocked) {
+			response.Fail(c, http.StatusForbidden, "user account locked")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "server error")
 		return
 	}
+
+	response.OK(c, resp)
 }
 
 // Me trả về thông tin user đã đăng nhập

@@ -181,7 +181,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 
 	userInfo, err := h.userService.FindByID(ctx, userID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			response.Fail(c, http.StatusNotFound, "user not found")
 			return
 		}

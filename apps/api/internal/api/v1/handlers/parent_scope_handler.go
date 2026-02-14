@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -55,7 +56,7 @@ func (h *ParentScopeHandler) MyChildren(c *gin.Context) {
 
 	students, err := h.parentScopeService.ListMyChildren(ctx, userID)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
@@ -99,11 +100,11 @@ func (h *ParentScopeHandler) ListMyChildClassPosts(c *gin.Context) {
 
 	posts, err := h.parentScopeService.ListMyChildClassPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for your own children")
 			return
 		}
@@ -147,11 +148,11 @@ func (h *ParentScopeHandler) ListMyChildStudentPosts(c *gin.Context) {
 
 	posts, err := h.parentScopeService.ListMyChildStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for your own children")
 			return
 		}
@@ -195,11 +196,11 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 
 	posts, err := h.parentScopeService.ListAllMyChildPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
-		if err == service.ErrForbidden {
+		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for your own children")
 			return
 		}
@@ -236,7 +237,7 @@ func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
 
 	posts, err := h.parentScopeService.GetMyFeed(ctx, userID, req.Limit, req.Offset)
 	if err != nil {
-		if err == service.ErrInvalidUserID {
+		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
