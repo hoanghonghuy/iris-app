@@ -2,11 +2,14 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -63,6 +66,10 @@ func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
 
 	teacher, err := h.teacherService.GetByTeacherID(ctx, teacherID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "teacher not found")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teacher")
 		return
 	}

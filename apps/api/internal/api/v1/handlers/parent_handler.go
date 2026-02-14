@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+	"github.com/jackc/pgx/v5"
 )
 
 type ParentHandler struct {
@@ -119,6 +121,10 @@ func (h *ParentHandler) GetByID(c *gin.Context) {
 
 	parent, err := h.parentService.GetByParentID(ctx, parentID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "parent not found")
+			return
+		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch parent")
 		return
 	}
