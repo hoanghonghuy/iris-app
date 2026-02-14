@@ -37,6 +37,19 @@ func Fail(c *gin.Context, status int, msg string) {
 	c.JSON(status, gin.H{"error": msg})
 }
 
+// Pagination chứa metadata phân trang cho response
+type Pagination struct {
+	Total   int  `json:"total"`
+	Limit   int  `json:"limit"`
+	Offset  int  `json:"offset"`
+	HasMore bool `json:"has_more"`
+}
+
+// OKPaginated trả về response HTTP 200 OK với data và pagination metadata
+func OKPaginated(c *gin.Context, data any, p Pagination) {
+	c.JSON(http.StatusOK, gin.H{"data": data, "pagination": p})
+}
+
 // TODO: thêm hàm CreatedWithLocation(c *gin.Context, data any, location string)
 // để hỗ trợ tiêu chuẩn RFC 7231 cho phản hồi 201 Created kèm theo header Location.
 // Hàm này sẽ hữu ích cho tất cả các endpoint POST tạo tài nguyên mới.
