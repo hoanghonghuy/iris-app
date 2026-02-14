@@ -13,11 +13,6 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
 )
 
-// UpdateMyProfileRequest represents the request to update teacher's own profile (teacher only - can only update phone)
-type UpdateMyProfileRequest struct {
-	Phone string `json:"phone"`
-}
-
 type TeacherScopeService struct {
 	teacherScopeRepo *repo.TeacherScopeRepo
 	teacherRepo      *repo.TeacherRepo
@@ -190,7 +185,7 @@ func (s *TeacherScopeService) ListHealthLogs(ctx context.Context, teacherUserID,
 }
 
 // UpdateMyProfile updates teacher's own profile (teacher only - can only update phone)
-func (s *TeacherScopeService) UpdateMyProfile(ctx context.Context, teacherUserID uuid.UUID, req UpdateMyProfileRequest) error {
+func (s *TeacherScopeService) UpdateMyProfile(ctx context.Context, teacherUserID uuid.UUID, phone string) error {
 	// Validate teacherUserID
 	if teacherUserID == uuid.Nil {
 		return ErrInvalidUserID
@@ -206,7 +201,7 @@ func (s *TeacherScopeService) UpdateMyProfile(ctx context.Context, teacherUserID
 	}
 
 	// Teacher can only update phone (cannot update school_id, teacher_id, user_id)
-	err = s.teacherRepo.UpdatePhone(ctx, teacher.TeacherID, req.Phone)
+	err = s.teacherRepo.UpdatePhone(ctx, teacher.TeacherID, phone)
 	if err != nil {
 		return fmt.Errorf("failed to update profile: %w", err)
 	}

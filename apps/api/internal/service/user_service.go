@@ -24,11 +24,6 @@ func NewUserService(userRepo *repo.UserRepo, jwtAuth *auth.Authenticator) *UserS
 	}
 }
 
-// yêu cầu cập nhật mật khẩu của người dùng. (self-service)
-type UpdateMyPasswordRequest struct {
-	Password string `json:"password"`
-}
-
 // CreateUserWithoutPassword tạo user mới không cần password (admin only)
 func (s *UserService) CreateUserWithoutPassword(ctx context.Context, email string, roles []string) (*model.UserInfo, error) {
 	// Validate input
@@ -192,14 +187,14 @@ func (s *UserService) UpdateEmail(ctx context.Context, userID uuid.UUID, email s
 }
 
 // UpdateMyPassword cập nhật mật khẩu của người dùng (user)
-func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, req UpdateMyPasswordRequest) error {
+func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, password string) error {
 	// Validate userID
 	if userID == uuid.Nil {
 		return ErrInvalidUserID
 	}
 
 	// validate password
-	if req.Password == "" {
+	if password == "" {
 		return ErrInvalidPassword
 	}
 
@@ -210,7 +205,7 @@ func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, re
 	}
 
 	// Hash password
-	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	passwordHashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return ErrFailedToHashPassword
 	}

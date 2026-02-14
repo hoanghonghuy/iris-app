@@ -44,8 +44,8 @@ type ActivateUserWithTokenRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-// UpdateRequest input để cập nhật user
-type UpdateRequest struct {
+// UpdateMyPasswordRequest input để user cập nhật mật khẩu (self-service)
+type UpdateMyPasswordRequest struct {
 	Password string `json:"password"`
 }
 
@@ -194,7 +194,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 
 // UpdateMyPassword cập nhật mật khẩu của người dùng (self-service only)
 func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
-	var req UpdateRequest
+	var req UpdateMyPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -217,11 +217,7 @@ func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
 		return
 	}
 
-	updateReq := service.UpdateMyPasswordRequest{
-		Password: req.Password,
-	}
-
-	if err := h.userService.UpdateMyPassword(ctx, userID, updateReq); err != nil {
+	if err := h.userService.UpdateMyPassword(ctx, userID, req.Password); err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidUserID):
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")

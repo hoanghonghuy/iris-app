@@ -56,6 +56,11 @@ type ListPostsRequest struct {
 	Offset int `form:"offset"`
 }
 
+// UpdateMyProfileRequest input để giáo viên cập nhật thông tin cá nhân (chỉ phone)
+type UpdateMyProfileRequest struct {
+	Phone string `json:"phone"`
+}
+
 // MyClasses trả về danh sách các lớp mà giáo viên được phân công giảng dạy.
 func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
@@ -209,7 +214,7 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 
 // UpdateMyProfile cập nhật hồ sơ cá nhân của giáo viên (teacher only - chỉ có thể cập nhật số điện thoại)
 func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
-	var req service.UpdateMyProfileRequest
+	var req UpdateMyProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -232,7 +237,7 @@ func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	err = h.teacherScopeService.UpdateMyProfile(ctx, userID, req)
+	err = h.teacherScopeService.UpdateMyProfile(ctx, userID, req.Phone)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")

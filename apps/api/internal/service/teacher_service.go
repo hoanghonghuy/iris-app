@@ -20,13 +20,6 @@ func NewTeacherService(teacherRepo *repo.TeacherRepo, teacherClassRepo *repo.Tea
 	}
 }
 
-// UpdateTeacherRequest represents the request to update a teacher (admin only)
-type UpdateTeacherRequest struct {
-	FullName string    `json:"full_name"`
-	Phone    string    `json:"phone"`
-	SchoolID uuid.UUID `json:"school_id"`
-}
-
 func (s *TeacherService) List(ctx context.Context) ([]model.Teacher, error) {
 	return s.teacherRepo.List(ctx)
 }
@@ -68,7 +61,7 @@ func (s *TeacherService) GetByTeacherID(ctx context.Context, teacherID uuid.UUID
 }
 
 // Update updates a teacher's information (admin only - can update all fields)
-func (s *TeacherService) Update(ctx context.Context, teacherID uuid.UUID, req UpdateTeacherRequest) error {
+func (s *TeacherService) Update(ctx context.Context, teacherID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
 	// Check if teacher exists
 	_, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
@@ -76,5 +69,5 @@ func (s *TeacherService) Update(ctx context.Context, teacherID uuid.UUID, req Up
 	}
 
 	// Admin can update all fields
-	return s.teacherRepo.Update(ctx, teacherID, req.FullName, req.Phone, req.SchoolID)
+	return s.teacherRepo.Update(ctx, teacherID, fullName, phone, schoolID)
 }

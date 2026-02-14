@@ -18,6 +18,13 @@ type TeacherHandler struct {
 	teacherService *service.TeacherService
 }
 
+// UpdateTeacherRequest input để admin cập nhật thông tin giáo viên
+type UpdateTeacherRequest struct {
+	FullName string    `json:"full_name"`
+	Phone    string    `json:"phone"`
+	SchoolID uuid.UUID `json:"school_id"`
+}
+
 func NewTeacherHandler(teacherService *service.TeacherService) *TeacherHandler {
 	return &TeacherHandler{
 		teacherService: teacherService,
@@ -138,7 +145,7 @@ func (h *TeacherHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var req service.UpdateTeacherRequest
+	var req UpdateTeacherRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -147,7 +154,7 @@ func (h *TeacherHandler) Update(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	err = h.teacherService.Update(ctx, teacherID, req)
+	err = h.teacherService.Update(ctx, teacherID, req.FullName, req.Phone, req.SchoolID)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to update teacher")
 		return
