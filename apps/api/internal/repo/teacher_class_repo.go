@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -88,5 +89,38 @@ func (r *TeacherClassRepo) IsTeacherAssignedToClass(ctx context.Context, teacher
 	return exists, err
 }
 
-// TODO:
-// func (r *TeacherClassRepo) ListTeacherDetailsOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error)
+// ListTeacherDetailsOfClass: Lấy danh sách giáo viên (kèm thông tin chi tiết) đang dạy một lớp.
+// Thay thế cho pattern N+1: ListTeachersOfClass (lấy IDs) + loop GetByTeacherID
+//
+// Input:
+//   - ctx: Context cho timeout/cancellation
+//   - classID: UUID của lớp cần tìm giáo viên
+//
+// Output:
+//   - []model.Teacher: Danh sách giáo viên với đầy đủ thông tin
+//   - error: Nếu query có lỗi
+func (r *TeacherClassRepo) ListTeacherDetailsOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error) {
+	const q = `
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
+		FROM teacher_classes tc
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		JOIN users u ON u.user_id = t.user_id
+		WHERE tc.class_id = $1
+		ORDER BY t.full_name;
+	`
+	rows, err := r.pool.Query(ctx, q, classID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var teachers []model.Teacher
+	for rows.Next() {
+		var t model.Teacher
+		if err := rows.Scan(&t.TeacherID, &t.UserID, &t.Email, &t.FullName, &t.Phone, &t.SchoolID); err != nil {
+			return nil, err
+		}
+		teachers = append(teachers, t)
+	}
+	return teachers, rows.Err()
+}
