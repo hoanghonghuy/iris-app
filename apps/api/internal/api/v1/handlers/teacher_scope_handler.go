@@ -315,7 +315,7 @@ func (h *TeacherScopeHandler) CreateHealth(c *gin.Context) {
 		return
 	}
 
-	response.OK(c, gin.H{
+	response.Created(c, gin.H{
 		"message":       "health log created successfully",
 		"health_log_id": id.String(),
 		"student_id":    req.StudentID,
