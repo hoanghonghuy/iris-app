@@ -73,9 +73,16 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	claims := claimsAny.(*auth.Claims)
 
 	// Trả về thông tin từ JWT claims (đã validate và xác thực)
-	response.OK(c, gin.H{
+	result := gin.H{
 		"user_id": claims.UserID,
 		"email":   claims.Email,
 		"roles":   claims.Roles,
-	})
+	}
+
+	// Nếu user là SCHOOL_ADMIN → trả thêm school_id
+	if claims.SchoolID != "" {
+		result["school_id"] = claims.SchoolID
+	}
+
+	response.OK(c, result)
 }

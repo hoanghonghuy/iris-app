@@ -10,14 +10,16 @@ import (
 )
 
 type AuthService struct {
-	userRepo *repo.UserRepo
-	jwtAuth  *auth.Authenticator
+	userRepo        *repo.UserRepo
+	schoolAdminRepo *repo.SchoolAdminRepo
+	jwtAuth         *auth.Authenticator
 }
 
-func NewAuthService(userRepo *repo.UserRepo, jwtAuth *auth.Authenticator) *AuthService {
+func NewAuthService(userRepo *repo.UserRepo, schoolAdminRepo *repo.SchoolAdminRepo, jwtAuth *auth.Authenticator) *AuthService {
 	return &AuthService{
-		userRepo: userRepo,
-		jwtAuth:  jwtAuth,
+		userRepo:        userRepo,
+		schoolAdminRepo: schoolAdminRepo,
+		jwtAuth:         jwtAuth,
 	}
 }
 
@@ -52,8 +54,21 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 		return nil, err
 	}
 
-	// 5. Tạo JWT token
-	token, err := s.jwtAuth.SignToken(user.ID.String(), user.Email, roles)
+	// 5. Nếu user có role SCHOOL_ADMIN → lấy school_id từ bảng school_admins
+	//    để nhúng vào JWT claims (không cần query DB mỗi request)
+	var schoolID string
+	for _, r := range roles {
+		if r == "SCHOOL_ADMIN" {
+			admin, err := s.schoolAdminRepo.GetByUserID(ctx, user.ID)
+			if err == nil {
+				schoolID = admin.SchoolID.String()
+			}
+			break
+		}
+	}
+
+	// 6. Tạo JWT token (schoolID rỗng cho SUPER_ADMIN/TEACHER/PARENT)
+	token, err := s.jwtAuth.SignToken(user.ID.String(), user.Email, roles, schoolID)
 	if err != nil {
 		return nil, err
 	}

@@ -141,7 +141,7 @@ func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password,
 	// Generate JWT token cho parent (auto login sau khi register)
 	roles := []string{"PARENT"}
 
-	token, err := s.jwtAuth.SignToken(userID.String(), email, roles)
+	token, err := s.jwtAuth.SignToken(userID.String(), email, roles, "")
 	if err != nil {
 		// Nếu generate token thất bại, vẫn trả về success
 		// Parent có thể login sau với email/password

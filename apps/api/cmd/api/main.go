@@ -52,7 +52,7 @@ func main() {
 	// Services
 	// TODO: tách ra hàm helper initServices(repos, jwtAuth) *Services
 	var (
-		authService         = service.NewAuthService(repos.UserRepo, jwtAuth)
+		authService         = service.NewAuthService(repos.UserRepo, repos.SchoolAdminRepo, jwtAuth)
 		schoolService       = service.NewSchoolService(repos.SchoolRepo)
 		classService        = service.NewClassService(repos.ClassRepo)
 		studentService      = service.NewStudentService(repos.StudentRepo)
@@ -62,6 +62,7 @@ func main() {
 		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo)
 		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo)
 		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth)
+		schoolAdminService  = service.NewSchoolAdminService(repos.SchoolAdminRepo, repos.UserRepo)
 	)
 
 	// Handlers
@@ -77,6 +78,7 @@ func main() {
 		parentHandler       = v1handlers.NewParentHandler(parentService)
 		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService)
 		parentCodeHandler   = v1handlers.NewParentCodeHandler(parentCodeService)
+		schoolAdminHandler  = v1handlers.NewSchoolAdminHandler(schoolAdminService)
 	)
 
 	// Router
@@ -93,6 +95,7 @@ func main() {
 		parentHandler,
 		parentScopeHandler,
 		parentCodeHandler,
+		schoolAdminHandler,
 	)
 
 	// Start server

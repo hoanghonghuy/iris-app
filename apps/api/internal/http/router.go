@@ -23,6 +23,7 @@ func NewRouter(
 	parentHandler *v1handlers.ParentHandler,
 	parentScopeHandler *v1handlers.ParentScopeHandler,
 	parentCodeHandler *v1handlers.ParentCodeHandler,
+	schoolAdminHandler *v1handlers.SchoolAdminHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -101,19 +102,21 @@ func NewRouter(
 				parentScope.GET("/children/:student_id/posts", parentScopeHandler.ListAllMyChildPosts)
 			}
 
-			// admin routes (require ADMIN role)
+			// admin routes (SUPER_ADMIN + SCHOOL_ADMIN đều truy cập được)
+			// InjectAdminScope đọc school_id từ JWT → lưu vào context
+			// SUPER_ADMIN: school_id rỗng (truy cập tất cả trường)
+			// SCHOOL_ADMIN: school_id có giá trị (chỉ truy cập trường mình)
 			admin := protected.Group("/admin")
-			admin.Use(middleware.RequireRole("ADMIN"))
+			admin.Use(middleware.RequireAnyRole("SUPER_ADMIN", "SCHOOL_ADMIN"))
+			admin.Use(middleware.InjectAdminScope())
 			{
 				// Admin ping/health check
 				admin.GET("/ping", func(c *gin.Context) {
 					response.OK(c, gin.H{"pong": "admin"})
 				})
 
-				// School routes
-				schools := admin.Group("/schools")
-				schools.POST("", schoolHandler.Create)
-				schools.GET("", schoolHandler.List)
+				// School routes (GET: cả 2 roles, POST: chỉ SUPER_ADMIN — đăng ký ở superOnly bên dưới)
+				admin.GET("/schools", schoolHandler.List)
 
 				// Class routes
 				classes := admin.Group("/classes")
@@ -125,22 +128,16 @@ func NewRouter(
 				students.POST("", studentHandler.Create)
 				students.GET("/by-class/:class_id", studentHandler.ListByClass)
 
-				// User routes (ADMIN only - quản lý users)
-				// Pattern:
-				//   - GET /api/v1/admin/users - list all users
-				//   - GET /api/v1/admin/users/:userid - get user by ID
-				//   - POST /api/v1/admin/users/:userid/lock - lock user account
-				//   - POST /api/v1/admin/users/:userid/unlock - unlock user account
-				//   - POST /api/v1/admin/users/:userid/roles - assign role to user
+				// User routes (quản lý users)
+				// AssignRole chỉ SUPER_ADMIN → đăng ký ở superOnly bên dưới
 				users := admin.Group("/users")
 				users.POST("", userHandler.CreateUser)
 				users.GET("", userHandler.List)
 				users.GET("/:userid", userHandler.GetByID)
 				users.POST("/:userid/lock", userHandler.Lock)
 				users.POST("/:userid/unlock", userHandler.Unlock)
-				users.POST("/:userid/roles", userHandler.AssignRole)
 
-				// teacher routes (ADMIN only - quản lý giáo viên)
+				// teacher routes (quản lý giáo viên)
 				teachers := admin.Group("/teachers")
 				{
 					// lấy danh sách tất cả giáo viên
@@ -162,7 +159,7 @@ func NewRouter(
 					teachers.DELETE("/:teacher_id/classes/:class_id", teacherHandler.Unassign)
 				}
 
-				// parent routes (ADMIN only - quản lý phụ huynh)
+				// parent routes (quản lý phụ huynh)
 				parents := admin.Group("/parents")
 				{
 					// lấy danh sách tất cả phụ huynh
@@ -178,11 +175,30 @@ func NewRouter(
 					parents.DELETE("/:parent_id/students/:student_id", parentHandler.UnassignStudent)
 				}
 
-				// parent code routes (ADMIN only - tạo parent codes)
+				// parent code routes (tạo parent codes)
 				parentCodes := admin.Group("/students")
 				{
 					// tạo parent code cho student
 					parentCodes.POST("/:student_id/generate-parent-code", parentCodeHandler.GenerateCodeForStudent)
+				}
+
+				// Các routes chỉ SUPER_ADMIN mới truy cập được
+				superOnly := admin.Group("/")
+				superOnly.Use(middleware.RequireRole("SUPER_ADMIN"))
+				{
+					// tạo trường mới (chỉ SUPER_ADMIN)
+					superOnly.POST("/schools", schoolHandler.Create)
+
+					// gán role cho user (chỉ SUPER_ADMIN — tránh SCHOOL_ADMIN tự nâng quyền)
+					superOnly.POST("/users/:userid/roles", userHandler.AssignRole)
+
+					// quản lý school admins (chỉ SUPER_ADMIN)
+					schoolAdmins := superOnly.Group("/school-admins")
+					{
+						schoolAdmins.POST("", schoolAdminHandler.Create)
+						schoolAdmins.GET("", schoolAdminHandler.List)
+						schoolAdmins.DELETE("/:admin_id", schoolAdminHandler.Delete)
+					}
 				}
 			}
 		}

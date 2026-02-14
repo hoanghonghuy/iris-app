@@ -9,20 +9,21 @@ import (
 )
 
 var (
-	ErrInvalidToken     = errors.New("invalid token")
+	ErrInvalidToken       = errors.New("invalid token")
 	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrUserLocked       = errors.New("user locked")
+	ErrUserLocked         = errors.New("user locked")
 )
 
 type Claims struct {
-	UserID string   `json:"user_id"`
-	Email  string   `json:"email"`
-	Roles  []string `json:"roles"`
+	UserID   string   `json:"user_id"`
+	Email    string   `json:"email"`
+	Roles    []string `json:"roles"`
+	SchoolID string   `json:"school_id,omitempty"` // chỉ có giá trị khi user là SCHOOL_ADMIN
 	jwt.RegisteredClaims
 }
 
 type Authenticator struct {
-	Secret string
+	Secret     string
 	TTLSeconds int
 }
 
@@ -34,9 +35,10 @@ func NewAuthenticator(secret string, ttlMinutes int) *Authenticator {
 	}
 }
 
-// SignToken tạo JWT token bằng Authenticator
-func (a *Authenticator) SignToken(userID, email string, roles []string) (string, error) {
-	return Sign(a.Secret, time.Duration(a.TTLSeconds)*time.Second, userID, email, roles)
+// SignToken tạo JWT token bằng Authenticator.
+// schoolID rỗng ("") cho SUPER_ADMIN/TEACHER/PARENT, có giá trị cho SCHOOL_ADMIN
+func (a *Authenticator) SignToken(userID, email string, roles []string, schoolID string) (string, error) {
+	return Sign(a.Secret, time.Duration(a.TTLSeconds)*time.Second, userID, email, roles, schoolID)
 }
 
 // ParseToken giải mã JWT token bằng Authenticator
@@ -60,15 +62,16 @@ func VerifyPassword(hash, plain string) bool {
 //
 // Hàm sẽ tạo một struct Claims chứa thông tin người dùng và các trường chuẩn của JWT (IssuedAt, ExpiresAt, Subject).
 // Sau đó, hàm tạo một token mới với các claims này, ký bằng thuật toán HS256 và trả về chuỗi token đã ký.
-func Sign(secret string, ttl time.Duration, userID, email string, roles []string) (string, error) {
+func Sign(secret string, ttl time.Duration, userID, email string, roles []string, schoolID string) (string, error) {
 	now := time.Now()
 	claims := Claims{
-		UserID: userID,
-		Email:  email,
-		Roles:  roles,
+		UserID:   userID,
+		Email:    email,
+		Roles:    roles,
+		SchoolID: schoolID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   userID, // định danh đối tượng mà token cấp cho, gán bằng userID để xác định token này thuộc về người dùng nào.
-			IssuedAt:  jwt.NewNumericDate(now), 
+			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(ttl)), // token hết hạn, cộng ttl vào thời điểm hiện tại (now)
 		},
 	}

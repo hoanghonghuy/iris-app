@@ -41,6 +41,12 @@ var (
 	ErrFailedToGetStudent          = errors.New("failed to get student")
 )
 
+// School admin-related errors
+var (
+	ErrSchoolAdminNotFound = errors.New("school admin not found")
+	ErrCannotAssignRole    = errors.New("insufficient permissions to assign this role")
+)
+
 // Business logic errors
 var (
 	ErrInvalidClassID     = errors.New("invalid class ID")

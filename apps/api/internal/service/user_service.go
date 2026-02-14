@@ -142,7 +142,12 @@ func (s *UserService) ActivateUserWithToken(ctx context.Context, token, password
 // AssignRole gán role cho user
 func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error {
 	// Validate role name
-	validRoles := map[string]bool{"ADMIN": true, "TEACHER": true, "PARENT": true}
+	validRoles := map[string]bool{
+		"SUPER_ADMIN": true,
+		"SCHOOL_ADMIN": true,
+		"TEACHER": true,
+		"PARENT": true,
+	}
 	if !validRoles[roleName] {
 		return fmt.Errorf("%w: %s", ErrInvalidRoleName, roleName)
 	}
