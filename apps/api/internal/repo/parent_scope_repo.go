@@ -50,10 +50,11 @@ func (r *ParentScopeRepo) ListMyChildren(ctx context.Context, parentUserID uuid.
 
 // ListMyChildClassPosts liệt kê bài đăng của lớp con mình đang học
 func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at
+			p.type, p.content, p.created_at, p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN students s ON s.current_class_id = p.class_id
 		JOIN student_parents sp ON sp.student_id = s.student_id
@@ -67,30 +68,32 @@ func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserI
 
 	rows, err := r.pool.Query(ctx, q, parentUserID, studentID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var posts []model.Post
+	var total int
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, rows.Err()
+	return posts, total, rows.Err()
 }
 
 // ListMyChildStudentPosts liệt kê bài đăng riêng của con mình (student scope)
 func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at
+			p.type, p.content, p.created_at, p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN student_parents sp ON sp.student_id = p.student_id
 		JOIN parents pa ON pa.parent_id = sp.parent_id
@@ -103,30 +106,32 @@ func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUse
 
 	rows, err := r.pool.Query(ctx, q, parentUserID, studentID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var posts []model.Post
+	var total int
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, rows.Err()
+	return posts, total, rows.Err()
 }
 
 // ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con mình (cả class và student scope)
 func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at
+			p.type, p.content, p.created_at, p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN student_parents sp ON sp.student_id = $2
 		JOIN parents pa ON pa.parent_id = sp.parent_id
@@ -142,29 +147,31 @@ func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID,
 
 	rows, err := r.pool.Query(ctx, q, parentUserID, studentID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var posts []model.Post
+	var total int
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, rows.Err()
+	return posts, total, rows.Err()
 }
 
 func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT DISTINCT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at
+			p.type, p.content, p.created_at, p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN student_parents sp ON (
 			(p.scope_type = 'student' AND p.student_id = sp.student_id)
@@ -182,22 +189,23 @@ func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 
 	rows, err := r.pool.Query(ctx, q, parentUserID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var posts []model.Post
+	var total int
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, rows.Err()
+	return posts, total, rows.Err()
 }
 
 // IsParentOfStudent kiểm tra xem user có phải là parent của student không

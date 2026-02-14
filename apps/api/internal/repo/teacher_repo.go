@@ -18,28 +18,31 @@ func NewTeacherRepo(pool *pgxpool.Pool) *TeacherRepo {
 	}
 }
 
-func (r *TeacherRepo) List(ctx context.Context) ([]model.Teacher, error) {
+func (r *TeacherRepo) List(ctx context.Context, limit, offset int) ([]model.Teacher, int, error) {
 	const q = `
-		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
+		       COUNT(*) OVER() as total_count
 		FROM teachers t
 		JOIN users u ON u.user_id = t.user_id
-		ORDER BY t.full_name;
+		ORDER BY t.full_name
+		LIMIT $1 OFFSET $2;
 	`
-	rows, err := r.pool.Query(ctx, q)
+	rows, err := r.pool.Query(ctx, q, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var teachers []model.Teacher
+	var total int
 	for rows.Next() {
 		var t model.Teacher
-		if err := rows.Scan(&t.TeacherID, &t.UserID, &t.Email, &t.FullName, &t.Phone, &t.SchoolID); err != nil {
-			return nil, err
+		if err := rows.Scan(&t.TeacherID, &t.UserID, &t.Email, &t.FullName, &t.Phone, &t.SchoolID, &total); err != nil {
+			return nil, 0, err
 		}
 		teachers = append(teachers, t)
 	}
-	return teachers, rows.Err()
+	return teachers, total, rows.Err()
 }
 
 // lấy thông tin giáo viên theo teacher_id.

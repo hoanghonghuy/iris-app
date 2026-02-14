@@ -51,7 +51,8 @@ type CreatePostRequest struct {
 	Content   string `json:"content" binding:"required"`
 }
 
-type ListPostsRequest struct {
+// PaginationParams input chung cho phân trang (dùng cho tất cả list endpoints)
+type PaginationParams struct {
 	Limit  int `form:"limit"`
 	Offset int `form:"offset"`
 }
@@ -526,7 +527,7 @@ func (h *TeacherScopeHandler) ListClassPosts(c *gin.Context) {
 		return
 	}
 
-	var req ListPostsRequest
+	var req PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -549,21 +550,26 @@ func (h *TeacherScopeHandler) ListClassPosts(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.teacherScopeService.ListClassPosts(ctx, userID, classID, req.Limit, req.Offset)
+	posts, total, err := h.teacherScopeService.ListClassPosts(ctx, userID, classID, req.Limit, req.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) {
-			response.Fail(c, http.StatusBadRequest, err.Error())
+			response.Fail(c, http.StatusBadRequest, "invalid user ID or class ID")
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts from your assigned classes")
+			response.Fail(c, http.StatusForbidden, "not assigned to this class")
 			return
 		}
-		response.Fail(c, http.StatusInternalServerError, "failed to fetch posts")
+		response.Fail(c, http.StatusInternalServerError, "failed to list class posts")
 		return
 	}
 
-	response.OK(c, posts)
+	response.OKPaginated(c, posts, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(posts) < total,
+	})
 }
 
 // ListStudentPosts liệt kê bài đăng của một học sinh
@@ -574,7 +580,7 @@ func (h *TeacherScopeHandler) ListStudentPosts(c *gin.Context) {
 		return
 	}
 
-	var req ListPostsRequest
+	var req PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -597,19 +603,24 @@ func (h *TeacherScopeHandler) ListStudentPosts(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.teacherScopeService.ListStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
+	posts, total, err := h.teacherScopeService.ListStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
-			response.Fail(c, http.StatusBadRequest, err.Error())
+			response.Fail(c, http.StatusBadRequest, "invalid user ID or student ID")
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for students in your assigned classes")
+			response.Fail(c, http.StatusForbidden, "not assigned to this student's class")
 			return
 		}
-		response.Fail(c, http.StatusInternalServerError, "failed to fetch posts")
+		response.Fail(c, http.StatusInternalServerError, "failed to list student posts")
 		return
 	}
 
-	response.OK(c, posts)
+	response.OKPaginated(c, posts, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(posts) < total,
+	})
 }

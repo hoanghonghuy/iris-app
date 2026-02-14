@@ -56,16 +56,25 @@ func (h *ClassHandler) ListBySchool(c *gin.Context) {
 		return
 	}
 
+	var params PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	classes, err := h.classService.ListBySchool(ctx, schoolID)
-	switch err {
-	case nil:
-		response.OK(c, classes)
-		return
-	default:
+	classes, total, err := h.classService.ListBySchool(ctx, schoolID, params.Limit, params.Offset)
+	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch classes")
 		return
 	}
+
+	response.OKPaginated(c, classes, response.Pagination{
+		Total:   total,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+		HasMore: params.Offset+len(classes) < total,
+	})
 }

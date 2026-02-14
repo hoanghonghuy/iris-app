@@ -34,6 +34,15 @@ func (s *ClassService) Create(ctx context.Context, schoolID uuid.UUID, name, sch
 }
 
 // ListBySchool lấy danh sách lớp học theo trường
-func (s *ClassService) ListBySchool(ctx context.Context, schoolID uuid.UUID) ([]model.Class, error) {
-	return s.classRepo.List(ctx, schoolID)
+func (s *ClassService) ListBySchool(ctx context.Context, schoolID uuid.UUID, limit, offset int) ([]model.Class, int, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.classRepo.List(ctx, schoolID, limit, offset)
 }

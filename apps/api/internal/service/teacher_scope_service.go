@@ -279,15 +279,15 @@ func (s *TeacherScopeService) CreateStudentPost(ctx context.Context, teacherUser
 
 // ListClassPosts liệt kê bài đăng của một lớp học
 func (s *TeacherScopeService) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	// Validate teacherUserID
 	if teacherUserID == uuid.Nil {
-		return nil, ErrInvalidUserID
+		return nil, 0, ErrInvalidUserID
 	}
 
 	// Validate classID
 	if classID == uuid.Nil {
-		return nil, ErrInvalidClassID
+		return nil, 0, ErrInvalidClassID
 	}
 
 	// Default limit
@@ -298,28 +298,28 @@ func (s *TeacherScopeService) ListClassPosts(ctx context.Context, teacherUserID,
 		limit = 100
 	}
 
-	posts, err := s.teacherScopeRepo.ListClassPosts(ctx, teacherUserID, classID, limit, offset)
+	posts, total, err := s.teacherScopeRepo.ListClassPosts(ctx, teacherUserID, classID, limit, offset)
 	if err != nil {
 		if errors.Is(err, repo.ErrForbidden) {
-			return nil, ErrForbidden
+			return nil, 0, ErrForbidden
 		}
-		return nil, fmt.Errorf("failed to list class posts: %w", err)
+		return nil, 0, fmt.Errorf("failed to list class posts: %w", err)
 	}
 
-	return posts, nil
+	return posts, total, nil
 }
 
 // ListStudentPosts liệt kê bài đăng của một học sinh
 func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	// Validate teacherUserID
 	if teacherUserID == uuid.Nil {
-		return nil, ErrInvalidUserID
+		return nil, 0, ErrInvalidUserID
 	}
 
 	// Validate studentID
 	if studentID == uuid.Nil {
-		return nil, ErrInvalidUserID
+		return nil, 0, ErrInvalidUserID
 	}
 
 	// Default limit
@@ -330,15 +330,15 @@ func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserI
 		limit = 100
 	}
 
-	posts, err := s.teacherScopeRepo.ListStudentPosts(ctx, teacherUserID, studentID, limit, offset)
+	posts, total, err := s.teacherScopeRepo.ListStudentPosts(ctx, teacherUserID, studentID, limit, offset)
 	if err != nil {
 		if errors.Is(err, repo.ErrForbidden) {
-			return nil, ErrForbidden
+			return nil, 0, ErrForbidden
 		}
-		return nil, fmt.Errorf("failed to list student posts: %w", err)
+		return nil, 0, fmt.Errorf("failed to list student posts: %w", err)
 	}
 
-	return posts, nil
+	return posts, total, nil
 }
 
 // isValidPostType kiểm tra postType có hợp lệ không

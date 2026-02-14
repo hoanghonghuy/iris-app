@@ -89,32 +89,37 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 }
 
 // List lấy danh sách tất cả users kèm roles
-func (r *UserRepo) List(ctx context.Context) ([]model.UserInfo, error) {
+func (r *UserRepo) List(ctx context.Context, limit, offset int) ([]model.UserInfo, int, error) {
 	const q = `
-		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles
+		-- ARRAY_AGG(): gom nhiều dòng thành một array
+		-- COUNT(*) OVER(): tính tổng số dòng mà không bị ảnh hưởng bởi LIMIT/OFFSET
+		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
+		       COUNT(*) OVER() as total_count
 		FROM users u
 		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
 		LEFT JOIN roles r ON r.role_id = ur.role_id
 		GROUP BY u.user_id, u.email, u.status
-		ORDER BY u.created_at DESC;
+		ORDER BY u.created_at DESC
+		LIMIT $1 OFFSET $2;
 	`
 
-	rows, err := r.pool.Query(ctx, q)
+	rows, err := r.pool.Query(ctx, q, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var users []model.UserInfo
+	var total int
 	for rows.Next() {
 		var u model.UserInfo
-		if err := rows.Scan(&u.ID, &u.Email, &u.Status, &u.Roles); err != nil {
-			return nil, err
+		if err := rows.Scan(&u.ID, &u.Email, &u.Status, &u.Roles, &total); err != nil {
+			return nil, 0, err
 		}
 		users = append(users, u)
 	}
 
-	return users, rows.Err()
+	return users, total, rows.Err()
 }
 
 // CreateActive tạo mới user với status='active'

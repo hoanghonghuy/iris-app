@@ -29,26 +29,29 @@ func (r *ClassRepo) Create(ctx context.Context, schoolID uuid.UUID, name, school
 	return id, err
 }
 
-func (r *ClassRepo) List(ctx context.Context, schoolID uuid.UUID) ([]model.Class, error) {
+func (r *ClassRepo) List(ctx context.Context, schoolID uuid.UUID, limit, offset int) ([]model.Class, int, error) {
 	const q = `
-		SELECT class_id, school_id, name, school_year
+		SELECT class_id, school_id, name, school_year,
+		       COUNT(*) OVER() AS total_count
 		FROM classes
 		WHERE school_id = $1
-		ORDER BY created_at DESC;
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3;
 	`
-	rows, err := r.pool.Query(ctx, q, schoolID)
+	rows, err := r.pool.Query(ctx, q, schoolID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var classes []model.Class
+	var total int
 	for rows.Next() {
 		var c model.Class
-		if err := rows.Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear); err != nil {
-			return nil, err
+		if err := rows.Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear, &total); err != nil {
+			return nil, 0, err
 		}
 		classes = append(classes, c)
 	}
-	return classes, rows.Err()
+	return classes, total, rows.Err()
 }

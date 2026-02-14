@@ -21,8 +21,17 @@ func NewParentService(parentRepo *repo.ParentRepo, studentParentRepo *repo.Stude
 }
 
 // List lấy danh sách tất cả phụ huynh
-func (s *ParentService) List(ctx context.Context) ([]model.Parent, error) {
-	return s.parentRepo.List(ctx)
+func (s *ParentService) List(ctx context.Context, limit, offset int) ([]model.Parent, int, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.parentRepo.List(ctx, limit, offset)
 }
 
 // Create tạo mới phụ huynh

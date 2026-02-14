@@ -32,15 +32,27 @@ func NewTeacherHandler(teacherService *service.TeacherService) *TeacherHandler {
 }
 
 func (h *TeacherHandler) List(c *gin.Context) {
+	var params PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	teachers, err := h.teacherService.List(ctx)
+	teachers, total, err := h.teacherService.List(ctx, params.Limit, params.Offset)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch teachers")
 		return
 	}
-	response.OK(c, teachers)
+
+	response.OKPaginated(c, teachers, response.Pagination{
+		Total:   total,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+		HasMore: params.Offset+len(teachers) < total,
+	})
 }
 
 func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {

@@ -32,6 +32,15 @@ func (s *SchoolService) Create(ctx context.Context, name, addr string) (*model.S
 }
 
 // List lấy danh sách tất cả trường học
-func (s *SchoolService) List(ctx context.Context) ([]model.School, error) {
-	return s.schoolRepo.List(ctx)
+func (s *SchoolService) List(ctx context.Context, limit, offset int) ([]model.School, int, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.schoolRepo.List(ctx, limit, offset)
 }

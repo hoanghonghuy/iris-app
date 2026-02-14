@@ -25,16 +25,6 @@ func NewParentScopeHandler(parentScopeService *service.ParentScopeService) *Pare
 	}
 }
 
-type ListChildPostsRequest struct {
-	Limit  int `form:"limit"`
-	Offset int `form:"offset"`
-}
-
-type GetMyFeedRequest struct {
-	Limit  int `form:"limit"`
-	Offset int `form:"offset"`
-}
-
 // MyChildren trả về danh sách các học sinh (con) của phụ huynh
 func (h *ParentScopeHandler) MyChildren(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
@@ -75,7 +65,7 @@ func (h *ParentScopeHandler) ListMyChildClassPosts(c *gin.Context) {
 		return
 	}
 
-	var req ListChildPostsRequest
+	var req PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -98,21 +88,26 @@ func (h *ParentScopeHandler) ListMyChildClassPosts(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.parentScopeService.ListMyChildClassPosts(ctx, userID, studentID, req.Limit, req.Offset)
+	posts, total, err := h.parentScopeService.ListMyChildClassPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
-			response.Fail(c, http.StatusBadRequest, err.Error())
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for your own children")
+			response.Fail(c, http.StatusForbidden, "forbidden")
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch class posts")
 		return
 	}
 
-	response.OK(c, posts)
+	response.OKPaginated(c, posts, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(posts) < total,
+	})
 }
 
 // ListMyChildStudentPosts liệt kê bài đăng riêng của con mình (student scope)
@@ -123,7 +118,7 @@ func (h *ParentScopeHandler) ListMyChildStudentPosts(c *gin.Context) {
 		return
 	}
 
-	var req ListChildPostsRequest
+	var req PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -146,21 +141,26 @@ func (h *ParentScopeHandler) ListMyChildStudentPosts(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.parentScopeService.ListMyChildStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
+	posts, total, err := h.parentScopeService.ListMyChildStudentPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
-			response.Fail(c, http.StatusBadRequest, err.Error())
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for your own children")
+			response.Fail(c, http.StatusForbidden, "forbidden")
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch student posts")
 		return
 	}
 
-	response.OK(c, posts)
+	response.OKPaginated(c, posts, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(posts) < total,
+	})
 }
 
 // ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con mình (cả class và student scope)
@@ -171,7 +171,7 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 		return
 	}
 
-	var req ListChildPostsRequest
+	var req PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -194,25 +194,30 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.parentScopeService.ListAllMyChildPosts(ctx, userID, studentID, req.Limit, req.Offset)
+	posts, total, err := h.parentScopeService.ListAllMyChildPosts(ctx, userID, studentID, req.Limit, req.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
-			response.Fail(c, http.StatusBadRequest, err.Error())
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "forbidden: you can only view posts for your own children")
+			response.Fail(c, http.StatusForbidden, "forbidden")
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch posts")
 		return
 	}
 
-	response.OK(c, posts)
+	response.OKPaginated(c, posts, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(posts) < total,
+	})
 }
 
 func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
-	var req GetMyFeedRequest
+	var req PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -235,15 +240,20 @@ func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
 		return
 	}
 
-	posts, err := h.parentScopeService.GetMyFeed(ctx, userID, req.Limit, req.Offset)
+	posts, total, err := h.parentScopeService.GetMyFeed(ctx, userID, req.Limit, req.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
-			response.Fail(c, http.StatusBadRequest, err.Error())
+			response.Fail(c, http.StatusBadRequest, "invalid user ID")
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch feed")
 		return
 	}
 
-	response.OK(c, posts)
+	response.OKPaginated(c, posts, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(posts) < total,
+	})
 }

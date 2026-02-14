@@ -20,8 +20,17 @@ func NewTeacherService(teacherRepo *repo.TeacherRepo, teacherClassRepo *repo.Tea
 	}
 }
 
-func (s *TeacherService) List(ctx context.Context) ([]model.Teacher, error) {
-	return s.teacherRepo.List(ctx)
+func (s *TeacherService) List(ctx context.Context, limit, offset int) ([]model.Teacher, int, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.teacherRepo.List(ctx, limit, offset)
 }
 
 func (s *TeacherService) Assign(ctx context.Context, teacherID, classID uuid.UUID) error {

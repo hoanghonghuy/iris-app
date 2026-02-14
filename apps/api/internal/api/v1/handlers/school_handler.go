@@ -47,16 +47,25 @@ func (h *SchoolHandler) Create(c *gin.Context) {
 
 // List lấy danh sách trường học
 func (h *SchoolHandler) List(c *gin.Context) {
+	var params PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	schools, err := h.schoolService.List(ctx)
-	switch err {
-	case nil:
-		response.OK(c, schools)
-		return
-	default:
+	schools, total, err := h.schoolService.List(ctx, params.Limit, params.Offset)
+	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch schools")
 		return
 	}
+
+	response.OKPaginated(c, schools, response.Pagination{
+		Total:   total,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+		HasMore: params.Offset+len(schools) < total,
+	})
 }

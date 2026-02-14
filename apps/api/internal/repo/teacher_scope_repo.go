@@ -220,10 +220,11 @@ func (r *TeacherScopeRepo) CreateStudentPost(ctx context.Context, teacherUserID,
 
 // ListClassPosts liệt kê bài đăng của một lớp nếu giáo viên được phân công dạy lớp đó.
 func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at
+			p.type, p.content, p.created_at, p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN teacher_classes tc ON tc.class_id = p.class_id
 		JOIN teachers t ON t.teacher_id = tc.teacher_id
@@ -234,22 +235,23 @@ func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, cl
 
 	rows, err := r.pool.Query(ctx, q, teacherUserID, classID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var posts []model.Post
+	var total int
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, rows.Err()
+	return posts, total, rows.Err()
 }
 
 // ListAttendanceByStudent liệt kê lịch sử điểm danh của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
@@ -289,10 +291,11 @@ func (r *TeacherScopeRepo) ListAttendanceByStudent(ctx context.Context, teacherU
 
 // ListStudentPosts liệt kê bài đăng của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
 func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
-	limit, offset int) ([]model.Post, error) {
+	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at
+			p.type, p.content, p.created_at, p.updated_at,
+			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN students s ON s.student_id = p.student_id
 		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
@@ -304,20 +307,21 @@ func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, 
 
 	rows, err := r.pool.Query(ctx, q, teacherUserID, studentID, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var posts []model.Post
+	var total int
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt,
+			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		posts = append(posts, p)
 	}
-	return posts, rows.Err()
+	return posts, total, rows.Err()
 }

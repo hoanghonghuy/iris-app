@@ -40,25 +40,28 @@ func (r *SchoolRepo) Create(ctx context.Context, name, address string) (uuid.UUI
 	return id, err
 }
 
-func (r *SchoolRepo) List(ctx context.Context) ([]model.School, error) {
+func (r *SchoolRepo) List(ctx context.Context, limit, offset int) ([]model.School, int, error) {
 	const q = `
-		SELECT school_id, name, COALESCE(address, '')
+		SELECT school_id, name, COALESCE(address, ''),
+		       COUNT(*) OVER() AS total_count
 		FROM schools
-		ORDER BY created_at DESC;
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2;
 	`
-	rows, err := r.pool.Query(ctx, q)
+	rows, err := r.pool.Query(ctx, q, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var schools []model.School
+	var total int
 	for rows.Next() {
 		var s model.School
-		if err := rows.Scan(&s.ID, &s.Name, &s.Address); err != nil {
-			return nil, err
+		if err := rows.Scan(&s.ID, &s.Name, &s.Address, &total); err != nil {
+			return nil, 0, err
 		}
 		schools = append(schools, s)
 	}
-	return schools, rows.Err()
+	return schools, total, rows.Err()
 }

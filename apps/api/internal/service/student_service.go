@@ -42,6 +42,15 @@ func (s *StudentService) Create(ctx context.Context, schoolID, classID uuid.UUID
 	}, nil
 }
 
-func (s *StudentService) ListByClass(ctx context.Context, classID uuid.UUID) ([]model.Student, error) {
-	return s.studentRepo.ListByClass(ctx, classID)
+func (s *StudentService) ListByClass(ctx context.Context, classID uuid.UUID, limit, offset int) ([]model.Student, int, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return s.studentRepo.ListByClass(ctx, classID, limit, offset)
 }

@@ -18,28 +18,31 @@ func NewParentRepo(pool *pgxpool.Pool) *ParentRepo {
 	}
 }
 
-func (r *ParentRepo) List(ctx context.Context) ([]model.Parent, error) {
+func (r *ParentRepo) List(ctx context.Context, limit, offset int) ([]model.Parent, int, error) {
 	const q = `
-		SELECT p.parent_id, p.user_id, u.email, p.full_name, COALESCE(p.phone,''), p.school_id
+		SELECT p.parent_id, p.user_id, u.email, p.full_name, COALESCE(p.phone,''), p.school_id,
+		       COUNT(*) OVER() as total_count
 		FROM parents p
 		JOIN users u ON u.user_id = p.user_id
-		ORDER BY p.full_name;
+		ORDER BY p.full_name
+		LIMIT $1 OFFSET $2;
 	`
-	rows, err := r.pool.Query(ctx, q)
+	rows, err := r.pool.Query(ctx, q, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	var out []model.Parent
+	var total int
 	for rows.Next() {
 		var x model.Parent
-		if err := rows.Scan(&x.ParentID, &x.UserID, &x.Email, &x.FullName, &x.Phone, &x.SchoolID); err != nil {
-			return nil, err
+		if err := rows.Scan(&x.ParentID, &x.UserID, &x.Email, &x.FullName, &x.Phone, &x.SchoolID, &total); err != nil {
+			return nil, 0, err
 		}
 		out = append(out, x)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
 }
 
 // Create thêm mới một parent vào cơ sở dữ liệu.

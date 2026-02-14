@@ -96,16 +96,27 @@ func (h *ParentHandler) UnassignStudent(c *gin.Context) {
 
 // List lấy danh sách tất cả phụ huynh (admin only)
 func (h *ParentHandler) List(c *gin.Context) {
+	var params PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	parents, err := h.parentService.List(ctx)
+	parents, total, err := h.parentService.List(ctx, params.Limit, params.Offset)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch parents")
 		return
 	}
 
-	response.OK(c, parents)
+	response.OKPaginated(c, parents, response.Pagination{
+		Total:   total,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+		HasMore: params.Offset+len(parents) < total,
+	})
 }
 
 // GetByID lấy thông tin phụ huynh theo parent_id (admin only)

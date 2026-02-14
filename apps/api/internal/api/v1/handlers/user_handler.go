@@ -272,16 +272,27 @@ func (h *UserHandler) Delete(c *gin.Context) {
 
 // List lấy danh sách tất cả users (admin only)
 func (h *UserHandler) List(c *gin.Context) {
+	var params PaginationParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	users, err := h.userService.List(ctx)
+	users, total, err := h.userService.List(ctx, params.Limit, params.Offset)
 	if err != nil {
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch users")
 		return
 	}
 
-	response.OK(c, users)
+	response.OKPaginated(c, users, response.Pagination{
+		Total:   total,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+		HasMore: params.Offset+len(users) < total,
+	})
 }
 
 // Lock khóa tài khoản user
