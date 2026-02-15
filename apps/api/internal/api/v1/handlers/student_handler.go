@@ -31,7 +31,7 @@ type CreateStudentReq struct {
 	Gender         string    `json:"gender" binding:"required"` // male/female/other
 }
 
-func (s *StudentHandler) Create(c *gin.Context) {
+func (h *StudentHandler) Create(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)
 
 	var req CreateStudentReq
@@ -43,7 +43,7 @@ func (s *StudentHandler) Create(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	student, err := s.studentService.Create(ctx, adminSchoolID, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
+	student, err := h.studentService.Create(ctx, adminSchoolID, req.SchoolID, req.CurrentClassID, req.FullName, req.DOB, req.Gender)
 	if err != nil {
 		if errors.Is(err, service.ErrSchoolAccessDenied) {
 			response.Fail(c, http.StatusForbidden, "access denied")
@@ -57,14 +57,14 @@ func (s *StudentHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, gin.H{"student_id": student.ID})
+	response.Created(c, gin.H{"student_id": student.StudentID})
 	// TODO: Set Location header và trả về created resource
-	// c.Header("Location", fmt.Sprintf("/api/v1/admin/students/%s", student.ID.String()))
+	// c.Header("Location", fmt.Sprintf("/api/v1/admin/students/%s", student.StudentID.String()))
 	// response.Created(c, student)
 
 }
 
-func (s *StudentHandler) ListByClass(c *gin.Context) {
+func (h *StudentHandler) ListByClass(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)
 
 	classID, err := uuid.Parse(c.Param("class_id"))
@@ -82,7 +82,7 @@ func (s *StudentHandler) ListByClass(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	students, total, err := s.studentService.ListByClass(ctx, adminSchoolID, classID, params.Limit, params.Offset)
+	students, total, err := h.studentService.ListByClass(ctx, adminSchoolID, classID, params.Limit, params.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrSchoolAccessDenied) {
 			response.Fail(c, http.StatusForbidden, "access denied")

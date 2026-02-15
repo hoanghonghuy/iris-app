@@ -48,7 +48,7 @@ func (r *ClassRepo) List(ctx context.Context, schoolID uuid.UUID, limit, offset 
 	var total int
 	for rows.Next() {
 		var c model.Class
-		if err := rows.Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear, &total); err != nil {
+		if err := rows.Scan(&c.ClassID, &c.SchoolID, &c.Name, &c.SchoolYear, &total); err != nil {
 			return nil, 0, err
 		}
 		classes = append(classes, c)
@@ -64,7 +64,7 @@ func (r *ClassRepo) GetByClassID(ctx context.Context, classID uuid.UUID) (*model
 		WHERE class_id = $1;
 	`
 	var c model.Class
-	err := r.pool.QueryRow(ctx, q, classID).Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear)
+	err := r.pool.QueryRow(ctx, q, classID).Scan(&c.ClassID, &c.SchoolID, &c.Name, &c.SchoolYear)
 	if err != nil {
 		return nil, err
 	}

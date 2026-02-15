@@ -40,7 +40,7 @@ func (r *ParentScopeRepo) ListMyChildren(ctx context.Context, parentUserID uuid.
 	var students []model.Student
 	for rows.Next() {
 		var s model.Student
-		if err := rows.Scan(&s.ID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender); err != nil {
+		if err := rows.Scan(&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender); err != nil {
 			return nil, err
 		}
 		students = append(students, s)

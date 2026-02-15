@@ -63,7 +63,7 @@ func (h *TeacherHandler) List(c *gin.Context) {
 	})
 }
 
-func (h *TeacherHandler) ListTeacherOfClass(c *gin.Context) {
+func (h *TeacherHandler) ListTeachersOfClass(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)
 
 	classID, err := uuid.Parse(c.Param("class_id"))

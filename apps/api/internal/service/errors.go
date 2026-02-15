@@ -8,7 +8,6 @@ var (
 	ErrUserNotFound                 = errors.New("user not found")
 	ErrEmailCannotBeEmpty           = errors.New("email cannot be empty")
 	ErrPasswordCannotBeEmpty        = errors.New("password cannot be empty")
-	ErrInvalidPassword              = errors.New("password cannot be empty")
 	ErrFailedToHashPassword         = errors.New("failed to hash password")
 	ErrFailedToUpdatePassword       = errors.New("failed to update password")
 	ErrFailedToActivateUser         = errors.New("failed to activate user")

@@ -85,7 +85,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		}
 	}
 
-	c.Header("Location", c.Request.URL.Path+"/"+resp.ID.String())
+	c.Header("Location", c.Request.URL.Path+"/"+resp.UserID.String())
 	response.Created(c, gin.H{
 		"user":    resp,
 		"message": "user created successfully. User needs to activate account.",
@@ -180,7 +180,7 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	defer cancel()
 
 	// Lấy userID từ URL param (admin xem thông tin user bất kỳ)
-	userID, err := uuid.Parse(c.Param("userid"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
@@ -236,7 +236,7 @@ func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
 		case errors.Is(err, service.ErrUserNotFound):
 			response.Fail(c, http.StatusNotFound, "user not found")
 			return
-		case errors.Is(err, service.ErrInvalidPassword):
+		case errors.Is(err, service.ErrPasswordCannotBeEmpty):
 			response.Fail(c, http.StatusBadRequest, "password cannot be empty")
 			return
 		case errors.Is(err, service.ErrFailedToHashPassword):
@@ -319,7 +319,7 @@ func (h *UserHandler) Lock(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, err := uuid.Parse(c.Param("userid"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
@@ -344,7 +344,7 @@ func (h *UserHandler) Unlock(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, err := uuid.Parse(c.Param("userid"))
+	userID, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
 		return
@@ -373,7 +373,7 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userIDString := c.Param("userid")
+	userIDString := c.Param("user_id")
 	userID, err := uuid.Parse(userIDString)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")

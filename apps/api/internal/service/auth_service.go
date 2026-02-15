@@ -49,7 +49,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 	}
 
 	// 4. Lấy roles của user
-	roles, err := s.userRepo.RolesOfUser(ctx, user.ID)
+	roles, err := s.userRepo.RolesOfUser(ctx, user.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 	var schoolID string
 	for _, r := range roles {
 		if r == "SCHOOL_ADMIN" {
-			admin, err := s.schoolAdminRepo.GetByUserID(ctx, user.ID)
+			admin, err := s.schoolAdminRepo.GetByUserID(ctx, user.UserID)
 			if err == nil {
 				schoolID = admin.SchoolID.String()
 			}
@@ -68,7 +68,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 	}
 
 	// 6. Tạo JWT token (schoolID rỗng cho SUPER_ADMIN/TEACHER/PARENT)
-	token, err := s.jwtAuth.SignToken(user.ID.String(), user.Email, roles, schoolID)
+	token, err := s.jwtAuth.SignToken(user.UserID.String(), user.Email, roles, schoolID)
 	if err != nil {
 		return nil, err
 	}

@@ -24,7 +24,7 @@ func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	const q = `SELECT user_id, email, password_hash, status FROM users WHERE email=$1 LIMIT 1;`
 	u := &model.User{}
-	if err := r.pool.QueryRow(ctx, q, email).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Status); err != nil {
+	if err := r.pool.QueryRow(ctx, q, email).Scan(&u.UserID, &u.Email, &u.PasswordHash, &u.Status); err != nil {
 		return nil, err
 	}
 	return u, nil
@@ -60,7 +60,7 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 	const userQuery = `SELECT user_id, email, status FROM users WHERE user_id = $1;`
 
 	info := &model.UserInfo{}
-	if err := r.pool.QueryRow(ctx, userQuery, userID).Scan(&info.ID, &info.Email, &info.Status); err != nil {
+	if err := r.pool.QueryRow(ctx, userQuery, userID).Scan(&info.UserID, &info.Email, &info.Status); err != nil {
 		return nil, err
 	}
 
@@ -90,9 +90,9 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 }
 
 // List lấy danh sách users kèm roles (có thể lọc theo school_id).
-// 
+//
 // schoolID == nil: tất cả users (SUPER_ADMIN).
-// 
+//
 // schoolID != nil: chỉ users thuộc trường đó qua teachers/parents (SCHOOL_ADMIN).
 func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.UserInfo, int, error) {
 	const qAll = `
@@ -139,7 +139,7 @@ func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset 
 	var total int
 	for rows.Next() {
 		var u model.UserInfo
-		if err := rows.Scan(&u.ID, &u.Email, &u.Status, &u.Roles, &total); err != nil {
+		if err := rows.Scan(&u.UserID, &u.Email, &u.Status, &u.Roles, &total); err != nil {
 			return nil, 0, err
 		}
 		users = append(users, u)
@@ -266,7 +266,7 @@ func (r *UserRepo) IsUserInSchool(ctx context.Context, userID, schoolID uuid.UUI
 			SELECT 1 FROM parents WHERE user_id = $1 AND school_id = $2
 		);
 	`
-	
+
 	// const q = `
 	// 	SELECT
 	// 		EXISTS (SELECT 1 FROM teachers WHERE user_id = $1 AND school_id = $2)
@@ -291,7 +291,7 @@ func (r *UserRepo) FindByActivationToken(ctx context.Context, token string) (*mo
 	`
 	u := &model.UserWithToken{}
 	err := r.pool.QueryRow(ctx, q, token).Scan(
-		&u.ID,
+		&u.UserID,
 		&u.Email,
 		&u.PasswordHash,
 		&u.Status,

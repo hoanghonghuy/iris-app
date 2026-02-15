@@ -43,7 +43,7 @@ func (h *SchoolHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, gin.H{"school_id": school.ID})
+	response.Created(c, gin.H{"school_id": school.SchoolID})
 }
 
 // List lấy danh sách trường học

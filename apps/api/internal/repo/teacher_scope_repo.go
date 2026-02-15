@@ -24,7 +24,7 @@ func NewTeacherScopeRepo(pool *pgxpool.Pool) *TeacherScopeRepo {
 }
 
 // ListMyClass liệt kê các lớp học mà giáo viên (theo user_id) được phân công giảng dạy.
-func (r *TeacherScopeRepo) ListMyClass(ctx context.Context, teacherUserID uuid.UUID) ([]model.Class, error) {
+func (r *TeacherScopeRepo) ListMyClasses(ctx context.Context, teacherUserID uuid.UUID) ([]model.Class, error) {
 	const q = `
 		SELECT c.class_id, c.school_id, c.name, c.school_year
 		FROM classes c
@@ -43,7 +43,7 @@ func (r *TeacherScopeRepo) ListMyClass(ctx context.Context, teacherUserID uuid.U
 	var classes []model.Class
 	for rows.Next() {
 		var c model.Class
-		if err := rows.Scan(&c.ID, &c.SchoolID, &c.Name, &c.SchoolYear); err != nil {
+		if err := rows.Scan(&c.ClassID, &c.SchoolID, &c.Name, &c.SchoolYear); err != nil {
 			return nil, err
 		}
 		classes = append(classes, c)
@@ -70,7 +70,7 @@ func (r *TeacherScopeRepo) ListMyStudentsInClass(ctx context.Context, teacherUse
 	var students []model.Student
 	for rows.Next() {
 		var s model.Student
-		if err := rows.Scan(&s.ID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender); err != nil {
+		if err := rows.Scan(&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender); err != nil {
 			return nil, err
 		}
 		students = append(students, s)

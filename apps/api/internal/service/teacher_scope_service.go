@@ -32,7 +32,7 @@ func (s *TeacherScopeService) ListMyClasses(ctx context.Context, teacherUserID u
 		return nil, ErrInvalidUserID
 	}
 
-	classes, err := s.teacherScopeRepo.ListMyClass(ctx, teacherUserID)
+	classes, err := s.teacherScopeRepo.ListMyClasses(ctx, teacherUserID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list classes: %w", err)
 	}
@@ -142,8 +142,8 @@ func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID
 
 	// Validate severity
 	if severity != nil {
-		s := *severity
-		if s != "normal" && s != "watch" && s != "urgent" {
+		sev := *severity
+		if sev != "normal" && sev != "watch" && sev != "urgent" {
 			return uuid.Nil, fmt.Errorf("%w: severity must be normal|watch|urgent", ErrInvalidValue)
 		}
 	}

@@ -19,23 +19,23 @@ func NewSchoolService(schoolRepo *repo.SchoolRepo) *SchoolService {
 }
 
 // Create tạo mới trường học
-func (s *SchoolService) Create(ctx context.Context, name, addr string) (*model.School, error) {
-	id, err := s.schoolRepo.Create(ctx, name, addr)
+func (s *SchoolService) Create(ctx context.Context, name, address string) (*model.School, error) {
+	id, err := s.schoolRepo.Create(ctx, name, address)
 	if err != nil {
 		return nil, err
 	}
 
 	return &model.School{
-		ID:      id,
-		Name:    name,
-		Address: addr,
+		SchoolID: id,
+		Name:     name,
+		Address:  address,
 	}, nil
 }
 
 // List lấy danh sách trường học.
-// 
+//
 // adminSchoolID == nil → tất cả trường (SUPER_ADMIN)
-// 
+//
 // adminSchoolID != nil → chỉ trường của admin đó (SCHOOL_ADMIN)
 func (s *SchoolService) List(ctx context.Context, adminSchoolID *uuid.UUID, limit, offset int) ([]model.School, int, error) {
 	if limit <= 0 {
@@ -48,7 +48,7 @@ func (s *SchoolService) List(ctx context.Context, adminSchoolID *uuid.UUID, limi
 		offset = 0
 	}
 
-	// SCHOOL_ADMIN: chỉ trả về trường của admin hiện tại đang truy vấn. 
+	// SCHOOL_ADMIN: chỉ trả về trường của admin hiện tại đang truy vấn.
 	if adminSchoolID != nil {
 		school, err := s.schoolRepo.GetByID(ctx, *adminSchoolID)
 		if err != nil {

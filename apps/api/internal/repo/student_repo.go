@@ -50,7 +50,7 @@ func (r *StudentRepo) ListByClass(ctx context.Context, classID uuid.UUID, limit,
 	var total int
 	for rows.Next() {
 		var s model.Student
-		if err := rows.Scan(&s.ID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender, &total); err != nil {
+		if err := rows.Scan(&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender, &total); err != nil {
 			return nil, 0, err
 		}
 		students = append(students, s)
@@ -63,7 +63,7 @@ func (r *StudentRepo) GetByStudentID(ctx context.Context, studentID uuid.UUID) (
 	const q = `SELECT student_id, school_id, current_class_id, full_name, dob, gender
 			   FROM students WHERE student_id = $1;`
 	var student model.Student
-	err := r.pool.QueryRow(ctx, q, studentID).Scan(&student.ID, &student.SchoolID,
+	err := r.pool.QueryRow(ctx, q, studentID).Scan(&student.StudentID, &student.SchoolID,
 		&student.CurrentClassID, &student.FullName, &student.DOB, &student.Gender)
 	if err != nil {
 		return nil, err

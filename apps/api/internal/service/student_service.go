@@ -54,7 +54,7 @@ func (s *StudentService) Create(ctx context.Context, adminSchoolID *uuid.UUID, s
 	}
 
 	return &model.Student{
-		ID:             id,
+		StudentID:      id,
 		SchoolID:       schoolID,
 		CurrentClassID: classID,
 		FullName:       fullName,

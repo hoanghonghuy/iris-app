@@ -58,7 +58,7 @@ func (r *SchoolRepo) List(ctx context.Context, limit, offset int) ([]model.Schoo
 	var total int
 	for rows.Next() {
 		var s model.School
-		if err := rows.Scan(&s.ID, &s.Name, &s.Address, &total); err != nil {
+		if err := rows.Scan(&s.SchoolID, &s.Name, &s.Address, &total); err != nil {
 			return nil, 0, err
 		}
 		schools = append(schools, s)
@@ -74,7 +74,7 @@ func (r *SchoolRepo) GetByID(ctx context.Context, schoolID uuid.UUID) (*model.Sc
 		WHERE school_id = $1;
 	`
 	var s model.School
-	err := r.pool.QueryRow(ctx, q, schoolID).Scan(&s.ID, &s.Name, &s.Address)
+	err := r.pool.QueryRow(ctx, q, schoolID).Scan(&s.SchoolID, &s.Name, &s.Address)
 	if err != nil {
 		return nil, err
 	}

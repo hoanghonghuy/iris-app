@@ -133,9 +133,9 @@ func NewRouter(
 				users := admin.Group("/users")
 				users.POST("", userHandler.CreateUser)
 				users.GET("", userHandler.List)
-				users.GET("/:userid", userHandler.GetByID)
-				users.POST("/:userid/lock", userHandler.Lock)
-				users.POST("/:userid/unlock", userHandler.Unlock)
+				users.GET("/:user_id", userHandler.GetByID)
+				users.POST("/:user_id/lock", userHandler.Lock)
+				users.POST("/:user_id/unlock", userHandler.Unlock)
 
 				// teacher routes (quản lý giáo viên)
 				teachers := admin.Group("/teachers")
@@ -150,7 +150,7 @@ func NewRouter(
 					teachers.PUT("/:teacher_id", teacherHandler.Update)
 
 					// lấy danh sách giáo viên của một lớp
-					teachers.GET("/class/:class_id", teacherHandler.ListTeacherOfClass)
+					teachers.GET("/class/:class_id", teacherHandler.ListTeachersOfClass)
 
 					// gán giáo viên vào lớp
 					teachers.POST("/:teacher_id/classes/:class_id", teacherHandler.Assign)
@@ -190,7 +190,7 @@ func NewRouter(
 					superOnly.POST("/schools", schoolHandler.Create)
 
 					// gán role cho user (chỉ SUPER_ADMIN — tránh SCHOOL_ADMIN tự nâng quyền)
-					superOnly.POST("/users/:userid/roles", userHandler.AssignRole)
+					superOnly.POST("/users/:user_id/roles", userHandler.AssignRole)
 
 					// quản lý school admins (chỉ SUPER_ADMIN)
 					schoolAdmins := superOnly.Group("/school-admins")

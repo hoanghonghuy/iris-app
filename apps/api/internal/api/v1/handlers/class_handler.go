@@ -51,7 +51,7 @@ func (h *ClassHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response.Created(c, gin.H{"class_id": class.ID})
+	response.Created(c, gin.H{"class_id": class.ClassID})
 }
 
 // ListBySchool lấy danh sách lớp theo trường

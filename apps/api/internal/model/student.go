@@ -7,7 +7,7 @@ import (
 )
 
 type Student struct {
-	ID             uuid.UUID `json:"student_id"`
+	StudentID      uuid.UUID `json:"student_id"`
 	SchoolID       uuid.UUID `json:"school_id"`
 	CurrentClassID uuid.UUID `json:"current_class_id"`
 	FullName       string    `json:"full_name"`

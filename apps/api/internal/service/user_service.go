@@ -114,7 +114,7 @@ func (s *UserService) ActivateUser(ctx context.Context, email, password string) 
 	}
 
 	// Update password and status
-	err = s.userRepo.Update(ctx, user.ID, user.Email, string(passwordHash))
+	err = s.userRepo.Update(ctx, user.UserID, user.Email, string(passwordHash))
 	if err != nil {
 		return ErrFailedToActivateUser
 	}
@@ -150,7 +150,7 @@ func (s *UserService) ActivateUserWithToken(ctx context.Context, token, password
 	}
 
 	// Activate user + update password
-	err = s.userRepo.ActivateWithPassword(ctx, user.ID, string(passwordHash))
+	err = s.userRepo.ActivateWithPassword(ctx, user.UserID, string(passwordHash))
 	if err != nil {
 		return ErrFailedToActivateUser
 	}
@@ -245,7 +245,7 @@ func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, pa
 
 	// validate password
 	if password == "" {
-		return ErrInvalidPassword
+		return ErrPasswordCannotBeEmpty
 	}
 
 	// check if user exists

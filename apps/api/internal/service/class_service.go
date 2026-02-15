@@ -32,7 +32,7 @@ func (s *ClassService) Create(ctx context.Context, adminSchoolID *uuid.UUID, sch
 	}
 
 	return &model.Class{
-		ID:         id,
+		ClassID:    id,
 		SchoolID:   schoolID,
 		Name:       name,
 		SchoolYear: schoolYear,
