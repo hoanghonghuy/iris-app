@@ -10,11 +10,12 @@ DECLARE
   v_class3  uuid; -- Lá Sen (school2)
 
   -- Users
-  v_admin_user    uuid;
-  v_teacher1_user uuid;
-  v_teacher2_user uuid;
-  v_parent1_user  uuid;
-  v_parent2_user  uuid;
+  v_super_admin_user uuid;
+  v_school_admin_user uuid;
+  v_teacher1_user     uuid;
+  v_teacher2_user     uuid;
+  v_parent1_user      uuid;
+  v_parent2_user      uuid;
 
   -- Teachers
   v_teacher1 uuid; -- Cô Lan
@@ -24,11 +25,18 @@ DECLARE
   v_parent1 uuid; -- Anh Minh
   v_parent2 uuid; -- Chị Hoa
 
+  -- School Admins
+  v_school_admin uuid; -- Cô Hương (SCHOOL_ADMIN của school1)
+
   -- Students
   v_s1 uuid; -- Bé An
   v_s2 uuid; -- Bé Bông
   v_s3 uuid; -- Bé Na
   v_s4 uuid; -- Bé Dương
+
+  -- Parent Codes
+  v_code1 uuid; -- Parent code for Bé An
+  v_code2 uuid; -- Parent code for Bé Bông
 BEGIN
   -- ======================
   -- 1) SCHOOLS
@@ -62,7 +70,7 @@ BEGIN
   -- ======================
   SELECT class_id INTO v_class1
   FROM classes
-  WHERE school_id = v_school1 AND name = 'Lá Non' AND school_year = '2025-2026'
+  WHERE school_id = v_school1 AND name = 'Lá Non'
   ORDER BY created_at
   LIMIT 1;
 
@@ -74,7 +82,7 @@ BEGIN
 
   SELECT class_id INTO v_class2
   FROM classes
-  WHERE school_id = v_school1 AND name = 'Lá Măng' AND school_year = '2025-2026'
+  WHERE school_id = v_school1 AND name = 'Lá Măng'
   ORDER BY created_at
   LIMIT 1;
 
@@ -86,7 +94,7 @@ BEGIN
 
   SELECT class_id INTO v_class3
   FROM classes
-  WHERE school_id = v_school2 AND name = 'Lá Sen' AND school_year = '2025-2026'
+  WHERE school_id = v_school2 AND name = 'Lá Sen'
   ORDER BY created_at
   LIMIT 1;
 
@@ -97,14 +105,20 @@ BEGIN
   END IF;
 
   -- ======================
-  -- 3) USERS (password: 123456)
-  -- bcrypt hash for "123456"
+  -- 3) USERS
   -- ======================
+  -- bcrypt hash for "123456"
   INSERT INTO users (email, password_hash, status)
   VALUES ('admin@iris.local', '$2b$12$6hU62IB6hIoxNRCXPh9Diu7QPaQkJhuMCfkjytTyphL/tX3ly93um', 'active')
   ON CONFLICT (email) DO UPDATE
     SET password_hash = EXCLUDED.password_hash, status = EXCLUDED.status
-  RETURNING user_id INTO v_admin_user;
+  RETURNING user_id INTO v_super_admin_user;
+
+  INSERT INTO users (email, password_hash, status)
+  VALUES ('school-admin@iris.local', '$2b$12$6hU62IB6hIoxNRCXPh9Diu7QPaQkJhuMCfkjytTyphL/tX3ly93um', 'active')
+  ON CONFLICT (email) DO UPDATE
+    SET password_hash = EXCLUDED.password_hash, status = EXCLUDED.status
+  RETURNING user_id INTO v_school_admin_user;
 
   INSERT INTO users (email, password_hash, status)
   VALUES ('teacher1@iris.local', '$2b$12$6hU62IB6hIoxNRCXPh9Diu7QPaQkJhuMCfkjytTyphL/tX3ly93um', 'active')
@@ -134,7 +148,11 @@ BEGIN
   -- 4) USER ROLES
   -- ======================
   INSERT INTO user_roles (user_id, role_id)
-  SELECT v_admin_user, role_id FROM roles WHERE name = 'ADMIN'
+  SELECT v_super_admin_user, role_id FROM roles WHERE name = 'SUPER_ADMIN'
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO user_roles (user_id, role_id)
+  SELECT v_school_admin_user, role_id FROM roles WHERE name = 'SCHOOL_ADMIN'
   ON CONFLICT DO NOTHING;
 
   INSERT INTO user_roles (user_id, role_id)
@@ -188,7 +206,17 @@ BEGIN
   END IF;
 
   -- ======================
-  -- 7) STUDENTS
+  -- 7) SCHOOL ADMIN PROFILES
+  -- ======================
+  SELECT admin_id INTO v_school_admin FROM school_admins WHERE user_id = v_school_admin_user;
+  IF v_school_admin IS NULL THEN
+    INSERT INTO school_admins (user_id, school_id, full_name, phone)
+    VALUES (v_school_admin_user, v_school1, 'Cô Hương', '0900000005')
+    RETURNING admin_id INTO v_school_admin;
+  END IF;
+
+  -- ======================
+  -- 8) STUDENTS
   -- ======================
   SELECT student_id INTO v_s1 FROM students
   WHERE school_id = v_school1 AND full_name = 'Bé An' AND dob = DATE '2021-05-12'
@@ -227,47 +255,77 @@ BEGIN
   END IF;
 
   -- ======================
-  -- 8) TEACHER-CLASS ASSIGNMENTS
-  -- Cô Lan → Lá Non
-  -- Thầy Nam → Lá Non + Lá Măng (multiple classes)
+  -- 9) TEACHER-CLASS ASSIGNMENTS
   -- ======================
-  INSERT INTO teacher_classes (teacher_id, class_id)
-  VALUES (v_teacher1, v_class1)
-  ON CONFLICT DO NOTHING;
+  IF to_regclass('public.teacher_classes') IS NOT NULL THEN
+    -- Cô Lan → Lá Non
+    INSERT INTO teacher_classes (teacher_id, class_id)
+    VALUES (v_teacher1, v_class1)
+    ON CONFLICT DO NOTHING;
 
-  INSERT INTO teacher_classes (teacher_id, class_id)
-  VALUES (v_teacher2, v_class1)
-  ON CONFLICT DO NOTHING;
+    -- Thầy Nam → Lá Non + Lá Măng (multiple classes)
+    INSERT INTO teacher_classes (teacher_id, class_id)
+    VALUES (v_teacher2, v_class1)
+    ON CONFLICT DO NOTHING;
 
-  INSERT INTO teacher_classes (teacher_id, class_id)
-  VALUES (v_teacher2, v_class2)
-  ON CONFLICT DO NOTHING;
-
-  -- ======================
-  -- 9) STUDENT-PARENT RELATIONSHIPS
-  -- Bé An: Anh Minh (father) + Chị Hoa (mother)
-  -- Bé Bông: Anh Minh (father)
-  -- Bé Na: Chị Hoa (mother)
-  -- Bé Dương: không có parent (để test edge case)
-  -- ======================
-  INSERT INTO student_parents (student_id, parent_id, relationship)
-  VALUES (v_s1, v_parent1, 'father')
-  ON CONFLICT DO NOTHING;
-
-  INSERT INTO student_parents (student_id, parent_id, relationship)
-  VALUES (v_s1, v_parent2, 'mother')
-  ON CONFLICT DO NOTHING;
-
-  INSERT INTO student_parents (student_id, parent_id, relationship)
-  VALUES (v_s2, v_parent1, 'father')
-  ON CONFLICT DO NOTHING;
-
-  INSERT INTO student_parents (student_id, parent_id, relationship)
-  VALUES (v_s3, v_parent2, 'mother')
-  ON CONFLICT DO NOTHING;
+    INSERT INTO teacher_classes (teacher_id, class_id)
+    VALUES (v_teacher2, v_class2)
+    ON CONFLICT DO NOTHING;
+  END IF;
 
   -- ======================
-  -- 10) ATTENDANCE RECORDS (đa dạng status, có check-in/out, date range)
+  -- 10) STUDENT-PARENT ASSIGNMENTS
+  -- ======================
+  IF to_regclass('public.student_parents') IS NOT NULL THEN
+    -- Bé An: father (Anh Minh) + mother (Chị Hoa)
+    INSERT INTO student_parents (student_id, parent_id, relationship)
+    VALUES (v_s1, v_parent1, 'father')
+    ON CONFLICT (student_id, parent_id) DO NOTHING;
+
+    INSERT INTO student_parents (student_id, parent_id, relationship)
+    VALUES (v_s1, v_parent2, 'mother')
+    ON CONFLICT (student_id, parent_id) DO NOTHING;
+
+    -- Bé Bông: father only (Anh Minh)
+    INSERT INTO student_parents (student_id, parent_id, relationship)
+    VALUES (v_s2, v_parent1, 'father')
+    ON CONFLICT (student_id, parent_id) DO NOTHING;
+
+    -- Bé Na: mother only (Chị Hoa)
+    INSERT INTO student_parents (student_id, parent_id, relationship)
+    VALUES (v_s3, v_parent2, 'mother')
+    ON CONFLICT (student_id, parent_id) DO NOTHING;
+
+    -- Bé Dương: no parents
+  END IF;
+
+  -- ======================
+  -- 11) PARENT CODES
+  -- ======================
+  IF to_regclass('public.student_parent_codes') IS NOT NULL THEN
+    -- Parent code for Bé An (max 4 parents, expires in 30 days)
+    INSERT INTO student_parent_codes (student_id, code, max_usage, expires_at)
+    VALUES (v_s1, 'BEAN25', 4, NOW() + INTERVAL '30 days')
+    ON CONFLICT (code) DO NOTHING;
+
+    -- Parent code for Bé Bông
+    INSERT INTO student_parent_codes (student_id, code, max_usage, expires_at)
+    VALUES (v_s2, 'BEBONG', 4, NOW() + INTERVAL '30 days')
+    ON CONFLICT (code) DO NOTHING;
+
+    -- Parent code for Bé Na
+    INSERT INTO student_parent_codes (student_id, code, max_usage, expires_at)
+    VALUES (v_s3, 'BENA25', 4, NOW() + INTERVAL '30 days')
+    ON CONFLICT (code) DO NOTHING;
+
+    -- Parent code for Bé Dương
+    INSERT INTO student_parent_codes (student_id, code, max_usage, expires_at)
+    VALUES (v_s4, 'BEDUONG', 4, NOW() + INTERVAL '30 days')
+    ON CONFLICT (code) DO NOTHING;
+  END IF;
+
+  -- ======================
+  -- 12) ATTENDANCE RECORDS (đa dạng status, có check-in/out, date range)
   -- ======================
   IF to_regclass('public.attendance_records') IS NOT NULL THEN
     -- Bé An: present (hôm nay, có check-in/out)
@@ -276,9 +334,9 @@ BEGIN
       v_s1,
       CURRENT_DATE,
       'present',
-      (CURRENT_DATE + TIME '07:45:00')::timestamptz,
+      (CURRENT_DATE + TIME '08:30:00')::timestamptz,
       (CURRENT_DATE + TIME '16:30:00')::timestamptz,
-      'Đi học đúng giờ',
+      'Đến đúng giờ',
       v_teacher1_user
     )
     ON CONFLICT (student_id, date) DO NOTHING;
@@ -289,8 +347,8 @@ BEGIN
       v_s1,
       CURRENT_DATE - INTERVAL '1 day',
       'late',
-      (CURRENT_DATE - INTERVAL '1 day' + TIME '08:30:00')::timestamptz,
-      'Đi muộn do đưa đón',
+      (CURRENT_DATE - INTERVAL '1 day' + TIME '09:15:00')::timestamptz,
+      'Đi muộn 45 phút',
       v_teacher1_user
     )
     ON CONFLICT (student_id, date) DO NOTHING;
@@ -301,7 +359,7 @@ BEGIN
       v_s1,
       CURRENT_DATE - INTERVAL '2 days',
       'absent',
-      'Nghỉ ốm',
+      'Nghỉ không phép',
       v_teacher1_user
     )
     ON CONFLICT (student_id, date) DO NOTHING;
@@ -312,37 +370,50 @@ BEGIN
       v_s2,
       CURRENT_DATE,
       'excused',
-      'Nghỉ có phép - khám bác sĩ',
-      v_teacher2_user
+      'Nghỉ ốm có giấy',
+      v_teacher1_user
     )
     ON CONFLICT (student_id, date) DO NOTHING;
 
     -- Bé Bông: present (hôm qua)
-    INSERT INTO attendance_records (student_id, date, status, check_in_at, check_out_at, recorded_by)
+    INSERT INTO attendance_records (student_id, date, status, check_in_at, check_out_at, note, recorded_by)
     VALUES (
       v_s2,
       CURRENT_DATE - INTERVAL '1 day',
       'present',
-      (CURRENT_DATE - INTERVAL '1 day' + TIME '07:50:00')::timestamptz,
-      (CURRENT_DATE - INTERVAL '1 day' + TIME '16:25:00')::timestamptz,
+      (CURRENT_DATE - INTERVAL '1 day' + TIME '08:00:00')::timestamptz,
+      (CURRENT_DATE - INTERVAL '1 day' + TIME '16:00:00')::timestamptz,
+      '',
       v_teacher1_user
     )
     ON CONFLICT (student_id, date) DO NOTHING;
 
     -- Bé Na: present (hôm nay)
-    INSERT INTO attendance_records (student_id, date, status, check_in_at, recorded_by)
+    INSERT INTO attendance_records (student_id, date, status, check_in_at, note, recorded_by)
     VALUES (
       v_s3,
       CURRENT_DATE,
       'present',
-      (CURRENT_DATE + TIME '08:00:00')::timestamptz,
+      (CURRENT_DATE + TIME '08:45:00')::timestamptz,
+      '',
+      v_teacher2_user
+    )
+    ON CONFLICT (student_id, date) DO NOTHING;
+
+    -- Bé Dương: absent (hôm nay)
+    INSERT INTO attendance_records (student_id, date, status, note, recorded_by)
+    VALUES (
+      v_s4,
+      CURRENT_DATE,
+      'absent',
+      'Nghỉ gia đình',
       v_teacher2_user
     )
     ON CONFLICT (student_id, date) DO NOTHING;
   END IF;
 
   -- ======================
-  -- 11) HEALTH LOGS (đa dạng severity, date range)
+  -- 13) HEALTH LOGS (đa dạng severity, date range)
   -- ======================
   IF to_regclass('public.health_logs') IS NOT NULL THEN
     -- Bé An: normal (hôm nay)
@@ -350,149 +421,121 @@ BEGIN
     VALUES (
       v_s1,
       NOW(),
-      36.7,
-      'Bình thường, vui vẻ',
+      36.5,
+      '',
       'normal',
       'Sức khỏe tốt',
       v_teacher1_user
-    );
+    )
+    ON CONFLICT DO NOTHING;
 
-    -- Bé An: watch (2 ngày trước - nhiệt độ hơi cao)
+    -- Bé An: watch (hôm qua - sốt nhẹ)
     INSERT INTO health_logs (student_id, recorded_at, temperature, symptoms, severity, note, recorded_by)
     VALUES (
       v_s1,
-      NOW() - INTERVAL '2 days',
-      37.3,
-      'Hơi ấm, mệt mỏi',
+      NOW() - INTERVAL '1 day',
+      37.8,
+      'Ho nhẹ',
       'watch',
-      'Theo dõi sát, thông báo phụ huynh',
+      'Cần theo dõi',
       v_teacher1_user
-    );
+    )
+    ON CONFLICT DO NOTHING;
 
-    -- Bé Bông: normal (hôm qua)
-    INSERT INTO health_logs (student_id, recorded_at, temperature, symptoms, severity, note, recorded_by)
+    -- Bé Bông: normal (3 ngày trước)
+    INSERT INTO health_logs (student_id, recorded_at, temperature, severity, recorded_by)
     VALUES (
       v_s2,
-      NOW() - INTERVAL '1 day',
-      36.5,
-      'Khỏe mạnh, năng động',
+      NOW() - INTERVAL '3 days',
+      36.3,
       'normal',
-      'Ổn định',
-      v_teacher2_user
-    );
+      v_teacher1_user
+    )
+    ON CONFLICT DO NOTHING;
 
     -- Bé Na: urgent (hôm nay - sốt cao)
     INSERT INTO health_logs (student_id, recorded_at, temperature, symptoms, severity, note, recorded_by)
     VALUES (
       v_s3,
       NOW(),
-      38.5,
-      'Sốt cao, mệt mỏi, không ăn',
+      39.2,
+      'Sốt cao, đau đầu',
       'urgent',
-      'Đã gọi phụ huynh đón về ngay',
+      'Cần liên hệ gia đình',
       v_teacher2_user
-    );
+    )
+    ON CONFLICT DO NOTHING;
 
-    -- Bé Dương: normal
-    INSERT INTO health_logs (student_id, recorded_at, temperature, symptoms, severity, note, recorded_by)
+    -- Bé Dương: normal (tuần trước)
+    INSERT INTO health_logs (student_id, recorded_at, temperature, severity, recorded_by)
     VALUES (
       v_s4,
-      NOW(),
-      36.6,
-      'Vui vẻ, ăn ngon',
+      NOW() - INTERVAL '7 days',
+      36.7,
       'normal',
-      'Tốt',
       v_teacher2_user
-    );
+    )
+    ON CONFLICT DO NOTHING;
   END IF;
 
   -- ======================
-  -- 12) POSTS (đa dạng type, scope: class + student, có attachments)
+  -- 14) POSTS (đa dạng type, scope: class/student)
   -- ======================
   IF to_regclass('public.posts') IS NOT NULL THEN
-    DECLARE
-      v_post1 uuid;
-      v_post2 uuid;
-      v_post3 uuid;
-      v_post4 uuid;
-      v_post5 uuid;
-    BEGIN
-      -- Post 1: Class announcement (Lá Non)
-      INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
-      VALUES (
-        v_teacher1_user,
-        'class',
-        v_class1,
-        'announcement',
-        '📢 Thông báo: Tuần sau lớp Lá Non sẽ tổ chức dã ngoại tại công viên. Phụ huynh vui lòng chuẩn bị mũ, áo chống nắng cho bé.'
-      )
-      RETURNING post_id INTO v_post1;
+    -- Class post: announcement (Lá Non)
+    INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
+    VALUES (
+      v_teacher1_user,
+      'class',
+      v_class1,
+      'announcement',
+      'Thông báo: Ngày mai lớp Lá Non có hoạt động ngoại khóa. Phụ huynh chuẩn bị quần áo thể thao cho các bé.'
+    )
+    ON CONFLICT DO NOTHING;
 
-      -- Post 2: Class activity (Lá Non)
-      INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
-      VALUES (
-        v_teacher2_user,
-        'class',
-        v_class1,
-        'activity',
-        '🎨 Hôm nay lớp Lá Non học vẽ và vận động ngoài trời. Các bé rất hào hứng và tham gia tích cực!'
-      )
-      RETURNING post_id INTO v_post2;
+    -- Class post: activity (Lá Non)
+    INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
+    VALUES (
+      v_teacher1_user,
+      'class',
+      v_class1,
+      'activity',
+      'Hoạt động vẽ tranh sáng nay các bạn rất hào hứng. Mời phụ huynh xem thêm ảnh đã gửi vào group!'
+    )
+    ON CONFLICT DO NOTHING;
 
-      -- Post 3: Student daily note (Bé An)
-      INSERT INTO posts (author_user_id, scope_type, student_id, type, content)
-      VALUES (
-        v_teacher1_user,
-        'student',
-        v_s1,
-        'daily_note',
-        '📝 Bé An hôm nay ăn uống ngon miệng, ngủ trưa đủ giấc. Bé tham gia hoạt động tích cực và vui vẻ!'
-      )
-      RETURNING post_id INTO v_post3;
+    -- Student post: daily_note (Bé An)
+    INSERT INTO posts (author_user_id, scope_type, student_id, type, content)
+    VALUES (
+      v_teacher1_user,
+      'student',
+      v_s1,
+      'daily_note',
+      'Bé An hôm nay tự giác ăn hết cơm trưa và ngủ trưa rất ngoan. Tiếp tục cố gắng nhé!'
+    )
+    ON CONFLICT DO NOTHING;
 
-      -- Post 4: Student health note (Bé Na - urgent health)
-      INSERT INTO posts (author_user_id, scope_type, student_id, type, content)
-      VALUES (
-        v_teacher2_user,
-        'student',
-        v_s3,
-        'health_note',
-        '🌡️ Bé Na có dấu hiệu sốt cao (38.5°C). Cô đã đo nhiệt độ và thông báo phụ huynh đón bé về ngay. Phụ huynh vui lòng theo dõi sức khỏe bé.'
-      )
-      RETURNING post_id INTO v_post4;
+    -- Student post: health_note (Bé Na - urgent từ health log)
+    INSERT INTO posts (author_user_id, scope_type, student_id, type, content)
+    VALUES (
+      v_teacher2_user,
+      'student',
+      v_s3,
+      'health_note',
+      'Bé Na bị sốt cao (39.2°C), đã báo phụ huynh. Bé đang ở y trường để theo dõi.'
+    )
+    ON CONFLICT DO NOTHING;
 
-      -- Post 5: Class announcement (Lá Măng)
-      INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
-      VALUES (
-        v_teacher2_user,
-        'class',
-        v_class2,
-        'announcement',
-        '📚 Nhắc nhở: Thứ 6 tuần này là ngày chia sẻ đồ chơi. Các bé nhớ mang theo 1 món đồ chơi yêu thích để chia sẻ với bạn nhé!'
-      )
-      RETURNING post_id INTO v_post5;
-
-      -- ======================
-      -- 13) POST ATTACHMENTS
-      -- ======================
-      IF to_regclass('public.post_attachments') IS NOT NULL THEN
-        -- Attachments cho post 2 (activity)
-        INSERT INTO post_attachments (post_id, url, mime_type)
-        VALUES
-          (v_post2, 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800', 'image/jpeg'),
-          (v_post2, 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800', 'image/jpeg');
-
-        -- Attachment cho post 3 (daily note)
-        INSERT INTO post_attachments (post_id, url, mime_type)
-        VALUES
-          (v_post3, 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800', 'image/jpeg');
-
-        -- Attachment cho post 4 (health note)
-        INSERT INTO post_attachments (post_id, url, mime_type)
-        VALUES
-          (v_post4, 'https://via.placeholder.com/800x600/4CAF50/FFFFFF?text=Temperature+Chart', 'image/png');
-      END IF;
-    END;
+    -- Class post: health_note (Lá Măng)
+    INSERT INTO posts (author_user_id, scope_type, class_id, type, content)
+    VALUES (
+      v_teacher2_user,
+      'class',
+      v_class2,
+      'health_note',
+      'Lưu ý: Hôm nay trong lớp có 1 bạn bị ho nhẹ. Các bạn khác chú ý vệ sinh, đeo khẩu trang nếu cần.'
+    )
+    ON CONFLICT DO NOTHING;
   END IF;
 
 END $$;
