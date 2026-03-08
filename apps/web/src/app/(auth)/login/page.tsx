@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/providers/AuthProvider';
 import { authApi } from '@/lib/api/auth.api';
 import { authHelpers } from '@/lib/api/client';
@@ -80,9 +81,15 @@ export default function LoginPage() {
                 required 
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 mb-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium" htmlFor="password">Mật khẩu</label>
+                <span
+                  className="text-xs text-muted-foreground cursor-not-allowed"
+                  title="Tính năng đang phát triển"
+                >
+                  Quên mật khẩu?
+                </span>
               </div>
               <Input 
                 id="password" 
@@ -93,10 +100,16 @@ export default function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
             </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              Phụ huynh chưa có tài khoản?{' '}
+              <Link href="/register" className="font-medium text-primary hover:underline">
+                Đăng ký tại đây
+              </Link>
+            </p>
           </CardFooter>
         </form>
       </Card>
