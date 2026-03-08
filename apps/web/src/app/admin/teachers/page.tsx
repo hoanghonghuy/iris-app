@@ -8,18 +8,18 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Teacher, School, Class } from "@/types";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  BookUser, Loader2, Phone, Mail, Link2, Unlink, ChevronDown,
-} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { BookUser, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Assign class state
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState("");
@@ -40,7 +40,6 @@ export default function AdminTeachersPage() {
 
   useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
 
-  // Load schools for assign dropdown
   useEffect(() => {
     const load = async () => {
       try {
@@ -52,7 +51,6 @@ export default function AdminTeachersPage() {
     load();
   }, []);
 
-  // Load classes when school changes
   useEffect(() => {
     if (!selectedSchoolId) return;
     const load = async () => {
@@ -85,8 +83,8 @@ export default function AdminTeachersPage() {
         <h1 className="text-2xl font-bold tracking-tight">Quản lý Giáo viên</h1>
       </div>
 
-      {success && <div className="rounded-md bg-green-100 p-4 text-sm text-green-700">{success}</div>}
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {success && <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>}
+      {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
@@ -119,21 +117,19 @@ export default function AdminTeachersPage() {
                     <td className="px-6 py-4 text-right">
                       {assigningTeacherId === t.teacher_id ? (
                         <div className="flex items-center justify-end gap-2">
-                          <div className="relative">
-                            <select value={selectedSchoolId} onChange={(e) => setSelectedSchoolId(e.target.value)}
-                              className="h-8 appearance-none rounded border bg-white py-0.5 pl-2 pr-6 text-xs">
-                              {schools.map((s) => <option key={s.school_id} value={s.school_id}>{s.name}</option>)}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                          </div>
-                          <div className="relative">
-                            <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}
-                              className="h-8 appearance-none rounded border bg-white py-0.5 pl-2 pr-6 text-xs">
-                              {classes.map((c) => <option key={c.class_id} value={c.class_id}>{c.name}</option>)}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                          </div>
-                          <Button size="sm" variant="default" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
+                          <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
+                            <SelectTrigger className="w-[140px]" size="sm"><SelectValue placeholder="Trường" /></SelectTrigger>
+                            <SelectContent>
+                              {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                            <SelectTrigger className="w-[120px]" size="sm"><SelectValue placeholder="Lớp" /></SelectTrigger>
+                            <SelectContent>
+                              {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Button size="sm" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
                             {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2 className="h-3 w-3" />}
                           </Button>
                           <Button size="sm" variant="ghost" onClick={() => setAssigningTeacherId(null)}>
@@ -168,13 +164,12 @@ export default function AdminTeachersPage() {
                 <div className="mt-3">
                   {assigningTeacherId === t.teacher_id ? (
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="relative">
-                        <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}
-                          className="h-8 appearance-none rounded border bg-white py-0.5 pl-2 pr-6 text-xs">
-                          {classes.map((c) => <option key={c.class_id} value={c.class_id}>{c.name}</option>)}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                      </div>
+                      <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                        <SelectTrigger className="w-[140px]" size="sm"><SelectValue placeholder="Lớp" /></SelectTrigger>
+                        <SelectContent>
+                          {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                       <Button size="sm" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
                         {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Gán"}
                       </Button>

@@ -10,16 +10,16 @@ import { adminApi } from "@/lib/api/admin.api";
 import { UserInfo, School } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  ShieldCheck, Loader2, Plus, X, Trash2, ChevronDown, Mail,
-} from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function AdminSchoolAdminsPage() {
   const [admins, setAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Create form
   const [showForm, setShowForm] = useState(false);
   const [schools, setSchools] = useState<School[]>([]);
   const [users, setUsers] = useState<UserInfo[]>([]);
@@ -42,7 +42,6 @@ export default function AdminSchoolAdminsPage() {
 
   useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
 
-  // Load schools + users when form opens
   useEffect(() => {
     if (!showForm) return;
     const load = async () => {
@@ -68,8 +67,7 @@ export default function AdminSchoolAdminsPage() {
       setSubmitting(true); setFormError(""); setSuccess("");
       await adminApi.createSchoolAdmin({ user_id: selectedUserId, school_id: selectedSchoolId });
       setSuccess("Đã tạo School Admin thành công!");
-      setShowForm(false);
-      fetchAdmins();
+      setShowForm(false); fetchAdmins();
     } catch (err: any) {
       setFormError(err.response?.data?.error || "Không thể tạo");
     } finally { setSubmitting(false); }
@@ -98,35 +96,33 @@ export default function AdminSchoolAdminsPage() {
         </Button>
       </div>
 
-      {success && <div className="rounded-md bg-green-100 p-4 text-sm text-green-700">{success}</div>}
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {success && <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>}
+      {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
       {showForm && (
         <Card>
           <CardHeader><CardTitle className="text-lg">Gán School Admin</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-4">
-              {formError && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{formError}</div>}
+              {formError && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{formError}</AlertDescription></Alert>}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">User</label>
-                  <div className="relative">
-                    <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}
-                      className="h-9 w-full appearance-none rounded-md border bg-white py-1 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                      {users.map((u) => <option key={u.user_id} value={u.user_id}>{u.email}</option>)}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                  <Label>User</Label>
+                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Chọn user" /></SelectTrigger>
+                    <SelectContent>
+                      {users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.email}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Trường</label>
-                  <div className="relative">
-                    <select value={selectedSchoolId} onChange={(e) => setSelectedSchoolId(e.target.value)}
-                      className="h-9 w-full appearance-none rounded-md border bg-white py-1 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-                      {schools.map((s) => <option key={s.school_id} value={s.school_id}>{s.name}</option>)}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                  <Label>Trường</Label>
+                  <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
+                    <SelectTrigger className="w-full"><SelectValue placeholder="Chọn trường" /></SelectTrigger>
+                    <SelectContent>
+                      {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex justify-end">
@@ -167,8 +163,7 @@ export default function AdminSchoolAdminsPage() {
                     <td className="px-6 py-4 text-muted-foreground">{a.school_name || a.school_id}</td>
                     <td className="px-6 py-4 text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleDelete(a.school_admin_id || a.user_id)} disabled={deletingId === (a.school_admin_id || a.user_id)}>
-                        {deletingId === (a.school_admin_id || a.user_id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4 text-destructive" />}
-                        Xóa
+                        {deletingId === (a.school_admin_id || a.user_id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4 text-destructive" />} Xóa
                       </Button>
                     </td>
                   </tr>

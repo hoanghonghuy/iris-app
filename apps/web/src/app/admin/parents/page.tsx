@@ -10,16 +10,15 @@ import { adminApi } from "@/lib/api/admin.api";
 import { Parent, School, Class, Student } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Heart, Loader2, Phone, Mail, Link2, Unlink, ChevronDown,
-} from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Heart, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function AdminParentsPage() {
   const [parents, setParents] = useState<Parent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Assign student state
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -42,7 +41,6 @@ export default function AdminParentsPage() {
 
   useEffect(() => { fetchParents(); }, [fetchParents]);
 
-  // Load schools
   useEffect(() => {
     const load = async () => {
       try {
@@ -54,7 +52,6 @@ export default function AdminParentsPage() {
     load();
   }, []);
 
-  // Load classes when school changes
   useEffect(() => {
     if (!selectedSchoolId) return;
     const load = async () => {
@@ -68,7 +65,6 @@ export default function AdminParentsPage() {
     load();
   }, [selectedSchoolId]);
 
-  // Load students when class changes
   useEffect(() => {
     if (!selectedClassId) return;
     const load = async () => {
@@ -102,8 +98,8 @@ export default function AdminParentsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Quản lý Phụ huynh</h1>
       </div>
 
-      {success && <div className="rounded-md bg-green-100 p-4 text-sm text-green-700">{success}</div>}
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+      {success && <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>}
+      {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
@@ -136,20 +132,18 @@ export default function AdminParentsPage() {
                     <td className="px-6 py-4 text-right">
                       {assigningParentId === p.parent_id ? (
                         <div className="flex items-center justify-end gap-1">
-                          <div className="relative">
-                            <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}
-                              className="h-8 appearance-none rounded border bg-white py-0.5 pl-2 pr-6 text-xs">
-                              {classes.map((c) => <option key={c.class_id} value={c.class_id}>{c.name}</option>)}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                          </div>
-                          <div className="relative">
-                            <select value={selectedStudentId} onChange={(e) => setSelectedStudentId(e.target.value)}
-                              className="h-8 appearance-none rounded border bg-white py-0.5 pl-2 pr-6 text-xs">
-                              {students.map((s) => <option key={s.student_id} value={s.student_id}>{s.full_name}</option>)}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-1 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                          </div>
+                          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                            <SelectTrigger className="w-[120px]" size="sm"><SelectValue placeholder="Lớp" /></SelectTrigger>
+                            <SelectContent>
+                              {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                            <SelectTrigger className="w-[130px]" size="sm"><SelectValue placeholder="HS" /></SelectTrigger>
+                            <SelectContent>
+                              {students.map((s) => <SelectItem key={s.student_id} value={s.student_id}>{s.full_name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           <Button size="sm" onClick={() => handleAssign(p.parent_id)} disabled={actionLoading || !selectedStudentId}>
                             {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2 className="h-3 w-3" />}
                           </Button>
