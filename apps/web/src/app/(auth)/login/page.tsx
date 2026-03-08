@@ -8,6 +8,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { authApi } from '@/lib/api/auth.api';
+import { authHelpers } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -26,17 +27,25 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Gọi API login
-      const response = await authApi.login({ email, password });
-      
-      // 2. Giải mã role từ token (trong thực tế backend nên trả về role hoặc dùng JWT decode)
-      // Ở đây ta giả định backend trả về role trong response hoặc ta lấy từ /me sau
-      // Để đơn giản cho bước này, ta sẽ fetch /me để lấy role chính xác
-      const userData = await authApi.getMe();
+      // 1. Gọi API login → backend trả về { data: { access_token, ... } }
+      const response = await authApi.login({ email, password }) as any;
+      const token = response.data?.access_token || response.access_token;
+
+      if (!token) {
+        setError('Không nhận được token từ server');
+        return;
+      }
+
+      // 2. Lưu token vào localStorage TRƯỚC khi gọi /me
+      authHelpers.setToken(token);
+
+      // 3. Gọi /me để lấy role (giờ interceptor sẽ gắn token vào header)
+      const meResponse = await authApi.getMe();
+      const userData = meResponse.data; // backend wrap trong { data: {...} }
       const primaryRole = userData.roles[0] as UserRole;
 
-      // 3. Lưu vào AuthProvider
-      login(response.access_token, primaryRole);
+      // 4. Lưu vào AuthProvider (sẽ redirect dựa theo role)
+      login(token, primaryRole);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
     } finally {
