@@ -5,17 +5,19 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Parent, School, Class, Student } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Heart, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Heart, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search } from "lucide-react";
 
 export default function AdminParentsPage() {
   const [parents, setParents] = useState<Parent[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -91,6 +93,16 @@ export default function AdminParentsPage() {
     } finally { setActionLoading(false); }
   };
 
+  const filteredParents = useMemo(() => {
+    if (!searchQuery.trim()) return parents;
+    const q = searchQuery.toLowerCase();
+    return parents.filter((p) => 
+      p.full_name?.toLowerCase().includes(q) || 
+      p.email?.toLowerCase().includes(q) ||
+      p.phone?.includes(q)
+    );
+  }, [parents, searchQuery]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -101,6 +113,20 @@ export default function AdminParentsPage() {
       {success && <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>}
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
+      {/* Toolbar: Search box */}
+      {!loading && !error && parents.length > 0 && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            type="search" 
+            placeholder="Tìm theo tên, email, SĐT..." 
+            className="pl-8 bg-white" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
       {!loading && parents.length === 0 && !error && (
@@ -110,8 +136,14 @@ export default function AdminParentsPage() {
         </CardContent></Card>
       )}
 
+      {!loading && parents.length > 0 && filteredParents.length === 0 && (
+        <div className="rounded-lg border border-dashed p-8 text-center">
+          <p className="text-sm text-muted-foreground">Không tìm thấy phụ huynh nào phù hợp với &ldquo;{searchQuery}&rdquo;</p>
+        </div>
+      )}
+
       {/* Desktop Table */}
-      {!loading && parents.length > 0 && (
+      {!loading && filteredParents.length > 0 && (
         <div className="hidden md:block">
           <Card><CardContent className="p-0">
             <table className="w-full">
@@ -124,7 +156,7 @@ export default function AdminParentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {parents.map((p) => (
+                {filteredParents.map((p) => (
                   <tr key={p.parent_id} className="border-b last:border-0 hover:bg-zinc-50">
                     <td className="px-6 py-4 font-medium">{p.full_name}</td>
                     <td className="px-6 py-4 text-muted-foreground">{p.email}</td>
@@ -164,9 +196,9 @@ export default function AdminParentsPage() {
       )}
 
       {/* Mobile Cards */}
-      {!loading && parents.length > 0 && (
+      {!loading && filteredParents.length > 0 && (
         <div className="space-y-3 md:hidden">
-          {parents.map((p) => (
+          {filteredParents.map((p) => (
             <Card key={p.parent_id}>
               <CardContent className="py-4">
                 <p className="font-medium">{p.full_name}</p>

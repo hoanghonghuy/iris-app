@@ -5,7 +5,7 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { School, Class, Student } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, CheckCircle2,
+  Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
 } from "lucide-react";
 
 export default function AdminStudentsPage() {
@@ -28,6 +28,7 @@ export default function AdminStudentsPage() {
   const [loadingClasses, setLoadingClasses] = useState(false);
 
   const [students, setStudents] = useState<Student[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [error, setError] = useState("");
 
@@ -61,7 +62,7 @@ export default function AdminStudentsPage() {
     if (!selectedSchoolId) return;
     const load = async () => {
       try {
-        setLoadingClasses(true); setSelectedClassId(""); setStudents([]);
+        setLoadingClasses(true); setSelectedClassId(""); setStudents([]); setSearchQuery("");
         const data = await adminApi.getClassesBySchool(selectedSchoolId);
         setClasses(data || []);
         if (data && data.length > 0) setSelectedClassId(data[0].class_id);
@@ -84,6 +85,13 @@ export default function AdminStudentsPage() {
   }, [selectedClassId]);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  // ─── Filter students by search query ──────────────────────────
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return students;
+    const q = searchQuery.toLowerCase();
+    return students.filter((s) => s.full_name.toLowerCase().includes(q));
+  }, [students, searchQuery]);
 
   // ─── Create student ───────────────────────────────────────────
   const handleCreate = async (e: React.FormEvent) => {
@@ -159,6 +167,20 @@ export default function AdminStudentsPage() {
         </div>
       </div>
 
+      {/* Toolbar: Search */}
+      {!loadingStudents && !error && students.length > 0 && !showForm && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            type="search" 
+            placeholder="Tìm theo tên học sinh..." 
+            className="pl-8 bg-white" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+
       {/* Create Form */}
       {showForm && (
         <Card>
@@ -206,11 +228,11 @@ export default function AdminStudentsPage() {
       {codeError && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{codeError}</AlertDescription></Alert>}
 
       {/* Loading */}
-      {(loadingClasses || loadingStudents) && (
+      {loadingStudents && (
         <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       )}
 
-      {/* Empty */}
+      {/* Empty (No students at all) */}
       {!loadingStudents && !error && students.length === 0 && selectedClassId && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -223,8 +245,15 @@ export default function AdminStudentsPage() {
         </Card>
       )}
 
+      {/* Empty Search Results */}
+      {!loadingStudents && !error && students.length > 0 && filteredStudents.length === 0 && (
+        <div className="rounded-lg border border-dashed p-8 text-center">
+          <p className="text-sm text-muted-foreground">Không tìm thấy học sinh nào phù hợp với &ldquo;{searchQuery}&rdquo;</p>
+        </div>
+      )}
+
       {/* Desktop Table */}
-      {!loadingStudents && students.length > 0 && (
+      {!loadingStudents && filteredStudents.length > 0 && (
         <div className="hidden md:block">
           <Card><CardContent className="p-0">
             <table className="w-full">
@@ -237,7 +266,7 @@ export default function AdminStudentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {students.map((s) => (
+                {filteredStudents.map((s) => (
                   <tr key={s.student_id} className="border-b last:border-0 hover:bg-zinc-50">
                     <td className="px-6 py-4 font-medium">{s.full_name}</td>
                     <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
@@ -265,9 +294,9 @@ export default function AdminStudentsPage() {
       )}
 
       {/* Mobile Cards */}
-      {!loadingStudents && students.length > 0 && (
+      {!loadingStudents && filteredStudents.length > 0 && (
         <div className="space-y-3 md:hidden">
-          {students.map((s) => (
+          {filteredStudents.map((s) => (
             <Card key={s.student_id}>
               <CardContent className="flex items-start gap-3 py-4">
                 <User className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />

@@ -5,18 +5,19 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Teacher, School, Class } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BookUser, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2 } from "lucide-react";
+import { BookUser, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search } from "lucide-react";
 
 export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -76,6 +77,16 @@ export default function AdminTeachersPage() {
     } finally { setActionLoading(false); }
   };
 
+  const filteredTeachers = useMemo(() => {
+    if (!searchQuery.trim()) return teachers;
+    const q = searchQuery.toLowerCase();
+    return teachers.filter((t) => 
+      t.full_name?.toLowerCase().includes(q) || 
+      t.email?.toLowerCase().includes(q) ||
+      t.phone?.includes(q)
+    );
+  }, [teachers, searchQuery]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -86,6 +97,20 @@ export default function AdminTeachersPage() {
       {success && <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>}
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
+      {/* Toolbar: Search */}
+      {!loading && !error && teachers.length > 0 && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            type="search" 
+            placeholder="Tìm theo tên, email, SĐT..." 
+            className="pl-8 bg-white" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
       {!loading && teachers.length === 0 && !error && (
@@ -95,8 +120,14 @@ export default function AdminTeachersPage() {
         </CardContent></Card>
       )}
 
+      {!loading && teachers.length > 0 && filteredTeachers.length === 0 && (
+        <div className="rounded-lg border border-dashed p-8 text-center">
+          <p className="text-sm text-muted-foreground">Không tìm thấy giáo viên nào phù hợp với &ldquo;{searchQuery}&rdquo;</p>
+        </div>
+      )}
+
       {/* Desktop Table */}
-      {!loading && teachers.length > 0 && (
+      {!loading && filteredTeachers.length > 0 && (
         <div className="hidden md:block">
           <Card><CardContent className="p-0">
             <table className="w-full">
@@ -109,7 +140,7 @@ export default function AdminTeachersPage() {
                 </tr>
               </thead>
               <tbody>
-                {teachers.map((t) => (
+                {filteredTeachers.map((t) => (
                   <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-zinc-50">
                     <td className="px-6 py-4 font-medium">{t.full_name}</td>
                     <td className="px-6 py-4 text-muted-foreground">{t.email}</td>
@@ -151,9 +182,9 @@ export default function AdminTeachersPage() {
       )}
 
       {/* Mobile Cards */}
-      {!loading && teachers.length > 0 && (
+      {!loading && filteredTeachers.length > 0 && (
         <div className="space-y-3 md:hidden">
-          {teachers.map((t) => (
+          {filteredTeachers.map((t) => (
             <Card key={t.teacher_id}>
               <CardContent className="py-4">
                 <p className="font-medium">{t.full_name}</p>

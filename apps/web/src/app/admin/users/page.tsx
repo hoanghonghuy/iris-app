@@ -5,7 +5,7 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { UserInfo } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  UserCog, Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, CheckCircle2,
+  UserCog, Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, CheckCircle2, Search
 } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
@@ -33,6 +33,7 @@ const statusLabel: Record<string, string> = {
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserInfo[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -86,6 +87,12 @@ export default function AdminUsersPage() {
     setFormRoles((prev) => prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]);
   };
 
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const q = searchQuery.toLowerCase();
+    return users.filter((u) => u.email?.toLowerCase().includes(q));
+  }, [users, searchQuery]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -138,6 +145,21 @@ export default function AdminUsersPage() {
       )}
 
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
+      
+      {/* Toolbar: Search box */}
+      {!loading && !error && users.length > 0 && !showForm && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            type="search" 
+            placeholder="Tìm theo email..." 
+            className="pl-8 bg-white" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      )}
+
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
       {!loading && users.length === 0 && !error && (
@@ -147,8 +169,14 @@ export default function AdminUsersPage() {
         </CardContent></Card>
       )}
 
+      {!loading && users.length > 0 && filteredUsers.length === 0 && (
+        <div className="rounded-lg border border-dashed p-8 text-center">
+          <p className="text-sm text-muted-foreground">Không tìm thấy người dùng nào mang email &ldquo;{searchQuery}&rdquo;</p>
+        </div>
+      )}
+
       {/* Desktop Table */}
-      {!loading && users.length > 0 && (
+      {!loading && filteredUsers.length > 0 && (
         <div className="hidden md:block">
           <Card><CardContent className="p-0">
             <table className="w-full">
@@ -161,7 +189,7 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <tr key={user.user_id} className="border-b last:border-0 hover:bg-zinc-50">
                     <td className="px-6 py-4 font-medium">{user.email}</td>
                     <td className="px-6 py-4">
@@ -192,9 +220,9 @@ export default function AdminUsersPage() {
       )}
 
       {/* Mobile Cards */}
-      {!loading && users.length > 0 && (
+      {!loading && filteredUsers.length > 0 && (
         <div className="space-y-3 md:hidden">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <Card key={user.user_id}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-3">
