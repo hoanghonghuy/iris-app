@@ -4,7 +4,7 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/teacher_scope_handler.go
  */
 import { apiClient } from './client';
-import { Class, Student, ApiResponse, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest } from '@/types';
+import { Class, Student, ApiResponse, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, HealthLog, Post } from '@/types';
 
 export const teacherApi = {
   /**
@@ -35,11 +35,46 @@ export const teacherApi = {
   },
 
   /**
+   * Lấy lịch sử điểm danh của học sinh
+   * GET /api/v1/teacher/students/:student_id/attendance
+   */
+  getStudentAttendance: async (studentId: string, from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiClient.get<ApiResponse<AttendanceRecord[]>>(`/teacher/students/${studentId}/attendance${query}`);
+    return res.data.data;
+  },
+
+  /**
    * Tạo nhật ký sức khỏe cho học sinh
    * POST /api/v1/teacher/health
    */
   createHealthLog: async (data: CreateHealthLogRequest) => {
     const res = await apiClient.post('/teacher/health', data);
+    return res.data;
+  },
+
+  /**
+   * Lấy nhật ký sức khỏe của học sinh
+   * GET /api/v1/teacher/students/:student_id/health
+   */
+  getStudentHealth: async (studentId: string, from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiClient.get<ApiResponse<HealthLog[]>>(`/teacher/students/${studentId}/health${query}`);
+    return res.data.data;
+  },
+
+  /**
+   * Cập nhật hồ sơ cá nhân (chỉ phone)
+   * PUT /api/v1/teacher/profile
+   */
+  updateMyProfile: async (phone: string) => {
+    const res = await apiClient.put('/teacher/profile', { phone });
     return res.data;
   },
 
@@ -50,5 +85,23 @@ export const teacherApi = {
   createPost: async (data: CreatePostRequest) => {
     const res = await apiClient.post('/teacher/posts', data);
     return res.data;
-  }
+  },
+
+  /**
+   * Lấy bài đăng của lớp
+   * GET /api/v1/teacher/classes/:class_id/posts
+   */
+  getClassPosts: async (classId: string) => {
+    const res = await apiClient.get<ApiResponse<Post[]>>(`/teacher/classes/${classId}/posts`);
+    return res.data.data;
+  },
+
+  /**
+   * Lấy bài đăng của học sinh
+   * GET /api/v1/teacher/students/:student_id/posts
+   */
+  getStudentPosts: async (studentId: string) => {
+    const res = await apiClient.get<ApiResponse<Post[]>>(`/teacher/students/${studentId}/posts`);
+    return res.data.data;
+  },
 };

@@ -1,29 +1,77 @@
 /**
  * Teacher Profile Page
- * Giáo viên cập nhật hồ sơ cá nhân (chỉ phone).
+ * Cập nhật số điện thoại cá nhân.
  * API: PUT /teacher/profile
  */
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { teacherApi } from "@/lib/api/teacher.api";
+import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { UserPen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { User, Loader2 } from "lucide-react";
 
 export default function TeacherProfilePage() {
+  const { user } = useAuth();
+  const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSubmitting(true);
+      setError("");
+      setSuccess("");
+      await teacherApi.updateMyProfile(phone);
+      setSuccess("Cập nhật thành công!");
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Không thể cập nhật");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <UserPen className="h-8 w-8" />
-        <h1 className="text-3xl font-bold tracking-tight">Hồ sơ cá nhân</h1>
+        <User className="h-7 w-7" />
+        <h1 className="text-2xl font-bold tracking-tight">Hồ sơ cá nhân</h1>
       </div>
-      <Card>
+
+      <Card className="max-w-lg">
         <CardHeader>
-          <CardTitle>Thông tin giáo viên</CardTitle>
+          <CardTitle className="text-lg">Thông tin tài khoản</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Nội dung sẽ được phát triển.
-          </p>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Email</label>
+            <p className="text-sm">{user?.email || "—"}</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+            {success && <div className="rounded-md bg-green-100 p-3 text-sm text-green-700">{success}</div>}
+
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium">Số điện thoại</label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="0900 000 000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+
+            <Button type="submit" disabled={submitting}>
+              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Cập nhật
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
