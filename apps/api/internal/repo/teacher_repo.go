@@ -22,18 +22,36 @@ func NewTeacherRepo(pool *pgxpool.Pool) *TeacherRepo {
 func (r *TeacherRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.Teacher, int, error) {
 	const qAll = `
 		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
+		       COALESCE(
+		           json_agg(
+		               json_build_object('class_id', c.class_id, 'name', c.name)
+		           ) FILTER (WHERE c.class_id IS NOT NULL), 
+		           '[]'
+		       ) as classes,
 		       COUNT(*) OVER() as total_count
 		FROM teachers t
 		JOIN users u ON u.user_id = t.user_id
+		LEFT JOIN teacher_classes tc ON t.teacher_id = tc.teacher_id
+		LEFT JOIN classes c ON tc.class_id = c.class_id
+		GROUP BY t.teacher_id, u.email
 		ORDER BY t.full_name
 		LIMIT $1 OFFSET $2;
 	`
 	const qBySchool = `
 		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
+		       COALESCE(
+		           json_agg(
+		               json_build_object('class_id', c.class_id, 'name', c.name)
+		           ) FILTER (WHERE c.class_id IS NOT NULL), 
+		           '[]'
+		       ) as classes,
 		       COUNT(*) OVER() as total_count
 		FROM teachers t
 		JOIN users u ON u.user_id = t.user_id
+		LEFT JOIN teacher_classes tc ON t.teacher_id = tc.teacher_id
+		LEFT JOIN classes c ON tc.class_id = c.class_id
 		WHERE t.school_id = $3
+		GROUP BY t.teacher_id, u.email
 		ORDER BY t.full_name
 		LIMIT $1 OFFSET $2;
 	`
@@ -54,7 +72,7 @@ func (r *TeacherRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offs
 	var total int
 	for rows.Next() {
 		var t model.Teacher
-		if err := rows.Scan(&t.TeacherID, &t.UserID, &t.Email, &t.FullName, &t.Phone, &t.SchoolID, &total); err != nil {
+		if err := rows.Scan(&t.TeacherID, &t.UserID, &t.Email, &t.FullName, &t.Phone, &t.SchoolID, &t.Classes, &total); err != nil {
 			return nil, 0, err
 		}
 		teachers = append(teachers, t)
@@ -65,16 +83,25 @@ func (r *TeacherRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offs
 // lấy thông tin giáo viên theo teacher_id.
 func (r *TeacherRepo) GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (*model.Teacher, error) {
 	const q = `
-		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
+		       COALESCE(
+		           json_agg(
+		               json_build_object('class_id', c.class_id, 'name', c.name)
+		           ) FILTER (WHERE c.class_id IS NOT NULL), 
+		           '[]'
+		       ) as classes
 		FROM teachers t
 		JOIN users u ON u.user_id = t.user_id
+		LEFT JOIN teacher_classes tc ON t.teacher_id = tc.teacher_id
+		LEFT JOIN classes c ON tc.class_id = c.class_id
 		WHERE t.teacher_id = $1
+		GROUP BY t.teacher_id, u.email
 		LIMIT 1;
 	`
 	teacher := &model.Teacher{}
 
 	err := r.pool.QueryRow(ctx, q, teacherID).Scan(&teacher.TeacherID, &teacher.UserID, &teacher.Email,
-		&teacher.FullName, &teacher.Phone, &teacher.SchoolID)
+		&teacher.FullName, &teacher.Phone, &teacher.SchoolID, &teacher.Classes)
 	if err != nil {
 		return nil, err
 	}
@@ -106,16 +133,25 @@ func (r *TeacherRepo) UpdatePhone(ctx context.Context, teacherID uuid.UUID, phon
 // GetByUserID lấy thông tin teacher theo user_id
 func (r *TeacherRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*model.Teacher, error) {
 	const q = `
-		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id
+		SELECT t.teacher_id, t.user_id, u.email, t.full_name, COALESCE(t.phone,''), t.school_id,
+		       COALESCE(
+		           json_agg(
+		               json_build_object('class_id', c.class_id, 'name', c.name)
+		           ) FILTER (WHERE c.class_id IS NOT NULL), 
+		           '[]'
+		       ) as classes
 		FROM teachers t
 		JOIN users u ON u.user_id = t.user_id
+		LEFT JOIN teacher_classes tc ON t.teacher_id = tc.teacher_id
+		LEFT JOIN classes c ON tc.class_id = c.class_id
 		WHERE t.user_id = $1
+		GROUP BY t.teacher_id, u.email
 		LIMIT 1;
 	`
 	teacher := &model.Teacher{}
 
 	err := r.pool.QueryRow(ctx, q, userID).Scan(&teacher.TeacherID, &teacher.UserID, &teacher.Email,
-		&teacher.FullName, &teacher.Phone, &teacher.SchoolID)
+		&teacher.FullName, &teacher.Phone, &teacher.SchoolID, &teacher.Classes)
 	if err != nil {
 		return nil, err
 	}
