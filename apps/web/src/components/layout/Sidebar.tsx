@@ -21,7 +21,6 @@ import {
   ClipboardCheck,
   HeartPulse,
   FileText,
-  UserPen,
   Baby,
   Newspaper,
   LayoutDashboard,
@@ -52,7 +51,6 @@ export const teacherMenuItems: SidebarItem[] = [
   { label: "Điểm danh", href: "/teacher/attendance", icon: <ClipboardCheck className="h-5 w-5" /> },
   { label: "Sức khỏe", href: "/teacher/health", icon: <HeartPulse className="h-5 w-5" /> },
   { label: "Bài đăng", href: "/teacher/posts", icon: <FileText className="h-5 w-5" /> },
-  { label: "Hồ sơ", href: "/teacher/profile", icon: <UserPen className="h-5 w-5" /> },
 ];
 
 export const parentMenuItems: SidebarItem[] = [
