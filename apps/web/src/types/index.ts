@@ -162,6 +162,10 @@ export interface Teacher {
   full_name: string;
   phone: string;
   school_id: string;
+  classes?: {
+    class_id: string;
+    name: string;
+  }[];
 }
 
 /**
@@ -197,6 +201,10 @@ export interface Parent {
   full_name: string;
   phone: string;
   school_id: string;
+  children?: {
+    student_id: string;
+    full_name: string;
+  }[];
 }
 
 /**

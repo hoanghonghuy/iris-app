@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Heart, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Heart, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
 
 export default function AdminParentsPage() {
   const [parents, setParents] = useState<Parent[]>([]);
@@ -88,8 +89,22 @@ export default function AdminParentsPage() {
       const studentName = students.find((s) => s.student_id === selectedStudentId)?.full_name || "";
       setSuccess(`Đã gán phụ huynh cho ${studentName}`);
       setAssigningParentId(null);
+      fetchParents();
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể gán");
+    } finally { setActionLoading(false); }
+  };
+
+  const handleUnassign = async (parentId: string, studentId: string, studentName: string) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Bạn có chắc chắn muốn hủy gán học sinh ${studentName}?`)) return;
+    try {
+      setActionLoading(true); setSuccess("");
+      await adminApi.unassignParentFromStudent(parentId, studentId);
+      setSuccess(`Đã hủy gán học sinh ${studentName}`);
+      fetchParents();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Không thể hủy gán");
     } finally { setActionLoading(false); }
   };
 
@@ -151,17 +166,41 @@ export default function AdminParentsPage() {
                 <tr className="border-b text-left text-sm text-muted-foreground">
                   <th className="px-6 py-3 font-medium">Họ tên</th>
                   <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Điện thoại</th>
+                  <th className="px-6 py-3 font-medium">Học Sinh Quản Lý</th>
                   <th className="px-6 py-3 font-medium text-right">Gán học sinh</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredParents.map((p) => (
-                  <tr key={p.parent_id} className="border-b last:border-0 hover:bg-zinc-50">
-                    <td className="px-6 py-4 font-medium">{p.full_name}</td>
+                  <tr key={p.parent_id} className="border-b last:border-0 hover:bg-zinc-50 leading-relaxed">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-slate-900">{p.full_name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {p.phone || "—"}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-muted-foreground">{p.email}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{p.phone || "—"}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4">
+                      {p.children && p.children.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {p.children.map(c => (
+                            <Badge key={c.student_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
+                              {c.full_name}
+                              <button 
+                                onClick={() => handleUnassign(p.parent_id, c.student_id, c.full_name)}
+                                className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                                aria-label="Remove"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Chưa ghép học sinh</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right align-middle">
                       {assigningParentId === p.parent_id ? (
                         <div className="flex items-center justify-end gap-1">
                           <Select value={selectedClassId} onValueChange={setSelectedClassId}>
@@ -206,10 +245,60 @@ export default function AdminParentsPage() {
                   <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {p.email}</p>
                   {p.phone && <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {p.phone}</p>}
                 </div>
-                <div className="mt-3">
-                  <Button variant="outline" size="sm" onClick={() => setAssigningParentId(p.parent_id)}>
-                    <Link2 className="mr-1 h-3 w-3" /> Gán học sinh
-                  </Button>
+
+                <div className="mt-4 border-t border-dashed pt-3">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Học sinh thuộc quản lý</p>
+                  {p.children && p.children.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.children.map(c => (
+                        <Badge key={c.student_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
+                          {c.full_name}
+                          <button 
+                            onClick={(e) => { e.preventDefault(); handleUnassign(p.parent_id, c.student_id, c.full_name); }}
+                            className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
+                            aria-label="Remove child"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      Chưa ghép học sinh
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-zinc-100 flex py-1 items-center justify-start">
+                  {assigningParentId === p.parent_id ? (
+                    <div className="flex flex-wrap items-center gap-2 w-full">
+                      <div className="flex w-full gap-2">
+                         <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                           <SelectTrigger className="flex-[0.4]" size="sm"><SelectValue placeholder="Chọn Lớp" /></SelectTrigger>
+                           <SelectContent>
+                             {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+                           </SelectContent>
+                         </Select>
+                         <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+                            <SelectTrigger className="flex-[0.6]" size="sm"><SelectValue placeholder="Chọn HS" /></SelectTrigger>
+                            <SelectContent>
+                              {students.map((s) => <SelectItem key={s.student_id} value={s.student_id}>{s.full_name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                      </div>
+                      <div className="flex w-full gap-2 mt-1">
+                        <Button size="sm" className="flex-1" onClick={() => handleAssign(p.parent_id)} disabled={actionLoading || !selectedStudentId}>
+                          {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Link2 className="h-4 w-4 mr-1" />} Gán
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => setAssigningParentId(null)}>Hủy</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" className="w-full text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200" onClick={() => setAssigningParentId(p.parent_id)}>
+                      <Link2 className="mr-1 h-4 w-4" /> Gán phân loại học sinh
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BookUser, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { BookUser, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
 
 export default function AdminTeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -72,8 +73,22 @@ export default function AdminTeachersPage() {
       const className = classes.find((c) => c.class_id === selectedClassId)?.name || "";
       setSuccess(`Đã gán giáo viên vào lớp ${className}`);
       setAssigningTeacherId(null);
+      fetchTeachers();
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể gán lớp");
+    } finally { setActionLoading(false); }
+  };
+
+  const handleUnassign = async (teacherId: string, classId: string, className: string) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Bạn có chắc chắn muốn hủy gán lớp ${className}?`)) return;
+    try {
+      setActionLoading(true); setSuccess("");
+      await adminApi.unassignTeacherFromClass(teacherId, classId);
+      setSuccess(`Đã hủy gán lớp ${className}`);
+      fetchTeachers();
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Không thể hủy gán lớp");
     } finally { setActionLoading(false); }
   };
 
@@ -135,17 +150,41 @@ export default function AdminTeachersPage() {
                 <tr className="border-b text-left text-sm text-muted-foreground">
                   <th className="px-6 py-3 font-medium">Họ tên</th>
                   <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Điện thoại</th>
+                  <th className="px-6 py-3 font-medium">Lớp Phụ Trách</th>
                   <th className="px-6 py-3 font-medium text-right">Gán lớp</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredTeachers.map((t) => (
-                  <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-zinc-50">
-                    <td className="px-6 py-4 font-medium">{t.full_name}</td>
+                  <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-zinc-50 leading-relaxed">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-slate-900">{t.full_name}</div>
+                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {t.phone || "—"}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-muted-foreground">{t.email}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{t.phone || "—"}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4">
+                      {t.classes && t.classes.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {t.classes.map(c => (
+                            <Badge key={c.class_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
+                              {c.name}
+                              <button 
+                                onClick={() => handleUnassign(t.teacher_id, c.class_id, c.name)}
+                                className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                                aria-label="Remove"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground italic">Chưa phân lớp</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right align-middle">
                       {assigningTeacherId === t.teacher_id ? (
                         <div className="flex items-center justify-end gap-2">
                           <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
@@ -192,23 +231,52 @@ export default function AdminTeachersPage() {
                   <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {t.email}</p>
                   {t.phone && <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {t.phone}</p>}
                 </div>
-                <div className="mt-3">
-                  {assigningTeacherId === t.teacher_id ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                        <SelectTrigger className="w-[140px]" size="sm"><SelectValue placeholder="Lớp" /></SelectTrigger>
-                        <SelectContent>
-                          {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                      <Button size="sm" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
-                        {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Gán"}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setAssigningTeacherId(null)}>Hủy</Button>
+                
+                <div className="mt-4 border-t border-dashed pt-3">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Lớp phụ trách</p>
+                  {t.classes && t.classes.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {t.classes.map(c => (
+                        <Badge key={c.class_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
+                          {c.name}
+                          <button 
+                            onClick={(e) => { e.preventDefault(); handleUnassign(t.teacher_id, c.class_id, c.name); }}
+                            className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
+                            aria-label="Remove class"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
                     </div>
                   ) : (
-                    <Button variant="outline" size="sm" onClick={() => setAssigningTeacherId(t.teacher_id)}>
-                      <Link2 className="mr-1 h-3 w-3" /> Gán lớp
+                    <div className="text-sm text-muted-foreground italic">
+                      Chưa phân lớp
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-start">
+                  {assigningTeacherId === t.teacher_id ? (
+                    <div className="flex flex-wrap items-center gap-2 w-full">
+                      <div className="flex w-full gap-2">
+                         <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                           <SelectTrigger className="flex-1" size="sm"><SelectValue placeholder="Chọn Lớp" /></SelectTrigger>
+                           <SelectContent>
+                             {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+                           </SelectContent>
+                         </Select>
+                      </div>
+                      <div className="flex w-full gap-2 mt-1">
+                        <Button size="sm" className="flex-1" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
+                          {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Link2 className="h-4 w-4 mr-1" />} Gán
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1" onClick={() => setAssigningTeacherId(null)}>Hủy</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button variant="outline" size="sm" className="w-full text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200" onClick={() => setAssigningTeacherId(t.teacher_id)}>
+                      <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
                     </Button>
                   )}
                 </div>
