@@ -1,7 +1,7 @@
 /**
  * Auth API Service
  * Quản lý các endpoint liên quan đến xác thực: login, register, activate...
- * Tương ứng với: apps/api/internal/api/v1/handlers/auth_handler.go
+ * Tương ứng với: apps/api/internal/api/v1/handlers/auth_handler.go + user_handler.go
  */
 import { apiClient } from './client';
 import { LoginRequest, LoginResponse, RegisterParentRequest } from '@/types';
@@ -26,11 +26,29 @@ export const authApi = {
   },
 
   /**
+   * Kích hoạt tài khoản bằng token
+   * POST /api/v1/users/activate-token
+   */
+  activateWithToken: async (data: { token: string; password: string }) => {
+    const res = await apiClient.post('/users/activate-token', data);
+    return res.data;
+  },
+
+  /**
+   * Cập nhật mật khẩu (self-service)
+   * PUT /api/v1/me/password
+   */
+  updateMyPassword: async (password: string) => {
+    const res = await apiClient.put('/me/password', { password });
+    return res.data;
+  },
+
+  /**
    * Phụ huynh tự đăng ký bằng mã code
    * POST /api/v1/register/parent
    */
   registerParent: async (data: RegisterParentRequest) => {
     const res = await apiClient.post('/register/parent', data);
     return res.data;
-  }
+  },
 };

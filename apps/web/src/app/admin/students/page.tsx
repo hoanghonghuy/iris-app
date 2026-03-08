@@ -1,7 +1,7 @@
 /**
  * Admin Students Page
- * Quản lý học sinh theo lớp: chọn trường → chọn lớp → xem danh sách + tạo mới.
- * API: GET /admin/students/by-class/:class_id, POST /admin/students
+ * Quản lý học sinh theo lớp: chọn trường → chọn lớp → xem danh sách + tạo mới + tạo mã phụ huynh.
+ * API: GET /admin/students/by-class/:class_id, POST /admin/students, POST /admin/students/:id/generate-parent-code
  */
 "use client";
 
@@ -19,6 +19,9 @@ import {
   ChevronDown,
   Calendar,
   User,
+  KeyRound,
+  Copy,
+  Check,
 } from "lucide-react";
 
 export default function AdminStudentsPage() {
@@ -42,6 +45,12 @@ export default function AdminStudentsPage() {
   const [formData, setFormData] = useState({ full_name: "", dob: "", gender: "male" });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // Parent code
+  const [generatingCode, setGeneratingCode] = useState<string | null>(null);
+  const [parentCodes, setParentCodes] = useState<Record<string, string>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState("");
 
   // ─── Fetch schools ────────────────────────────────────────────────
 
@@ -132,6 +141,28 @@ export default function AdminStudentsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // ─── Generate Parent Code ──────────────────────────────────────────
+
+  const handleGenerateCode = async (studentId: string) => {
+    try {
+      setGeneratingCode(studentId);
+      setCodeError("");
+      const res = await adminApi.generateParentCode(studentId);
+      const code = (res as any)?.data?.parent_code || (res as any)?.parent_code || "";
+      setParentCodes((prev) => ({ ...prev, [studentId]: code }));
+    } catch (err: any) {
+      setCodeError(err.response?.data?.error || "Không thể tạo mã");
+    } finally {
+      setGeneratingCode(null);
+    }
+  };
+
+  const handleCopy = (studentId: string) => {
+    navigator.clipboard.writeText(parentCodes[studentId] || "");
+    setCopiedId(studentId);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   // ─── Helpers ──────────────────────────────────────────────────────
@@ -278,6 +309,9 @@ export default function AdminStudentsPage() {
       {error && (
         <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
       )}
+      {codeError && (
+        <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{codeError}</div>
+      )}
 
       {/* Loading */}
       {(loadingClasses || loadingStudents) && (
@@ -313,6 +347,7 @@ export default function AdminStudentsPage() {
                     <th className="px-6 py-3 font-medium">Họ tên</th>
                     <th className="px-6 py-3 font-medium">Ngày sinh</th>
                     <th className="px-6 py-3 font-medium">Giới tính</th>
+                    <th className="px-6 py-3 font-medium text-right">Mã PH</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -322,6 +357,21 @@ export default function AdminStudentsPage() {
                       <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {genderLabel[s.gender] || s.gender}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {parentCodes[s.student_id] ? (
+                          <div className="flex items-center justify-end gap-1">
+                            <code className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
+                            <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
+                              {copiedId === s.student_id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
+                            {generatingCode === s.student_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="mr-1 h-4 w-4" />}
+                            Tạo mã
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -348,6 +398,19 @@ export default function AdminStudentsPage() {
                     </span>
                     <span>{genderLabel[s.gender] || s.gender}</span>
                   </div>
+                  {parentCodes[s.student_id] ? (
+                    <div className="mt-2 flex items-center gap-1">
+                      <code className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
+                      <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
+                        {copiedId === s.student_id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="ghost" size="sm" className="mt-2" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
+                      {generatingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <KeyRound className="mr-1 h-3 w-3" />}
+                      Tạo mã PH
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

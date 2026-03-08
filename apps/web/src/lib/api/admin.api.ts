@@ -1,12 +1,11 @@
 /**
  * Admin API Service
  * Quản lý các endpoint dành cho Admin (SUPER_ADMIN & SCHOOL_ADMIN)
- * Tương ứng với: apps/api/internal/api/v1/handlers/ (admin_helpers.go, school_handler.go, class_handler.go...)
  */
 import { apiClient } from './client';
-import { 
-  School, Class, Student, UserInfo, Teacher, Parent, 
-  ApiResponse, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest 
+import {
+  School, Class, Student, UserInfo, Teacher, Parent,
+  ApiResponse, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest
 } from '@/types';
 
 export const adminApi = {
@@ -49,6 +48,14 @@ export const adminApi = {
     const res = await apiClient.get<ApiResponse<UserInfo[]>>('/admin/users', { params });
     return res.data;
   },
+  createUser: async (data: { email: string; roles: string[] }) => {
+    const res = await apiClient.post('/admin/users', data);
+    return res.data;
+  },
+  getUserById: async (userId: string) => {
+    const res = await apiClient.get<ApiResponse<UserInfo>>(`/admin/users/${userId}`);
+    return res.data.data;
+  },
   lockUser: async (userId: string) => {
     const res = await apiClient.post(`/admin/users/${userId}/lock`);
     return res.data;
@@ -57,14 +64,34 @@ export const adminApi = {
     const res = await apiClient.post(`/admin/users/${userId}/unlock`);
     return res.data;
   },
+  assignRole: async (userId: string, roleName: string) => {
+    const res = await apiClient.post(`/admin/users/${userId}/roles`, { role_name: roleName });
+    return res.data;
+  },
 
   // --- TEACHERS ---
   getTeachers: async () => {
     const res = await apiClient.get<ApiResponse<Teacher[]>>('/admin/teachers');
     return res.data.data;
   },
+  getTeacherById: async (teacherId: string) => {
+    const res = await apiClient.get<ApiResponse<Teacher>>(`/admin/teachers/${teacherId}`);
+    return res.data.data;
+  },
+  updateTeacher: async (teacherId: string, data: { full_name?: string; phone?: string }) => {
+    const res = await apiClient.put(`/admin/teachers/${teacherId}`, data);
+    return res.data;
+  },
+  getTeachersOfClass: async (classId: string) => {
+    const res = await apiClient.get<ApiResponse<Teacher[]>>(`/admin/teachers/class/${classId}`);
+    return res.data.data;
+  },
   assignTeacherToClass: async (teacherId: string, classId: string) => {
     const res = await apiClient.post(`/admin/teachers/${teacherId}/classes/${classId}`);
+    return res.data;
+  },
+  unassignTeacherFromClass: async (teacherId: string, classId: string) => {
+    const res = await apiClient.delete(`/admin/teachers/${teacherId}/classes/${classId}`);
     return res.data;
   },
 
@@ -73,8 +100,30 @@ export const adminApi = {
     const res = await apiClient.get<ApiResponse<Parent[]>>('/admin/parents');
     return res.data.data;
   },
+  getParentById: async (parentId: string) => {
+    const res = await apiClient.get<ApiResponse<Parent>>(`/admin/parents/${parentId}`);
+    return res.data.data;
+  },
   assignParentToStudent: async (parentId: string, studentId: string) => {
     const res = await apiClient.post(`/admin/parents/${parentId}/students/${studentId}`);
     return res.data;
-  }
+  },
+  unassignParentFromStudent: async (parentId: string, studentId: string) => {
+    const res = await apiClient.delete(`/admin/parents/${parentId}/students/${studentId}`);
+    return res.data;
+  },
+
+  // --- SCHOOL ADMINS ---
+  getSchoolAdmins: async () => {
+    const res = await apiClient.get<ApiResponse<any[]>>('/admin/school-admins');
+    return res.data.data;
+  },
+  createSchoolAdmin: async (data: { user_id: string; school_id: string }) => {
+    const res = await apiClient.post('/admin/school-admins', data);
+    return res.data;
+  },
+  deleteSchoolAdmin: async (adminId: string) => {
+    const res = await apiClient.delete(`/admin/school-admins/${adminId}`);
+    return res.data;
+  },
 };
