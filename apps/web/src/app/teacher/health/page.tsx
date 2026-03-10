@@ -2,6 +2,8 @@
  * Teacher Health Page
  * Ghi nhận sức khỏe HS: chọn lớp → HS → ghi nhận nhiệt độ, triệu chứng, mức độ.
  * API: GET /teacher/classes, GET /teacher/classes/:id/students, POST /teacher/health
+ *
+ * TODO: add server-side pagination for health logs list
  */
 "use client";
 

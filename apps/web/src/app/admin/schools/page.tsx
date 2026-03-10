@@ -2,6 +2,8 @@
  * Admin Schools Page
  * Quản lý danh sách trường học: xem, tạo mới.
  * API: GET /admin/schools, POST /admin/schools
+ *
+ * TODO: add server-side pagination when school count grows
  */
 "use client";
 

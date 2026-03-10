@@ -2,6 +2,8 @@
  * Teacher Attendance Page
  * Chọn lớp → xem HS → điểm danh từng em.
  * API: GET /teacher/classes, GET /teacher/classes/:id/students, POST /teacher/attendance
+ *
+ * TODO: add server-side pagination for attendance history list
  */
 "use client";
 

@@ -7,7 +7,8 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
-import { UserInfo } from "@/types";
+import { UserInfo, Pagination } from "@/types";
+import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [formEmail, setFormEmail] = useState("");
@@ -48,13 +51,14 @@ export default function AdminUsersPage() {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true); setError("");
-      const response = await adminApi.getUsers({ limit: 100 });
+      const response = await adminApi.getUsers({ limit: 20, offset: currentOffset });
       const data = (response as any).data || response || [];
       setUsers(Array.isArray(data) ? data : []);
+      if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách người dùng");
     } finally { setLoading(false); }
-  }, []);
+  }, [currentOffset]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -249,6 +253,11 @@ export default function AdminUsersPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && users.length > 0 && (
+        <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
     </div>
   );

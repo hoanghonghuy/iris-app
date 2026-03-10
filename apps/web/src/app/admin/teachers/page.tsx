@@ -7,7 +7,8 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
-import { Teacher, School, Class } from "@/types";
+import { Teacher, School, Class, Pagination } from "@/types";
+import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,8 @@ export default function AdminTeachersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -33,12 +36,13 @@ export default function AdminTeachersPage() {
   const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true); setError("");
-      const data = await adminApi.getTeachers();
-      setTeachers(data || []);
+      const response = await adminApi.getTeachers({ limit: 20, offset: currentOffset });
+      setTeachers(response.data || []);
+      if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách giáo viên");
     } finally { setLoading(false); }
-  }, []);
+  }, [currentOffset]);
 
   useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
 
@@ -284,6 +288,11 @@ export default function AdminTeachersPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && teachers.length > 0 && (
+        <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
     </div>
   );

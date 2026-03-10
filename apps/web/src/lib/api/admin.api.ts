@@ -5,7 +5,7 @@
 import { apiClient } from './client';
 import {
   School, Class, Student, UserInfo, Teacher, Parent,
-  ApiResponse, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest
+  ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest
 } from '@/types';
 
 export const adminApi = {
@@ -44,7 +44,7 @@ export const adminApi = {
   },
 
   // --- USERS ---
-  getUsers: async (params?: { limit?: number; offset?: number }) => {
+  getUsers: async (params?: PaginationParams) => {
     const res = await apiClient.get<ApiResponse<UserInfo[]>>('/admin/users', { params });
     return res.data;
   },
@@ -70,9 +70,9 @@ export const adminApi = {
   },
 
   // --- TEACHERS ---
-  getTeachers: async () => {
-    const res = await apiClient.get<ApiResponse<Teacher[]>>('/admin/teachers');
-    return res.data.data;
+  getTeachers: async (params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<Teacher[]>>('/admin/teachers', { params });
+    return res.data;
   },
   getTeacherById: async (teacherId: string) => {
     const res = await apiClient.get<ApiResponse<Teacher>>(`/admin/teachers/${teacherId}`);
@@ -96,9 +96,9 @@ export const adminApi = {
   },
 
   // --- PARENTS ---
-  getParents: async () => {
-    const res = await apiClient.get<ApiResponse<Parent[]>>('/admin/parents');
-    return res.data.data;
+  getParents: async (params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<Parent[]>>('/admin/parents', { params });
+    return res.data;
   },
   getParentById: async (parentId: string) => {
     const res = await apiClient.get<ApiResponse<Parent>>(`/admin/parents/${parentId}`);

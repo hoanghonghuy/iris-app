@@ -2,6 +2,8 @@
  * Admin Students Page
  * Quản lý học sinh theo lớp: chọn trường → chọn lớp → xem danh sách + tạo mới + tạo mã phụ huynh.
  * API: GET /admin/students/by-class/:class_id, POST /admin/students, POST /admin/students/:id/generate-parent-code
+ *
+ * TODO: add server-side pagination when student count per class grows
  */
 "use client";
 

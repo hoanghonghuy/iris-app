@@ -2,6 +2,8 @@
  * Admin School Admins Page
  * Quản lý School Admin: listing + tạo mới + xóa.
  * API: GET/POST/DELETE /admin/school-admins
+ *
+ * TODO: add server-side pagination when school-admin count grows
  */
 "use client";
 

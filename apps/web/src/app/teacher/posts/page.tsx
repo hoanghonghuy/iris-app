@@ -2,6 +2,8 @@
  * Teacher Posts Page
  * Tạo & xem bài đăng (thông báo lớp, nhận xét HS).
  * API: POST /teacher/posts, GET /teacher/classes/:id/posts
+ *
+ * TODO: add server-side pagination for posts list
  */
 "use client";
 

@@ -7,7 +7,8 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
-import { Parent, School, Class, Student } from "@/types";
+import { Parent, School, Class, Student, Pagination } from "@/types";
+import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,8 @@ export default function AdminParentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -35,12 +38,13 @@ export default function AdminParentsPage() {
   const fetchParents = useCallback(async () => {
     try {
       setLoading(true); setError("");
-      const data = await adminApi.getParents();
-      setParents(data || []);
+      const response = await adminApi.getParents({ limit: 20, offset: currentOffset });
+      setParents(response.data || []);
+      if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách phụ huynh");
     } finally { setLoading(false); }
-  }, []);
+  }, [currentOffset]);
 
   useEffect(() => { fetchParents(); }, [fetchParents]);
 
@@ -304,6 +308,11 @@ export default function AdminParentsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && parents.length > 0 && (
+        <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
     </div>
   );
