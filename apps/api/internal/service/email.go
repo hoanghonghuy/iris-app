@@ -1,0 +1,103 @@
+package service
+
+import (
+	"fmt"
+	"log"
+	"strconv"
+
+	mail "github.com/wneessen/go-mail"
+)
+
+// EmailSender defines the interface for sending emails.
+// Swap implementations by changing the constructor in main.go:
+//   - NewLogEmailSender      → dev/test (prints to terminal)
+//   - NewSMTPEmailSender     → production (sends via SMTP)
+type EmailSender interface {
+	Send(to, subject, htmlBody string) error
+}
+
+// ---------------------------------------------------------------------------
+// LogEmailSender — dev/test only, prints email content to stdout
+// ---------------------------------------------------------------------------
+
+type LogEmailSender struct {
+	frontendURL string
+}
+
+func NewLogEmailSender(frontendURL string) *LogEmailSender {
+	return &LogEmailSender{frontendURL: frontendURL}
+}
+
+func (s *LogEmailSender) Send(to, subject, htmlBody string) error {
+	log.Printf("\n"+
+		"╔══════════════════════════════════════════════════╗\n"+
+		"║            📧  EMAIL (dev mode)                 ║\n"+
+		"╠══════════════════════════════════════════════════╣\n"+
+		"║ To:      %s\n"+
+		"║ Subject: %s\n"+
+		"╠══════════════════════════════════════════════════╣\n"+
+		"║ Body:\n%s\n"+
+		"╚══════════════════════════════════════════════════╝\n",
+		to, subject, htmlBody,
+	)
+	return nil
+}
+
+func (s *LogEmailSender) FrontendURL() string { return s.frontendURL }
+
+// ---------------------------------------------------------------------------
+// SMTPEmailSender — production, sends real emails via SMTP
+// ---------------------------------------------------------------------------
+
+type SMTPEmailSender struct {
+	host        string
+	port        int
+	user        string
+	pass        string
+	frontendURL string
+}
+
+func NewSMTPEmailSender(host, portStr, user, pass, frontendURL string) *SMTPEmailSender {
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		port = 587 // default TLS port
+	}
+	return &SMTPEmailSender{
+		host:        host,
+		port:        port,
+		user:        user,
+		pass:        pass,
+		frontendURL: frontendURL,
+	}
+}
+
+func (s *SMTPEmailSender) Send(to, subject, htmlBody string) error {
+	m := mail.NewMsg()
+	if err := m.From(s.user); err != nil {
+		return fmt.Errorf("failed to set From: %w", err)
+	}
+	if err := m.To(to); err != nil {
+		return fmt.Errorf("failed to set To: %w", err)
+	}
+	m.Subject(subject)
+	m.SetBodyString(mail.TypeTextHTML, htmlBody)
+
+	c, err := mail.NewClient(s.host,
+		mail.WithPort(s.port),
+		mail.WithSMTPAuth(mail.SMTPAuthPlain),
+		mail.WithUsername(s.user),
+		mail.WithPassword(s.pass),
+		mail.WithTLSPortPolicy(mail.TLSMandatory),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create mail client: %w", err)
+	}
+
+	if err = c.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SMTPEmailSender) FrontendURL() string { return s.frontendURL }
