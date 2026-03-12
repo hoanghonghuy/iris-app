@@ -7,6 +7,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { authApi } from '@/lib/api/auth.api';
 import { authHelpers } from '@/lib/api/client';
@@ -102,7 +103,14 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button className="w-full" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Đang đăng nhập...
+                </>
+              ) : (
+                'Đang đăng nhập'
+              )}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
               Phụ huynh chưa có tài khoản?{' '}

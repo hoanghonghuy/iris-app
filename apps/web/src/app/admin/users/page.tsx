@@ -15,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TableSkeleton } from "@/components/shared/TableSkeleton";
+import { CardSkeleton } from "@/components/shared/CardSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { toast } from "sonner";
 import {
   UserCog, Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, CheckCircle2, Search
 } from "lucide-react";
@@ -56,20 +60,22 @@ export default function AdminUsersPage() {
       setUsers(Array.isArray(data) ? data : []);
       if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải danh sách người dùng");
+      const msg = err.response?.data?.error || "Không thể tải danh sách người dùng";
+      setError(msg);
+      toast.error(msg);
     } finally { setLoading(false); }
   }, [currentOffset]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleLock = async (userId: string) => {
-    try { setActionLoading(userId); await adminApi.lockUser(userId); fetchUsers(); }
-    catch (err: any) { setError(err.response?.data?.error || "Không thể khóa"); }
+    try { setActionLoading(userId); await adminApi.lockUser(userId); toast.success("Đã khóa người dùng"); fetchUsers(); }
+    catch (err: any) { toast.error(err.response?.data?.error || "Không thể khóa"); }
     finally { setActionLoading(null); }
   };
   const handleUnlock = async (userId: string) => {
-    try { setActionLoading(userId); await adminApi.unlockUser(userId); fetchUsers(); }
-    catch (err: any) { setError(err.response?.data?.error || "Không thể mở khóa"); }
+    try { setActionLoading(userId); await adminApi.unlockUser(userId); toast.success("Đã mở khóa người dùng"); fetchUsers(); }
+    catch (err: any) { toast.error(err.response?.data?.error || "Không thể mở khóa"); }
     finally { setActionLoading(null); }
   };
 
@@ -80,10 +86,11 @@ export default function AdminUsersPage() {
     try {
       setSubmitting(true); setFormError(""); setSuccess("");
       await adminApi.createUser({ email: formEmail, roles: formRoles });
-      setSuccess(`Đã tạo user ${formEmail}. User cần kích hoạt tài khoản.`);
+      toast.success(`Đã tạo user ${formEmail}. User cần kích hoạt tài khoản.`);
       setFormEmail(""); setFormRoles(["TEACHER"]); setShowForm(false); fetchUsers();
     } catch (err: any) {
       setFormError(err.response?.data?.error || "Không thể tạo user");
+      toast.error(err.response?.data?.error || "Không thể tạo user");
     } finally { setSubmitting(false); }
   };
 
@@ -109,10 +116,6 @@ export default function AdminUsersPage() {
           {showForm ? "Hủy" : "Tạo user"}
         </Button>
       </div>
-
-      {success && (
-        <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>
-      )}
 
       {showForm && (
         <Card>
@@ -148,29 +151,45 @@ export default function AdminUsersPage() {
         </Card>
       )}
 
-      {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
-      
+
+
       {/* Toolbar: Search box */}
       {!loading && !error && users.length > 0 && !showForm && (
         <div className="relative max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Tìm theo email..." 
-            className="pl-8 bg-white" 
+          <Input
+            type="search"
+            placeholder="Tìm theo email..."
+            className="pl-8 bg-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       )}
 
-      {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
+      {loading && (
+        <>
+          <div className="hidden md:block">
+            <TableSkeleton columns={4} rows={10} />
+          </div>
+          <div className="md:hidden">
+            <CardSkeleton cards={5} />
+          </div>
+        </>
+      )}
 
       {!loading && users.length === 0 && !error && (
-        <Card><CardContent className="flex flex-col items-center justify-center py-12">
-          <UserCog className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-sm text-muted-foreground">Chưa có người dùng nào</p>
-        </CardContent></Card>
+        <EmptyState
+          icon={UserCog}
+          title="Chưa có người dùng nào"
+          description="Hiện tại hệ thống chưa có dữ liệu người dùng mới."
+          action={
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo user đầu tiên
+            </Button>
+          }
+        />
       )}
 
       {!loading && users.length > 0 && filteredUsers.length === 0 && (

@@ -13,6 +13,10 @@ import { School, CreateSchoolRequest } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TableSkeleton } from "@/components/shared/TableSkeleton";
+import { CardSkeleton } from "@/components/shared/CardSkeleton";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { toast } from "sonner";
 import { School as SchoolIcon, Plus, X, Loader2, MapPin } from "lucide-react";
 
 export default function AdminSchoolsPage() {
@@ -37,7 +41,9 @@ export default function AdminSchoolsPage() {
       const data = await adminApi.getSchools();
       setSchools(data || []);
     } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải danh sách trường học");
+      const msg = err.response?.data?.error || "Không thể tải danh sách trường học";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -62,6 +68,7 @@ export default function AdminSchoolsPage() {
       await adminApi.createSchool(formData);
       setFormData({ name: "", address: "" });
       setShowForm(false);
+      toast.success("Tạo trường học thành công");
       fetchSchools(); // refresh list
     } catch (err: any) {
       setFormError(err.response?.data?.error || "Không thể tạo trường học");
@@ -144,23 +151,28 @@ export default function AdminSchoolsPage() {
 
       {/* Loading State */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <>
+          <div className="hidden md:block">
+            <TableSkeleton columns={2} rows={5} />
+          </div>
+          <div className="md:hidden">
+            <CardSkeleton cards={3} />
+          </div>
+        </>
       )}
 
       {/* Empty State */}
       {!loading && !error && schools.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <SchoolIcon className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 text-sm text-muted-foreground">Chưa có trường học nào</p>
-            <Button variant="outline" className="mt-4" onClick={() => setShowForm(true)}>
+        <EmptyState
+          icon={SchoolIcon}
+          title="Chưa có trường học nào"
+          action={
+            <Button onClick={() => setShowForm(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Thêm trường đầu tiên
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       )}
 
       {/* Desktop Table (md+) */}
