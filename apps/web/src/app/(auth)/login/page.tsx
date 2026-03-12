@@ -72,31 +72,31 @@ export default function LoginPage() {
             )}
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">Email</label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
+              <Input
+                id="email"
+                type="email"
+                placeholder="name@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
               />
             </div>
             <div className="space-y-2 mb-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium" htmlFor="password">Mật khẩu</label>
-                <span
-                  className="text-xs text-muted-foreground cursor-not-allowed"
-                  title="Tính năng đang phát triển"
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
                 >
                   Quên mật khẩu?
-                </span>
+                </Link>
               </div>
-              <Input 
-                id="password" 
-                type="password" 
+              <Input
+                id="password"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
               />
             </div>
           </CardContent>

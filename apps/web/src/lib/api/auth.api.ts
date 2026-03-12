@@ -51,4 +51,22 @@ export const authApi = {
     const res = await apiClient.post('/register/parent', data);
     return res.data;
   },
+
+  /**
+   * Yêu cầu đặt lại mật khẩu (gửi email)
+   * POST /api/v1/auth/forgot-password
+   */
+  forgotPassword: async (email: string) => {
+    const res = await apiClient.post('/auth/forgot-password', { email });
+    return res.data;
+  },
+
+  /**
+   * Đặt lại mật khẩu bằng token
+   * POST /api/v1/auth/reset-password
+   */
+  resetPassword: async (token: string, password: string) => {
+    const res = await apiClient.post('/auth/reset-password', { token, password });
+    return res.data;
+  },
 };
