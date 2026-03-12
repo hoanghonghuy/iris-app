@@ -30,6 +30,13 @@ var (
 	ErrActivationTokenExpired  = errors.New("activation token has expired")
 )
 
+// Password reset errors
+var (
+	ErrResetTokenInvalid = errors.New("invalid or expired reset token")
+	ErrResetTokenUsed    = errors.New("reset token has already been used")
+	ErrFailedToSendEmail = errors.New("failed to send reset email")
+)
+
 // Parent-related errors
 var (
 	ErrInvalidParentCode           = errors.New("invalid parent code")

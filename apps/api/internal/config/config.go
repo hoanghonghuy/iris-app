@@ -10,6 +10,13 @@ type Config struct {
 	JWTSecret     string
 	JWTTTLMinutes int
 	Port          string
+
+	// SMTP (optional — empty = dev mode, uses LogEmailSender)
+	SMTPHost    string
+	SMTPPort    string
+	SMTPUser    string
+	SMTPPass    string
+	FrontendURL string
 }
 
 // Load reads configuration from environment variables.
@@ -31,6 +38,11 @@ func Load() Config {
 		JWTSecret:     must("JWT_SECRET"),
 		JWTTTLMinutes: ttl,
 		Port:          port,
+		SMTPHost:      os.Getenv("SMTP_HOST"),
+		SMTPPort:      os.Getenv("SMTP_PORT"),
+		SMTPUser:      os.Getenv("SMTP_USER"),
+		SMTPPass:      os.Getenv("SMTP_PASS"),
+		FrontendURL:   os.Getenv("FRONTEND_URL"),
 	}
 }
 

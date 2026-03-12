@@ -17,11 +17,13 @@ import (
 
 type AuthHandler struct {
 	authService *service.AuthService
+	userService *service.UserService
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+func NewAuthHandler(authService *service.AuthService, userService *service.UserService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		userService: userService,
 	}
 }
 
@@ -85,4 +87,53 @@ func (h *AuthHandler) Me(c *gin.Context) {
 	}
 
 	response.OK(c, result)
+}
+
+// ForgotPassword xử lý yêu cầu reset password
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
+	defer cancel()
+
+	// Luôn trả success để tránh lộ thông tin email có tồn tại hay không
+	_ = h.userService.RequestPasswordReset(ctx, req.Email)
+
+	response.OK(c, gin.H{"message": "Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu."})
+}
+
+// ResetPassword xử lý đặt lại mật khẩu bằng token
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Token    string `json:"token" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	if err := h.userService.ResetPasswordWithToken(ctx, req.Token, req.Password); err != nil {
+		if errors.Is(err, service.ErrResetTokenInvalid) {
+			response.Fail(c, http.StatusBadRequest, "token không hợp lệ hoặc đã hết hạn")
+			return
+		}
+		if errors.Is(err, service.ErrPasswordCannotBeEmpty) {
+			response.Fail(c, http.StatusBadRequest, "mật khẩu không được để trống")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "server error")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập."})
 }

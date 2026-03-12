@@ -44,10 +44,26 @@ func main() {
 		TeacherScopeRepo:  repo.NewTeacherScopeRepo(pool),
 		ParentScopeRepo:   repo.NewParentScopeRepo(pool),
 		SchoolAdminRepo:   repo.NewSchoolAdminRepo(pool),
+		ResetTokenRepo:    repo.NewResetTokenRepo(pool),
 	}
 
 	// Authenticator
 	jwtAuth := auth.NewAuthenticator(cfg.JWTSecret, cfg.JWTTTLMinutes)
+
+	// Email sender (dev mode: log to console; prod: set SMTP_HOST env)
+	frontendURL := cfg.FrontendURL
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
+	}
+
+	var emailSender service.EmailSender
+	if cfg.SMTPHost != "" {
+		emailSender = service.NewSMTPEmailSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, frontendURL)
+		log.Println("Email: SMTP mode (", cfg.SMTPHost, ")")
+	} else {
+		emailSender = service.NewLogEmailSender(frontendURL)
+		log.Println("Email: LOG mode (no SMTP_HOST set, emails printed to console)")
+	}
 
 	// Services
 	// TODO: tách ra hàm helper initServices(repos, jwtAuth) *Services
@@ -56,7 +72,7 @@ func main() {
 		schoolService       = service.NewSchoolService(repos.SchoolRepo)
 		classService        = service.NewClassService(repos.ClassRepo)
 		studentService      = service.NewStudentService(repos.StudentRepo, repos.ClassRepo)
-		userService         = service.NewUserService(repos.UserRepo, jwtAuth)
+		userService         = service.NewUserService(repos.UserRepo, repos.ResetTokenRepo, jwtAuth, emailSender, frontendURL)
 		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo, repos.ClassRepo)
 		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo)
 		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo)
@@ -68,7 +84,7 @@ func main() {
 	// Handlers
 	// TODO: tách ra hàm helper initHandlers(services) *Handlers
 	var (
-		authHandler         = v1handlers.NewAuthHandler(authService)
+		authHandler         = v1handlers.NewAuthHandler(authService, userService)
 		schoolHandler       = v1handlers.NewSchoolHandler(schoolService)
 		classHandler        = v1handlers.NewClassHandler(classService)
 		studentHandler      = v1handlers.NewStudentHandler(studentService)

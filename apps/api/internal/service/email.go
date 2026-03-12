@@ -8,18 +8,15 @@ import (
 	mail "github.com/wneessen/go-mail"
 )
 
-// EmailSender defines the interface for sending emails.
-// Swap implementations by changing the constructor in main.go:
-//   - NewLogEmailSender      → dev/test (prints to terminal)
-//   - NewSMTPEmailSender     → production (sends via SMTP)
+// EmailSender định nghĩa interface gửi email.
+// Đổi implementation bằng cách thay constructor trong main.go:
+//   - NewLogEmailSender      → dev/test (in ra terminal)
+//   - NewSMTPEmailSender     → production (gửi qua SMTP)
 type EmailSender interface {
 	Send(to, subject, htmlBody string) error
 }
 
-// ---------------------------------------------------------------------------
-// LogEmailSender — dev/test only, prints email content to stdout
-// ---------------------------------------------------------------------------
-
+// LogEmailSender gửi email giả, chỉ in nội dung ra stdout (dùng cho dev/test)
 type LogEmailSender struct {
 	frontendURL string
 }
@@ -45,10 +42,7 @@ func (s *LogEmailSender) Send(to, subject, htmlBody string) error {
 
 func (s *LogEmailSender) FrontendURL() string { return s.frontendURL }
 
-// ---------------------------------------------------------------------------
-// SMTPEmailSender — production, sends real emails via SMTP
-// ---------------------------------------------------------------------------
-
+// SMTPEmailSender gửi email thật qua SMTP (dùng cho production)
 type SMTPEmailSender struct {
 	host        string
 	port        int

@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -13,14 +16,26 @@ import (
 )
 
 type UserService struct {
-	userRepo *repo.UserRepo
-	jwtAuth  *auth.Authenticator
+	userRepo       *repo.UserRepo
+	resetTokenRepo *repo.ResetTokenRepo
+	jwtAuth        *auth.Authenticator
+	emailSender    EmailSender
+	frontendURL    string
 }
 
-func NewUserService(userRepo *repo.UserRepo, jwtAuth *auth.Authenticator) *UserService {
+func NewUserService(
+	userRepo *repo.UserRepo,
+	resetTokenRepo *repo.ResetTokenRepo,
+	jwtAuth *auth.Authenticator,
+	emailSender EmailSender,
+	frontendURL string,
+) *UserService {
 	return &UserService{
-		userRepo: userRepo,
-		jwtAuth:  jwtAuth,
+		userRepo:       userRepo,
+		resetTokenRepo: resetTokenRepo,
+		jwtAuth:        jwtAuth,
+		emailSender:    emailSender,
+		frontendURL:    frontendURL,
 	}
 }
 
@@ -264,6 +279,102 @@ func (s *UserService) UpdateMyPassword(ctx context.Context, userID uuid.UUID, pa
 	if err != nil {
 		return ErrFailedToUpdatePassword
 	}
+
+	return nil
+}
+
+const resetTokenExpiry = 15 * time.Minute
+
+// RequestPasswordReset tạo reset token và gửi email cho user.
+// Luôn trả nil để tránh lộ thông tin email có tồn tại hay không.
+func (s *UserService) RequestPasswordReset(ctx context.Context, email string) error {
+	if email == "" {
+		return ErrEmailCannotBeEmpty
+	}
+
+	// Tìm user (bỏ qua nếu không tìm thấy)
+	user, err := s.userRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return nil // không leak thông tin
+	}
+	_ = user // user.UserID được dùng bên dưới
+
+	// Tạo crypto-random token (32 bytes = 256 bits)
+	rawToken := make([]byte, 32)
+	if _, err := rand.Read(rawToken); err != nil {
+		return nil
+	}
+	plainToken := hex.EncodeToString(rawToken) // 64 hex chars
+
+	// SHA-256 hash trước khi lưu
+	hash := sha256.Sum256([]byte(plainToken))
+	tokenHash := hex.EncodeToString(hash[:])
+
+	// Lưu vào DB
+	expiresAt := time.Now().Add(resetTokenExpiry)
+	if err := s.resetTokenRepo.Create(ctx, user.UserID, tokenHash, expiresAt); err != nil {
+		return nil
+	}
+
+	// Tạo reset link
+	resetLink := fmt.Sprintf("%s/reset-password?token=%s", s.frontendURL, plainToken)
+
+	htmlBody := fmt.Sprintf(`
+<h2>Đặt lại mật khẩu — Iris</h2>
+<p>Bạn đã yêu cầu đặt lại mật khẩu. Click vào link bên dưới (hết hạn sau 15 phút):</p>
+<p><a href="%s">%s</a></p>
+<p>Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
+`, resetLink, resetLink)
+
+	// Gửi email (best-effort, không fail request)
+	_ = s.emailSender.Send(email, "Đặt lại mật khẩu — Iris", htmlBody)
+
+	return nil
+}
+
+// ResetPasswordWithToken xác thực token và đặt mật khẩu mới
+func (s *UserService) ResetPasswordWithToken(ctx context.Context, plainToken, newPassword string) error {
+	if plainToken == "" {
+		return ErrResetTokenInvalid
+	}
+	if newPassword == "" {
+		return ErrPasswordCannotBeEmpty
+	}
+
+	// Hash token đầu vào để so khớp với DB
+	hash := sha256.Sum256([]byte(plainToken))
+	tokenHash := hex.EncodeToString(hash[:])
+
+	// Tìm token
+	rt, err := s.resetTokenRepo.FindByTokenHash(ctx, tokenHash)
+	if err != nil {
+		return ErrResetTokenInvalid
+	}
+
+	// Kiểm tra hết hạn
+	if rt.ExpiresAt.Before(time.Now()) {
+		return ErrResetTokenInvalid
+	}
+
+	// Hash mật khẩu mới
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return ErrFailedToHashPassword
+	}
+
+	// Lấy email user (cần cho UpdatePassword)
+	userInfo, err := s.userRepo.FindByID(ctx, rt.UserID)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	// Cập nhật mật khẩu
+	if err := s.userRepo.UpdatePassword(ctx, rt.UserID, userInfo.Email, string(passwordHash)); err != nil {
+		return ErrFailedToUpdatePassword
+	}
+
+	// Đánh dấu token đã sử dụng
+	_ = s.resetTokenRepo.MarkUsed(ctx, rt.ID)
 
 	return nil
 }
