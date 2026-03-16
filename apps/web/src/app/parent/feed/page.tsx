@@ -2,8 +2,7 @@
  * Parent Feed Page
  * Bảng tin tổng hợp của tất cả con.
  * API: GET /parent/feed
- *
- * TODO: add server-side pagination when implementing feed content
+ * API: GET /parent/feed
  */
 "use client";
 

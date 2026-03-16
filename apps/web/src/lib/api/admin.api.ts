@@ -5,14 +5,20 @@
 import { apiClient } from './client';
 import {
   School, Class, Student, UserInfo, Teacher, Parent,
-  ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest
+  ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest, AdminAnalytics
 } from '@/types';
 
 export const adminApi = {
-  // --- SCHOOLS ---
-  getSchools: async () => {
-    const res = await apiClient.get<ApiResponse<School[]>>('/admin/schools');
+  // --- ANALYTICS ---
+  getAnalytics: async () => {
+    const res = await apiClient.get<ApiResponse<AdminAnalytics>>('/admin/analytics');
     return res.data.data;
+  },
+
+  // --- SCHOOLS ---
+  getSchools: async (params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<School[]>>('/admin/schools', { params });
+    return res.data;
   },
   createSchool: async (data: CreateSchoolRequest) => {
     const res = await apiClient.post('/admin/schools', data);
@@ -20,9 +26,9 @@ export const adminApi = {
   },
 
   // --- CLASSES ---
-  getClassesBySchool: async (schoolId: string) => {
-    const res = await apiClient.get<ApiResponse<Class[]>>(`/admin/classes/by-school/${schoolId}`);
-    return res.data.data;
+  getClassesBySchool: async (schoolId: string, params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<Class[]>>(`/admin/classes/by-school/${schoolId}`, { params });
+    return res.data;
   },
   createClass: async (data: CreateClassRequest) => {
     const res = await apiClient.post('/admin/classes', data);
@@ -30,9 +36,9 @@ export const adminApi = {
   },
 
   // --- STUDENTS ---
-  getStudentsByClass: async (classId: string) => {
-    const res = await apiClient.get<ApiResponse<Student[]>>(`/admin/students/by-class/${classId}`);
-    return res.data.data;
+  getStudentsByClass: async (classId: string, params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<Student[]>>(`/admin/students/by-class/${classId}`, { params });
+    return res.data;
   },
   createStudent: async (data: CreateStudentRequest) => {
     const res = await apiClient.post('/admin/students', data);
@@ -114,9 +120,9 @@ export const adminApi = {
   },
 
   // --- SCHOOL ADMINS ---
-  getSchoolAdmins: async () => {
-    const res = await apiClient.get<ApiResponse<any[]>>('/admin/school-admins');
-    return res.data.data;
+  getSchoolAdmins: async (params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<any[]>>('/admin/school-admins', { params });
+    return res.data;
   },
   createSchoolAdmin: async (data: { user_id: string; school_id: string }) => {
     const res = await apiClient.post('/admin/school-admins', data);

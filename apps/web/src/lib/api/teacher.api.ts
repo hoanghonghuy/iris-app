@@ -4,9 +4,18 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/teacher_scope_handler.go
  */
 import { apiClient } from './client';
-import { Class, Student, ApiResponse, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, HealthLog, Post } from '@/types';
+import { Class, Student, ApiResponse, PaginationParams, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, HealthLog, Post, TeacherAnalytics } from '@/types';
 
 export const teacherApi = {
+  /**
+   * Lấy thống kê Dashboard
+   * GET /api/v1/teacher/analytics
+   */
+  getAnalytics: async () => {
+    const res = await apiClient.get<ApiResponse<TeacherAnalytics>>('/teacher/analytics');
+    return res.data.data;
+  },
+
   /**
    * Lấy danh sách lớp học được phân công cho giáo viên hiện tại
    * GET /api/v1/teacher/classes
@@ -91,17 +100,17 @@ export const teacherApi = {
    * Lấy bài đăng của lớp
    * GET /api/v1/teacher/classes/:class_id/posts
    */
-  getClassPosts: async (classId: string) => {
-    const res = await apiClient.get<ApiResponse<Post[]>>(`/teacher/classes/${classId}/posts`);
-    return res.data.data;
+  getClassPosts: async (classId: string, params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<Post[]>>(`/teacher/classes/${classId}/posts`, { params });
+    return res.data;
   },
 
   /**
    * Lấy bài đăng của học sinh
    * GET /api/v1/teacher/students/:student_id/posts
    */
-  getStudentPosts: async (studentId: string) => {
-    const res = await apiClient.get<ApiResponse<Post[]>>(`/teacher/students/${studentId}/posts`);
-    return res.data.data;
+  getStudentPosts: async (studentId: string, params?: PaginationParams) => {
+    const res = await apiClient.get<ApiResponse<Post[]>>(`/teacher/students/${studentId}/posts`, { params });
+    return res.data;
   },
 };

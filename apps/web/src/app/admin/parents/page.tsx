@@ -51,7 +51,8 @@ export default function AdminParentsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await adminApi.getSchools();
+        const response = await adminApi.getSchools();
+        const data = response.data;
         setSchools(data || []);
         if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
       } catch { /* ignore */ }
@@ -63,7 +64,8 @@ export default function AdminParentsPage() {
     if (!selectedSchoolId) return;
     const load = async () => {
       try {
-        const data = await adminApi.getClassesBySchool(selectedSchoolId);
+        const response = await adminApi.getClassesBySchool(selectedSchoolId);
+        const data = response.data;
         setClasses(data || []);
         if (data && data.length > 0) setSelectedClassId(data[0].class_id);
         else { setSelectedClassId(""); setStudents([]); }
@@ -76,7 +78,8 @@ export default function AdminParentsPage() {
     if (!selectedClassId) return;
     const load = async () => {
       try {
-        const data = await adminApi.getStudentsByClass(selectedClassId);
+        const response = await adminApi.getStudentsByClass(selectedClassId);
+        const data = response.data;
         setStudents(data || []);
         if (data && data.length > 0) setSelectedStudentId(data[0].student_id);
         else setSelectedStudentId("");

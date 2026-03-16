@@ -6,24 +6,29 @@
 
 import React, { useEffect, useState } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
-import { Class } from "@/types";
+import { Class, TeacherAnalytics } from "@/types";
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { GraduationCap, Users, ClipboardCheck, Heart, Loader2 } from "lucide-react";
+import { GraduationCap, Users, ClipboardCheck, Heart, Loader2, BookOpen, MessageSquare } from "lucide-react";
 import Link from "next/link";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const [classes, setClasses] = useState<Class[]>([]);
+  const [stats, setStats] = useState<TeacherAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await teacherApi.getMyClasses();
-        setClasses(data || []);
-      } catch {
-        // Ignore
+        const [classesData, statsData] = await Promise.all([
+          teacherApi.getMyClasses(),
+          teacherApi.getAnalytics()
+        ]);
+        setClasses(classesData || []);
+        setStats(statsData);
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu giáo viên", error);
       } finally {
         setLoading(false);
       }
@@ -38,11 +43,51 @@ export default function TeacherDashboard() {
       <Card>
         <CardContent className="py-4">
           <p className="font-medium">Xin chào, {user?.email}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Bạn đang được phân công dạy {loading ? "..." : classes.length} lớp
-          </p>
         </CardContent>
       </Card>
+
+      {/* Stats Cards */}
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : stats ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Link href="/teacher/classes">
+            <Card className="hover:bg-zinc-50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Lớp phụ trách</CardTitle>
+                <BookOpen className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total_classes}</div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/teacher/classes">
+            <Card className="hover:bg-zinc-50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Học sinh quản lý</CardTitle>
+                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total_students}</div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/teacher/posts">
+            <Card className="hover:bg-zinc-50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Bài đăng đã tạo</CardTitle>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total_posts}</div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      ) : null}
 
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

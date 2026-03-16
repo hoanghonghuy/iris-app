@@ -34,7 +34,8 @@ export default function AdminClassesPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await adminApi.getSchools();
+        const response = await adminApi.getSchools();
+        const data = response.data;
         setSchools(data || []);
         if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
       } catch { setError("Không thể tải danh sách trường"); }
@@ -47,7 +48,8 @@ export default function AdminClassesPage() {
     if (!selectedSchoolId) return;
     try {
       setLoadingClasses(true); setError("");
-      const data = await adminApi.getClassesBySchool(selectedSchoolId);
+      const response = await adminApi.getClassesBySchool(selectedSchoolId);
+      const data = response.data;
       setClasses(data || []);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách lớp");

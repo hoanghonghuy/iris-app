@@ -53,7 +53,8 @@ export default function AdminTeachersPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await adminApi.getSchools();
+        const response = await adminApi.getSchools();
+        const data = response.data;
         setSchools(data || []);
         if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
       } catch { /* ignore */ }
@@ -65,7 +66,8 @@ export default function AdminTeachersPage() {
     if (!selectedSchoolId) return;
     const load = async () => {
       try {
-        const data = await adminApi.getClassesBySchool(selectedSchoolId);
+        const response = await adminApi.getClassesBySchool(selectedSchoolId);
+        const data = response.data;
         setClasses(data || []);
         if (data && data.length > 0) setSelectedClassId(data[0].class_id);
       } catch { setClasses([]); }

@@ -2,14 +2,13 @@
  * Admin School Admins Page
  * Quản lý School Admin: listing + tạo mới + xóa.
  * API: GET/POST/DELETE /admin/school-admins
- *
- * TODO: add server-side pagination when school-admin count grows
  */
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api/admin.api";
-import { UserInfo, School } from "@/types";
+import { UserInfo, School, Pagination } from "@/types";
+import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -21,6 +20,8 @@ export default function AdminSchoolAdminsPage() {
   const [admins, setAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [schools, setSchools] = useState<School[]>([]);
@@ -35,12 +36,13 @@ export default function AdminSchoolAdminsPage() {
   const fetchAdmins = useCallback(async () => {
     try {
       setLoading(true); setError("");
-      const data = await adminApi.getSchoolAdmins();
-      setAdmins(data || []);
+      const response = await adminApi.getSchoolAdmins({ limit: 20, offset: currentOffset });
+      setAdmins(response.data || []);
+      if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách");
     } finally { setLoading(false); }
-  }, []);
+  }, [currentOffset]);
 
   useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
 
@@ -48,10 +50,11 @@ export default function AdminSchoolAdminsPage() {
     if (!showForm) return;
     const load = async () => {
       try {
-        const [schoolData, userData] = await Promise.all([
+        const [schoolResponse, userData] = await Promise.all([
           adminApi.getSchools(),
           adminApi.getUsers({ limit: 100 }),
         ]);
+        const schoolData = schoolResponse.data;
         setSchools(schoolData || []);
         const userList = (userData as any).data || [];
         setUsers(Array.isArray(userList) ? userList : []);
@@ -195,6 +198,11 @@ export default function AdminSchoolAdminsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && admins.length > 0 && (
+        <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
     </div>
   );

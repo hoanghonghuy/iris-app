@@ -2,14 +2,13 @@
  * Admin Schools Page
  * Quản lý danh sách trường học: xem, tạo mới.
  * API: GET /admin/schools, POST /admin/schools
- *
- * TODO: add server-side pagination when school count grows
  */
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api/admin.api";
-import { School, CreateSchoolRequest } from "@/types";
+import { School, CreateSchoolRequest, Pagination } from "@/types";
+import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +24,8 @@ export default function AdminSchoolsPage() {
   const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -38,8 +39,9 @@ export default function AdminSchoolsPage() {
     try {
       setLoading(true);
       setError("");
-      const data = await adminApi.getSchools();
-      setSchools(data || []);
+      const response = await adminApi.getSchools({ limit: 20, offset: currentOffset });
+      setSchools(response.data || []);
+      if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
       const msg = err.response?.data?.error || "Không thể tải danh sách trường học";
       setError(msg);
@@ -47,7 +49,7 @@ export default function AdminSchoolsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentOffset]);
 
   useEffect(() => {
     fetchSchools();
@@ -223,6 +225,11 @@ export default function AdminSchoolsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && schools.length > 0 && (
+        <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
     </div>
   );

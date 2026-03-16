@@ -2,8 +2,6 @@
  * Admin Students Page
  * Quản lý học sinh theo lớp: chọn trường → chọn lớp → xem danh sách + tạo mới + tạo mã phụ huynh.
  * API: GET /admin/students/by-class/:class_id, POST /admin/students, POST /admin/students/:id/generate-parent-code
- *
- * TODO: add server-side pagination when student count per class grows
  */
 "use client";
 
@@ -50,7 +48,8 @@ export default function AdminStudentsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await adminApi.getSchools();
+        const response = await adminApi.getSchools();
+        const data = response.data;
         setSchools(data || []);
         if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
       } catch { setError("Không thể tải danh sách trường"); }
@@ -65,7 +64,8 @@ export default function AdminStudentsPage() {
     const load = async () => {
       try {
         setLoadingClasses(true); setSelectedClassId(""); setStudents([]); setSearchQuery("");
-        const data = await adminApi.getClassesBySchool(selectedSchoolId);
+        const response = await adminApi.getClassesBySchool(selectedSchoolId);
+        const data = response.data;
         setClasses(data || []);
         if (data && data.length > 0) setSelectedClassId(data[0].class_id);
       } catch { setClasses([]); }
@@ -79,8 +79,8 @@ export default function AdminStudentsPage() {
     if (!selectedClassId) return;
     try {
       setLoadingStudents(true); setError("");
-      const data = await adminApi.getStudentsByClass(selectedClassId);
-      setStudents(data || []);
+      const response = await adminApi.getStudentsByClass(selectedClassId);
+      setStudents(response.data || []);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách học sinh");
     } finally { setLoadingStudents(false); }

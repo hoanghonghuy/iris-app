@@ -396,3 +396,27 @@ export interface AssignParentToStudentRequest {
   student_id: string;
   relationship: string;
 }
+
+// ============================================================================
+// ANALYTICS TYPES
+// ============================================================================
+
+/**
+ * AdminAnalytics - Thống kê Dashboard Admin
+ */
+export interface AdminAnalytics {
+  total_schools: number;
+  total_classes: number;
+  total_teachers: number;
+  total_students: number;
+  total_parents: number;
+}
+
+/**
+ * TeacherAnalytics - Thống kê Dashboard Giáo viên
+ */
+export interface TeacherAnalytics {
+  total_classes: number;
+  total_students: number;
+  total_posts: number;
+}

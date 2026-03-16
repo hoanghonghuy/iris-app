@@ -2,14 +2,13 @@
  * Teacher Posts Page
  * Tạo & xem bài đăng (thông báo lớp, nhận xét HS).
  * API: POST /teacher/posts, GET /teacher/classes/:id/posts
- *
- * TODO: add server-side pagination for posts list
  */
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
-import { Class, Post, Student } from "@/types";
+import { Class, Post, Student, Pagination } from "@/types";
+import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +31,8 @@ export default function TeacherPostsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [error, setError] = useState("");
+  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
+  const [currentOffset, setCurrentOffset] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
   const [scopeType, setScopeType] = useState<"class" | "student">("class");
@@ -69,12 +70,13 @@ export default function TeacherPostsPage() {
     if (!selectedClassId) return;
     try {
       setLoadingPosts(true); setError("");
-      const data = await teacherApi.getClassPosts(selectedClassId);
-      setPosts(data || []);
+      const response = await teacherApi.getClassPosts(selectedClassId, { limit: 20, offset: currentOffset });
+      setPosts(response.data || []);
+      if (response.pagination) setPagination(response.pagination);
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải bài đăng");
     } finally { setLoadingPosts(false); }
-  }, [selectedClassId]);
+  }, [selectedClassId, currentOffset]);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
@@ -207,6 +209,11 @@ export default function TeacherPostsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {!loadingPosts && posts.length > 0 && (
+        <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
     </div>
   );
