@@ -325,3 +325,29 @@ func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, 
 	}
 	return posts, total, rows.Err()
 }
+
+// CountMyStudents đếm tổng số học sinh đang được phân công giảng dạy bởi giáo viên này
+func (r *TeacherScopeRepo) CountMyStudents(ctx context.Context, teacherUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(DISTINCT s.student_id)
+		FROM students s
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1;
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, teacherUserID).Scan(&count)
+	return count, err
+}
+
+// CountMyPosts đếm tổng số bài đăng được tạo bởi giáo viên này
+func (r *TeacherScopeRepo) CountMyPosts(ctx context.Context, teacherUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(p.post_id)
+		FROM posts p
+		WHERE p.author_user_id = $1;
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, teacherUserID).Scan(&count)
+	return count, err
+}

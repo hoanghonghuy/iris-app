@@ -79,6 +79,7 @@ func main() {
 		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo)
 		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth)
 		schoolAdminService  = service.NewSchoolAdminService(repos.SchoolAdminRepo, repos.UserRepo)
+		analyticsService    = service.NewAnalyticsService(repos)
 	)
 
 	// Handlers
@@ -95,6 +96,7 @@ func main() {
 		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService)
 		parentCodeHandler   = v1handlers.NewParentCodeHandler(parentCodeService)
 		schoolAdminHandler  = v1handlers.NewSchoolAdminHandler(schoolAdminService)
+		analyticsHandler    = v1handlers.NewAnalyticsHandler(analyticsService)
 	)
 
 	// Router
@@ -112,6 +114,7 @@ func main() {
 		parentScopeHandler,
 		parentCodeHandler,
 		schoolAdminHandler,
+		analyticsHandler,
 	)
 
 	// Start server

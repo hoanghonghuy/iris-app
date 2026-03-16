@@ -80,3 +80,11 @@ func (r *SchoolRepo) GetByID(ctx context.Context, schoolID uuid.UUID) (*model.Sc
 	}
 	return &s, nil
 }
+
+// CountAll đếm tổng số trường học trong hệ thống
+func (r *SchoolRepo) CountAll(ctx context.Context) (int, error) {
+	const q = `SELECT COUNT(*) FROM schools;`
+	var count int
+	err := r.pool.QueryRow(ctx, q).Scan(&count)
+	return count, err
+}

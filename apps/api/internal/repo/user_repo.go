@@ -318,3 +318,38 @@ func (r *UserRepo) ActivateWithPassword(ctx context.Context, userID uuid.UUID, p
 	_, err := r.pool.Exec(ctx, q, userID, passwordHash)
 	return err
 }
+
+// CountUsersByRoleAndSchool đếm tổng số user theo role và school
+// Nếu schoolID rỗng, đếm tất cả user có role đó trên toàn hệ thống
+func (r *UserRepo) CountUsersByRoleAndSchool(ctx context.Context, role string, schoolID *uuid.UUID) (int, error) {
+	var q string
+	var err error
+	var count int
+
+	if schoolID != nil {
+		q = `
+			SELECT COUNT(DISTINCT u.user_id)
+			FROM users u
+			JOIN user_roles ur ON ur.user_id = u.user_id
+			JOIN roles r ON r.role_id = ur.role_id
+			WHERE r.name = $1
+			AND u.user_id IN (
+				SELECT user_id FROM teachers WHERE school_id = $2
+				UNION
+				SELECT user_id FROM parents WHERE school_id = $2
+			);
+		`
+		err = r.pool.QueryRow(ctx, q, role, *schoolID).Scan(&count)
+	} else {
+		q = `
+			SELECT COUNT(u.user_id)
+			FROM users u
+			JOIN user_roles ur ON ur.user_id = u.user_id
+			JOIN roles r ON r.role_id = ur.role_id
+			WHERE r.name = $1;
+		`
+		err = r.pool.QueryRow(ctx, q, role).Scan(&count)
+	}
+
+	return count, err
+}

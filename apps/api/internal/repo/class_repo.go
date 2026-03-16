@@ -70,3 +70,20 @@ func (r *ClassRepo) GetByClassID(ctx context.Context, classID uuid.UUID) (*model
 	}
 	return &c, nil
 }
+
+// CountBySchool đếm tổng số lớp học (nếu schoolID rỗng thì đếm toàn hệ thống)
+func (r *ClassRepo) CountBySchool(ctx context.Context, schoolID *uuid.UUID) (int, error) {
+	var q string
+	var err error
+	var count int
+
+	if schoolID != nil {
+		q = `SELECT COUNT(*) FROM classes WHERE school_id = $1;`
+		err = r.pool.QueryRow(ctx, q, *schoolID).Scan(&count)
+	} else {
+		q = `SELECT COUNT(*) FROM classes;`
+		err = r.pool.QueryRow(ctx, q).Scan(&count)
+	}
+
+	return count, err
+}

@@ -81,3 +81,20 @@ func (r *StudentRepo) GetSchoolIDByStudentID(ctx context.Context, studentID uuid
 	}
 	return schoolID, nil
 }
+
+// CountStudentsBySchool đếm tổng số học sinh (nếu schoolID rỗng thì đếm toàn hệ thống)
+func (r *StudentRepo) CountStudentsBySchool(ctx context.Context, schoolID *uuid.UUID) (int, error) {
+	var q string
+	var err error
+	var count int
+
+	if schoolID != nil {
+		q = `SELECT COUNT(*) FROM students WHERE school_id = $1;`
+		err = r.pool.QueryRow(ctx, q, *schoolID).Scan(&count)
+	} else {
+		q = `SELECT COUNT(*) FROM students;`
+		err = r.pool.QueryRow(ctx, q).Scan(&count)
+	}
+
+	return count, err
+}

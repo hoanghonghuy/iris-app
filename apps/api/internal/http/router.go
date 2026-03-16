@@ -24,6 +24,7 @@ func NewRouter(
 	parentScopeHandler *v1handlers.ParentScopeHandler,
 	parentCodeHandler *v1handlers.ParentCodeHandler,
 	schoolAdminHandler *v1handlers.SchoolAdminHandler,
+	analyticsHandler *v1handlers.AnalyticsHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -101,6 +102,9 @@ func NewRouter(
 				teacherScope.POST("/posts", teacherScopeHandler.CreatePost)
 				teacherScope.GET("/classes/:class_id/posts", teacherScopeHandler.ListClassPosts)
 				teacherScope.GET("/students/:student_id/posts", teacherScopeHandler.ListStudentPosts)
+
+				// teacher analytics
+				teacherScope.GET("/analytics", analyticsHandler.TeacherDashboardStats)
 			}
 
 			// parent routes (phụ huynh xem thông tin con mình)
@@ -135,6 +139,9 @@ func NewRouter(
 				admin.GET("/ping", func(c *gin.Context) {
 					response.OK(c, gin.H{"pong": "admin"})
 				})
+
+				// Admin analytics
+				admin.GET("/analytics", analyticsHandler.AdminDashboardStats)
 
 				// School routes (GET: cả 2 roles, POST: chỉ SUPER_ADMIN — đăng ký ở superOnly bên dưới)
 				admin.GET("/schools", schoolHandler.List)
