@@ -109,7 +109,7 @@ export default function LoginPage() {
                   Đang đăng nhập...
                 </>
               ) : (
-                'Đang đăng nhập'
+                'Đăng nhập'
               )}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
