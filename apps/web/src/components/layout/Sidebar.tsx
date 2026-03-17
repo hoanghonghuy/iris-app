@@ -91,7 +91,7 @@ export function Sidebar({ items, isOpen, onClose }: SidebarProps) {
       {/* ── Sidebar ── */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-white transition-transform duration-200 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 transition-transform duration-200 ease-in-out",
           // Mobile: ẩn mặc định, hiện khi isOpen
           isOpen ? "translate-x-0" : "-translate-x-full",
           // Desktop (lg): luôn hiện, width 256px
@@ -101,13 +101,13 @@ export function Sidebar({ items, isOpen, onClose }: SidebarProps) {
         )}
       >
         {/* ── Logo + Close (mobile) ── */}
-        <div className="flex h-14 items-center justify-between border-b px-4">
-          <h2 className="text-lg font-semibold">🌸 Iris School</h2>
+        <div className="flex h-14 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">🌸 Iris School</h2>
           <button
-            className="rounded-md p-1 hover:bg-zinc-100 lg:hidden"
+            className="rounded-md p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 lg:hidden transition-colors"
             onClick={onClose}
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
           </button>
         </div>
 
@@ -121,8 +121,8 @@ export function Sidebar({ items, isOpen, onClose }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive(item.href)
-                  ? "bg-zinc-100 text-zinc-900"
-                  : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900"
+                  ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                  : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
               )}
             >
               {item.icon}

@@ -56,7 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+    <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Iris School</CardTitle>

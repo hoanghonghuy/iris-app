@@ -191,7 +191,7 @@ export default function AdminSchoolsPage() {
                 </thead>
                 <tbody>
                   {schools.map((school) => (
-                    <tr key={school.school_id} className="border-b last:border-0 hover:bg-zinc-50">
+                    <tr key={school.school_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
                       <td className="px-6 py-4 font-medium">{school.name}</td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {school.address || "—"}

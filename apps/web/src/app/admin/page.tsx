@@ -56,7 +56,7 @@ export default function AdminDashboard() {
       ) : stats ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Link href="/admin/schools">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Tổng số Trường</CardTitle>
                 <School className="h-4 w-4 text-muted-foreground" />
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
             </Card>
           </Link>
           <Link href="/admin/classes">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Tổng số Lớp học</CardTitle>
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
             </Card>
           </Link>
           <Link href="/admin/teachers">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Giáo viên</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
             </Card>
           </Link>
           <Link href="/admin/students">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Học sinh</CardTitle>
                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -100,7 +100,7 @@ export default function AdminDashboard() {
             </Card>
           </Link>
           <Link href="/admin/parents">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Phụ huynh</CardTitle>
                 <UsersRound className="h-4 w-4 text-muted-foreground" />

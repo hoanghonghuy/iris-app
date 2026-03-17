@@ -126,7 +126,7 @@ export default function AdminTeachersPage() {
           <Input
             type="search"
             placeholder="Tìm theo tên, email, SĐT..."
-            className="pl-8 bg-white"
+            className="pl-8 bg-white dark:bg-zinc-950"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -173,7 +173,7 @@ export default function AdminTeachersPage() {
               </thead>
               <tbody>
                 {filteredTeachers.map((t) => (
-                  <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-zinc-50 leading-relaxed">
+                  <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 leading-relaxed">
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900">{t.full_name}</div>
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">

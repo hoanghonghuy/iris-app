@@ -38,7 +38,7 @@ export default function ActivateAccountPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+      <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center py-12">
             <ShieldCheck className="h-16 w-16 text-green-600" />
@@ -54,7 +54,7 @@ export default function ActivateAccountPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+    <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -82,7 +82,7 @@ export default function ActivateAccountPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Đã có tài khoản?{" "}
-              <Link href="/login" className="font-medium text-zinc-900 hover:underline">Đăng nhập</Link>
+              <Link href="/login" className="font-medium text-zinc-900 dark:text-zinc-100 hover:underline">Đăng nhập</Link>
             </p>
           </form>
         </CardContent>

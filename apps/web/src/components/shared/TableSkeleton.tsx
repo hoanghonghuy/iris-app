@@ -23,7 +23,7 @@ export function TableSkeleton({ columns = 4, rows = 5 }: TableSkeletonProps) {
                     </thead>
                     <tbody>
                         {Array.from({ length: rows }).map((_, rIndex) => (
-                            <tr key={rIndex} className="border-b last:border-0 hover:bg-zinc-50">
+                            <tr key={rIndex} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
                                 {Array.from({ length: columns }).map((_, cIndex) => (
                                     <td key={cIndex} className="px-6 py-4">
                                         <Skeleton className="h-4 w-full max-w-[200px]" />

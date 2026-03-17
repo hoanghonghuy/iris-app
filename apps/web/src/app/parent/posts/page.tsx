@@ -59,7 +59,7 @@ export default function ParentPostsPage() {
             <Card key={p.post_id}>
               <CardContent className="py-4">
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium">
+                  <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium">
                     {postTypeLabels[p.type] || p.type}
                   </span>
                   <span className="text-xs text-muted-foreground">

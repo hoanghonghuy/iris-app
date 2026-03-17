@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BookOpen, HeartPulse, ClipboardCheck, GraduationCap, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpen, HeartPulse, ClipboardCheck, GraduationCap, ShieldCheck, Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Home() {
   return (
@@ -16,13 +18,40 @@ export default function Home() {
             <a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Tính năng</a>
             <a href="#about" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Về chúng tôi</a>
           </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" className="hidden sm:inline-flex text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800">Đăng nhập</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Đăng ký Phụ huynh</Button>
-            </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle className="text-zinc-600 dark:text-zinc-400" />
+            <div className="hidden sm:flex items-center gap-2 sm:gap-3">
+              <Link href="/login">
+                <Button variant="ghost" className="text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800">Đăng nhập</Button>
+              </Link>
+              <Link href="/register">
+                <Button>Đăng ký Phụ huynh</Button>
+              </Link>
+            </div>
+            {/* Mobile Navigation */}
+            <div className="md:hidden flex items-center ml-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9 bg-transparent border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle navigation menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 flex flex-col pt-10">
+                  <nav className="flex flex-col gap-6 text-lg font-medium text-zinc-600 dark:text-zinc-400">
+                    <a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Tính năng</a>
+                    <a href="#about" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Về chúng tôi</a>
+                    <hr className="border-t border-zinc-200 dark:border-zinc-800 my-2" />
+                    <Link href="/login" className="w-full">
+                      <Button variant="outline" className="w-full justify-start text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800">Đăng nhập</Button>
+                    </Link>
+                    <Link href="/register" className="w-full">
+                      <Button className="w-full justify-start">Đăng ký Phụ huynh</Button>
+                    </Link>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>

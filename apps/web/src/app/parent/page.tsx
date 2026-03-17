@@ -60,7 +60,7 @@ export default function ParentDashboard() {
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/parent/children">
-          <Card className="transition-colors hover:bg-zinc-50">
+          <Card className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
             <CardHeader className="pb-2">
               <Users className="h-6 w-6 text-muted-foreground" />
               <CardTitle className="text-lg">Con em</CardTitle>
@@ -72,7 +72,7 @@ export default function ParentDashboard() {
         </Link>
 
         <Link href="/parent/posts">
-          <Card className="transition-colors hover:bg-zinc-50">
+          <Card className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
             <CardHeader className="pb-2">
               <MessageSquare className="h-6 w-6 text-muted-foreground" />
               <CardTitle className="text-lg">Bảng tin</CardTitle>
@@ -92,7 +92,7 @@ export default function ParentDashboard() {
             {children.map((child) => (
               <Card key={child.student_id}>
                 <CardContent className="flex items-center gap-3 py-4">
-                  <User className="h-8 w-8 shrink-0 rounded-full bg-zinc-100 p-1.5 text-muted-foreground" />
+                  <User className="h-8 w-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 p-1.5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">{child.full_name}</p>
                     <p className="text-sm text-muted-foreground">{child.dob}</p>
@@ -113,7 +113,7 @@ export default function ParentDashboard() {
               <Card key={p.post_id}>
                 <CardContent className="py-4">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium">
+                    <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium">
                       {postTypeLabels[p.type] || p.type}
                     </span>
                     <span className="text-xs text-muted-foreground">

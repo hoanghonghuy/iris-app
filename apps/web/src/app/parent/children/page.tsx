@@ -53,7 +53,7 @@ export default function ParentChildrenPage() {
           {children.map((child) => (
             <Card key={child.student_id}>
               <CardContent className="flex items-start gap-4 py-5">
-                <User className="h-10 w-10 shrink-0 rounded-full bg-zinc-100 p-2 text-muted-foreground" />
+                <User className="h-10 w-10 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 p-2 text-muted-foreground" />
                 <div>
                   <p className="text-lg font-medium">{child.full_name}</p>
                   <div className="mt-2 space-y-1 text-sm text-muted-foreground">

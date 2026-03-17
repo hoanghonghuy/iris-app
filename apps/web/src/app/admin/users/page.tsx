@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
           <Input
             type="search"
             placeholder="Tìm theo email..."
-            className="pl-8 bg-white"
+            className="pl-8 bg-white dark:bg-zinc-950"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -213,7 +213,7 @@ export default function AdminUsersPage() {
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
-                  <tr key={user.user_id} className="border-b last:border-0 hover:bg-zinc-50">
+                  <tr key={user.user_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
                     <td className="px-6 py-4 font-medium">{user.email}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">

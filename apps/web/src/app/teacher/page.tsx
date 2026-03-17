@@ -54,7 +54,7 @@ export default function TeacherDashboard() {
       ) : stats ? (
         <div className="grid gap-4 md:grid-cols-3">
           <Link href="/teacher/classes">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Lớp phụ trách</CardTitle>
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -65,7 +65,7 @@ export default function TeacherDashboard() {
             </Card>
           </Link>
           <Link href="/teacher/classes">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Học sinh quản lý</CardTitle>
                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
@@ -76,7 +76,7 @@ export default function TeacherDashboard() {
             </Card>
           </Link>
           <Link href="/teacher/posts">
-            <Card className="hover:bg-zinc-50 transition-colors">
+            <Card className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Bài đăng đã tạo</CardTitle>
                 <MessageSquare className="h-4 w-4 text-muted-foreground" />
@@ -92,7 +92,7 @@ export default function TeacherDashboard() {
       {/* Quick links */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link href="/teacher/classes">
-          <Card className="transition-colors hover:bg-zinc-50">
+          <Card className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
             <CardHeader className="pb-2">
               <GraduationCap className="h-6 w-6 text-muted-foreground" />
               <CardTitle className="text-lg">Lớp của tôi</CardTitle>
@@ -104,7 +104,7 @@ export default function TeacherDashboard() {
         </Link>
 
         <Link href="/teacher/attendance">
-          <Card className="transition-colors hover:bg-zinc-50">
+          <Card className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
             <CardHeader className="pb-2">
               <ClipboardCheck className="h-6 w-6 text-muted-foreground" />
               <CardTitle className="text-lg">Điểm danh</CardTitle>
@@ -116,7 +116,7 @@ export default function TeacherDashboard() {
         </Link>
 
         <Link href="/teacher/health">
-          <Card className="transition-colors hover:bg-zinc-50">
+          <Card className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
             <CardHeader className="pb-2">
               <Heart className="h-6 w-6 text-muted-foreground" />
               <CardTitle className="text-lg">Sức khỏe</CardTitle>
@@ -128,7 +128,7 @@ export default function TeacherDashboard() {
         </Link>
 
         <Link href="/teacher/posts">
-          <Card className="transition-colors hover:bg-zinc-50">
+          <Card className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900">
             <CardHeader className="pb-2">
               <Users className="h-6 w-6 text-muted-foreground" />
               <CardTitle className="text-lg">Bài đăng</CardTitle>

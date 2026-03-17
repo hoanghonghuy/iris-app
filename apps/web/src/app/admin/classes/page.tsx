@@ -157,7 +157,7 @@ export default function AdminClassesPage() {
               </thead>
               <tbody>
                 {classes.map((cls) => (
-                  <tr key={cls.class_id} className="border-b last:border-0 hover:bg-zinc-50">
+                  <tr key={cls.class_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
                     <td className="px-6 py-4 font-medium">{cls.name}</td>
                     <td className="px-6 py-4"><Badge variant="secondary">{cls.school_year}</Badge></td>
                   </tr>
