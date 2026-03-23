@@ -64,3 +64,11 @@ var (
 	ErrTeacherNotAssigned = errors.New("teacher is not assigned to this class")
 	ErrInvalidValue       = errors.New("invalid value")
 )
+
+// Chat-related errors
+var (
+	ErrChatCannotMessageSelf = errors.New("cannot create conversation with yourself")
+	ErrChatGroupNeedMembers  = errors.New("group conversation needs at least 2 participants")
+	ErrChatNotParticipant    = errors.New("you are not a participant of this conversation")
+	ErrChatEmptyMessage      = errors.New("message content cannot be empty")
+)

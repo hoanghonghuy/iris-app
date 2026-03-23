@@ -10,6 +10,7 @@ import (
 	httpapi "github.com/hoanghonghuy/iris-app/apps/api/internal/http"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
 	"github.com/joho/godotenv"
@@ -45,6 +46,7 @@ func main() {
 		ParentScopeRepo:   repo.NewParentScopeRepo(pool),
 		SchoolAdminRepo:   repo.NewSchoolAdminRepo(pool),
 		ResetTokenRepo:    repo.NewResetTokenRepo(pool),
+		ChatRepo:          repo.NewChatRepo(pool),
 	}
 
 	// Authenticator
@@ -80,6 +82,7 @@ func main() {
 		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth)
 		schoolAdminService  = service.NewSchoolAdminService(repos.SchoolAdminRepo, repos.UserRepo)
 		analyticsService    = service.NewAnalyticsService(repos)
+		chatService         = service.NewChatService(repos.ChatRepo)
 	)
 
 	// Handlers
@@ -99,6 +102,12 @@ func main() {
 		analyticsHandler    = v1handlers.NewAnalyticsHandler(analyticsService)
 	)
 
+	// WebSocket Hub (chạy goroutine background)
+	hub := ws.NewHub()
+	go hub.Run()
+
+	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret)
+
 	// Router
 	r := httpapi.NewRouter(
 		cfg.JWTSecret,
@@ -115,6 +124,7 @@ func main() {
 		parentCodeHandler,
 		schoolAdminHandler,
 		analyticsHandler,
+		chatHandler,
 	)
 
 	// Start server

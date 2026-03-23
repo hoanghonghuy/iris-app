@@ -25,6 +25,7 @@ func NewRouter(
 	parentCodeHandler *v1handlers.ParentCodeHandler,
 	schoolAdminHandler *v1handlers.SchoolAdminHandler,
 	analyticsHandler *v1handlers.AnalyticsHandler,
+	chatHandler *v1handlers.ChatHandler,
 ) *gin.Engine {
 	r := gin.Default()
 
@@ -59,6 +60,9 @@ func NewRouter(
 		v1.POST("/auth/reset-password", authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
 		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
+
+		// WebSocket endpoint (auth qua query string ?token=JWT)
+		v1.GET("/chat/ws", chatHandler.HandleWS)
 
 		// Protected routes (require valid JWT)
 		protected := v1.Group("/")
@@ -125,6 +129,22 @@ func NewRouter(
 
 				// phụ huynh xem tất cả bài đăng liên quan đến con mình
 				parentScope.GET("/children/:student_id/posts", parentScopeHandler.ListAllMyChildPosts)
+			}
+
+			// chat routes (tất cả authenticated users đều có thể dùng)
+			chat := protected.Group("/chat")
+			{
+				// tìm kiếm user để chat
+				chat.GET("/users/search", chatHandler.SearchUsers)
+
+				// tạo cuộc hội thoại direct (1-1)
+				chat.POST("/conversations/direct", chatHandler.CreateDirectConversation)
+
+				// lấy danh sách cuộc hội thoại của user hiện tại
+				chat.GET("/conversations", chatHandler.ListConversations)
+
+				// lấy danh sách tin nhắn của cuộc hội thoại
+				chat.GET("/conversations/:conversation_id/messages", chatHandler.ListMessages)
 			}
 
 			// admin routes (SUPER_ADMIN + SCHOOL_ADMIN đều truy cập được)

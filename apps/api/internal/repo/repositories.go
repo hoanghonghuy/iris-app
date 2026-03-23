@@ -14,4 +14,5 @@ type Repositories struct {
 	ParentScopeRepo   *ParentScopeRepo
 	SchoolAdminRepo   *SchoolAdminRepo
 	ResetTokenRepo    *ResetTokenRepo
+	ChatRepo          *ChatRepo
 }
