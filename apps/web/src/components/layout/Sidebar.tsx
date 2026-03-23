@@ -24,6 +24,7 @@ import {
   Baby,
   Newspaper,
   LayoutDashboard,
+  MessageSquare,
 } from "lucide-react";
 
 // ─── Menu items config ──────────────────────────────────────────────
@@ -43,6 +44,7 @@ export const adminMenuItems: SidebarItem[] = [
   { label: "Giáo viên", href: "/admin/teachers", icon: <BookUser className="h-5 w-5" /> },
   { label: "Phụ huynh", href: "/admin/parents", icon: <Heart className="h-5 w-5" /> },
   { label: "School Admin", href: "/admin/school-admins", icon: <ShieldCheck className="h-5 w-5" /> },
+  { label: "Tin nhắn", href: "/admin/chat", icon: <MessageSquare className="h-5 w-5" /> },
 ];
 
 export const teacherMenuItems: SidebarItem[] = [
@@ -51,12 +53,14 @@ export const teacherMenuItems: SidebarItem[] = [
   { label: "Điểm danh", href: "/teacher/attendance", icon: <ClipboardCheck className="h-5 w-5" /> },
   { label: "Sức khỏe", href: "/teacher/health", icon: <HeartPulse className="h-5 w-5" /> },
   { label: "Bài đăng", href: "/teacher/posts", icon: <FileText className="h-5 w-5" /> },
+  { label: "Tin nhắn", href: "/teacher/chat", icon: <MessageSquare className="h-5 w-5" /> },
 ];
 
 export const parentMenuItems: SidebarItem[] = [
   { label: "Tổng quan", href: "/parent", icon: <LayoutDashboard className="h-5 w-5" /> },
   { label: "Con của tôi", href: "/parent/children", icon: <Baby className="h-5 w-5" /> },
   { label: "Bảng tin", href: "/parent/feed", icon: <Newspaper className="h-5 w-5" /> },
+  { label: "Tin nhắn", href: "/parent/chat", icon: <MessageSquare className="h-5 w-5" /> },
 ];
 
 // ─── Sidebar Component ──────────────────────────────────────────────

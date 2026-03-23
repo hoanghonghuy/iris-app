@@ -420,3 +420,59 @@ export interface TeacherAnalytics {
   total_students: number;
   total_posts: number;
 }
+
+// ============================================================================
+// CHAT TYPES
+// ============================================================================
+
+/**
+ * ParticipantInfo - Thông tin cơ bản của thành viên trong cuộc hội thoại
+ * Backend: apps/api/internal/model/chat.go
+ */
+export interface ParticipantInfo {
+  user_id: string;
+  email: string;
+  full_name?: string;
+}
+
+/**
+ * Conversation - Cuộc hội thoại
+ * Backend: apps/api/internal/model/chat.go
+ */
+export interface Conversation {
+  conversation_id: string;
+  type: "direct" | "group";
+  name?: string;
+  created_at: string;
+  participants: ParticipantInfo[];
+}
+
+/**
+ * Message - Tin nhắn trong cuộc hội thoại
+ * Backend: apps/api/internal/model/chat.go
+ */
+export interface Message {
+  message_id: string;
+  conversation_id: string;
+  sender_id: string;
+  sender_email: string;
+  content: string;
+  created_at: string;
+}
+
+/**
+ * WSEvent - Sự kiện WebSocket realtime
+ * Backend: apps/api/internal/ws/hub.go
+ */
+export interface WSEvent {
+  type: "new_message" | "conversation_created";
+  data: unknown;
+}
+
+/**
+ * WSSendMessage - Cấu trúc JSON gửi tin nhắn qua WebSocket
+ */
+export interface WSSendMessage {
+  conversation_id: string;
+  content: string;
+}
