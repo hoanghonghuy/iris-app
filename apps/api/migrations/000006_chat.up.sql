@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   conversation_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   type            varchar(10) NOT NULL DEFAULT 'direct', -- direct | group
   name            varchar(255),                          -- tên nhóm (NULL nếu direct)
-  created_at      timestamptz NOT NULL DEFAULT now()
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
 );
 
 -- Bảng thành viên tham gia cuộc hội thoại
