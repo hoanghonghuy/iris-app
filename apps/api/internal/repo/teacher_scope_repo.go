@@ -11,8 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var ErrForbidden = errors.New("forbidden")
-
 type TeacherScopeRepo struct {
 	pool *pgxpool.Pool
 }
@@ -104,7 +102,7 @@ func (r *TeacherScopeRepo) UpsertAttendance(ctx context.Context, teacherUserID, 
 	}
 
 	if tag.RowsAffected() == 0 { // không có hàng nào được cập nhật, điều kiện WHERE không thỏa mãn
-		return ErrForbidden
+		return ErrNoRowsUpdated
 	}
 	return nil
 }
@@ -126,7 +124,7 @@ func (r *TeacherScopeRepo) CreateHealthLog(ctx context.Context, teacherUserID, s
 	err := r.pool.QueryRow(ctx, q, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, ErrForbidden
+			return uuid.Nil, ErrNoRowsUpdated
 		}
 		return uuid.Nil, err
 	}
@@ -185,7 +183,7 @@ func (r *TeacherScopeRepo) CreateClassPost(ctx context.Context, teacherUserID, c
 	err := r.pool.QueryRow(ctx, q, teacherUserID, classID, postType, content).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, ErrForbidden
+			return uuid.Nil, ErrNoRowsUpdated
 		}
 		return uuid.Nil, err
 	}
@@ -210,7 +208,7 @@ func (r *TeacherScopeRepo) CreateStudentPost(ctx context.Context, teacherUserID,
 	err := r.pool.QueryRow(ctx, q, teacherUserID, studentID, postType, content).Scan(&id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return uuid.Nil, ErrForbidden
+			return uuid.Nil, ErrNoRowsUpdated
 		}
 		return uuid.Nil, err
 	}
