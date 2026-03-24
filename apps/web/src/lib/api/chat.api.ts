@@ -6,6 +6,13 @@
 import { apiClient } from './client';
 import { ApiResponse, Conversation, Message } from '@/types';
 
+/** Response từ API ListMessages (cursor-based) */
+export interface MessageCursorResponse {
+  data: Message[];
+  has_more: boolean;
+  next_cursor: string | null;
+}
+
 export const chatApi = {
   /**
    * Tạo hoặc tìm cuộc hội thoại direct (1-1) với user khác
@@ -28,15 +35,20 @@ export const chatApi = {
   },
 
   /**
-   * Lấy danh sách tin nhắn trong cuộc hội thoại
-   * GET /api/v1/chat/conversations/:conversation_id/messages
+   * Lấy danh sách tin nhắn theo cursor-based pagination
+   * GET /api/v1/chat/conversations/:id/messages?before=<uuid>&limit=<int>
+   *
+   * Trả về tin nhắn DESC (mới nhất trước). Frontend reverse trước khi render.
+   * Dùng next_cursor để gọi lần tiếp theo khi cuộn lên.
    */
-  listMessages: async (conversationId: string, limit = 50, offset = 0) => {
-    const res = await apiClient.get<ApiResponse<Message[]>>(
+  listMessages: async (conversationId: string, limit = 50, before?: string): Promise<MessageCursorResponse> => {
+    const params: Record<string, string | number> = { limit };
+    if (before) params.before = before;
+    const res = await apiClient.get<MessageCursorResponse>(
       `/chat/conversations/${conversationId}/messages`,
-      { params: { limit, offset } }
+      { params }
     );
-    return res.data.data;
+    return res.data;
   },
 
   /**

@@ -2,6 +2,9 @@
  * ChatPage Component
  * Trang chat realtime dùng chung cho tất cả roles (Admin, Teacher, Parent).
  * Giao diện split-pane: danh sách hội thoại bên trái, khung chat bên phải.
+ *
+ * Sử dụng cursor-based pagination: load 50 tin nhắn mới nhất ban đầu,
+ * sau đó tải thêm khi user cuộn lên đầu (infinite scroll ngược chiều).
  */
 "use client";
 
@@ -10,7 +13,7 @@ import { chatApi } from "@/lib/api/chat.api";
 import { authHelpers } from "@/lib/api/client";
 import { useChatWebSocket } from "@/hooks/useChatWebSocket";
 import { Conversation, Message } from "@/types";
-import { MessageSquare, Send, ArrowLeft, Wifi, WifiOff, Plus, X } from "lucide-react";
+import { MessageSquare, Send, ArrowLeft, Wifi, WifiOff, Plus, X, Loader2 } from "lucide-react";
 
 /* ────────────────────────────── helpers ────────────────────────────── */
 
@@ -43,7 +46,14 @@ export default function ChatPage() {
   const [showNewConv, setShowNewConv] = useState(false);
   const [newConvTarget, setNewConvTarget] = useState("");
   const [searchResults, setSearchResults] = useState<{ user_id: string; email: string; full_name: string }[]>([]);
+
+  // Cursor-based pagination state
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   /* ── lấy user id từ JWT ── */
   useEffect(() => {
@@ -63,7 +73,6 @@ export default function ChatPage() {
         if (prev.some((m) => m.message_id === msg.message_id)) return prev;
         return [...prev, msg];
       }
-      // Nếu đang không xem cuộc hội thoại → vẫn cập nhật nếu match
       return prev;
     });
   }, []);
@@ -87,23 +96,73 @@ export default function ChatPage() {
     fetchConversations();
   }, [fetchConversations]);
 
-  /* ── fetch messages khi chọn conversation ── */
+  /* ── fetch messages khi chọn conversation (lần đầu) ── */
   useEffect(() => {
     if (!selectedConv) return;
+    setMessages([]);
+    setNextCursor(null);
+    setHasMore(false);
+
     (async () => {
       try {
-        const data = await chatApi.listMessages(selectedConv.conversation_id);
-        setMessages(data || []);
+        const res = await chatApi.listMessages(selectedConv.conversation_id);
+        // API trả về DESC (mới nhất trước) → reverse để hiển thị đúng thứ tự
+        setMessages([...res.data].reverse());
+        setNextCursor(res.next_cursor);
+        setHasMore(res.has_more);
       } catch (err) {
         console.error("Failed to load messages:", err);
       }
     })();
   }, [selectedConv]);
 
-  /* ── auto scroll ── */
+  /* ── auto scroll xuống cuối khi có tin nhắn mới ── */
+  const prevMessageCountRef = useRef(0);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const newCount = messages.length;
+    const wasAtBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+    // Chỉ scroll xuống nếu user đang ở gần cuối (tin nhắn mới đến)
+    // hoặc đây là lần đầu load (prevCount = 0)
+    if (wasAtBottom || prevMessageCountRef.current === 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: prevMessageCountRef.current === 0 ? "auto" : "smooth" });
+    }
+    prevMessageCountRef.current = newCount;
   }, [messages]);
+
+  /* ── load more khi user cuộn lên đầu ── */
+  const handleScroll = useCallback(async () => {
+    const container = messagesContainerRef.current;
+    if (!container || !hasMore || loadingMore || !selectedConv || !nextCursor) return;
+
+    // Khi scroll gần đầu (< 80px)
+    if (container.scrollTop < 80) {
+      setLoadingMore(true);
+      const prevScrollHeight = container.scrollHeight;
+      try {
+        const res = await chatApi.listMessages(selectedConv.conversation_id, 50, nextCursor);
+        const older = [...res.data].reverse(); // reverse về ASC
+        setMessages((prev) => [...older, ...prev]);
+        setNextCursor(res.next_cursor);
+        setHasMore(res.has_more);
+
+        // Giữ nguyên vị trí scroll sau khi prepend tin nhắn cũ
+        requestAnimationFrame(() => {
+          if (container) {
+            container.scrollTop = container.scrollHeight - prevScrollHeight;
+          }
+        });
+      } catch (err) {
+        console.error("Failed to load more messages:", err);
+      } finally {
+        setLoadingMore(false);
+      }
+    }
+  }, [hasMore, loadingMore, selectedConv, nextCursor]);
 
   /* ── gửi tin nhắn ── */
   const handleSend = () => {
@@ -142,7 +201,7 @@ export default function ChatPage() {
       } catch (err) {
         console.error("Failed to search users:", err);
       }
-    }, 500); // 500ms debounce
+    }, 500);
     return () => clearTimeout(timer);
   }, [newConvTarget]);
 
@@ -151,7 +210,7 @@ export default function ChatPage() {
     if (!targetUserId) return;
     try {
       const newConv = await chatApi.createDirectConversation(targetUserId);
-      await fetchConversations(); // refresh list
+      await fetchConversations();
       setSelectedConv(newConv);
       setShowNewConv(false);
       setNewConvTarget("");
@@ -286,7 +345,23 @@ export default function ChatPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto p-4 space-y-3"
+            >
+              {/* Load more indicator */}
+              {loadingMore && (
+                <div className="flex justify-center py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                </div>
+              )}
+              {!hasMore && messages.length > 0 && (
+                <p className="text-center text-xs text-zinc-400 dark:text-zinc-500 py-1">
+                  Đã tải hết lịch sử trò chuyện
+                </p>
+              )}
+
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-500">
                   <MessageSquare className="h-10 w-10 mb-2" />
