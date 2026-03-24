@@ -42,8 +42,7 @@ export default function LoginPage() {
       authHelpers.setToken(token);
 
       // 3. Gọi /me để lấy role (giờ interceptor sẽ gắn token vào header)
-      const meResponse = await authApi.getMe();
-      const userData = meResponse.data; // backend wrap trong { data: {...} }
+      const userData = await authApi.getMe();
       const primaryRole = userData.roles[0] as UserRole;
 
       // 4. Lưu vào AuthProvider (sẽ redirect dựa theo role)

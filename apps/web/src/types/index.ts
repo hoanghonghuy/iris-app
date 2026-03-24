@@ -51,6 +51,7 @@ export interface RegisterParentRequest {
 export interface UserInfo {
   user_id: string;
   email: string;
+  full_name?: string;
   status: UserStatus;
   roles: UserRole[];
   school_id?: string;

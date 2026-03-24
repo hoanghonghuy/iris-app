@@ -21,8 +21,8 @@ export const authApi = {
    * GET /api/v1/me
    */
   getMe: async () => {
-    const res = await apiClient.get('/me');
-    return res.data;
+    const res = await apiClient.get<{data: any}>('/me');
+    return res.data.data;
   },
 
   /**
