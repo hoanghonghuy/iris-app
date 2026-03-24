@@ -181,6 +181,10 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 		nextCursor = &id
 	}
 
+	if msgs == nil {
+		msgs = []model.MessageWithSender{}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data":        msgs,
 		"has_more":    hasMore,

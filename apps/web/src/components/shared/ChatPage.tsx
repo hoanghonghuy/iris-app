@@ -107,7 +107,7 @@ export default function ChatPage() {
       try {
         const res = await chatApi.listMessages(selectedConv.conversation_id);
         // API trả về DESC (mới nhất trước) → reverse để hiển thị đúng thứ tự
-        setMessages([...res.data].reverse());
+        setMessages([...(res.data || [])].reverse());
         setNextCursor(res.next_cursor);
         setHasMore(res.has_more);
       } catch (err) {
@@ -145,7 +145,7 @@ export default function ChatPage() {
       const prevScrollHeight = container.scrollHeight;
       try {
         const res = await chatApi.listMessages(selectedConv.conversation_id, 50, nextCursor);
-        const older = [...res.data].reverse(); // reverse về ASC
+        const older = [...(res.data || [])].reverse(); // reverse về ASC
         setMessages((prev) => [...older, ...prev]);
         setNextCursor(res.next_cursor);
         setHasMore(res.has_more);
