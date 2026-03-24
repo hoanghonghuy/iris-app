@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, HeartPulse, ClipboardCheck, GraduationCap, ShieldCheck, Menu } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 export default function Home() {
   return (
@@ -38,6 +38,7 @@ export default function Home() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 flex flex-col p-0">
+                  <SheetTitle className="sr-only">Menu Điều Hướng</SheetTitle>
                   <div className="flex flex-col h-full">
                     {/* Sidebar Header with Logo */}
                     <div className="p-6 pr-12 border-b border-zinc-100 dark:border-zinc-900 flex items-center gap-3">
