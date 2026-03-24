@@ -175,7 +175,7 @@ export default function AdminTeachersPage() {
                 {filteredTeachers.map((t) => (
                   <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-muted leading-relaxed">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{t.full_name}</div>
+                      <div className="font-medium text-foreground">{t.full_name}</div>
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <Phone className="h-3 w-3" /> {t.phone || "—"}
                       </div>
@@ -292,7 +292,7 @@ export default function AdminTeachersPage() {
                       </div>
                     </div>
                   ) : (
-                    <Button variant="outline" size="sm" className="w-full text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200" onClick={() => setAssigningTeacherId(t.teacher_id)}>
+                    <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssigningTeacherId(t.teacher_id)}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
                     </Button>
                   )}

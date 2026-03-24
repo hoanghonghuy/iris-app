@@ -181,7 +181,7 @@ export default function AdminParentsPage() {
                 {filteredParents.map((p) => (
                   <tr key={p.parent_id} className="border-b last:border-0 hover:bg-muted leading-relaxed">
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{p.full_name}</div>
+                      <div className="font-medium text-foreground">{p.full_name}</div>
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <Phone className="h-3 w-3" /> {p.phone || "—"}
                       </div>
@@ -302,8 +302,8 @@ export default function AdminParentsPage() {
                       </div>
                     </div>
                   ) : (
-                    <Button variant="outline" size="sm" className="w-full text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200" onClick={() => setAssigningParentId(p.parent_id)}>
-                      <Link2 className="mr-1 h-4 w-4" /> Gán phân loại học sinh
+                    <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssigningParentId(p.parent_id)}>
+                      <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
                     </Button>
                   )}
                 </div>
