@@ -37,18 +37,51 @@ export default function Home() {
                     <span className="sr-only">Toggle navigation menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 flex flex-col pt-10">
-                  <nav className="flex flex-col gap-6 text-lg font-medium text-zinc-600 dark:text-zinc-400">
-                    <a href="#features" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Tính năng</a>
-                    <a href="#about" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Về chúng tôi</a>
-                    <hr className="border-t border-zinc-200 dark:border-zinc-800 my-2" />
-                    <Link href="/login" className="w-full">
-                      <Button variant="outline" className="w-full justify-start text-zinc-900 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800">Đăng nhập</Button>
-                    </Link>
-                    <Link href="/register" className="w-full">
-                      <Button className="w-full justify-start">Đăng ký Phụ huynh</Button>
-                    </Link>
-                  </nav>
+                <SheetContent side="right" className="w-[300px] sm:w-[350px] bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 flex flex-col p-0">
+                  <div className="flex flex-col h-full">
+                    {/* Sidebar Header with Logo */}
+                    <div className="p-6 pr-12 border-b border-zinc-100 dark:border-zinc-900 flex items-center gap-3">
+                      <GraduationCap className="h-6 w-6 text-zinc-900 dark:text-zinc-100" />
+                      <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">Iris School</span>
+                    </div>
+                    
+                    <nav className="flex-1 flex flex-col py-8 px-6">
+                      <div className="flex flex-col gap-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 mb-2 px-2">Điều hướng</p>
+                        <a 
+                          href="#features" 
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl text-lg font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all active:scale-95"
+                        >
+                          Tính năng
+                        </a>
+                        <a 
+                          href="#about" 
+                          className="flex items-center gap-3 px-3 py-3 rounded-xl text-lg font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all active:scale-95"
+                        >
+                          Về chúng tôi
+                        </a>
+                      </div>
+                      
+                      <div className="mt-auto flex flex-col gap-4 pb-8">
+                        <div className="h-px bg-zinc-100 dark:bg-zinc-900 w-full mb-4" />
+                        <Link href="/login" className="w-full">
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-center h-12 text-base font-semibold border-zinc-200 dark:border-zinc-800 rounded-xl"
+                          >
+                            Đăng nhập
+                          </Button>
+                        </Link>
+                        <Link href="/register" className="w-full">
+                          <Button 
+                            className="w-full justify-center h-12 text-base font-semibold bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-zinc-800 dark:hover:bg-zinc-200 rounded-xl shadow-lg shadow-zinc-200/50 dark:shadow-none"
+                          >
+                            Đăng ký Phụ huynh
+                          </Button>
+                        </Link>
+                      </div>
+                    </nav>
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>
@@ -152,7 +185,7 @@ export default function Home() {
             <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Iris School</span>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
-            &copy; {new Date().getFullYear()} Nền tảng Quản lý Trường học. Đồ án xây dựng.
+            &copy; {new Date().getFullYear()} Nền tảng Quản lý Trường học.
           </p>
           <div className="flex items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
             <a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">Bảo mật</a>
