@@ -44,7 +44,7 @@ export default function ChatArea({
     <div
       className={`
         fixed inset-0 z-50 md:static md:flex-1
-        flex flex-col bg-[#f4f4f5] dark:bg-zinc-950 md:z-auto
+        flex flex-col bg-background md:z-auto
         transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]
         ${selectedConv ? "translate-x-0" : "translate-x-full md:translate-x-0"}
       `}
@@ -52,7 +52,7 @@ export default function ChatArea({
       {selectedConv ? (
         <>
           {/* Chat Header */}
-          <div className="shrink-0 flex items-center gap-3 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-2 py-2.5 z-10 shadow-sm md:shadow-none pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <div className="shrink-0 flex items-center gap-3 bg-background/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-2 py-2.5 z-10 shadow-sm md:shadow-none pt-[max(0.5rem,env(safe-area-inset-top))]">
             {/* Nút back (chỉ hiện trên mobile) */}
             <button
               onClick={onBack}
@@ -152,7 +152,7 @@ export default function ChatArea({
           </div>
 
           {/* Input gửi tin nhắn */}
-          <div className="shrink-0 bg-white dark:bg-zinc-950 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-4 md:py-4 border-t border-zinc-200 dark:border-zinc-900">
+          <div className="shrink-0 bg-background px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-4 md:py-4 border-t border-zinc-200 dark:border-zinc-900">
             <div className="flex items-end gap-2 max-w-4xl mx-auto">
               {/* Nút đính kèm (placeholder) */}
               <button className="flex-shrink-0 p-2.5 rounded-full text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">
@@ -160,7 +160,7 @@ export default function ChatArea({
               </button>
 
               {/* Textarea tự mở rộng */}
-              <div className="flex-1 relative bg-zinc-100 dark:bg-zinc-900 rounded-3xl border border-transparent focus-within:border-blue-500 focus-within:bg-white dark:focus-within:bg-zinc-950 transition-all flex items-end">
+              <div className="flex-1 relative bg-zinc-100 dark:bg-zinc-900 rounded-3xl border border-transparent focus-within:border-blue-500 focus-within:bg-background transition-all flex items-end">
                 <textarea
                   rows={1}
                   value={input}
@@ -197,7 +197,7 @@ export default function ChatArea({
         </>
       ) : (
         /* Desktop Empty State (ẩn trên mobile vì slide logic đã xử lý) */
-        <div className="hidden md:flex flex-col w-full items-center justify-center h-full bg-[#f4f4f5] dark:bg-zinc-950 text-zinc-400 dark:text-zinc-600">
+        <div className="hidden md:flex flex-col w-full items-center justify-center h-full bg-background text-zinc-400 dark:text-zinc-600">
           <div className="w-24 h-24 rounded-full bg-white dark:bg-zinc-900 shadow-sm flex items-center justify-center mb-6">
             <MessageSquare className="h-10 w-10 text-blue-500 opacity-60" />
           </div>

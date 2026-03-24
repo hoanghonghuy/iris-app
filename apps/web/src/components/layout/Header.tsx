@@ -49,34 +49,34 @@ export function Header({ onMenuToggle }: HeaderProps) {
     : "U";
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-4 lg:px-6 transition-colors duration-300">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 lg:px-6 transition-colors duration-300">
       {/* Left: hamburger (mobile/tablet) + role label */}
       <div className="flex items-center gap-3">
         <button
-          className="rounded-md p-1.5 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 lg:hidden transition-colors"
+          className="rounded-md p-1.5 hover:bg-muted lg:hidden transition-colors"
           onClick={onMenuToggle}
         >
-          <Menu className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />
+          <Menu className="h-5 w-5 text-foreground" />
         </button>
-        <span className="text-sm text-zinc-500 dark:text-zinc-400 hidden sm:inline">
+        <span className="text-sm text-muted-foreground hidden sm:inline">
           {role && roleLabels[role]}
         </span>
       </div>
 
       {/* Right: Theme Toggle + User Dropdown Menu */}
       <div className="flex items-center gap-2 sm:gap-4">
-        <ThemeToggle className="text-zinc-600 dark:text-zinc-400" />
+        <ThemeToggle className="text-muted-foreground" />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 rounded-full pl-2 pr-4 focus-visible:ring-0 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 transition-colors">
+            <Button variant="ghost" className="relative h-9 rounded-full pl-2 pr-4 focus-visible:ring-0 hover:bg-muted transition-colors">
               <div className="flex items-center gap-2">
                 <Avatar className="h-7 w-7">
                   <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium hidden sm:inline-block max-w-[150px] truncate text-zinc-900 dark:text-zinc-100">
+                <span className="text-sm font-medium hidden sm:inline-block max-w-[150px] truncate text-foreground">
                   {user?.email}
                 </span>
               </div>

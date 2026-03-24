@@ -176,7 +176,7 @@ export default function AdminStudentsPage() {
           <Input 
             type="search" 
             placeholder="Tìm theo tên học sinh..." 
-            className="pl-8 bg-white dark:bg-zinc-950 " 
+            className="pl-8 bg-background " 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -269,14 +269,14 @@ export default function AdminStudentsPage() {
               </thead>
               <tbody>
                 {filteredStudents.map((s) => (
-                  <tr key={s.student_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <tr key={s.student_id} className="border-b last:border-0 hover:bg-muted">
                     <td className="px-6 py-4 font-medium">{s.full_name}</td>
                     <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
                     <td className="px-6 py-4"><Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge></td>
                     <td className="px-6 py-4 text-right">
                       {parentCodes[s.student_id] ? (
                         <div className="flex items-center justify-end gap-1">
-                          <code className="rounded bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
+                          <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
                           <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
                             {copiedId === s.student_id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                           </Button>
@@ -310,7 +310,7 @@ export default function AdminStudentsPage() {
                   </div>
                   {parentCodes[s.student_id] ? (
                     <div className="mt-2 flex items-center gap-1">
-                      <code className="rounded bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
+                      <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
                       <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
                         {copiedId === s.student_id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
                       </Button>

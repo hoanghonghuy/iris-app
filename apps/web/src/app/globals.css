@@ -48,72 +48,114 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* ═══ NURTURED LAYER — MINIMALIST PASTEL (LIGHT MODE) ═══ */
+  /* Thiết kế dựa trên Neutral = #F5F7F6 (Xám nhạt dịu), Primary = #4DB6AC (Teal - Xanh ngọc) */
+  --radius: 1rem; /* Bo góc cực lớn (16px) để tạo cảm giác friendly, soft */
+
+  /* Nền hệ thống: Soft Neutral (#F5F7F6) */
+  --background: oklch(0.97 0.005 160);
+  --foreground: oklch(0.2 0.02 240); /* Chữ xám đậm, không đen hoàn toàn */
+
+  /* Khối Card: Trắng tinh (#FFFFFF) để nổi bật trên nền xám nhạt */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.2 0.02 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.2 0.02 240);
+
+  /* Primary: Xanh ngọc dịu (Soft Teal - #4DB6AC) */
+  --primary: oklch(0.71 0.1 180);
+  --primary-foreground: oklch(1 0 0);
+
+  /* Secondary: Xanh Mint rất nhạt hoặc Xám nhạt cho nút phụ */
+  --secondary: oklch(0.95 0.02 180);
+  --secondary-foreground: oklch(0.3 0.05 180);
+  
+  /* Muted: Xám xanh rất nhạt cho hover và trạng thái vô hiệu hóa */
+  --muted: oklch(0.96 0.005 240);
+  --muted-foreground: oklch(0.55 0.01 240);
+  
+  /* Accent: Xanh ngọc nhạt để làm hiệu ứng hover menu */
+  --accent: oklch(0.96 0.02 180);
+  --accent-foreground: oklch(0.4 0.08 180);
+
+  /* Destructive: Đỏ cam nhạt dịu mắt (#EF5350) */
+  --destructive: oklch(0.65 0.15 20);
+  --destructive-foreground: oklch(1 0 0);
+
+  /* Border / Input: Viền xám rất mờ, hầu như hòa vào nền */
+  --border: oklch(0.92 0.01 240);
+  --input: oklch(0.92 0.01 240);
+  --ring: oklch(0.71 0.1 180); /* Focus ring màu Teal */
+
+  /* Sidebar: Đồng màu với nền hoặc màu trắng */
+  --sidebar: oklch(0.97 0.005 160); /* Giống nền */
+  --sidebar-foreground: oklch(0.3 0.02 240);
+  --sidebar-primary: oklch(0.71 0.1 180);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.94 0.01 180);
+  --sidebar-accent-foreground: oklch(0.2 0.02 240);
+  --sidebar-border: oklch(0.92 0.01 240);
+  --sidebar-ring: oklch(0.71 0.1 180);
+
+  /* Charts: Teal, Amber, Blue */
+  --chart-1: oklch(0.71 0.1 180);  /* Teal */
+  --chart-2: oklch(0.8 0.15 75);   /* Amber */
+  --chart-3: oklch(0.75 0.1 240);  /* Blue */
+  --chart-4: oklch(0.65 0.15 20);  /* Soft Red */
+  --chart-5: oklch(0.8 0.05 120);  /* Soft Green */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ═══ NURTURED LAYER — DARK MODE ═══ */
+  /* Dark Mode của phong cách Minimalist thường dùng nền Xám Than (Charcoal) mượt mà */
+
+  /* Nền chính: Xám đen Graphite (#121212) */
+  --background: oklch(0.15 0 0);
+  --foreground: oklch(0.96 0 0); /* Trắng xám */
+
+  /* Khối Card: Xám sáng hơn (#1E1E1E) để nổi khối */
+  --card: oklch(0.22 0 0);
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.22 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+
+  /* Primary: Xanh ngọc (#4DB6AC) nổi bật cực đẹp trên nền đen */
+  --primary: oklch(0.71 0.1 180);
+  --primary-foreground: oklch(0.1 0 0); /* Chữ đen để tương phản */
+
+  /* Secondary / Muted */
+  --secondary: oklch(0.3 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.28 0.02 180);
+  --accent-foreground: oklch(0.96 0 0);
+
+  /* Destructive */
+  --destructive: oklch(0.65 0.15 20);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  /* Border / Input: Viền mờ */
+  --border: oklch(0.3 0 0);
+  --input: oklch(0.3 0 0);
+  --ring: oklch(0.71 0.1 180);
+
+  /* Sidebar */
+  --sidebar: oklch(0.18 0 0);
+  --sidebar-foreground: oklch(0.85 0 0);
+  --sidebar-primary: oklch(0.71 0.1 180);
+  --sidebar-primary-foreground: oklch(0.1 0 0);
+  --sidebar-accent: oklch(0.25 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: oklch(0.71 0.1 180);
+
+  /* Charts */
+  --chart-1: oklch(0.71 0.1 180);
+  --chart-2: oklch(0.8 0.15 75);
+  --chart-3: oklch(0.75 0.1 240);
+  --chart-4: oklch(0.65 0.15 20);
+  --chart-5: oklch(0.8 0.05 120);
 }
 
 @layer base {

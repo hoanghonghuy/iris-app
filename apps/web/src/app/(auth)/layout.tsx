@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300 relative">
+    <div className="flex min-h-screen flex-col bg-background transition-colors duration-300 relative">
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
         <ThemeToggle className="text-zinc-600 dark:text-zinc-400" />
       </div>

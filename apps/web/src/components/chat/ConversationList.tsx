@@ -40,7 +40,7 @@ export default function ConversationList({
   if (conversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-600 space-y-4">
-        <div className="h-16 w-16 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center">
+        <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
           <MessageSquare className="h-8 w-8 text-zinc-300 dark:text-zinc-700" />
         </div>
         <p className="text-sm font-medium">Chưa có tin nhắn nào</p>

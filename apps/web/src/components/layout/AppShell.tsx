@@ -19,7 +19,7 @@ export function AppShell({ children, menuItems }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+    <div className="flex h-screen overflow-hidden bg-background transition-colors duration-300">
       {/* Sidebar */}
       <Sidebar
         items={menuItems}

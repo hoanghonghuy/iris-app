@@ -163,7 +163,7 @@ export default function AdminSchoolAdminsPage() {
               </thead>
               <tbody>
                 {admins.map((a) => (
-                  <tr key={a.school_admin_id || a.user_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <tr key={a.school_admin_id || a.user_id} className="border-b last:border-0 hover:bg-muted">
                     <td className="px-6 py-4 font-medium">{a.email || a.user_id}</td>
                     <td className="px-6 py-4 text-muted-foreground">{a.school_name || a.school_id}</td>
                     <td className="px-6 py-4 text-right">

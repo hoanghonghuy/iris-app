@@ -53,7 +53,7 @@ export default function ChatSidebar({
   };
 
   return (
-    <div className="flex w-full md:w-80 flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 z-0 h-full">
+    <div className="flex w-full md:w-80 flex-col border-r border-border bg-background z-0 h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 md:py-5 border-b border-transparent">
         <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">

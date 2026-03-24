@@ -13,7 +13,7 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
     return (
         <Card className="border-dashed shadow-sm">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="rounded-full bg-zinc-100 dark:bg-zinc-800 p-4 mb-4">
+                <div className="rounded-full bg-muted p-4 mb-4">
                     <Icon className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>

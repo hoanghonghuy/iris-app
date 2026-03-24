@@ -53,7 +53,7 @@ export default function MessageBubble({
         className={`max-w-full px-3.5 py-2.5 shadow-sm relative group ${
           isMine
             ? "bg-blue-600 text-white"
-            : "bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+            : "bg-card border border-border text-foreground"
         } ${radiusClass}`}
       >
         {/* Tên sender cho group chat (chỉ hiện ở tin đầu nhóm, không phải tin của mình) */}

@@ -85,7 +85,7 @@ export default function TeacherClassesPage() {
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="h-9 appearance-none rounded-md border bg-white dark:bg-zinc-950 py-1 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="h-9 appearance-none rounded-md border bg-background py-1 pl-3 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               {classes.map((c) => (
                 <option key={c.class_id} value={c.class_id}>
@@ -143,7 +143,7 @@ export default function TeacherClassesPage() {
                 </thead>
                 <tbody>
                   {students.map((s) => (
-                    <tr key={s.student_id} className="border-b last:border-0 hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                    <tr key={s.student_id} className="border-b last:border-0 hover:bg-muted">
                       <td className="px-6 py-4 font-medium">{s.full_name}</td>
                       <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
                       <td className="px-6 py-4 text-muted-foreground">{genderLabel[s.gender] || s.gender}</td>
