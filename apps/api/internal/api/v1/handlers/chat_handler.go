@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
@@ -53,7 +54,13 @@ type CreateDirectConversationRequest struct {
 
 // CreateDirectConversation tạo hoặc tìm cuộc hội thoại direct giữa 2 user
 func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
-	claims := c.MustGet("claims").(*auth.Claims)
+	claimsAny, ok := c.Get(middleware.CtxClaims)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -84,7 +91,13 @@ func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
 
 // ListConversations lấy danh sách cuộc hội thoại của user hiện tại
 func (h *ChatHandler) ListConversations(c *gin.Context) {
-	claims := c.MustGet("claims").(*auth.Claims)
+	claimsAny, ok := c.Get(middleware.CtxClaims)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -105,7 +118,13 @@ func (h *ChatHandler) ListConversations(c *gin.Context) {
 
 // ListMessages lấy danh sách tin nhắn của cuộc hội thoại
 func (h *ChatHandler) ListMessages(c *gin.Context) {
-	claims := c.MustGet("claims").(*auth.Claims)
+	claimsAny, ok := c.Get(middleware.CtxClaims)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -228,7 +247,13 @@ func (h *ChatHandler) HandleWS(c *gin.Context) {
 
 // SearchUsers tìm kiếm user qua query param "q"
 func (h *ChatHandler) SearchUsers(c *gin.Context) {
-	claims := c.MustGet("claims").(*auth.Claims)
+	claimsAny, ok := c.Get(middleware.CtxClaims)
+	if !ok {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
