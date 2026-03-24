@@ -25,7 +25,11 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
       wsRef.current.close();
     }
 
-    const ws = new WebSocket(`${WS_BASE_URL}/chat/ws?token=${token}`);
+    // Truyền token qua Sec-WebSocket-Protocol thay vì query string
+    // (tránh token bị log trong server access log / browser history)
+    // Format: ['Bearer', '<jwt>'] → browser gửi: Sec-WebSocket-Protocol: Bearer, <jwt>
+    const ws = new WebSocket(`${WS_BASE_URL}/chat/ws`, ['Bearer', token]);
+
 
     ws.onopen = () => {
       console.log('[WS] Connected');

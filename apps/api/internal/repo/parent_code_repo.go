@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+
 type ParentCodeRepo struct {
 	pool *pgxpool.Pool
 }
@@ -53,7 +54,7 @@ func (r *ParentCodeRepo) FindByCode(ctx context.Context, code string) (*model.St
 	return info, err
 }
 
-// IncrementUsage tăng usage_count
+// IncrementUsage tăng usage_count (dùng nội bộ khi đã biết còn slot)
 func (r *ParentCodeRepo) IncrementUsage(ctx context.Context, code string) error {
 	const q = `
 		UPDATE student_parent_codes
@@ -63,3 +64,24 @@ func (r *ParentCodeRepo) IncrementUsage(ctx context.Context, code string) error 
 	_, err := r.pool.Exec(ctx, q, code)
 	return err
 }
+
+// IncrementUsageIfNotMaxed tăng usage_count chỉ khi chưa đạt giới hạn.
+// Trả về ErrParentCodeMaxUsageReached nếu đã full (atomic — tránh race condition).
+func (r *ParentCodeRepo) IncrementUsageIfNotMaxed(ctx context.Context, code string) error {
+	const q = `
+		UPDATE student_parent_codes
+		SET usage_count = usage_count + 1
+		WHERE code = $1
+		  AND usage_count < max_usage
+		  AND expires_at > now();
+	`
+	tag, err := r.pool.Exec(ctx, q, code)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNoRowsUpdated
+	}
+	return nil
+}
+

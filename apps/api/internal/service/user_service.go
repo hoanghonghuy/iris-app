@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -381,13 +382,20 @@ func (s *UserService) ResetPasswordWithToken(ctx context.Context, plainToken, ne
 		return ErrUserNotFound
 	}
 
+	// Đánh dấu token đã sử dụng TRƯỚC khi đặt mật khẩu (fail-fast chống TOCTOU race)
+	// Nếu 2 request đồng thời: request thứ 2 sẽ thất bại ở bước này
+	// repo.ErrNoRowsUpdated cho biết token đã bị mark bởi request khác
+	if err := s.resetTokenRepo.MarkUsed(ctx, rt.ID); err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return ErrResetTokenInvalid // token đã bị dùng bởi request khác
+		}
+		return ErrResetTokenInvalid // lỗi DB khác, treat như invalid
+	}
+
 	// Cập nhật mật khẩu
 	if err := s.userRepo.UpdatePassword(ctx, rt.UserID, userInfo.Email, string(passwordHash)); err != nil {
 		return ErrFailedToUpdatePassword
 	}
-
-	// Đánh dấu token đã sử dụng
-	_ = s.resetTokenRepo.MarkUsed(ctx, rt.ID)
 
 	return nil
 }

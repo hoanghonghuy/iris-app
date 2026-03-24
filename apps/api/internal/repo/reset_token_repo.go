@@ -46,15 +46,22 @@ func (r *ResetTokenRepo) FindByTokenHash(ctx context.Context, tokenHash string) 
 	return t, nil
 }
 
-// MarkUsed đánh dấu token đã sử dụng
+// MarkUsed đánh dấu token đã sử dụng (atomic: chỉ update khi used_at IS NULL).
+// Trả về ErrNoRowsUpdated nếu token đã dùng (race condition guard).
 func (r *ResetTokenRepo) MarkUsed(ctx context.Context, tokenID uuid.UUID) error {
 	const q = `
 		UPDATE password_reset_tokens
 		SET used_at = now()
-		WHERE id = $1;
+		WHERE id = $1 AND used_at IS NULL;
 	`
-	_, err := r.pool.Exec(ctx, q, tokenID)
-	return err
+	tag, err := r.pool.Exec(ctx, q, tokenID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNoRowsUpdated
+	}
+	return nil
 }
 
 // DeleteExpired dọn dẹp token hết hạn (gọi định kỳ nếu cần)

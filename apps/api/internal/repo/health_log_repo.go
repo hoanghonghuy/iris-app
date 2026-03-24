@@ -1,3 +1,12 @@
+// Package repo — health_log_repo.go
+//
+// [MAINTAINABILITY NOTE] HealthLogRepo hiện KHÔNG được wire vào Repositories struct
+// và không được sử dụng trong flow chính. Logic query health log cho TEACHER
+// đã được implement trực tiếp trong TeacherScopeRepo (teacher_scope_repo.go).
+//
+// TODO: Quyết định một trong hai:
+//   a) Xóa file này nếu TeacherScopeRepo đủ đáp ứng mọi use case.
+//   b) Wire HealthLogRepo vào Repositories nếu cần dùng cho flow khác (e.g., admin view).
 package repo
 
 import (

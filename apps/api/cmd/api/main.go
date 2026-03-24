@@ -106,12 +106,13 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
-	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret)
+	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
 
 	// Router
 	r := httpapi.NewRouter(
 		cfg.JWTSecret,
 		cfg.JWTTTLMinutes,
+		cfg.AllowedOrigins,
 		authHandler,
 		schoolHandler,
 		classHandler,

@@ -21,28 +21,26 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
 )
 
-// upgrader cấu hình WebSocket upgrader cho Gin
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true // TODO: restrict origins in production
-	},
-}
-
+// upgrader sẽ được build trong NewChatHandler để inject allowedOrigins
 // ChatHandler xử lý các endpoint REST và WebSocket cho hệ thống chat
 type ChatHandler struct {
-	chatService *service.ChatService
-	hub         *ws.Hub
-	jwtSecret   string
+	chatService    *service.ChatService
+	hub            *ws.Hub
+	jwtSecret      string
+	allowedOrigins map[string]struct{} // origin allowlist cho WS
 }
 
 // NewChatHandler tạo mới ChatHandler
-func NewChatHandler(chatService *service.ChatService, hub *ws.Hub, jwtSecret string) *ChatHandler {
+func NewChatHandler(chatService *service.ChatService, hub *ws.Hub, jwtSecret string, allowedOrigins []string) *ChatHandler {
+	set := make(map[string]struct{}, len(allowedOrigins))
+	for _, o := range allowedOrigins {
+		set[o] = struct{}{}
+	}
 	return &ChatHandler{
-		chatService: chatService,
-		hub:         hub,
-		jwtSecret:   jwtSecret,
+		chatService:    chatService,
+		hub:            hub,
+		jwtSecret:      jwtSecret,
+		allowedOrigins: set,
 	}
 }
 
@@ -202,12 +200,38 @@ type wsMessage struct {
 }
 
 // HandleWS xử lý upgrade HTTP → WebSocket.
-// Token JWT được truyền qua query string: /api/v1/chat/ws?token=<JWT>
+// Token JWT được truyền qua Sec-WebSocket-Protocol header:
+//   - Client gửi: Sec-WebSocket-Protocol: Bearer, <JWT>
+//   - Server validate token và reply với cùng sub-protocol để browser chấp nhận
 func (h *ChatHandler) HandleWS(c *gin.Context) {
-	// Lấy token từ query string (WebSocket browser không hỗ trợ custom headers)
-	tokenStr := c.Query("token")
+	// Tạo upgrader với CheckOrigin theo allowlist
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				// non-browser client (e.g. server-to-server) - cho phép
+				return true
+			}
+			_, ok := h.allowedOrigins[origin]
+			return ok
+		},
+	}
+
+	// Đọc token từ Sec-WebSocket-Protocol (format: "Bearer, <JWT>")
+	// Browser WebSocket API không cho phép set custom headers, nên dùng sub-protocol thay thế.
+	// RFC 6455 §4.1: browser sẽ gửi lại Sec-WebSocket-Protocol trong response nếu server echo lại.
+	protocols := websocket.Subprotocols(c.Request)
+	var tokenStr string
+	for i, p := range protocols {
+		if p == "Bearer" && i+1 < len(protocols) {
+			tokenStr = protocols[i+1]
+			break
+		}
+	}
 	if tokenStr == "" {
-		response.Fail(c, http.StatusUnauthorized, "missing token query param")
+		response.Fail(c, http.StatusUnauthorized, "missing token in Sec-WebSocket-Protocol")
 		return
 	}
 
@@ -223,7 +247,10 @@ func (h *ChatHandler) HandleWS(c *gin.Context) {
 		return
 	}
 
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	// Echo lại sub-protocol "Bearer" để browser chấp nhận handshake
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, http.Header{
+		"Sec-WebSocket-Protocol": {"Bearer"},
+	})
 	if err != nil {
 		log.Printf("[WS] upgrade error: %v", err)
 		return

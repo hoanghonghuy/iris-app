@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -63,7 +64,8 @@ func (s *ParentCodeService) GenerateCodeForStudent(ctx context.Context, adminSch
 	return code, nil
 }
 
-// VerifyCode xác minh parent code hợp lệ và chưa vượt giới hạn
+// VerifyCode xác minh parent code hợp lệ và chưa vượt giới hạn (read-only, dùng để preview thông tin).
+// Lưu ý: do không atomic, không dùng để guard việc đăng ký — dùng IncrementUsageIfNotMaxed thay thế.
 func (s *ParentCodeService) VerifyCode(ctx context.Context, code string) (*model.StudentParentCode, error) {
 	codeInfo, err := s.parentCodeRepo.FindByCode(ctx, code)
 	if err != nil {
@@ -85,10 +87,13 @@ func (s *ParentCodeService) VerifyCode(ctx context.Context, code string) (*model
 
 // RegisterParent đăng ký parent mới sử dụng parent code
 func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password, parentCode string) (*LoginResponse, error) {
-	// Verify parent code
-	codeInfo, err := s.VerifyCode(ctx, parentCode)
+	// Đọc thông tin code để lấy studentID (read-only, chỉ dùng để preview)
+	codeInfo, err := s.parentCodeRepo.FindByCode(ctx, parentCode)
 	if err != nil {
-		return nil, err
+		return nil, ErrInvalidParentCode
+	}
+	if codeInfo.ExpiresAt.Before(time.Now()) {
+		return nil, ErrParentCodeExpired
 	}
 
 	// Check email chưa tồn tại
@@ -140,12 +145,14 @@ func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password,
 		return nil, ErrFailedToLinkParentToStudent
 	}
 
-	// Increment usage count
-	err = s.parentCodeRepo.IncrementUsage(ctx, parentCode)
-	if err != nil {
-		// Nếu increment không thành công, không sao, chỉ log
-		// (parent vẫn đăng ký thành công)
-		// TODO: log error
+	// Atomic increment: kiểm tra + tăng usage_count trong 1 câu SQL
+	// Nếu code đã đạt max_usage giữa lúc đọc và lúc này → repo trả ErrNoRowsUpdated
+	// Service map sang business error ErrParentCodeMaxUsageReached
+	if err = s.parentCodeRepo.IncrementUsageIfNotMaxed(ctx, parentCode); err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return nil, ErrParentCodeMaxUsageReached
+		}
+		return nil, err
 	}
 
 	// Generate JWT token cho parent (auto login sau khi register)

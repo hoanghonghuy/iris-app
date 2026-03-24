@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
@@ -13,6 +15,7 @@ import (
 func NewRouter(
 	jwtSecret string,
 	ttlMinutes int,
+	allowedOrigins []string,
 	authHandler *v1handlers.AuthHandler,
 	schoolHandler *v1handlers.SchoolHandler,
 	classHandler *v1handlers.ClassHandler,
@@ -29,15 +32,27 @@ func NewRouter(
 ) *gin.Engine {
 	r := gin.Default()
 
-	// CORS middleware — cho phép frontend gọi API cross-origin
+	// Build origin set for O(1) lookup
+	originSet := make(map[string]struct{}, len(allowedOrigins))
+	for _, o := range allowedOrigins {
+		originSet[o] = struct{}{}
+	}
+
+	// CORS middleware — chỉ cho phép origin trong allowlist
 	r.Use(func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
 		if origin != "" {
-			c.Header("Access-Control-Allow-Origin", origin)
-			c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
-			c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
-			c.Header("Access-Control-Allow-Credentials", "true")
-			c.Header("Access-Control-Max-Age", "86400")
+			if _, ok := originSet[origin]; ok {
+				c.Header("Access-Control-Allow-Origin", origin)
+				c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+				c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+				c.Header("Access-Control-Allow-Credentials", "true")
+				c.Header("Access-Control-Max-Age", "86400")
+			} else if c.Request.Method == "OPTIONS" {
+				// Preflight từ origin không hợp lệ → reject ngay
+				c.AbortWithStatus(http.StatusForbidden)
+				return
+			}
 		}
 
 		if c.Request.Method == "OPTIONS" {
