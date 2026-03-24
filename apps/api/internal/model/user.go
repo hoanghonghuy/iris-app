@@ -16,10 +16,11 @@ type User struct {
 
 // UserInfo chứa thông tin user trả cho client
 type UserInfo struct {
-	UserID uuid.UUID `json:"user_id"`
-	Email  string    `json:"email"`
-	Status string    `json:"status"`
-	Roles  []string  `json:"roles"`
+	UserID   uuid.UUID `json:"user_id"`
+	Email    string    `json:"email"`
+	FullName string    `json:"full_name,omitempty"`
+	Status   string    `json:"status"`
+	Roles    []string  `json:"roles"`
 }
 
 // UserWithToken dùng cho activation flow

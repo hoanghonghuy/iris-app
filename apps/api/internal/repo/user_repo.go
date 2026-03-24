@@ -57,10 +57,18 @@ func (r *UserRepo) RolesOfUser(ctx context.Context, userID uuid.UUID) ([]string,
 
 func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error) {
 	// Get user info
-	const userQuery = `SELECT user_id, email, status FROM users WHERE user_id = $1;`
+	const userQuery = `
+		SELECT u.user_id, u.email, u.status, 
+		       COALESCE(t.full_name, p.full_name, sa.full_name, '') as full_name
+		FROM users u
+		LEFT JOIN teachers t ON u.user_id = t.user_id
+		LEFT JOIN parents p ON u.user_id = p.user_id
+		LEFT JOIN school_admins sa ON u.user_id = sa.user_id
+		WHERE u.user_id = $1;
+	`
 
 	info := &model.UserInfo{}
-	if err := r.pool.QueryRow(ctx, userQuery, userID).Scan(&info.UserID, &info.Email, &info.Status); err != nil {
+	if err := r.pool.QueryRow(ctx, userQuery, userID).Scan(&info.UserID, &info.Email, &info.Status, &info.FullName); err != nil {
 		return nil, err
 	}
 
