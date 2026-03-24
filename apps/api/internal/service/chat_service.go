@@ -87,8 +87,8 @@ func (s *ChatService) SendMessage(ctx context.Context, conversationID, senderID 
 	return s.chatRepo.CreateMessage(ctx, conversationID, senderID, content)
 }
 
-// ListMessages lấy danh sách tin nhắn (kiểm tra quyền truy cập)
-func (s *ChatService) ListMessages(ctx context.Context, conversationID, userID uuid.UUID, limit, offset int) ([]model.MessageWithSender, error) {
+// ListMessages lấy danh sách tin nhắn theo cursor (kiểm tra quyền truy cập)
+func (s *ChatService) ListMessages(ctx context.Context, conversationID, userID uuid.UUID, before *uuid.UUID, limit int) ([]model.MessageWithSender, error) {
 	// Kiểm tra user có thuộc cuộc hội thoại không
 	ok, err := s.chatRepo.IsParticipant(ctx, conversationID, userID)
 	if err != nil {
@@ -98,17 +98,11 @@ func (s *ChatService) ListMessages(ctx context.Context, conversationID, userID u
 		return nil, ErrChatNotParticipant
 	}
 
-	if limit <= 0 {
+	if limit <= 0 || limit > 100 {
 		limit = 50
 	}
-	if limit > 200 {
-		limit = 200
-	}
-	if offset < 0 {
-		offset = 0
-	}
 
-	return s.chatRepo.ListMessages(ctx, conversationID, limit, offset)
+	return s.chatRepo.ListMessages(ctx, conversationID, before, limit)
 }
 
 // GetParticipantIDs lấy danh sách user_id trong cuộc hội thoại (dùng cho broadcast WS)

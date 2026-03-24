@@ -164,22 +164,60 @@ func (r *ChatRepo) CreateMessage(ctx context.Context, conversationID, senderID u
 	return &msg, nil
 }
 
-// ListMessages lấy danh sách tin nhắn của cuộc hội thoại (kèm email người gửi)
-func (r *ChatRepo) ListMessages(ctx context.Context, conversationID uuid.UUID, limit, offset int) ([]model.MessageWithSender, error) {
+// ListMessages lấy danh sách tin nhắn theo cursor (before message_id).
+// Trả về tối đa `limit` tin nhắn, sắp xếp DESC (mới nhất trước).
+// Frontend đảo ngược slice trước khi hiển thị, dùng message_id cuối làm next_cursor.
+func (r *ChatRepo) ListMessages(ctx context.Context, conversationID uuid.UUID, before *uuid.UUID, limit int) ([]model.MessageWithSender, error) {
+	if before == nil {
+		return r.listLatestMessages(ctx, conversationID, limit)
+	}
+	return r.listMessagesBefore(ctx, conversationID, *before, limit)
+}
+
+func (r *ChatRepo) listLatestMessages(ctx context.Context, conversationID uuid.UUID, limit int) ([]model.MessageWithSender, error) {
 	const q = `
 		SELECT m.message_id, m.conversation_id, m.sender_id, u.email, m.content, m.created_at
 		FROM messages m
 		JOIN users u ON m.sender_id = u.user_id
 		WHERE m.conversation_id = $1
-		ORDER BY m.created_at ASC
-		LIMIT $2 OFFSET $3;
+		ORDER BY m.created_at DESC, m.message_id DESC
+		LIMIT $2;
 	`
-	rows, err := r.pool.Query(ctx, q, conversationID, limit, offset)
+	rows, err := r.pool.Query(ctx, q, conversationID, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	return scanMessages(rows)
+}
 
+func (r *ChatRepo) listMessagesBefore(ctx context.Context, conversationID, beforeID uuid.UUID, limit int) ([]model.MessageWithSender, error) {
+	// Composite cursor: lấy tin nhắn cũ hơn cursor (created_at, message_id)
+	const q = `
+		SELECT m.message_id, m.conversation_id, m.sender_id, u.email, m.content, m.created_at
+		FROM messages m
+		JOIN users u ON m.sender_id = u.user_id
+		WHERE m.conversation_id = $1
+		  AND (m.created_at, m.message_id) < (
+		      SELECT created_at, message_id FROM messages WHERE message_id = $2
+		  )
+		ORDER BY m.created_at DESC, m.message_id DESC
+		LIMIT $3;
+	`
+	rows, err := r.pool.Query(ctx, q, conversationID, beforeID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanMessages(rows)
+}
+
+// scanMessages đọc rows từ truy vấn messages
+func scanMessages(rows interface {
+	Next() bool
+	Scan(...any) error
+	Err() error
+}) ([]model.MessageWithSender, error) {
 	var msgs []model.MessageWithSender
 	for rows.Next() {
 		var m model.MessageWithSender
