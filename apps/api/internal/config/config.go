@@ -7,11 +7,12 @@ import (
 
 type Config struct {
 	DatabaseURL   string
+	DBMaxConns    int32
 	JWTSecret     string
 	JWTTTLMinutes int
 	Port          string
 
-	// SMTP (optional — empty = dev mode, uses LogEmailSender)
+	// SMTP (empty = dev mode, uses LogEmailSender)
 	SMTPHost    string
 	SMTPPort    string
 	SMTPUser    string
@@ -33,8 +34,16 @@ func Load() Config {
 		}
 	}
 
+	maxConns := int32(50)
+	if v := os.Getenv("DB_MAX_CONNS"); v != "" {
+		if n, err := strconv.ParseInt(v, 10, 32); err == nil && n > 0 {
+			maxConns = int32(n)
+		}
+	}
+
 	return Config{
 		DatabaseURL:   must("DATABASE_URL"),
+		DBMaxConns:    maxConns,
 		JWTSecret:     must("JWT_SECRET"),
 		JWTTTLMinutes: ttl,
 		Port:          port,

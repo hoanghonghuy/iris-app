@@ -10,6 +10,10 @@ import (
 
 // Hub quản lý tất cả WebSocket clients đang kết nối.
 // Chịu trách nhiệm đăng ký, hủy đăng ký, và broadcast tin nhắn đến đúng user.
+//
+// TODO: Khi scale hệ thống lên nhiều server (Horizontal Scaling API),
+// cấu trúc in-memory map này sẽ khiến server A không biết các user kết nối ở server B.
+// Cần tích hợp [Redis Pub/Sub] để đồng bộ event chat thời gian thực giữa các API instances.
 type Hub struct {
 	// mu bảo vệ clients map
 	mu sync.RWMutex

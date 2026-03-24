@@ -8,12 +8,12 @@ import (
 )
 
 // NewPool tạo một connection pool mới để kết nối với cơ sở dữ liệu PostgreSQL.
-func NewPool(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
+func NewPool(ctx context.Context, databaseURL string, maxConns int32) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		return nil, err
 	}
-	cfg.MaxConns = 10
+	cfg.MaxConns = maxConns
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

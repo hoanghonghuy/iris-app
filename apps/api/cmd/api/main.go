@@ -24,7 +24,7 @@ func main() {
 	cfg := config.Load()
 
 	// Database connection
-	pool, err := db.NewPool(context.Background(), cfg.DatabaseURL)
+	pool, err := db.NewPool(context.Background(), cfg.DatabaseURL, cfg.DBMaxConns)
 	if err != nil {
 		log.Fatal(err)
 	}

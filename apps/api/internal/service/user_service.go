@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -326,8 +327,20 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 <p>Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
 `, resetLink, resetLink)
 
-	// Gửi email (best-effort, không fail request)
-	_ = s.emailSender.Send(email, "Đặt lại mật khẩu — Iris", htmlBody)
+	// _ = s.emailSender.Send(email, "Đặt lại mật khẩu — Iris", htmlBody)
+	// gửi email ngầm bằng goroutine để không block API
+	// Mục đích: tránh để API endpoint phải chờ kết nối SMTP (3s),
+	// giúp phản hồi HTTP về FE lập tức (giảm rủi ro nghẽn Connection Pool khi có nhiều người reset password).
+	go func(targetEmail, subject, body string) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[Recover] Email sending panicked: %v", r)
+			}
+		}()
+		if err := s.emailSender.Send(targetEmail, subject, body); err != nil {
+			log.Printf("[EmailService] Failed to send reset password email to %s: %v", targetEmail, err)
+		}
+	}(email, "Đặt lại mật khẩu — Iris", htmlBody)
 
 	return nil
 }
