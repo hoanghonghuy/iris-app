@@ -1,6 +1,6 @@
 /**
  * Parent Children Page
- * Xem danh sách con em.
+ * Xem danh sách con.
  * API: GET /parent/children
  */
 "use client";
@@ -24,7 +24,7 @@ export default function ParentChildrenPage() {
         const data = await parentApi.getMyChildren();
         setChildren(data || []);
       } catch (err: any) {
-        setError(err.response?.data?.error || "Không thể tải danh sách con em");
+        setError(err.response?.data?.error || "Không thể tải danh sách con");
       } finally { setLoading(false); }
     };
     load();
@@ -34,7 +34,7 @@ export default function ParentChildrenPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Users className="h-7 w-7" />
-        <h1 className="text-2xl font-bold tracking-tight">Con em của tôi</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Con của tôi</h1>
       </div>
 
       {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
@@ -44,7 +44,7 @@ export default function ParentChildrenPage() {
       {!loading && children.length === 0 && !error && (
         <Card><CardContent className="flex flex-col items-center justify-center py-12">
           <Users className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-sm text-muted-foreground">Chưa có con em nào được liên kết</p>
+          <p className="mt-4 text-sm text-muted-foreground">Chưa có con nào được liên kết</p>
         </CardContent></Card>
       )}
 

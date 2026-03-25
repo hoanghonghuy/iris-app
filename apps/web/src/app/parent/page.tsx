@@ -71,7 +71,7 @@ export default function ParentDashboard() {
                   <div className="p-2.5 md:p-3 bg-amber-500/10 text-amber-600 rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">
                     <Baby className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
-                  <p className="font-medium md:font-semibold text-xs md:text-sm text-foreground group-hover:text-amber-600 transition-colors">Hồ sơ Con em</p>
+                  <p className="font-medium md:font-semibold text-xs md:text-sm text-foreground group-hover:text-amber-600 transition-colors">Hồ sơ con</p>
                 </CardContent>
               </Card>
             </Link>
@@ -92,7 +92,7 @@ export default function ParentDashboard() {
             {/* Children List */}
             <div className="lg:col-span-1 space-y-4">
               <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                Con em của bạn
+                Con của bạn
               </h2>
               {children.length > 0 ? (
                 <div className="grid gap-3">
