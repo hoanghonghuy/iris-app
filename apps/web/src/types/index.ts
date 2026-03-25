@@ -127,6 +127,7 @@ export interface Student {
   student_id: string;
   school_id: string;
   current_class_id: string;
+  current_class_name?: string;
   full_name: string;
   dob: string;
   gender: StudentGender;

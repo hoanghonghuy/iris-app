@@ -9,6 +9,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, Student } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatDateVN } from "@/lib/utils";
 import {
   GraduationCap,
   Loader2,
@@ -145,7 +146,7 @@ export default function TeacherClassesPage() {
                   {students.map((s) => (
                     <tr key={s.student_id} className="border-b last:border-0 hover:bg-muted">
                       <td className="px-6 py-4 font-medium">{s.full_name}</td>
-                      <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
+                      <td className="px-6 py-4 text-muted-foreground">{formatDateVN(s.dob)}</td>
                       <td className="px-6 py-4 text-muted-foreground">{genderLabel[s.gender] || s.gender}</td>
                     </tr>
                   ))}
@@ -166,7 +167,7 @@ export default function TeacherClassesPage() {
                 <div>
                   <p className="font-medium">{s.full_name}</p>
                   <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                    <Calendar className="h-3 w-3" /> {s.dob} · {genderLabel[s.gender] || s.gender}
+                    <Calendar className="h-3 w-3" /> {formatDateVN(s.dob)} · {genderLabel[s.gender] || s.gender}
                   </p>
                 </div>
               </CardContent>

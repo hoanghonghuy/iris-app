@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ClipboardCheck, Loader2, Check, AlertCircle } from "lucide-react";
+import { formatDateVN } from "@/lib/utils";
 
 const statusOptions = [
   { value: "present", label: "Có mặt", variant: "default" as const },
@@ -122,7 +123,7 @@ export default function TeacherAttendancePage() {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <p className="font-medium">{s.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{s.dob}</p>
+                      <p className="text-sm text-muted-foreground">{formatDateVN(s.dob)}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {statusOptions.map((opt) => (

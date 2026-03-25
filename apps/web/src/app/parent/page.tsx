@@ -9,8 +9,9 @@ import { parentApi } from "@/lib/api/parent.api";
 import { Student, Post } from "@/types";
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, MessageSquare, Loader2, Baby, CalendarClock, ChevronRight, Activity, HeartPulse } from "lucide-react";
+import { MessageSquare, Loader2, Baby, CalendarClock } from "lucide-react";
 import Link from "next/link";
+import { formatDateVN } from "@/lib/utils";
 
 const postTypeConfig: Record<string, { label: string, colorClass: string }> = {
   announcement: { label: "Thông báo", colorClass: "bg-primary/10 text-primary" },
@@ -33,7 +34,7 @@ export default function ParentDashboard() {
           parentApi.getMyFeed({ limit: 5 }),
         ]);
         setChildren(childData || []);
-        setPosts((feedData as any)?.data || []);
+        setPosts(feedData?.data || []);
       } catch { /* ignore */ }
       finally { setLoading(false); }
     };
@@ -97,19 +98,21 @@ export default function ParentDashboard() {
               {children.length > 0 ? (
                 <div className="grid gap-3">
                   {children.map((child) => (
-                    <Card key={child.student_id} className="group hover:border-primary/50 transition-colors">
-                      <CardContent className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
-                        <div className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base md:text-lg">
-                          {child.full_name?.charAt(0)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-foreground truncate">{child.full_name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                            <CalendarClock className="h-3.5 w-3.5" /> Ngày sinh: {child.dob}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <Link key={child.student_id} href={`/parent/children/${child.student_id}`}>
+                      <Card className="group hover:border-primary/50 transition-colors cursor-pointer">
+                        <CardContent className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
+                          <div className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base md:text-lg">
+                            {child.full_name?.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-foreground truncate">{child.full_name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                              <CalendarClock className="h-3.5 w-3.5" /> Ngày sinh: {formatDateVN(child.dob)}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))}
                 </div>
               ) : (

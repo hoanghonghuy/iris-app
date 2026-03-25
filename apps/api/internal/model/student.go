@@ -7,13 +7,14 @@ import (
 )
 
 type Student struct {
-	StudentID      uuid.UUID `json:"student_id"`
-	SchoolID       uuid.UUID `json:"school_id"`
-	CurrentClassID uuid.UUID `json:"current_class_id"`
-	FullName       string    `json:"full_name"`
-	DOB            time.Time `json:"dob"`
-	Gender         string    `json:"gender"`
-	
+	StudentID        uuid.UUID `json:"student_id"`
+	SchoolID         uuid.UUID `json:"school_id"`
+	CurrentClassID   uuid.UUID `json:"current_class_id"`
+	CurrentClassName *string   `json:"current_class_name,omitempty"`
+	FullName         string    `json:"full_name"`
+	DOB              time.Time `json:"dob"`
+	Gender           string    `json:"gender"`
+
 	// Active parent code information (added from join)
 	ActiveParentCode *string    `json:"active_parent_code,omitempty"`
 	CodeExpiresAt    *time.Time `json:"code_expires_at,omitempty"`

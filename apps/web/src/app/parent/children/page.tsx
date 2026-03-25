@@ -6,10 +6,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { parentApi } from "@/lib/api/parent.api";
 import { Student } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Loader2, User, Calendar } from "lucide-react";
+import { formatDateVN } from "@/lib/utils";
 
 const genderLabel: Record<string, string> = { male: "Nam", female: "Nữ", other: "Khác" };
 
@@ -23,8 +25,15 @@ export default function ParentChildrenPage() {
       try {
         const data = await parentApi.getMyChildren();
         setChildren(data || []);
-      } catch (err: any) {
-        setError(err.response?.data?.error || "Không thể tải danh sách con");
+      } catch (err: unknown) {
+        const message =
+          typeof err === "object" &&
+          err !== null &&
+          "response" in err &&
+          typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+            : undefined;
+        setError(message || "Không thể tải danh sách con");
       } finally { setLoading(false); }
     };
     load();
@@ -51,21 +60,23 @@ export default function ParentChildrenPage() {
       {!loading && children.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {children.map((child) => (
-            <Card key={child.student_id}>
-              <CardContent className="flex items-start gap-4 py-5">
-                <User className="h-10 w-10 shrink-0 rounded-full bg-muted p-2 text-muted-foreground" />
-                <div>
-                  <p className="text-lg font-medium">{child.full_name}</p>
-                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3" />
-                      Ngày sinh: {child.dob}
-                    </p>
-                    <p>Giới tính: {genderLabel[child.gender] || child.gender}</p>
+            <Link key={child.student_id} href={`/parent/children/${child.student_id}`}>
+              <Card className="transition-colors hover:border-primary/50 cursor-pointer">
+                <CardContent className="flex items-start gap-4 py-5">
+                  <User className="h-10 w-10 shrink-0 rounded-full bg-muted p-2 text-muted-foreground" />
+                  <div>
+                    <p className="text-lg font-medium">{child.full_name}</p>
+                    <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <p className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3" />
+                        Ngày sinh: {formatDateVN(child.dob)}
+                      </p>
+                      <p>Giới tính: {genderLabel[child.gender] || child.gender}</p>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

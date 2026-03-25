@@ -23,8 +23,9 @@ func NewParentScopeRepo(pool *pgxpool.Pool) *ParentScopeRepo {
 // ListMyChildren liệt kê các học sinh (con) của phụ huynh theo user_id
 func (r *ParentScopeRepo) ListMyChildren(ctx context.Context, parentUserID uuid.UUID) ([]model.Student, error) {
 	const q = `
-		SELECT s.student_id, s.school_id, s.current_class_id, s.full_name, s.dob, s.gender
+		SELECT s.student_id, s.school_id, s.current_class_id, c.name AS current_class_name, s.full_name, s.dob, s.gender
 		FROM students s
+		JOIN classes c ON c.class_id = s.current_class_id
 		JOIN student_parents sp ON sp.student_id = s.student_id
 		JOIN parents p ON p.parent_id = sp.parent_id
 		WHERE p.user_id = $1
@@ -40,7 +41,7 @@ func (r *ParentScopeRepo) ListMyChildren(ctx context.Context, parentUserID uuid.
 	var students []model.Student
 	for rows.Next() {
 		var s model.Student
-		if err := rows.Scan(&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender); err != nil {
+		if err := rows.Scan(&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.CurrentClassName, &s.FullName, &s.DOB, &s.Gender); err != nil {
 			return nil, err
 		}
 		students = append(students, s)
