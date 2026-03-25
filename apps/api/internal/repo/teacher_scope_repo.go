@@ -216,6 +216,77 @@ func (r *TeacherScopeRepo) CreateStudentPost(ctx context.Context, teacherUserID,
 	return id, nil
 }
 
+// UpdatePost cập nhật nội dung bài đăng nếu người dùng hiện tại là tác giả.
+// Đồng thời ghi lịch sử trước/sau chỉnh sửa vào post_edit_history.
+func (r *TeacherScopeRepo) UpdatePost(ctx context.Context, authorUserID, postID uuid.UUID, newContent string) error {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	const qGetCurrent = `
+		SELECT content
+		FROM posts
+		WHERE post_id = $1 AND author_user_id = $2
+		FOR UPDATE;
+	`
+
+	var oldContent string
+	err = tx.QueryRow(ctx, qGetCurrent, postID, authorUserID).Scan(&oldContent)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNoRowsUpdated
+		}
+		return err
+	}
+
+	const qUpdate = `
+		UPDATE posts
+		SET content = $3,
+			updated_at = now()
+		WHERE post_id = $1 AND author_user_id = $2;
+	`
+
+	tag, err := tx.Exec(ctx, qUpdate, postID, authorUserID, newContent)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNoRowsUpdated
+	}
+
+	const qInsertHistory = `
+		INSERT INTO post_edit_history (post_id, old_content, new_content, edited_by)
+		VALUES ($1, $2, $3, $4);
+	`
+
+	if _, err := tx.Exec(ctx, qInsertHistory, postID, oldContent, newContent, authorUserID); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+// DeletePost xóa bài đăng nếu người dùng hiện tại là tác giả.
+func (r *TeacherScopeRepo) DeletePost(ctx context.Context, authorUserID, postID uuid.UUID) error {
+	const q = `
+		DELETE FROM posts
+		WHERE post_id = $1
+		  AND author_user_id = $2;
+	`
+
+	tag, err := r.pool.Exec(ctx, q, postID, authorUserID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNoRowsUpdated
+	}
+
+	return nil
+}
+
 // ListClassPosts liệt kê bài đăng của một lớp nếu giáo viên được phân công dạy lớp đó.
 func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {

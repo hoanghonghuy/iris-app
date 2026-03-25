@@ -51,6 +51,10 @@ type CreatePostRequest struct {
 	Content   string `json:"content" binding:"required"`
 }
 
+type UpdatePostRequest struct {
+	Content string `json:"content" binding:"required"`
+}
+
 // PaginationParams input chung cho phân trang (dùng cho tất cả list endpoints)
 type PaginationParams struct {
 	Limit  int `form:"limit"`
@@ -516,6 +520,100 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 		"post_id":    postID.String(),
 		"scope_type": req.ScopeType,
 		"type":       req.Type,
+	})
+}
+
+// UpdatePost cập nhật nội dung bài đăng của chính giáo viên.
+func (h *TeacherScopeHandler) UpdatePost(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("post_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	var req UpdatePostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	err = h.teacherScopeService.UpdatePost(ctx, userID, postID, req.Content)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only edit your own posts")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to update post")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message": "post updated successfully",
+		"post_id": postID.String(),
+	})
+}
+
+// DeletePost xóa bài đăng của chính giáo viên.
+func (h *TeacherScopeHandler) DeletePost(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("post_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	err = h.teacherScopeService.DeletePost(ctx, userID, postID)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only delete your own posts")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to delete post")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message": "post deleted successfully",
+		"post_id": postID.String(),
 	})
 }
 

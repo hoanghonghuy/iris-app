@@ -119,6 +119,8 @@ func NewRouter(
 
 				// bài đăng (posts)
 				teacherScope.POST("/posts", teacherScopeHandler.CreatePost)
+				teacherScope.PUT("/posts/:post_id", teacherScopeHandler.UpdatePost)
+				teacherScope.DELETE("/posts/:post_id", teacherScopeHandler.DeletePost)
 				teacherScope.GET("/classes/:class_id/posts", teacherScopeHandler.ListClassPosts)
 				teacherScope.GET("/students/:student_id/posts", teacherScopeHandler.ListStudentPosts)
 

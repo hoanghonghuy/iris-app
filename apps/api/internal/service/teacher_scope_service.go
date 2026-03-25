@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -339,6 +340,53 @@ func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserI
 	}
 
 	return posts, total, nil
+}
+
+// UpdatePost cập nhật nội dung bài đăng của chính giáo viên và lưu lịch sử trước/sau chỉnh sửa.
+func (s *TeacherScopeService) UpdatePost(ctx context.Context, teacherUserID, postID uuid.UUID, content string) error {
+	if teacherUserID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	if postID == uuid.Nil {
+		return ErrInvalidValue
+	}
+
+	trimmedContent := strings.TrimSpace(content)
+	if trimmedContent == "" {
+		return fmt.Errorf("%w: content cannot be empty", ErrInvalidValue)
+	}
+
+	err := s.teacherScopeRepo.UpdatePost(ctx, teacherUserID, postID, trimmedContent)
+	if err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return ErrForbidden
+		}
+		return fmt.Errorf("failed to update post: %w", err)
+	}
+
+	return nil
+}
+
+// DeletePost xóa bài đăng của chính giáo viên.
+func (s *TeacherScopeService) DeletePost(ctx context.Context, teacherUserID, postID uuid.UUID) error {
+	if teacherUserID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	if postID == uuid.Nil {
+		return ErrInvalidValue
+	}
+
+	err := s.teacherScopeRepo.DeletePost(ctx, teacherUserID, postID)
+	if err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return ErrForbidden
+		}
+		return fmt.Errorf("failed to delete post: %w", err)
+	}
+
+	return nil
 }
 
 // isValidPostType kiểm tra postType có hợp lệ không
