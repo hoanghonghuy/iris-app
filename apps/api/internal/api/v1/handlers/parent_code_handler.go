@@ -24,10 +24,6 @@ func NewParentCodeHandler(parentCodeService *service.ParentCodeService) *ParentC
 }
 
 // GenerateCodeForStudentRequest request để admin tạo parent code cho student
-type GenerateCodeForStudentRequest struct {
-	StudentID uuid.UUID `uri:"student_id" binding:"required"`
-}
-
 // RegisterParentRequest request để parent tự đăng ký
 type RegisterParentRequest struct {
 	Email      string `json:"email" binding:"required,email"`
@@ -39,16 +35,16 @@ type RegisterParentRequest struct {
 func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)
 
-	var uriParams GenerateCodeForStudentRequest
-	if err := c.ShouldBindUri(&uriParams); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid student ID")
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student ID format")
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	code, err := h.parentCodeService.GenerateCodeForStudent(ctx, adminSchoolID, uriParams.StudentID)
+	code, err := h.parentCodeService.GenerateCodeForStudent(ctx, adminSchoolID, studentID)
 	if err != nil {
 		if errors.Is(err, service.ErrSchoolAccessDenied) {
 			response.Fail(c, http.StatusForbidden, "access denied")
@@ -59,12 +55,37 @@ func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
 	}
 
 	response.OK(c, gin.H{
-		"student_id":  uriParams.StudentID,
+		"student_id":  studentID,
 		"parent_code": code,
 		"message":     "share this code with parent to allow registration",
 		"max_usage":   4,
-		"expires_at":  time.Now().AddDate(1, 0, 0), // 1 year từ khi tạo
+		"expires_at":  time.Now().AddDate(0, 0, 7), // 7 ngày từ khi tạo
 	})
+}
+
+// RevokeParentCode thu hồi parent code cua hs
+func (h *ParentCodeHandler) RevokeParentCode(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student ID format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.parentCodeService.RevokeCode(ctx, adminSchoolID, studentID); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to revoke parent code")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "parent code revoked successfully"})
 }
 
 // RegisterParent parent tự đăng ký (public endpoint)

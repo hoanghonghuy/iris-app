@@ -33,11 +33,18 @@ func (r *StudentRepo) Create(ctx context.Context, schoolID, classID uuid.UUID,
 
 func (r *StudentRepo) ListByClass(ctx context.Context, classID uuid.UUID, limit, offset int) ([]model.Student, int, error) {
 	const q = `
-		SELECT student_id, school_id, current_class_id, full_name, dob, gender,
+		SELECT s.student_id, s.school_id, s.current_class_id, s.full_name, s.dob, s.gender,
+		       pc.code, pc.expires_at, pc.usage_count, pc.max_usage,
 		       COUNT(*) OVER() AS total_count
-		FROM students
-		WHERE current_class_id = $1
-		ORDER BY full_name
+		FROM students s
+		LEFT JOIN (
+			SELECT DISTINCT ON (student_id) student_id, code, expires_at, usage_count, max_usage
+			FROM student_parent_codes
+			WHERE expires_at > now() AND usage_count < max_usage
+			ORDER BY student_id, expires_at DESC
+		) pc ON pc.student_id = s.student_id
+		WHERE s.current_class_id = $1
+		ORDER BY s.full_name
 		LIMIT $2 OFFSET $3;
 	`
 	rows, err := r.pool.Query(ctx, q, classID, limit, offset)
@@ -50,7 +57,11 @@ func (r *StudentRepo) ListByClass(ctx context.Context, classID uuid.UUID, limit,
 	var total int
 	for rows.Next() {
 		var s model.Student
-		if err := rows.Scan(&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender, &total); err != nil {
+		if err := rows.Scan(
+			&s.StudentID, &s.SchoolID, &s.CurrentClassID, &s.FullName, &s.DOB, &s.Gender,
+			&s.ActiveParentCode, &s.CodeExpiresAt, &s.CodeUsageCount, &s.CodeMaxUsage,
+			&total,
+		); err != nil {
 			return nil, 0, err
 		}
 		students = append(students, s)

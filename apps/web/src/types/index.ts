@@ -130,6 +130,10 @@ export interface Student {
   full_name: string;
   dob: string;
   gender: StudentGender;
+  active_parent_code?: string;
+  code_expires_at?: string;
+  code_usage_count?: number;
+  code_max_usage?: number;
 }
 
 /**

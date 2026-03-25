@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -18,12 +19,19 @@ func NewParentCodeRepo(pool *pgxpool.Pool) *ParentCodeRepo {
 }
 
 // Create tạo parent code mới
-func (r *ParentCodeRepo) Create(ctx context.Context, studentID uuid.UUID, code string, maxUsage int) error {
+func (r *ParentCodeRepo) Create(ctx context.Context, studentID uuid.UUID, code string, maxUsage int, expiresAt time.Time) error {
 	const q = `
-		INSERT INTO student_parent_codes (student_id, code, usage_count, max_usage)
-		VALUES ($1, $2, 0, $3);
+		INSERT INTO student_parent_codes (student_id, code, usage_count, max_usage, expires_at)
+		VALUES ($1, $2, 0, $3, $4);
 	`
-	_, err := r.pool.Exec(ctx, q, studentID, code, maxUsage)
+	_, err := r.pool.Exec(ctx, q, studentID, code, maxUsage, expiresAt)
+	return err
+}
+
+// DeleteByStudentID query to delete parent codes by studentID
+func (r *ParentCodeRepo) DeleteByStudentID(ctx context.Context, studentID uuid.UUID) error {
+	const q = `DELETE FROM student_parent_codes WHERE student_id = $1;`
+	_, err := r.pool.Exec(ctx, q, studentID)
 	return err
 }
 

@@ -48,6 +48,10 @@ export const adminApi = {
     const res = await apiClient.post(`/admin/students/${studentId}/generate-parent-code`);
     return res.data;
   },
+  revokeParentCode: async (studentId: string) => {
+    const res = await apiClient.delete(`/admin/students/${studentId}/parent-code`);
+    return res.data;
+  },
 
   // --- USERS ---
   getUsers: async (params?: PaginationParams) => {

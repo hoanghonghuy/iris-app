@@ -54,14 +54,32 @@ func (s *ParentCodeService) GenerateCodeForStudent(ctx context.Context, adminSch
 	code := generateRandomCode(8) // 8 ký tự
 
 	maxUsage := 4
+	expiresAt := time.Now().AddDate(0, 0, 7) // 7 ngày
+
+	// xoá mã cũ nếu có
+	_ = s.parentCodeRepo.DeleteByStudentID(ctx, studentID)
 
 	// Lưu vào DB
-	err := s.parentCodeRepo.Create(ctx, studentID, code, maxUsage)
+	err := s.parentCodeRepo.Create(ctx, studentID, code, maxUsage, expiresAt)
 	if err != nil {
 		return "", err
 	}
 
 	return code, nil
+}
+
+// RevokeCode thu hồi toàn bộ parent code đang active của student
+func (s *ParentCodeService) RevokeCode(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID) error {
+	if adminSchoolID != nil {
+		student, err := s.studentRepo.GetByStudentID(ctx, studentID)
+		if err != nil {
+			return ErrFailedToGetStudent
+		}
+		if student.SchoolID != *adminSchoolID {
+			return ErrSchoolAccessDenied
+		}
+	}
+	return s.parentCodeRepo.DeleteByStudentID(ctx, studentID)
 }
 
 // VerifyCode xác minh parent code hợp lệ và chưa vượt giới hạn (read-only, dùng để preview thông tin).

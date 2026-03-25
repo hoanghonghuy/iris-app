@@ -243,6 +243,8 @@ func NewRouter(
 				{
 					// tạo parent code cho student
 					parentCodes.POST("/:student_id/generate-parent-code", parentCodeHandler.GenerateCodeForStudent)
+					// thu hoi parent code hien tai
+					parentCodes.DELETE("/:student_id/parent-code", parentCodeHandler.RevokeParentCode)
 				}
 
 				// Các routes chỉ SUPER_ADMIN mới truy cập được
