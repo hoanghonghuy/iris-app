@@ -79,32 +79,98 @@ func (r *TeacherScopeRepo) ListMyStudentsInClass(ctx context.Context, teacherUse
 // UpsertAttendance: Giáo viên chỉ có thể điểm danh cho học sinh trong lớp của mình.
 func (r *TeacherScopeRepo) UpsertAttendance(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	date time.Time, status string, checkInAt, checkOutAt *time.Time, note string) error {
-	const q = `
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	const qExisting = `
+		SELECT ar.attendance_id, ar.status, COALESCE(ar.note, '')
+		FROM attendance_records ar
+		JOIN students s ON s.student_id = ar.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+		  AND ar.student_id = $2
+		  AND ar.date = $3
+		FOR UPDATE;
+	`
+
+	var attendanceID uuid.UUID
+	var oldStatus string
+	var oldNote string
+	err = tx.QueryRow(ctx, qExisting, teacherUserID, studentID, date).Scan(&attendanceID, &oldStatus, &oldNote)
+
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+
+		const qInsert = `
 			INSERT INTO attendance_records (student_id, date, status, check_in_at, check_out_at, note, recorded_by)
 			SELECT s.student_id, $3, $4, $5, $6, $7, $1
 			FROM students s
 			JOIN teacher_classes tc ON tc.class_id = s.current_class_id
 			JOIN teachers t ON t.teacher_id = tc.teacher_id
 			WHERE t.user_id = $1 AND s.student_id = $2
-			ON CONFLICT (student_id, date)
-			DO UPDATE SET
-			  status = EXCLUDED.status,
-			  check_in_at = EXCLUDED.check_in_at,
-			  check_out_at = EXCLUDED.check_out_at,
-			  note = EXCLUDED.note,
-			  recorded_by = EXCLUDED.recorded_by,
-			  updated_at = now();
+			RETURNING attendance_id;
 		`
 
-	tag, err := r.pool.Exec(ctx, q, teacherUserID, studentID, date, status, checkInAt, checkOutAt, note)
+		if err := tx.QueryRow(ctx, qInsert, teacherUserID, studentID, date, status, checkInAt, checkOutAt, note).Scan(&attendanceID); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return ErrNoRowsUpdated
+			}
+			return err
+		}
+
+		const qInsertLogCreate = `
+			INSERT INTO attendance_change_logs (
+				attendance_id, student_id, date, change_type,
+				new_status, new_note, changed_by
+			)
+			VALUES ($1, $2, $3, 'create', $4, $5, $6);
+		`
+		if _, err := tx.Exec(ctx, qInsertLogCreate, attendanceID, studentID, date, status, note, teacherUserID); err != nil {
+			return err
+		}
+
+		return tx.Commit(ctx)
+	}
+
+	const qUpdate = `
+		UPDATE attendance_records
+		SET status = $2,
+			check_in_at = $3,
+			check_out_at = $4,
+			note = $5,
+			recorded_by = $6,
+			updated_at = now()
+		WHERE attendance_id = $1;
+	`
+
+	tag, err := tx.Exec(ctx, qUpdate, attendanceID, status, checkInAt, checkOutAt, note, teacherUserID)
 	if err != nil {
 		return err
 	}
-
-	if tag.RowsAffected() == 0 { // không có hàng nào được cập nhật, điều kiện WHERE không thỏa mãn
+	if tag.RowsAffected() == 0 {
 		return ErrNoRowsUpdated
 	}
-	return nil
+
+	if oldStatus != status || oldNote != note {
+		const qInsertLogUpdate = `
+			INSERT INTO attendance_change_logs (
+				attendance_id, student_id, date, change_type,
+				old_status, new_status, old_note, new_note, changed_by
+			)
+			VALUES ($1, $2, $3, 'update', $4, $5, $6, $7, $8);
+		`
+		if _, err := tx.Exec(ctx, qInsertLogUpdate, attendanceID, studentID, date, oldStatus, status, oldNote, note, teacherUserID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
 }
 
 // CreateHealthLog tạo mới bản ghi sức khỏe cho học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
@@ -355,6 +421,45 @@ func (r *TeacherScopeRepo) ListAttendanceByStudent(ctx context.Context, teacherU
 		}
 		out = append(out, x)
 	}
+	return out, rows.Err()
+}
+
+// ListAttendanceChangeLogsByStudent liệt kê lịch sử chỉnh sửa điểm danh của một học sinh.
+func (r *TeacherScopeRepo) ListAttendanceChangeLogsByStudent(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	from, to time.Time) ([]model.AttendanceChangeLog, error) {
+	const q = `
+		SELECT acl.change_id, acl.attendance_id, acl.student_id, acl.date, acl.change_type,
+			acl.old_status, acl.new_status, acl.old_note, acl.new_note,
+			acl.changed_by, acl.changed_at
+		FROM attendance_change_logs acl
+		JOIN students s ON s.student_id = acl.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+			AND acl.student_id = $2
+			AND acl.date BETWEEN $3 AND $4
+		ORDER BY acl.changed_at DESC;
+	`
+
+	rows, err := r.pool.Query(ctx, q, teacherUserID, studentID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []model.AttendanceChangeLog
+	for rows.Next() {
+		var x model.AttendanceChangeLog
+		if err := rows.Scan(
+			&x.ChangeID, &x.AttendanceID, &x.StudentID, &x.Date, &x.ChangeType,
+			&x.OldStatus, &x.NewStatus, &x.OldNote, &x.NewNote,
+			&x.ChangedBy, &x.ChangedAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, x)
+	}
+
 	return out, rows.Err()
 }
 

@@ -113,6 +113,7 @@ func NewRouter(
 
 				// giáo viên xem lịch sử điểm danh của một học sinh trong lớp của mình
 				teacherScope.GET("/students/:student_id/attendance", teacherScopeHandler.ListAttendance)
+				teacherScope.GET("/students/:student_id/attendance-changes", teacherScopeHandler.ListAttendanceChangeLogs)
 
 				// giáo viên cập nhật hồ sơ cá nhân của mình
 				teacherScope.PUT("/profile", teacherScopeHandler.UpdateMyProfile)

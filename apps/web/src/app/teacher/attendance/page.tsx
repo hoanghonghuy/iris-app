@@ -8,22 +8,42 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
-import { Class, Student } from "@/types";
+import { Class, Student, AttendanceStatus, AttendanceChangeLog } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ClipboardCheck, Loader2, Check, AlertCircle } from "lucide-react";
+import { ClipboardCheck, Loader2, Check, AlertCircle, History } from "lucide-react";
 import { formatDateVN } from "@/lib/utils";
 
 const statusOptions = [
-  { value: "present", label: "Có mặt", variant: "default" as const },
-  { value: "absent", label: "Vắng", variant: "destructive" as const },
-  { value: "late", label: "Muộn", variant: "secondary" as const },
-  { value: "excused", label: "Có phép", variant: "outline" as const },
+  { value: "present" as AttendanceStatus, label: "Có mặt", variant: "default" as const },
+  { value: "absent" as AttendanceStatus, label: "Vắng", variant: "destructive" as const },
+  { value: "late" as AttendanceStatus, label: "Muộn", variant: "secondary" as const },
+  { value: "excused" as AttendanceStatus, label: "Có phép", variant: "outline" as const },
 ];
+
+const statusLabel: Record<AttendanceStatus, string> = {
+  present: "Có mặt",
+  absent: "Vắng",
+  late: "Muộn",
+  excused: "Có phép",
+};
+
+type AttendanceChangeHistoryRow = AttendanceChangeLog & {
+  student_name: string;
+};
+
+function extractErrorMessage(err: unknown): string | undefined {
+  return typeof err === "object" &&
+    err !== null &&
+    "response" in err &&
+    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+    ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+    : undefined;
+}
 
 export default function TeacherAttendancePage() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -33,10 +53,44 @@ export default function TeacherAttendancePage() {
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [error, setError] = useState("");
 
-  const [attendance, setAttendance] = useState<Record<string, { status: string; note: string }>>({});
+  const [attendance, setAttendance] = useState<Record<string, { status: AttendanceStatus; note: string }>>({});
+  const [savedAttendance, setSavedAttendance] = useState<Record<string, { status: AttendanceStatus; note: string }>>({});
+  const [hasSavedToday, setHasSavedToday] = useState<Record<string, boolean>>({});
+
   const [submitting, setSubmitting] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState<Set<string>>(new Set());
+  const [savingAll, setSavingAll] = useState(false);
+
+  const [historyOpen, setHistoryOpen] = useState<Set<string>>(new Set());
+  const [historyLoading, setHistoryLoading] = useState<Set<string>>(new Set());
+  const [historyByStudent, setHistoryByStudent] = useState<Record<string, AttendanceChangeLog[]>>({});
+
   const [today] = useState(() => new Date().toISOString().slice(0, 10));
+
+  const [viewMode, setViewMode] = useState<"take" | "history">("take");
+  const [historyFrom, setHistoryFrom] = useState(() => {
+    const from = new Date();
+    from.setDate(from.getDate() - 7);
+    return from.toISOString().slice(0, 10);
+  });
+  const [historyTo, setHistoryTo] = useState(today);
+  const [historyStudentId, setHistoryStudentId] = useState("all");
+  const [historyStatus, setHistoryStatus] = useState<AttendanceStatus | "all">("all");
+  const [historyListLoading, setHistoryListLoading] = useState(false);
+  const [historyList, setHistoryList] = useState<AttendanceChangeHistoryRow[]>([]);
+
+  const isRowDirty = useCallback((studentId: string) => {
+    const current = attendance[studentId];
+    const saved = savedAttendance[studentId];
+    if (!current || !saved) {
+      return !hasSavedToday[studentId];
+    }
+    if (!hasSavedToday[studentId]) {
+      return true;
+    }
+    return current.status !== saved.status || (current.note || "") !== (saved.note || "");
+  }, [attendance, savedAttendance, hasSavedToday]);
+
+  const dirtyCount = students.filter((student) => isRowDirty(student.student_id)).length;
 
   useEffect(() => {
     const load = async () => {
@@ -53,16 +107,57 @@ export default function TeacherAttendancePage() {
   const fetchStudents = useCallback(async () => {
     if (!selectedClassId) return;
     try {
-      setLoadingStudents(true); setError(""); setSubmitted(new Set());
+      setLoadingStudents(true);
+      setError("");
+      setHistoryOpen(new Set());
+      setHistoryByStudent({});
+
       const data = await teacherApi.getStudentsInClass(selectedClassId);
-      setStudents(data || []);
-      const init: Record<string, { status: string; note: string }> = {};
-      (data || []).forEach((s: Student) => { init[s.student_id] = { status: "present", note: "" }; });
+
+      const studentList = data || [];
+      setStudents(studentList);
+
+      const init: Record<string, { status: AttendanceStatus; note: string }> = {};
+      const savedInit: Record<string, { status: AttendanceStatus; note: string }> = {};
+      const hasSavedInit: Record<string, boolean> = {};
+
+      await Promise.all(
+        studentList.map(async (student: Student) => {
+          try {
+            const records = await teacherApi.getStudentAttendance(student.student_id, today, today);
+            const todayRecord = records.find((record) => record.date.startsWith(today));
+
+            if (todayRecord) {
+              const value = {
+                status: todayRecord.status,
+                note: todayRecord.note || "",
+              };
+              init[student.student_id] = value;
+              savedInit[student.student_id] = value;
+              hasSavedInit[student.student_id] = true;
+            } else {
+              const defaultValue = { status: "present" as AttendanceStatus, note: "" };
+              init[student.student_id] = defaultValue;
+              savedInit[student.student_id] = defaultValue;
+              hasSavedInit[student.student_id] = false;
+            }
+          } catch {
+            const defaultValue = { status: "present" as AttendanceStatus, note: "" };
+            init[student.student_id] = defaultValue;
+            savedInit[student.student_id] = defaultValue;
+            hasSavedInit[student.student_id] = false;
+          }
+        })
+      );
+
       setAttendance(init);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải HS");
+      setSavedAttendance(savedInit);
+      setHasSavedToday(hasSavedInit);
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err);
+      setError(message || "Không thể tải HS");
     } finally { setLoadingStudents(false); }
-  }, [selectedClassId]);
+  }, [selectedClassId, today]);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
@@ -71,11 +166,144 @@ export default function TeacherAttendancePage() {
     if (!att) return;
     try {
       setSubmitting(studentId);
-      await teacherApi.markAttendance({ student_id: studentId, date: today, status: att.status as any, note: att.note });
-      setSubmitted((prev) => new Set(prev).add(studentId));
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Lỗi điểm danh");
+      await teacherApi.markAttendance({ student_id: studentId, date: today, status: att.status, note: att.note });
+      setSavedAttendance((prev) => ({ ...prev, [studentId]: { status: att.status, note: att.note } }));
+      setHasSavedToday((prev) => ({ ...prev, [studentId]: true }));
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err);
+      setError(message || "Lỗi điểm danh");
     } finally { setSubmitting(null); }
+  };
+
+  const handleSaveAll = async () => {
+    const dirtyStudents = students.filter((student) => isRowDirty(student.student_id));
+    if (dirtyStudents.length === 0) {
+      return;
+    }
+
+    setSavingAll(true);
+    setError("");
+    try {
+      await Promise.all(
+        dirtyStudents.map(async (student) => {
+          const att = attendance[student.student_id];
+          if (!att) {
+            return;
+          }
+          await teacherApi.markAttendance({
+            student_id: student.student_id,
+            date: today,
+            status: att.status,
+            note: att.note,
+          });
+        })
+      );
+
+      setSavedAttendance((prev) => {
+        const next = { ...prev };
+        dirtyStudents.forEach((student) => {
+          const att = attendance[student.student_id];
+          if (att) {
+            next[student.student_id] = { status: att.status, note: att.note };
+          }
+        });
+        return next;
+      });
+
+      setHasSavedToday((prev) => {
+        const next = { ...prev };
+        dirtyStudents.forEach((student) => {
+          next[student.student_id] = true;
+        });
+        return next;
+      });
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err);
+      setError(message || "Lỗi khi lưu hàng loạt");
+    } finally {
+      setSavingAll(false);
+    }
+  };
+
+  const toggleHistory = async (studentId: string) => {
+    const isOpened = historyOpen.has(studentId);
+    const nextOpen = new Set(historyOpen);
+    if (isOpened) {
+      nextOpen.delete(studentId);
+      setHistoryOpen(nextOpen);
+      return;
+    }
+    nextOpen.add(studentId);
+    setHistoryOpen(nextOpen);
+
+    if (historyByStudent[studentId]) {
+      return;
+    }
+
+    const nextLoading = new Set(historyLoading);
+    nextLoading.add(studentId);
+    setHistoryLoading(nextLoading);
+    try {
+      const from = new Date();
+      from.setDate(from.getDate() - 30);
+      const fromDate = from.toISOString().slice(0, 10);
+
+      const records = await teacherApi.getStudentAttendanceChanges(studentId, fromDate, today);
+      setHistoryByStudent((prev) => ({ ...prev, [studentId]: records || [] }));
+    } catch {
+      setHistoryByStudent((prev) => ({ ...prev, [studentId]: [] }));
+    } finally {
+      const loadingAfter = new Set(historyLoading);
+      loadingAfter.delete(studentId);
+      setHistoryLoading(loadingAfter);
+    }
+  };
+
+  const loadClassHistory = async () => {
+    if (!selectedClassId || students.length === 0) {
+      setHistoryList([]);
+      return;
+    }
+
+    setHistoryListLoading(true);
+    setError("");
+
+    try {
+      const targetStudents = historyStudentId === "all"
+        ? students
+        : students.filter((student) => student.student_id === historyStudentId);
+
+      const responses = await Promise.all(
+        targetStudents.map(async (student) => {
+          const records = await teacherApi.getStudentAttendanceChanges(student.student_id, historyFrom, historyTo);
+          return (records || []).map((record) => ({
+            ...record,
+            student_name: student.full_name,
+          }));
+        })
+      );
+
+      let flattened = responses.flat();
+      if (historyStatus !== "all") {
+        flattened = flattened.filter((record) => record.new_status === historyStatus);
+      }
+
+      flattened.sort((a, b) => {
+        const dateCompare = new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime();
+        if (dateCompare !== 0) {
+          return dateCompare;
+        }
+        return a.student_name.localeCompare(b.student_name, "vi");
+      });
+
+      setHistoryList(flattened);
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err);
+      setError(message || "Không thể tải lịch sử điểm danh");
+      setHistoryList([]);
+    } finally {
+      setHistoryListLoading(false);
+    }
   };
 
   if (loadingClasses) {
@@ -92,14 +320,26 @@ export default function TeacherAttendancePage() {
             <p className="text-sm text-muted-foreground">Ngày: {today}</p>
           </div>
         </div>
-        {classes.length > 0 && (
-          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
-            <SelectContent>
-              {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-2">
+          {students.length > 0 && (
+            <Button size="sm" variant="secondary" onClick={handleSaveAll} disabled={savingAll || dirtyCount === 0}>
+              {savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : `Lưu tất cả${dirtyCount > 0 ? ` (${dirtyCount})` : ""}`}
+            </Button>
+          )}
+          {classes.length > 0 && (
+            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button size="sm" variant={viewMode === "take" ? "default" : "outline"} onClick={() => setViewMode("take")}>Điểm danh hôm nay</Button>
+        <Button size="sm" variant={viewMode === "history" ? "default" : "outline"} onClick={() => setViewMode("history")}>Lịch sử lớp</Button>
       </div>
 
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
@@ -112,41 +352,177 @@ export default function TeacherAttendancePage() {
         </CardContent></Card>
       )}
 
-      {!loadingStudents && students.length > 0 && (
-        <div className="space-y-3">
+      {!loadingStudents && students.length > 0 && viewMode === "take" && (
+        <div className="space-y-2.5">
           {students.map((s) => {
             const att = attendance[s.student_id] || { status: "present", note: "" };
-            const isDone = submitted.has(s.student_id);
+            const isDirty = isRowDirty(s.student_id);
+            const isSavingThisRow = submitting === s.student_id;
             return (
-              <Card key={s.student_id} className={isDone ? "border-success/30 bg-success/10" : ""}>
-                <CardContent className="py-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <Card key={s.student_id} className={!isDirty && hasSavedToday[s.student_id] ? "border-success/30 bg-success/10" : ""}>
+                <CardContent className="px-3 py-3 sm:px-4">
+                  <div className="flex items-start justify-between gap-2 sm:items-center">
                     <div className="min-w-0">
-                      <p className="font-medium">{s.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{formatDateVN(s.dob)}</p>
+                      <p className="text-sm font-medium leading-tight truncate">
+                        {s.full_name}
+                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">• {formatDateVN(s.dob)}</span>
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {!hasSavedToday[s.student_id] ? "Chưa lưu" : isDirty ? "Đã chỉnh sửa, chưa lưu" : "Đã lưu"}
+                      </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+
+                    <div className="w-[120px] shrink-0 sm:hidden">
+                      <Select
+                        value={att.status}
+                        onValueChange={(value: AttendanceStatus) =>
+                          setAttendance((prev) => ({ ...prev, [s.student_id]: { ...att, status: value } }))
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Trạng thái" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="hidden flex-wrap items-center gap-1.5 sm:flex">
                       {statusOptions.map((opt) => (
                         <Badge key={opt.value}
                           variant={att.status === opt.value ? opt.variant : "outline"}
-                          className={`cursor-pointer select-none transition-all ${att.status === opt.value ? "ring-2 ring-offset-1 ring-zinc-400" : "opacity-60 hover:opacity-100"}`}
+                          className={`h-6 cursor-pointer select-none px-2 text-xs transition-all ${att.status === opt.value ? "ring-2 ring-offset-1 ring-zinc-400" : "opacity-70 hover:opacity-100"}`}
                           onClick={() => setAttendance((prev) => ({ ...prev, [s.student_id]: { ...att, status: opt.value } }))}
                         >{opt.label}</Badge>
                       ))}
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Input placeholder="Ghi chú..." value={att.note} className="text-sm"
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Input placeholder="Ghi chú..." value={att.note} className="h-8 text-xs"
                       onChange={(e) => setAttendance((prev) => ({ ...prev, [s.student_id]: { ...att, note: e.target.value } }))} />
-                    <Button size="sm" onClick={() => handleMark(s.student_id)} disabled={submitting === s.student_id || isDone}
-                      variant={isDone ? "outline" : "default"}>
-                      {submitting === s.student_id ? <Loader2 className="h-4 w-4 animate-spin" /> : isDone ? <Check className="h-4 w-4" /> : "Lưu"}
+                    <Button size="sm" className="h-8 px-2.5 text-xs" onClick={() => handleMark(s.student_id)} disabled={isSavingThisRow}
+                      variant={!isDirty && hasSavedToday[s.student_id] ? "outline" : "default"}>
+                      {isSavingThisRow ? <Loader2 className="h-4 w-4 animate-spin" /> : !isDirty && hasSavedToday[s.student_id] ? <Check className="h-4 w-4" /> : hasSavedToday[s.student_id] ? "Cập nhật" : "Lưu"}
                     </Button>
+                  </div>
+
+                  <div className="mt-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-0 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => toggleHistory(s.student_id)}
+                    >
+                      <History className="mr-1 h-3.5 w-3.5" />
+                      {historyOpen.has(s.student_id) ? "Ẩn lịch sử" : "Xem lịch sử 30 ngày"}
+                    </Button>
+
+                    {historyOpen.has(s.student_id) && (
+                      <div className="mt-2 rounded-md border bg-muted/30 p-2">
+                        {historyLoading.has(s.student_id) ? (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Đang tải lịch sử...
+                          </div>
+                        ) : (historyByStudent[s.student_id] || []).length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Chưa có lịch sử điểm danh.</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {(historyByStudent[s.student_id] || []).slice(0, 8).map((record) => (
+                              <div key={record.change_id} className="space-y-0.5 text-xs">
+                                <div className="flex items-start justify-between gap-2">
+                                  <span className="text-muted-foreground">{new Date(record.changed_at).toLocaleString("vi-VN")}</span>
+                                  <span className="font-medium">{record.change_type === "create" ? "Tạo mới" : "Cập nhật"}</span>
+                                </div>
+                                <div className="flex items-start justify-between gap-2 text-muted-foreground">
+                                  <span>{statusLabel[record.old_status as AttendanceStatus] || "-"} → {statusLabel[record.new_status]}</span>
+                                  <span className="line-clamp-1 max-w-[45%] text-right">{record.old_note || "-"} → {record.new_note || "-"}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {!loadingStudents && students.length > 0 && viewMode === "history" && (
+        <div className="space-y-3">
+          <Card>
+            <CardContent className="space-y-3 py-4">
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <Input type="date" value={historyFrom} onChange={(e) => setHistoryFrom(e.target.value)} className="h-9 text-sm" />
+                <Input type="date" value={historyTo} onChange={(e) => setHistoryTo(e.target.value)} className="h-9 text-sm" />
+
+                <Select value={historyStudentId} onValueChange={setHistoryStudentId}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Học sinh" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả học sinh</SelectItem>
+                    {students.map((student) => (
+                      <SelectItem key={student.student_id} value={student.student_id}>{student.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={historyStatus} onValueChange={(value: AttendanceStatus | "all") => setHistoryStatus(value)}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Button size="sm" onClick={loadClassHistory} disabled={historyListLoading}>
+                  {historyListLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xem lịch sử"}
+                </Button>
+                <p className="text-xs text-muted-foreground">Tổng bản ghi: {historyList.length}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="py-4">
+              {historyListLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Đang tải lịch sử...
+                </div>
+              ) : historyList.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Không có dữ liệu lịch sử phù hợp.</p>
+              ) : (
+                <div className="space-y-2">
+                  {historyList.map((record) => (
+                    <div key={record.change_id} className="flex items-start justify-between gap-3 rounded-md border px-3 py-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium leading-tight">{record.student_name}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(record.changed_at).toLocaleString("vi-VN")}</p>
+                      </div>
+
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-medium">{statusLabel[record.old_status as AttendanceStatus] || "-"} → {statusLabel[record.new_status]}</p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">{record.old_note || "-"} → {record.new_note || "-"}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

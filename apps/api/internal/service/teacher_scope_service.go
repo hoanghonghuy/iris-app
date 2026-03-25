@@ -128,6 +128,26 @@ func (s *TeacherScopeService) ListAttendanceByStudent(ctx context.Context, teach
 	return records, nil
 }
 
+// ListAttendanceChangeLogsByStudent liệt kê lịch sử chỉnh sửa điểm danh của một học sinh.
+func (s *TeacherScopeService) ListAttendanceChangeLogsByStudent(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	from, to time.Time) ([]model.AttendanceChangeLog, error) {
+
+	if teacherUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	if studentID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	logs, err := s.teacherScopeRepo.ListAttendanceChangeLogsByStudent(ctx, teacherUserID, studentID, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list attendance change logs: %w", err)
+	}
+
+	return logs, nil
+}
+
 // CreateHealthLog tạo nhật ký sức khỏe mới cho học sinh
 func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	recordedAt *time.Time, temperature *float64, symptoms, note string, severity *string) (uuid.UUID, error) {

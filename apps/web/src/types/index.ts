@@ -243,6 +243,20 @@ export interface AttendanceRecord {
   recorded_by: string;
 }
 
+export interface AttendanceChangeLog {
+  change_id: string;
+  attendance_id: string;
+  student_id: string;
+  date: string;
+  change_type: "create" | "update";
+  old_status?: AttendanceStatus;
+  new_status: AttendanceStatus;
+  old_note?: string;
+  new_note?: string;
+  changed_by: string;
+  changed_at: string;
+}
+
 /**
  * AttendanceStatus - Trạng thái điểm danh
  */

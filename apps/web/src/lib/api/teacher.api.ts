@@ -4,7 +4,7 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/teacher_scope_handler.go
  */
 import { apiClient } from './client';
-import { Class, Student, ApiResponse, PaginationParams, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, HealthLog, Post, TeacherAnalytics } from '@/types';
+import { Class, Student, ApiResponse, PaginationParams, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, AttendanceChangeLog, HealthLog, Post, TeacherAnalytics } from '@/types';
 
 export const teacherApi = {
   /**
@@ -53,6 +53,19 @@ export const teacherApi = {
     if (to) params.set('to', to);
     const query = params.toString() ? `?${params.toString()}` : '';
     const res = await apiClient.get<ApiResponse<AttendanceRecord[]>>(`/teacher/students/${studentId}/attendance${query}`);
+    return res.data.data;
+  },
+
+  /**
+   * Lấy lịch sử chỉnh sửa điểm danh của học sinh
+   * GET /api/v1/teacher/students/:student_id/attendance-changes
+   */
+  getStudentAttendanceChanges: async (studentId: string, from?: string, to?: string) => {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await apiClient.get<ApiResponse<AttendanceChangeLog[]>>(`/teacher/students/${studentId}/attendance-changes${query}`);
     return res.data.data;
   },
 
