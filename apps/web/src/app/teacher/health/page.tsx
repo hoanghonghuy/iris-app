@@ -19,13 +19,17 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Plus, X, AlertCircle, CheckCircle2 } from "lucide-react";
 
-const severityOptions = [
+type Severity = "normal" | "watch" | "urgent";
+
+const severityOptions: Array<{
+  value: Severity;
+  label: string;
+  variant: "secondary" | "outline" | "destructive";
+}> = [
   { value: "normal", label: "Bình thường", variant: "secondary" as const },
   { value: "watch", label: "Theo dõi", variant: "outline" as const },
   { value: "urgent", label: "Khẩn cấp", variant: "destructive" as const },
 ];
-
-type Severity = "normal" | "watch" | "urgent";
 
 function extractErrorMessage(err: unknown): string | undefined {
   return (

@@ -23,7 +23,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
 import {
-  Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, Search
+  Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, Search, UserCog
 } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
