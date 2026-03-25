@@ -410,13 +410,40 @@ func (r *TeacherScopeRepo) DeletePost(ctx context.Context, authorUserID, postID 
 // ListClassPosts liệt kê bài đăng của một lớp nếu giáo viên được phân công dạy lớp đó.
 func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
+	// TODO: comment giai thich
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at,
+			p.type, p.content,
+			COALESCE(lc.like_count, 0) AS like_count,
+			COALESCE(cc.comment_count, 0) AS comment_count,
+			COALESCE(sc.share_count, 0) AS share_count,
+			EXISTS(
+				SELECT 1
+				FROM post_interactions self_like
+				WHERE self_like.post_id = p.post_id AND self_like.user_id = $1 AND self_like.action_type = 'like'
+			) AS liked_by_me,
+			p.created_at, p.updated_at,
 			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN teacher_classes tc ON tc.class_id = p.class_id
 		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS like_count
+			FROM post_interactions
+			WHERE action_type = 'like'
+			GROUP BY post_id
+		) lc ON lc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS comment_count
+			FROM post_comments
+			GROUP BY post_id
+		) cc ON cc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS share_count
+			FROM post_interactions
+			WHERE action_type = 'share'
+			GROUP BY post_id
+		) sc ON sc.post_id = p.post_id
 		WHERE t.user_id = $1 AND p.class_id = $2 AND p.scope_type = 'class'
 		ORDER BY p.created_at DESC
 		LIMIT $3 OFFSET $4;
@@ -434,7 +461,9 @@ func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, cl
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
+			&p.Type, &p.Content,
+			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
+			&p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -564,14 +593,41 @@ func (r *TeacherScopeRepo) ListAttendanceChangeLogsByClass(ctx context.Context, 
 // ListStudentPosts liệt kê bài đăng của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
 func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
+	// TODO: comment giai thich
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at,
+			p.type, p.content,
+			COALESCE(lc.like_count, 0) AS like_count,
+			COALESCE(cc.comment_count, 0) AS comment_count,
+			COALESCE(sc.share_count, 0) AS share_count,
+			EXISTS(
+				SELECT 1
+				FROM post_interactions self_like
+				WHERE self_like.post_id = p.post_id AND self_like.user_id = $1 AND self_like.action_type = 'like'
+			) AS liked_by_me,
+			p.created_at, p.updated_at,
 			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN students s ON s.student_id = p.student_id
 		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
 		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS like_count
+			FROM post_interactions
+			WHERE action_type = 'like'
+			GROUP BY post_id
+		) lc ON lc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS comment_count
+			FROM post_comments
+			GROUP BY post_id
+		) cc ON cc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS share_count
+			FROM post_interactions
+			WHERE action_type = 'share'
+			GROUP BY post_id
+		) sc ON sc.post_id = p.post_id
 		WHERE t.user_id = $1 AND p.student_id = $2 AND p.scope_type = 'student'
 		ORDER BY p.created_at DESC
 		LIMIT $3 OFFSET $4;
@@ -589,7 +645,9 @@ func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, 
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
+			&p.Type, &p.Content,
+			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
+			&p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
 			return nil, 0, err
 		}

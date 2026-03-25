@@ -16,6 +16,10 @@ type Post struct {
 	StudentID    *uuid.UUID `json:"student_id,omitempty"`
 	Type         string     `json:"type"` // announcement|activity|daily_note|health_note
 	Content      string     `json:"content"`
+	LikeCount    int        `json:"like_count"`
+	CommentCount int        `json:"comment_count"`
+	ShareCount   int        `json:"share_count"`
+	LikedByMe    bool       `json:"liked_by_me"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 }
@@ -27,4 +31,22 @@ type PostAttachment struct {
 	URL          string    `json:"url"`
 	MimeType     *string   `json:"mime_type,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
+}
+
+// PostComment = một bình luận cho bài đăng.
+type PostComment struct {
+	CommentID     uuid.UUID `json:"comment_id"`
+	PostID        uuid.UUID `json:"post_id"`
+	AuthorUserID  uuid.UUID `json:"author_user_id"`
+	AuthorDisplay string    `json:"author_display"`
+	Content       string    `json:"content"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// PostInteraction = tương tác trên bài đăng (like/share).
+type PostInteraction struct {
+	PostID     uuid.UUID `json:"post_id"`
+	UserID     uuid.UUID `json:"user_id"`
+	ActionType string    `json:"action_type"` // like|share
+	CreatedAt  time.Time `json:"created_at"`
 }

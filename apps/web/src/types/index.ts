@@ -327,8 +327,57 @@ export interface Post {
   student_id?: string;
   type: PostType;
   content: string;
+  like_count: number;
+  comment_count: number;
+  share_count: number;
+  liked_by_me: boolean;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * PostComment - Bình luận của bài đăng
+ */
+export interface PostComment {
+  comment_id: string;
+  post_id: string;
+  author_user_id: string;
+  author_display: string;
+  content: string;
+  created_at: string;
+}
+
+/**
+ * PostLikeResponse - Kết quả thao tác like/unlike
+ */
+export interface PostLikeResponse {
+  post_id: string;
+  liked_by_me: boolean;
+  like_count: number;
+}
+
+/**
+ * PostShareResponse - Kết quả thao tác share
+ */
+export interface PostShareResponse {
+  post_id: string;
+  share_count: number;
+}
+
+/**
+ * CreatePostCommentRequest - Tạo bình luận bài đăng
+ */
+export interface CreatePostCommentRequest {
+  content: string;
+}
+
+/**
+ * CreatePostCommentResponse - Kết quả tạo bình luận
+ */
+export interface CreatePostCommentResponse {
+  post_id: string;
+  comment_count: number;
+  comment: PostComment;
 }
 
 /**

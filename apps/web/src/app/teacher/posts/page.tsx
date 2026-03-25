@@ -7,21 +7,39 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
-import { Class, Post, Student, Pagination } from "@/types";
+import { Class, CreatePostRequest, Pagination, Post, PostType, Student } from "@/types";
 import { PaginationBar } from "@/components/shared/PaginationBar";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { MessageSquare, Loader2, Plus, X, AlertCircle } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PostCard } from "@/components/shared/PostCard";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AlertCircle, Loader2, MessageSquare, Plus, X } from "lucide-react";
+import { POST_SCOPE_LABELS, POST_TYPE_OPTIONS } from "@/lib/post-config";
 
-const postTypeLabels: Record<string, string> = {
-  announcement: "Thông báo", activity: "Hoạt động",
-  daily_note: "Nhận xét ngày", health_note: "Sức khỏe",
-};
+type ComposerScope = "class" | "student";
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+
+  return fallback;
+}
+
+function isComposerScope(value: string): value is ComposerScope {
+  return value === "class" || value === "student";
+}
+
+function isPostType(value: string): value is PostType {
+  return POST_TYPE_OPTIONS.some((option) => option.value === value);
+}
 
 export default function TeacherPostsPage() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -35,9 +53,9 @@ export default function TeacherPostsPage() {
   const [currentOffset, setCurrentOffset] = useState(0);
 
   const [showForm, setShowForm] = useState(false);
-  const [scopeType, setScopeType] = useState<"class" | "student">("class");
+  const [scopeType, setScopeType] = useState<ComposerScope>("class");
   const [formStudentId, setFormStudentId] = useState("");
-  const [postType, setPostType] = useState("announcement");
+  const [postType, setPostType] = useState<PostType>("announcement");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -56,6 +74,8 @@ export default function TeacherPostsPage() {
 
   useEffect(() => {
     if (!selectedClassId) return;
+    setCurrentOffset(0);
+
     const load = async () => {
       try {
         const data = await teacherApi.getStudentsInClass(selectedClassId);
@@ -73,27 +93,38 @@ export default function TeacherPostsPage() {
       const response = await teacherApi.getClassPosts(selectedClassId, { limit: 20, offset: currentOffset });
       setPosts(response.data || []);
       if (response.pagination) setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải bài đăng");
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err, "Không thể tải bài đăng"));
     } finally { setLoadingPosts(false); }
   }, [selectedClassId, currentOffset]);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
+  const patchPostById = useCallback((postId: string, patch: Partial<Post>) => {
+    setPosts((prev) => prev.map((item) => (item.post_id === postId ? { ...item, ...patch } : item)));
+  }, []);
+
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) { setFormError("Nội dung không được trống"); return; }
+
+    const payload: CreatePostRequest = {
+      scope_type: scopeType,
+      type: postType,
+      content,
+      class_id: scopeType === "class" ? selectedClassId : undefined,
+      student_id: scopeType === "student" ? formStudentId : undefined,
+    };
+
     try {
       setSubmitting(true); setFormError("");
-      await teacherApi.createPost({
-        scope_type: scopeType,
-        class_id: scopeType === "class" ? selectedClassId : undefined,
-        student_id: scopeType === "student" ? formStudentId : undefined,
-        type: postType as any, content,
-      });
-      setContent(""); setShowForm(false); fetchPosts();
-    } catch (err: any) {
-      setFormError(err.response?.data?.error || "Lỗi tạo bài đăng");
+      await teacherApi.createPost(payload);
+      setContent("");
+      setShowForm(false);
+      setCurrentOffset(0);
+      fetchPosts();
+    } catch (err: unknown) {
+      setFormError(extractErrorMessage(err, "Lỗi tạo bài đăng"));
     } finally { setSubmitting(false); }
   };
 
@@ -102,36 +133,72 @@ export default function TeacherPostsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
-        <div className="flex items-center gap-2">
-          {classes.length > 0 && (
-            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
-              <SelectContent>
-                {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-          <Button size="sm" onClick={() => setShowForm(!showForm)}>
-            {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-            {showForm ? "Hủy" : "Tạo bài"}
-          </Button>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-3xl space-y-4">
+      <Card>
+        <CardContent className="space-y-3 p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <Avatar>
+                <AvatarFallback>GV</AvatarFallback>
+              </Avatar>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 w-full justify-start rounded-full px-4 text-muted-foreground sm:w-auto sm:min-w-72"
+                onClick={() => setShowForm((prev) => !prev)}
+              >
+                {showForm ? "Đóng khung soạn bài" : "Bạn muốn chia sẻ điều gì với lớp hôm nay?"}
+              </Button>
+            </div>
+
+            {classes.length > 0 && (
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Chọn lớp" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((classInfo) => (
+                    <SelectItem key={classInfo.class_id} value={classInfo.class_id}>
+                      {classInfo.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+            <Badge variant="outline">{pagination.total} bài đăng</Badge>
+            <Badge variant="secondary">{POST_SCOPE_LABELS[scopeType]}</Badge>
+            <Button size="sm" variant="ghost" onClick={() => setShowForm((prev) => !prev)}>
+              {showForm ? <X className="mr-1 h-4 w-4" /> : <Plus className="mr-1 h-4 w-4" />}
+              {showForm ? "Đóng" : "Tạo bài"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
       {showForm && (
         <Card>
-          <CardHeader><CardTitle className="text-lg">Tạo bài đăng mới</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-lg">Tạo bài đăng mới</CardTitle>
+          </CardHeader>
           <CardContent>
             <form onSubmit={handleCreatePost} className="space-y-4">
               {formError && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{formError}</AlertDescription></Alert>}
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label>Phạm vi</Label>
-                  <Select value={scopeType} onValueChange={(v) => setScopeType(v as "class" | "student")}>
+                  <Select
+                    value={scopeType}
+                    onValueChange={(value) => {
+                      if (isComposerScope(value)) {
+                        setScopeType(value);
+                      }
+                    }}
+                  >
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="class">Cả lớp</SelectItem>
@@ -152,13 +219,21 @@ export default function TeacherPostsPage() {
                 )}
                 <div className="space-y-2">
                   <Label>Loại bài</Label>
-                  <Select value={postType} onValueChange={setPostType}>
+                  <Select
+                    value={postType}
+                    onValueChange={(value) => {
+                      if (isPostType(value)) {
+                        setPostType(value);
+                      }
+                    }}
+                  >
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="announcement">Thông báo</SelectItem>
-                      <SelectItem value="activity">Hoạt động</SelectItem>
-                      <SelectItem value="daily_note">Nhận xét ngày</SelectItem>
-                      <SelectItem value="health_note">Sức khỏe</SelectItem>
+                      {POST_TYPE_OPTIONS.map((typeOption) => (
+                        <SelectItem key={typeOption.value} value={typeOption.value}>
+                          {typeOption.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -181,28 +256,28 @@ export default function TeacherPostsPage() {
       {loadingPosts && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
       {!loadingPosts && posts.length === 0 && (
-        <Card><CardContent className="flex flex-col items-center justify-center py-12">
-          <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-sm text-muted-foreground">Chưa có bài đăng nào cho lớp này</p>
-        </CardContent></Card>
+        <EmptyState
+          icon={MessageSquare}
+          title="Chưa có bài đăng nào"
+          description="Hãy tạo bài đầu tiên để cập nhật thông tin cho lớp học."
+          action={
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo bài đăng
+            </Button>
+          }
+        />
       )}
 
       {!loadingPosts && posts.length > 0 && (
-        <div className="space-y-3">
-          {posts.map((p) => (
-            <Card key={p.post_id}>
-              <CardContent className="py-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{postTypeLabels[p.type] || p.type}</Badge>
-                      <span className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleString("vi-VN")}</span>
-                    </div>
-                    <p className="mt-2 text-sm whitespace-pre-line">{p.content}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <PostCard
+              key={post.post_id}
+              post={post}
+              audience="teacher"
+              onPostPatched={patchPostById}
+            />
           ))}
         </div>
       )}

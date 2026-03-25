@@ -257,3 +257,195 @@ func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
 		HasMore: req.Offset+len(posts) < total,
 	})
 }
+
+// TogglePostLike bật/tắt like cho bài đăng trong feed phụ huynh.
+func (h *ParentScopeHandler) TogglePostLike(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("post_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	liked, likeCount, err := h.parentScopeService.TogglePostLike(ctx, userID, postID)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to toggle like")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"post_id":     postID.String(),
+		"liked_by_me": liked,
+		"like_count":  likeCount,
+	})
+}
+
+// ListPostComments liệt kê bình luận của một bài đăng trong feed phụ huynh.
+func (h *ParentScopeHandler) ListPostComments(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("post_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	var req PaginationParams
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	comments, total, err := h.parentScopeService.ListPostComments(ctx, userID, postID, req.Limit, req.Offset)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to list comments")
+		return
+	}
+
+	response.OKPaginated(c, comments, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(comments) < total,
+	})
+}
+
+// CreatePostComment thêm bình luận vào bài đăng trong feed phụ huynh.
+func (h *ParentScopeHandler) CreatePostComment(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("post_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	var req CreatePostCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	comment, commentCount, err := h.parentScopeService.AddPostComment(ctx, userID, postID, req.Content)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to create comment")
+		return
+	}
+
+	response.Created(c, gin.H{
+		"comment":       comment,
+		"comment_count": commentCount,
+		"post_id":       postID.String(),
+	})
+}
+
+// SharePost ghi nhận chia sẻ bài đăng trong feed phụ huynh.
+func (h *ParentScopeHandler) SharePost(c *gin.Context) {
+	postID, err := uuid.Parse(c.Param("post_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid post_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	shareCount, err := h.parentScopeService.SharePost(ctx, userID, postID)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to share post")
+		return
+	}
+
+	response.Created(c, gin.H{
+		"post_id":     postID.String(),
+		"share_count": shareCount,
+	})
+}

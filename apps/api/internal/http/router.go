@@ -124,6 +124,10 @@ func NewRouter(
 				teacherScope.POST("/posts", teacherScopeHandler.CreatePost)
 				teacherScope.PUT("/posts/:post_id", teacherScopeHandler.UpdatePost)
 				teacherScope.DELETE("/posts/:post_id", teacherScopeHandler.DeletePost)
+				teacherScope.POST("/posts/:post_id/like", teacherScopeHandler.TogglePostLike)
+				teacherScope.GET("/posts/:post_id/comments", teacherScopeHandler.ListPostComments)
+				teacherScope.POST("/posts/:post_id/comments", teacherScopeHandler.CreatePostComment)
+				teacherScope.POST("/posts/:post_id/share", teacherScopeHandler.SharePost)
 				teacherScope.GET("/classes/:class_id/posts", teacherScopeHandler.ListClassPosts)
 				teacherScope.GET("/students/:student_id/posts", teacherScopeHandler.ListStudentPosts)
 
@@ -140,6 +144,10 @@ func NewRouter(
 
 				// phụ huynh xem feed tổng hợp của tất cả con (aggregated feed)
 				parentScope.GET("/feed", parentScopeHandler.GetMyFeed)
+				parentScope.POST("/posts/:post_id/like", parentScopeHandler.TogglePostLike)
+				parentScope.GET("/posts/:post_id/comments", parentScopeHandler.ListPostComments)
+				parentScope.POST("/posts/:post_id/comments", parentScopeHandler.CreatePostComment)
+				parentScope.POST("/posts/:post_id/share", parentScopeHandler.SharePost)
 
 				// phụ huynh xem bài đăng của lớp con mình
 				parentScope.GET("/children/:student_id/class-posts", parentScopeHandler.ListMyChildClassPosts)

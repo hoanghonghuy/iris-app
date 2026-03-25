@@ -54,12 +54,38 @@ func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserI
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at,
+			p.type, p.content,
+			COALESCE(lc.like_count, 0) AS like_count,
+			COALESCE(cc.comment_count, 0) AS comment_count,
+			COALESCE(sc.share_count, 0) AS share_count,
+			EXISTS(
+				SELECT 1
+				FROM post_interactions self_like
+				WHERE self_like.post_id = p.post_id AND self_like.user_id = $1 AND self_like.action_type = 'like'
+			) AS liked_by_me,
+			p.created_at, p.updated_at,
 			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN students s ON s.current_class_id = p.class_id
 		JOIN student_parents sp ON sp.student_id = s.student_id
 		JOIN parents pa ON pa.parent_id = sp.parent_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS like_count
+			FROM post_interactions
+			WHERE action_type = 'like'
+			GROUP BY post_id
+		) lc ON lc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS comment_count
+			FROM post_comments
+			GROUP BY post_id
+		) cc ON cc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS share_count
+			FROM post_interactions
+			WHERE action_type = 'share'
+			GROUP BY post_id
+		) sc ON sc.post_id = p.post_id
 		WHERE pa.user_id = $1
 			AND s.student_id = $2
 			AND p.scope_type = 'class'
@@ -79,7 +105,9 @@ func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserI
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
+			&p.Type, &p.Content,
+			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
+			&p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -93,11 +121,37 @@ func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUse
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at,
+			p.type, p.content,
+			COALESCE(lc.like_count, 0) AS like_count,
+			COALESCE(cc.comment_count, 0) AS comment_count,
+			COALESCE(sc.share_count, 0) AS share_count,
+			EXISTS(
+				SELECT 1
+				FROM post_interactions self_like
+				WHERE self_like.post_id = p.post_id AND self_like.user_id = $1 AND self_like.action_type = 'like'
+			) AS liked_by_me,
+			p.created_at, p.updated_at,
 			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN student_parents sp ON sp.student_id = p.student_id
 		JOIN parents pa ON pa.parent_id = sp.parent_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS like_count
+			FROM post_interactions
+			WHERE action_type = 'like'
+			GROUP BY post_id
+		) lc ON lc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS comment_count
+			FROM post_comments
+			GROUP BY post_id
+		) cc ON cc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS share_count
+			FROM post_interactions
+			WHERE action_type = 'share'
+			GROUP BY post_id
+		) sc ON sc.post_id = p.post_id
 		WHERE pa.user_id = $1
 			AND p.student_id = $2
 			AND p.scope_type = 'student'
@@ -117,7 +171,9 @@ func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUse
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
+			&p.Type, &p.Content,
+			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
+			&p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -131,12 +187,38 @@ func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID,
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at,
+			p.type, p.content,
+			COALESCE(lc.like_count, 0) AS like_count,
+			COALESCE(cc.comment_count, 0) AS comment_count,
+			COALESCE(sc.share_count, 0) AS share_count,
+			EXISTS(
+				SELECT 1
+				FROM post_interactions self_like
+				WHERE self_like.post_id = p.post_id AND self_like.user_id = $1 AND self_like.action_type = 'like'
+			) AS liked_by_me,
+			p.created_at, p.updated_at,
 			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN student_parents sp ON sp.student_id = $2
 		JOIN parents pa ON pa.parent_id = sp.parent_id
 		JOIN students s ON s.student_id = sp.student_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS like_count
+			FROM post_interactions
+			WHERE action_type = 'like'
+			GROUP BY post_id
+		) lc ON lc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS comment_count
+			FROM post_comments
+			GROUP BY post_id
+		) cc ON cc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS share_count
+			FROM post_interactions
+			WHERE action_type = 'share'
+			GROUP BY post_id
+		) sc ON sc.post_id = p.post_id
 		WHERE pa.user_id = $1
 			AND (
 				(p.scope_type = 'class' AND p.class_id = s.current_class_id)
@@ -158,7 +240,9 @@ func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID,
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
+			&p.Type, &p.Content,
+			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
+			&p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -171,7 +255,16 @@ func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
 		SELECT DISTINCT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
-			p.type, p.content, p.created_at, p.updated_at,
+			p.type, p.content,
+			COALESCE(lc.like_count, 0) AS like_count,
+			COALESCE(cc.comment_count, 0) AS comment_count,
+			COALESCE(sc.share_count, 0) AS share_count,
+			EXISTS(
+				SELECT 1
+				FROM post_interactions self_like
+				WHERE self_like.post_id = p.post_id AND self_like.user_id = $1 AND self_like.action_type = 'like'
+			) AS liked_by_me,
+			p.created_at, p.updated_at,
 			COUNT(*) OVER() AS total_count
 		FROM posts p
 		JOIN student_parents sp ON (
@@ -183,6 +276,23 @@ func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 			))
 		)
 		JOIN parents pa ON pa.parent_id = sp.parent_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS like_count
+			FROM post_interactions
+			WHERE action_type = 'like'
+			GROUP BY post_id
+		) lc ON lc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS comment_count
+			FROM post_comments
+			GROUP BY post_id
+		) cc ON cc.post_id = p.post_id
+		LEFT JOIN (
+			SELECT post_id, COUNT(*) AS share_count
+			FROM post_interactions
+			WHERE action_type = 'share'
+			GROUP BY post_id
+		) sc ON sc.post_id = p.post_id
 		WHERE pa.user_id = $1
 		ORDER BY p.created_at DESC
 		LIMIT $2 OFFSET $3;
@@ -200,7 +310,9 @@ func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 		var p model.Post
 		if err := rows.Scan(
 			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content, &p.CreatedAt, &p.UpdatedAt, &total,
+			&p.Type, &p.Content,
+			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
+			&p.CreatedAt, &p.UpdatedAt, &total,
 		); err != nil {
 			return nil, 0, err
 		}

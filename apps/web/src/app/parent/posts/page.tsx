@@ -8,15 +8,19 @@
 import React, { useEffect, useState } from "react";
 import { parentApi } from "@/lib/api/parent.api";
 import { Post } from "@/types";
-import { Card, CardContent } from "@/components/ui/card";
-import { MessageSquare, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PostCard } from "@/components/shared/PostCard";
+import { AlertCircle, Loader2, MessageSquare } from "lucide-react";
 
-const postTypeLabels: Record<string, string> = {
-  announcement: "Thông báo",
-  activity: "Hoạt động",
-  daily_note: "Nhận xét ngày",
-  health_note: "Sức khỏe",
-};
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+
+  return fallback;
+}
 
 export default function ParentPostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -27,43 +31,47 @@ export default function ParentPostsPage() {
     const load = async () => {
       try {
         const data = await parentApi.getMyFeed({ limit: 50 });
-        setPosts((data as any)?.data || []);
-      } catch (err: any) {
-        setError(err.response?.data?.error || "Không thể tải bảng tin");
+        setPosts(data.data || []);
+      } catch (err: unknown) {
+        setError(extractErrorMessage(err, "Không thể tải bảng tin"));
       } finally { setLoading(false); }
     };
     load();
   }, []);
 
+  const patchPostById = (postId: string, patch: Partial<Post>) => {
+    setPosts((prev) => prev.map((item) => (item.post_id === postId ? { ...item, ...patch } : item)));
+  };
+
   return (
-    <div className="space-y-6">
-      {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
+    <div className="mx-auto w-full max-w-3xl space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}
 
       {!loading && posts.length === 0 && !error && (
-        <Card><CardContent className="flex flex-col items-center justify-center py-12">
-          <MessageSquare className="h-12 w-12 text-muted-foreground/50" />
-          <p className="mt-4 text-sm text-muted-foreground">Chưa có bài đăng nào</p>
-        </CardContent></Card>
+        <EmptyState
+          icon={MessageSquare}
+          title="Chưa có bài đăng nào"
+          description="Bảng tin sẽ hiển thị thông báo và cập nhật từ giáo viên."
+        />
       )}
 
       {!loading && posts.length > 0 && (
-        <div className="space-y-3">
-          {posts.map((p) => (
-            <Card key={p.post_id}>
-              <CardContent className="py-4">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
-                    {postTypeLabels[p.type] || p.type}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(p.created_at).toLocaleString("vi-VN")}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm whitespace-pre-line">{p.content}</p>
-              </CardContent>
-            </Card>
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <PostCard
+              key={post.post_id}
+              post={post}
+              authorLabel="Giáo viên"
+              audience="parent"
+              onPostPatched={patchPostById}
+            />
           ))}
         </div>
       )}

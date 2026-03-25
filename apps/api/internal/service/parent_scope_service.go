@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -11,12 +12,14 @@ import (
 )
 
 type ParentScopeService struct {
-	parentScopeRepo *repo.ParentScopeRepo
+	parentScopeRepo  *repo.ParentScopeRepo
+	postInteractRepo *repo.PostInteractionRepo
 }
 
-func NewParentScopeService(parentScopeRepo *repo.ParentScopeRepo) *ParentScopeService {
+func NewParentScopeService(parentScopeRepo *repo.ParentScopeRepo, postInteractRepo *repo.PostInteractionRepo) *ParentScopeService {
 	return &ParentScopeService{
-		parentScopeRepo: parentScopeRepo,
+		parentScopeRepo:  parentScopeRepo,
+		postInteractRepo: postInteractRepo,
 	}
 }
 
@@ -171,4 +174,119 @@ func (s *ParentScopeService) GetMyFeed(ctx context.Context, parentUserID uuid.UU
 	}
 
 	return posts, total, nil
+}
+
+// TogglePostLike bật/tắt like cho bài đăng mà phụ huynh có quyền truy cập.
+func (s *ParentScopeService) TogglePostLike(ctx context.Context, parentUserID, postID uuid.UUID) (bool, int, error) {
+	if parentUserID == uuid.Nil {
+		return false, 0, ErrInvalidUserID
+	}
+	if postID == uuid.Nil {
+		return false, 0, ErrInvalidValue
+	}
+
+	allowed, err := s.postInteractRepo.ParentCanAccessPost(ctx, parentUserID, postID)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to verify post access: %w", err)
+	}
+	if !allowed {
+		return false, 0, ErrForbidden
+	}
+
+	liked, likeCount, err := s.postInteractRepo.ToggleLike(ctx, parentUserID, postID)
+	if err != nil {
+		return false, 0, fmt.Errorf("failed to toggle like: %w", err)
+	}
+
+	return liked, likeCount, nil
+}
+
+// AddPostComment thêm bình luận cho bài đăng mà phụ huynh có quyền truy cập.
+func (s *ParentScopeService) AddPostComment(ctx context.Context, parentUserID, postID uuid.UUID, content string) (model.PostComment, int, error) {
+	if parentUserID == uuid.Nil {
+		return model.PostComment{}, 0, ErrInvalidUserID
+	}
+	if postID == uuid.Nil {
+		return model.PostComment{}, 0, ErrInvalidValue
+	}
+	trimmedContent := strings.TrimSpace(content)
+	if trimmedContent == "" {
+		return model.PostComment{}, 0, fmt.Errorf("%w: content cannot be empty", ErrInvalidValue)
+	}
+
+	allowed, err := s.postInteractRepo.ParentCanAccessPost(ctx, parentUserID, postID)
+	if err != nil {
+		return model.PostComment{}, 0, fmt.Errorf("failed to verify post access: %w", err)
+	}
+	if !allowed {
+		return model.PostComment{}, 0, ErrForbidden
+	}
+
+	comment, err := s.postInteractRepo.AddComment(ctx, parentUserID, postID, trimmedContent)
+	if err != nil {
+		return model.PostComment{}, 0, fmt.Errorf("failed to add comment: %w", err)
+	}
+
+	commentCount, err := s.postInteractRepo.CountComments(ctx, postID)
+	if err != nil {
+		return model.PostComment{}, 0, fmt.Errorf("failed to count comments: %w", err)
+	}
+
+	return comment, commentCount, nil
+}
+
+// ListPostComments liệt kê bình luận của bài đăng mà phụ huynh có quyền truy cập.
+func (s *ParentScopeService) ListPostComments(ctx context.Context, parentUserID, postID uuid.UUID, limit, offset int) ([]model.PostComment, int, error) {
+	if parentUserID == uuid.Nil {
+		return nil, 0, ErrInvalidUserID
+	}
+	if postID == uuid.Nil {
+		return nil, 0, ErrInvalidValue
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	allowed, err := s.postInteractRepo.ParentCanAccessPost(ctx, parentUserID, postID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to verify post access: %w", err)
+	}
+	if !allowed {
+		return nil, 0, ErrForbidden
+	}
+
+	comments, total, err := s.postInteractRepo.ListComments(ctx, postID, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list comments: %w", err)
+	}
+
+	return comments, total, nil
+}
+
+// SharePost ghi nhận một lượt chia sẻ cho bài đăng mà phụ huynh có quyền truy cập.
+func (s *ParentScopeService) SharePost(ctx context.Context, parentUserID, postID uuid.UUID) (int, error) {
+	if parentUserID == uuid.Nil {
+		return 0, ErrInvalidUserID
+	}
+	if postID == uuid.Nil {
+		return 0, ErrInvalidValue
+	}
+
+	allowed, err := s.postInteractRepo.ParentCanAccessPost(ctx, parentUserID, postID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to verify post access: %w", err)
+	}
+	if !allowed {
+		return 0, ErrForbidden
+	}
+
+	shareCount, err := s.postInteractRepo.AddShare(ctx, parentUserID, postID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to add share: %w", err)
+	}
+
+	return shareCount, nil
 }

@@ -33,20 +33,21 @@ func main() {
 	// Repositories
 	// TODO: tách ra hàm helper initRepositories(pool) *repo.Repositories
 	repos := &repo.Repositories{
-		UserRepo:          repo.NewUserRepo(pool),
-		SchoolRepo:        repo.NewSchoolRepo(pool),
-		ClassRepo:         repo.NewClassRepo(pool),
-		StudentRepo:       repo.NewStudentRepo(pool),
-		StudentParentRepo: repo.NewStudentParentRepo(pool),
-		ParentRepo:        repo.NewParentRepo(pool),
-		ParentCodeRepo:    repo.NewParentCodeRepo(pool),
-		TeacherRepo:       repo.NewTeacherRepo(pool),
-		TeacherClassRepo:  repo.NewTeacherClassRepo(pool),
-		TeacherScopeRepo:  repo.NewTeacherScopeRepo(pool),
-		ParentScopeRepo:   repo.NewParentScopeRepo(pool),
-		SchoolAdminRepo:   repo.NewSchoolAdminRepo(pool),
-		ResetTokenRepo:    repo.NewResetTokenRepo(pool),
-		ChatRepo:          repo.NewChatRepo(pool),
+		UserRepo:            repo.NewUserRepo(pool),
+		SchoolRepo:          repo.NewSchoolRepo(pool),
+		ClassRepo:           repo.NewClassRepo(pool),
+		StudentRepo:         repo.NewStudentRepo(pool),
+		StudentParentRepo:   repo.NewStudentParentRepo(pool),
+		ParentRepo:          repo.NewParentRepo(pool),
+		ParentCodeRepo:      repo.NewParentCodeRepo(pool),
+		TeacherRepo:         repo.NewTeacherRepo(pool),
+		TeacherClassRepo:    repo.NewTeacherClassRepo(pool),
+		TeacherScopeRepo:    repo.NewTeacherScopeRepo(pool),
+		ParentScopeRepo:     repo.NewParentScopeRepo(pool),
+		PostInteractionRepo: repo.NewPostInteractionRepo(pool),
+		SchoolAdminRepo:     repo.NewSchoolAdminRepo(pool),
+		ResetTokenRepo:      repo.NewResetTokenRepo(pool),
+		ChatRepo:            repo.NewChatRepo(pool),
 	}
 
 	// Authenticator
@@ -76,9 +77,9 @@ func main() {
 		studentService      = service.NewStudentService(repos.StudentRepo, repos.ClassRepo)
 		userService         = service.NewUserService(repos.UserRepo, repos.ResetTokenRepo, jwtAuth, emailSender, frontendURL)
 		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo, repos.ClassRepo)
-		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo)
+		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo, repos.PostInteractionRepo)
 		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo)
-		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo)
+		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo, repos.PostInteractionRepo)
 		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth)
 		schoolAdminService  = service.NewSchoolAdminService(repos.SchoolAdminRepo, repos.UserRepo)
 		analyticsService    = service.NewAnalyticsService(repos)
