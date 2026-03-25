@@ -44,7 +44,7 @@ export function ChangePasswordForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-          {success && <div className="rounded-md bg-green-100 p-3 text-sm text-green-700">{success}</div>}
+          {success && <div className="rounded-md bg-success/10 p-3 text-sm text-success">{success}</div>}
           <div className="space-y-2">
             <label htmlFor="newPassword" className="text-sm font-medium">Mật khẩu mới</label>
             <Input id="newPassword" type="password" placeholder="Tối thiểu 6 ký tự" value={password} onChange={(e) => setPassword(e.target.value)} required />

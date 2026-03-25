@@ -13,10 +13,10 @@ import { Users, MessageSquare, Loader2, Baby, CalendarClock, ChevronRight, Activ
 import Link from "next/link";
 
 const postTypeConfig: Record<string, { label: string, colorClass: string }> = {
-  announcement: { label: "Thông báo", colorClass: "bg-blue-500/10 text-blue-600" },
-  activity: { label: "Hoạt động", colorClass: "bg-amber-500/10 text-amber-600" },
-  daily_note: { label: "Nhận xét", colorClass: "bg-teal-500/10 text-teal-600" },
-  health_note: { label: "Sức khỏe", colorClass: "bg-rose-500/10 text-rose-600" },
+  announcement: { label: "Thông báo", colorClass: "bg-primary/10 text-primary" },
+  activity: { label: "Hoạt động", colorClass: "bg-chart-2/10 text-chart-2" },
+  daily_note: { label: "Nhận xét", colorClass: "bg-chart-1/10 text-chart-1" },
+  health_note: { label: "Sức khỏe", colorClass: "bg-destructive/10 text-destructive" },
 };
 
 export default function ParentDashboard() {
@@ -85,15 +85,15 @@ export default function ParentDashboard() {
             </Link>
 
             <Link href="/parent/posts" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-blue-500/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-blue-50/50 dark:hover:to-blue-950/20">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-primary/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-primary/10 dark:hover:to-primary/20">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="p-4 bg-blue-500/10 text-blue-600 rounded-2xl transition-transform group-hover:scale-110 duration-300">
+                      <div className="p-4 bg-primary/10 text-primary rounded-2xl transition-transform group-hover:scale-110 duration-300">
                         <MessageSquare className="h-7 w-7" />
                       </div>
                       <div>
-                        <p className="text-xl font-bold text-foreground group-hover:text-blue-600 transition-colors">Bảng tin Lớp</p>
+                        <p className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">Bảng tin Lớp</p>
                         <p className="text-sm text-muted-foreground mt-0.5">Cập nhật thông báo từ giáo viên</p>
                       </div>
                     </div>

@@ -72,7 +72,7 @@ function ResetPasswordForm() {
         return (
             <Card className="w-full max-w-md">
                 <CardContent className="flex flex-col items-center gap-4 py-8">
-                    <CheckCircle2 className="h-12 w-12 text-green-500" />
+                    <CheckCircle2 className="h-12 w-12 text-success" />
                     <p className="text-center text-sm font-medium">Đặt lại mật khẩu thành công!</p>
                     <p className="text-center text-sm text-muted-foreground">
                         Đang chuyển về trang đăng nhập...

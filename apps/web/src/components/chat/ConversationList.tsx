@@ -60,8 +60,8 @@ export default function ConversationList({
             onClick={() => onSelect(conv)}
             className={`w-full text-left p-3 rounded-2xl flex items-center gap-3 transition-all ${
               isSelected
-                ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                : "hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-900 dark:text-zinc-100"
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "hover:bg-secondary text-foreground"
             }`}
           >
             {/* Avatar */}
@@ -84,7 +84,7 @@ export default function ConversationList({
               </div>
               <p
                 className={`text-[13px] truncate ${
-                  isSelected ? "text-blue-100" : "text-zinc-500 dark:text-zinc-400"
+                  isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
                 }`}
               >
                 {conv.type === "direct"

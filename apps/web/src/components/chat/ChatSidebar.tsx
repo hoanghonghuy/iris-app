@@ -101,7 +101,7 @@ export default function ChatSidebar({
           {/* Nút tạo cuộc hội thoại mới */}
           <button
             onClick={handleToggleNewConv}
-            className="rounded-full bg-blue-50 dark:bg-blue-900/30 p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+            className="rounded-full bg-primary/10 p-2 text-primary hover:bg-primary/20 transition-colors"
             title="Tạo mới"
           >
             {showNewConv ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}

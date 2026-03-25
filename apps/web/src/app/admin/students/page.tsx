@@ -278,7 +278,7 @@ export default function AdminStudentsPage() {
                         <div className="flex items-center justify-end gap-1">
                           <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
                           <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
-                            {copiedId === s.student_id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                            {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                           </Button>
                         </div>
                       ) : (
@@ -312,7 +312,7 @@ export default function AdminStudentsPage() {
                     <div className="mt-2 flex items-center gap-1">
                       <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
                       <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
-                        {copiedId === s.student_id ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+                        {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                       </Button>
                     </div>
                   ) : (

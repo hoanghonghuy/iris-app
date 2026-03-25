@@ -117,7 +117,7 @@ export default function TeacherAttendancePage() {
             const att = attendance[s.student_id] || { status: "present", note: "" };
             const isDone = submitted.has(s.student_id);
             return (
-              <Card key={s.student_id} className={isDone ? "border-green-200 bg-green-50/50" : ""}>
+              <Card key={s.student_id} className={isDone ? "border-success/30 bg-success/10" : ""}>
                 <CardContent className="py-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">

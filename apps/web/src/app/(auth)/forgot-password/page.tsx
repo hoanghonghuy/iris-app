@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
                 {sent ? (
                     <>
                         <CardContent className="flex flex-col items-center gap-4 py-6">
-                            <CheckCircle2 className="h-12 w-12 text-green-500" />
+                            <CheckCircle2 className="h-12 w-12 text-success" />
                             <p className="text-center text-sm text-muted-foreground">
                                 Nếu email <span className="font-medium text-foreground">{email}</span> tồn tại trong hệ thống,
                                 bạn sẽ nhận được link đặt lại mật khẩu trong vài phút.

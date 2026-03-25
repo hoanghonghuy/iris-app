@@ -41,7 +41,7 @@ export default function ActivateAccountPage() {
       <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center py-12">
-            <ShieldCheck className="h-16 w-16 text-green-600" />
+            <ShieldCheck className="h-16 w-16 text-success" />
             <h2 className="mt-4 text-xl font-semibold">Kích hoạt thành công!</h2>
             <p className="mt-2 text-sm text-muted-foreground">Bạn có thể đăng nhập với mật khẩu mới.</p>
             <Link href="/login">

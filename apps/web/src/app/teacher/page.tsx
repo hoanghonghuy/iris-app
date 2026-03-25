@@ -96,15 +96,15 @@ export default function TeacherDashboard() {
             </Link>
 
             <Link href="/teacher/posts" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-blue-500/30 relative overflow-hidden">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-3/30 relative overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="space-y-3">
                       <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Bài đăng đã tạo</p>
-                      <p className="text-4xl font-bold text-foreground group-hover:text-blue-500 transition-colors">{stats?.total_posts || 0}</p>
+                      <p className="text-4xl font-bold text-foreground group-hover:text-chart-3 transition-colors">{stats?.total_posts || 0}</p>
                     </div>
                     {/* Blue Pill Icon Badge */}
-                    <div className="p-3.5 bg-blue-500/10 rounded-2xl text-blue-500 transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3.5 bg-chart-3/10 rounded-2xl text-chart-3 transition-transform group-hover:scale-110 duration-300">
                       <MessageSquare className="h-6 w-6" />
                     </div>
                   </div>
@@ -123,11 +123,11 @@ export default function TeacherDashboard() {
                 <Link href="/teacher/attendance">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="p-2.5 bg-green-500/10 text-green-600 rounded-xl">
+                      <div className="p-2.5 bg-success/10 text-success rounded-xl">
                         <ClipboardCheck className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-foreground group-hover:text-green-600 transition-colors">Điểm danh</p>
+                        <p className="font-semibold text-foreground group-hover:text-success transition-colors">Điểm danh</p>
                         <p className="text-xs text-muted-foreground">Chốt sĩ số hàng ngày</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
@@ -138,11 +138,11 @@ export default function TeacherDashboard() {
                 <Link href="/teacher/health">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="p-2.5 bg-rose-500/10 text-rose-600 rounded-xl">
+                      <div className="p-2.5 bg-destructive/10 text-destructive rounded-xl">
                         <Heart className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-foreground group-hover:text-rose-600 transition-colors">Sức khỏe</p>
+                        <p className="font-semibold text-foreground group-hover:text-destructive transition-colors">Sức khỏe</p>
                         <p className="text-xs text-muted-foreground">Cập nhật hồ sơ thể chất</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
@@ -153,11 +153,11 @@ export default function TeacherDashboard() {
                 <Link href="/teacher/posts">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm">
                     <CardContent className="p-4 flex items-center gap-4">
-                      <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-xl">
+                      <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
                         <Users className="h-5 w-5" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-semibold text-foreground group-hover:text-blue-600 transition-colors">Bảng tin</p>
+                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">Bảng tin</p>
                         <p className="text-xs text-muted-foreground">Gửi thông báo lớp</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />

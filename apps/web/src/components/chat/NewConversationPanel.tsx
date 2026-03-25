@@ -41,7 +41,7 @@ export default function NewConversationPanel({
           placeholder="Tìm kiếm email hoặc tên..."
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-2xl border-none bg-muted px-4 py-2.5 pl-10 text-sm text-foreground placeholder-[var(--muted-foreground)] focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all outline-none"
+          className="w-full rounded-2xl border-none bg-muted px-4 py-2.5 pl-10 text-sm text-foreground placeholder-[var(--muted-foreground)] focus:ring-2 focus:ring-primary focus:bg-background transition-all outline-none"
         />
         <MessageSquare className="absolute left-4 top-2.5 h-4 w-4 text-muted-foreground" />
       </div>
@@ -55,7 +55,7 @@ export default function NewConversationPanel({
               onClick={() => onStartConversation(user.user_id)}
               className="w-full text-left px-4 py-3 hover:bg-muted transition-colors flex items-center gap-3 border-b border-border last:border-0"
             >
-              <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold shadow-sm">
+              <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-bold shadow-sm">
                 {getInitials(user.full_name || user.email)}
               </div>
               <div className="flex flex-col overflow-hidden">

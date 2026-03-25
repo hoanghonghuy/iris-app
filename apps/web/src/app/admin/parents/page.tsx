@@ -132,7 +132,7 @@ export default function AdminParentsPage() {
         <h1 className="text-2xl font-bold tracking-tight">Quản lý Phụ huynh</h1>
       </div>
 
-      {success && <Alert><CheckCircle2 className="h-4 w-4 text-green-600" /><AlertDescription>{success}</AlertDescription></Alert>}
+      {success && <Alert><CheckCircle2 className="h-4 w-4 text-success" /><AlertDescription>{success}</AlertDescription></Alert>}
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 
       {/* Toolbar: Search box */}

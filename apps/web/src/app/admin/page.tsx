@@ -61,15 +61,15 @@ export default function AdminDashboard() {
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {/* School Stats - Teal Pill */}
             <Link href="/admin/schools" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-teal-500/30 relative overflow-hidden">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-1/30 relative overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex flex-col h-full justify-between gap-4">
-                    <div className="p-3 bg-teal-500/10 text-teal-600 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3 bg-chart-1/10 text-chart-1 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
                       <School className="h-6 w-6" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">Trường học</p>
-                      <p className="text-3xl font-bold text-foreground group-hover:text-teal-600 transition-colors">{stats.total_schools}</p>
+                      <p className="text-3xl font-bold text-foreground group-hover:text-chart-1 transition-colors">{stats.total_schools}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -78,15 +78,15 @@ export default function AdminDashboard() {
 
             {/* Classes Stats - Indigo Pill */}
             <Link href="/admin/classes" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-indigo-500/30 relative overflow-hidden">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-3/30 relative overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex flex-col h-full justify-between gap-4">
-                    <div className="p-3 bg-indigo-500/10 text-indigo-600 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3 bg-chart-3/10 text-chart-3 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
                       <BookOpen className="h-6 w-6" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">Lớp học</p>
-                      <p className="text-3xl font-bold text-foreground group-hover:text-indigo-600 transition-colors">{stats.total_classes}</p>
+                      <p className="text-3xl font-bold text-foreground group-hover:text-chart-3 transition-colors">{stats.total_classes}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -95,15 +95,15 @@ export default function AdminDashboard() {
 
             {/* Teachers Stats - Rose Pill */}
             <Link href="/admin/teachers" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-rose-500/30 relative overflow-hidden">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-4/30 relative overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex flex-col h-full justify-between gap-4">
-                    <div className="p-3 bg-rose-500/10 text-rose-600 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3 bg-chart-4/10 text-chart-4 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
                       <Users className="h-6 w-6" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">Giáo viên</p>
-                      <p className="text-3xl font-bold text-foreground group-hover:text-rose-600 transition-colors">{stats.total_teachers}</p>
+                      <p className="text-3xl font-bold text-foreground group-hover:text-chart-4 transition-colors">{stats.total_teachers}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -112,15 +112,15 @@ export default function AdminDashboard() {
 
             {/* Students Stats - Amber Pill */}
             <Link href="/admin/students" className="group md:col-span-2 xl:col-span-1">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-amber-500/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-amber-50/50 dark:hover:to-amber-950/20">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-chart-2/10 dark:hover:to-chart-2/20">
                 <CardContent className="p-6">
                   <div className="flex flex-col h-full justify-between gap-4">
-                    <div className="p-3 bg-amber-500/10 text-amber-600 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3 bg-chart-2/10 text-chart-2 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
                       <GraduationCap className="h-6 w-6" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">Học sinh</p>
-                      <p className="text-3xl font-bold text-foreground group-hover:text-amber-600 transition-colors">{stats.total_students}</p>
+                      <p className="text-3xl font-bold text-foreground group-hover:text-chart-2 transition-colors">{stats.total_students}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -129,15 +129,15 @@ export default function AdminDashboard() {
 
             {/* Parents Stats - Blue Pill */}
             <Link href="/admin/parents" className="group md:col-span-2 xl:col-span-1">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-blue-500/30 relative overflow-hidden">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-5/30 relative overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex flex-col h-full justify-between gap-4">
-                    <div className="p-3 bg-blue-500/10 text-blue-600 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3 bg-chart-5/10 text-chart-5 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
                       <UsersRound className="h-6 w-6" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wider">Phụ huynh</p>
-                      <p className="text-3xl font-bold text-foreground group-hover:text-blue-600 transition-colors">{stats.total_parents}</p>
+                      <p className="text-3xl font-bold text-foreground group-hover:text-chart-5 transition-colors">{stats.total_parents}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -174,12 +174,12 @@ export default function AdminDashboard() {
                 <Link href="/admin/users">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
                     <CardContent className="p-5 flex items-start gap-4 h-full flex-col sm:flex-row">
-                      <div className="p-3 bg-indigo-500/10 text-indigo-600 rounded-xl shrink-0">
+                      <div className="p-3 bg-chart-3/10 text-chart-3 rounded-xl shrink-0">
                         <Users className="h-6 w-6" />
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between">
-                          <p className="font-semibold text-foreground group-hover:text-indigo-600 transition-colors">Quản lý Người dùng</p>
+                          <p className="font-semibold text-foreground group-hover:text-chart-3 transition-colors">Quản lý Người dùng</p>
                           <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2">
@@ -193,12 +193,12 @@ export default function AdminDashboard() {
                 <Link href="/admin/classes">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
                     <CardContent className="p-5 flex items-start gap-4 h-full flex-col sm:flex-row">
-                      <div className="p-3 bg-amber-500/10 text-amber-600 rounded-xl shrink-0">
+                      <div className="p-3 bg-chart-2/10 text-chart-2 rounded-xl shrink-0">
                         <BookOpen className="h-6 w-6" />
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center justify-between">
-                          <p className="font-semibold text-foreground group-hover:text-amber-600 transition-colors">Thiết lập Lớp học</p>
+                          <p className="font-semibold text-foreground group-hover:text-chart-2 transition-colors">Thiết lập Lớp học</p>
                           <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2">

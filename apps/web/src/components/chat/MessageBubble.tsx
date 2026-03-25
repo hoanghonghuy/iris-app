@@ -52,13 +52,13 @@ export default function MessageBubble({
       <div
         className={`max-w-full px-3.5 py-2.5 shadow-sm relative group ${
           isMine
-            ? "bg-blue-600 text-white"
+            ? "bg-primary text-primary-foreground"
             : "bg-card border border-border text-foreground"
         } ${radiusClass}`}
       >
         {/* Tên sender cho group chat (chỉ hiện ở tin đầu nhóm, không phải tin của mình) */}
         {showSenderName && (
-          <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 mb-1 leading-none">
+          <p className="text-[11px] font-bold text-primary mb-1 leading-none">
             {msg.sender_email.split("@")[0]}
           </p>
         )}
@@ -72,7 +72,7 @@ export default function MessageBubble({
         {/* Badge thời gian nhỏ ở góc phải dưới */}
         <span
           className={`absolute bottom-1.5 right-2 text-[10px] font-medium tracking-tight ${
-            isMine ? "text-blue-200" : "text-zinc-400 dark:text-zinc-600"
+            isMine ? "text-primary-foreground/70" : "text-muted-foreground"
           }`}
         >
           {formatTime(msg.created_at)}

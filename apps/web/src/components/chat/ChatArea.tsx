@@ -56,13 +56,13 @@ export default function ChatArea({
             {/* Nút back (chỉ hiện trên mobile) */}
             <button
               onClick={onBack}
-              className="md:hidden rounded-full p-2.5 text-blue-600 dark:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors active:scale-95"
+              className="md:hidden rounded-full p-2.5 text-primary hover:bg-secondary transition-colors active:scale-95"
             >
               <ArrowLeft className="h-6 w-6" strokeWidth={2.5} />
             </button>
 
             {/* Avatar */}
-            <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-white bg-gradient-to-br from-blue-500 to-indigo-500 shadow-sm ml-1 md:ml-3">
+            <div className="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-primary-foreground bg-gradient-to-br from-primary to-primary/70 shadow-sm ml-1 md:ml-3">
               {selectedConv.name
                 ? selectedConv.name.substring(0, 2).toUpperCase()
                 : (selectedConv.participants?.[0]?.full_name || "?").substring(0, 2).toUpperCase()}
@@ -89,14 +89,14 @@ export default function ChatArea({
           <div
             ref={messagesContainerRef}
             onScroll={onScroll}
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#e5e5ea] dark:bg-[#000000] relative scroll-smooth"
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-secondary/30 dark:bg-background relative scroll-smooth"
           >
             {/* Indicator đang tải thêm */}
             {loadingMore && (
               <div className="flex justify-center py-3 sticky top-0 z-10">
                 <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm rounded-full px-4 py-1.5 flex items-center gap-2 border border-zinc-200 dark:border-zinc-800">
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">
                     Đang tải lịch sử...
                   </span>
                 </div>
@@ -155,12 +155,12 @@ export default function ChatArea({
           <div className="shrink-0 bg-background px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-4 md:py-4 border-t border-zinc-200 dark:border-zinc-900">
             <div className="flex items-end gap-2 max-w-4xl mx-auto">
               {/* Nút đính kèm (placeholder) */}
-              <button className="flex-shrink-0 p-2.5 rounded-full text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-zinc-900 transition-colors">
+              <button className="flex-shrink-0 p-2.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
                 <Plus className="h-6 w-6" strokeWidth={2} />
               </button>
 
               {/* Textarea tự mở rộng */}
-              <div className="flex-1 relative bg-zinc-100 dark:bg-zinc-900 rounded-3xl border border-transparent focus-within:border-blue-500 focus-within:bg-background transition-all flex items-end">
+              <div className="flex-1 relative bg-secondary/50 rounded-3xl border border-transparent focus-within:border-primary focus-within:bg-background transition-all flex items-end">
                 <textarea
                   rows={1}
                   value={input}
@@ -182,8 +182,8 @@ export default function ChatArea({
                 disabled={!input.trim()}
                 className={`flex-shrink-0 p-3 rounded-full transition-all duration-200 ${
                   input.trim()
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/20 active:scale-90 hover:bg-blue-700"
-                    : "bg-zinc-100 dark:bg-zinc-900 text-zinc-400"
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 active:scale-90 hover:opacity-90"
+                    : "bg-secondary text-muted-foreground"
                 }`}
               >
                 <Send
@@ -197,9 +197,9 @@ export default function ChatArea({
         </>
       ) : (
         /* Desktop Empty State (ẩn trên mobile vì slide logic đã xử lý) */
-        <div className="hidden md:flex flex-col w-full items-center justify-center h-full bg-background text-zinc-400 dark:text-zinc-600">
-          <div className="w-24 h-24 rounded-full bg-white dark:bg-zinc-900 shadow-sm flex items-center justify-center mb-6">
-            <MessageSquare className="h-10 w-10 text-blue-500 opacity-60" />
+        <div className="hidden md:flex flex-col w-full items-center justify-center h-full bg-background text-muted-foreground">
+          <div className="w-24 h-24 rounded-full bg-secondary/30 shadow-sm flex items-center justify-center mb-6">
+            <MessageSquare className="h-10 w-10 text-primary opacity-60" />
           </div>
           <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-600 to-zinc-400">
             Ứng dụng Nhắn tin IRIS

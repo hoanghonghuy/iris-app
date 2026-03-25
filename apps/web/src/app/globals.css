@@ -38,6 +38,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-success-foreground: var(--success-foreground);
+  --color-success: var(--success);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -81,6 +83,10 @@
   /* Destructive: Đỏ cam nhạt dịu mắt (#EF5350) */
   --destructive: oklch(0.65 0.15 20);
   --destructive-foreground: oklch(1 0 0);
+
+  /* Success: Xanh ngọc lục bảo nhạt (#4CAF50 - Soft Green) */
+  --success: oklch(0.72 0.15 142);
+  --success-foreground: oklch(1 0 0);
 
   /* Border / Input: Viền xám rất mờ, hầu như hòa vào nền */
   --border: oklch(0.92 0.01 240);
@@ -134,6 +140,10 @@
   /* Destructive */
   --destructive: oklch(0.65 0.15 20);
   --destructive-foreground: oklch(0.98 0 0);
+
+  /* Success */
+  --success: oklch(0.72 0.15 142);
+  --success-foreground: oklch(0.1 0 0);
 
   /* Border / Input: Viền mờ */
   --border: oklch(0.3 0 0);
