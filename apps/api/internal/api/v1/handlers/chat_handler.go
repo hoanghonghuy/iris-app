@@ -190,7 +190,6 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 	})
 }
 
-
 // --- WebSocket endpoint ---
 
 // wsMessage cấu trúc JSON mà client gửi lên qua WebSocket
@@ -229,6 +228,12 @@ func (h *ChatHandler) HandleWS(c *gin.Context) {
 			tokenStr = protocols[i+1]
 			break
 		}
+	}
+
+	// Fallback: nhận token qua query param để tương thích một số proxy
+	// có thể không forward Sec-WebSocket-Protocol đầy đủ.
+	if tokenStr == "" {
+		tokenStr = c.Query("token")
 	}
 	if tokenStr == "" {
 		response.Fail(c, http.StatusUnauthorized, "missing token in Sec-WebSocket-Protocol")

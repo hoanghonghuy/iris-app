@@ -14,6 +14,8 @@ const WS_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/a
 export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const reconnectAttemptsRef = useRef(0);
+  const connectRef = useRef<() => void>(() => undefined);
   const [isConnected, setIsConnected] = useState(false);
 
   const connect = useCallback(() => {
@@ -25,15 +27,16 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
       wsRef.current.close();
     }
 
-    // Truyền token qua Sec-WebSocket-Protocol thay vì query string
-    // (tránh token bị log trong server access log / browser history)
-    // Format: ['Bearer', '<jwt>'] → browser gửi: Sec-WebSocket-Protocol: Bearer, <jwt>
-    const ws = new WebSocket(`${WS_BASE_URL}/chat/ws`, ['Bearer', token]);
+    // Ưu tiên token qua Sec-WebSocket-Protocol.
+    // Đồng thời gửi thêm query param token để tương thích proxy không forward sub-protocol header.
+    const wsUrl = `${WS_BASE_URL}/chat/ws?token=${encodeURIComponent(token)}`;
+    const ws = new WebSocket(wsUrl, ['Bearer', token]);
 
 
     ws.onopen = () => {
       console.log('[WS] Connected');
       setIsConnected(true);
+      reconnectAttemptsRef.current = 0;
     };
 
     ws.onmessage = (event) => {
@@ -53,19 +56,32 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
 
       // Auto-reconnect sau 3 giây (trừ khi đóng chủ ý)
       if (event.code !== 1000) {
+        if (reconnectAttemptsRef.current >= 5) {
+          console.warn('[WS] Stop reconnect after 5 failed attempts');
+          return;
+        }
+
+        reconnectAttemptsRef.current += 1;
+        const delayMs = Math.min(3000 * reconnectAttemptsRef.current, 15000);
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('[WS] Reconnecting...');
-          connect();
-        }, 3000);
+          console.log('[WS] Reconnecting... attempt', reconnectAttemptsRef.current);
+          connectRef.current();
+        }, delayMs);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('[WS] Error:', error);
+    ws.onerror = () => {
+      // Browser không expose chi tiết WebSocket error event (thường chỉ thấy {}).
+      // Xem thêm thông tin ở onclose(code/reason) và backend logs.
+      console.warn('[WS] Transport error detected (details hidden by browser)');
     };
 
     wsRef.current = ws;
   }, [onNewMessage]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   // Gửi tin nhắn qua WebSocket
   const sendMessage = useCallback((conversationId: string, content: string) => {
