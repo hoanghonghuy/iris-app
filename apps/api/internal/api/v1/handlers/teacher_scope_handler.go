@@ -217,6 +217,59 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 	})
 }
 
+// CancelAttendance hủy điểm danh đã lưu của một học sinh trong ngày.
+func (h *TeacherScopeHandler) CancelAttendance(c *gin.Context) {
+	studentIDRaw := c.Query("student_id")
+	dateRaw := c.Query("date")
+
+	if studentIDRaw == "" || dateRaw == "" {
+		response.Fail(c, http.StatusBadRequest, "student_id and date are required")
+		return
+	}
+
+	studentID, err := uuid.Parse(studentIDRaw)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	err = h.teacherScopeService.CancelAttendanceForDate(ctx, userID, studentID, dateRaw)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidDate) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden: you can only cancel attendance for students in your assigned classes")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to cancel attendance")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message":    "attendance canceled successfully",
+		"student_id": studentID.String(),
+		"date":       dateRaw,
+	})
+}
+
 // UpdateMyProfile cập nhật hồ sơ cá nhân của giáo viên (teacher only - chỉ có thể cập nhật số điện thoại)
 func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 	var req UpdateMyProfileRequest
@@ -494,6 +547,92 @@ func (h *TeacherScopeHandler) ListAttendanceChangeLogs(c *gin.Context) {
 	}
 
 	response.OK(c, logs)
+}
+
+func (h *TeacherScopeHandler) ListClassAttendanceChangeLogs(c *gin.Context) {
+	classID, err := uuid.Parse(c.Param("class_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid class_id")
+		return
+	}
+
+	var req PaginationParams
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
+		return
+	}
+
+	status := c.Query("status")
+	if status == "" {
+		status = ""
+	}
+
+	studentIDRaw := c.Query("student_id")
+	var studentID *uuid.UUID
+	if studentIDRaw != "" {
+		parsedStudentID, err := uuid.Parse(studentIDRaw)
+		if err != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid student_id")
+			return
+		}
+		studentID = &parsedStudentID
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	claimsAny, exists := c.Get(middleware.CtxClaims)
+	if !exists {
+		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	claims := claimsAny.(*auth.Claims)
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+		return
+	}
+
+	to := time.Now()
+	from := to.AddDate(0, 0, -30)
+
+	if v := c.Query("from"); v != "" {
+		if t, e := time.Parse("2006-01-02", v); e == nil {
+			from = t
+		}
+	}
+	if v := c.Query("to"); v != "" {
+		if t, e := time.Parse("2006-01-02", v); e == nil {
+			to = t
+		}
+	}
+
+	var statusPtr *string
+	if status != "" {
+		statusPtr = &status
+	}
+
+	logs, total, err := h.teacherScopeService.ListAttendanceChangeLogsByClass(ctx, userID, classID, studentID, statusPtr, from, to, req.Limit, req.Offset)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidClassID) || errors.Is(err, service.ErrInvalidStatus) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, "forbidden")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch class attendance change logs")
+		return
+	}
+
+	response.OKPaginated(c, logs, response.Pagination{
+		Total:   total,
+		Limit:   req.Limit,
+		Offset:  req.Offset,
+		HasMore: req.Offset+len(logs) < total,
+	})
 }
 
 // CreatePost tạo bài đăng mới cho lớp hoặc học sinh

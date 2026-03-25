@@ -107,6 +107,32 @@ func (s *TeacherScopeService) UpsertAttendance(ctx context.Context, teacherUserI
 	return nil
 }
 
+// CancelAttendanceForDate hủy điểm danh của học sinh trong ngày.
+func (s *TeacherScopeService) CancelAttendanceForDate(ctx context.Context, teacherUserID, studentID uuid.UUID, date string) error {
+	if teacherUserID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	if studentID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	parsedDate, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return ErrInvalidDate
+	}
+
+	err = s.teacherScopeRepo.DeleteAttendanceForDate(ctx, teacherUserID, studentID, parsedDate)
+	if err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return ErrForbidden
+		}
+		return fmt.Errorf("failed to cancel attendance: %w", err)
+	}
+
+	return nil
+}
+
 // ListAttendanceByStudent liệt kê lịch sử điểm danh của một học sinh.
 // Giáo viên chỉ có thể xem điểm danh của học sinh trong các lớp được phân công.
 func (s *TeacherScopeService) ListAttendanceByStudent(ctx context.Context, teacherUserID, studentID uuid.UUID,
@@ -146,6 +172,42 @@ func (s *TeacherScopeService) ListAttendanceChangeLogsByStudent(ctx context.Cont
 	}
 
 	return logs, nil
+}
+
+// ListAttendanceChangeLogsByClass liệt kê lịch sử chỉnh sửa điểm danh theo lớp có phân trang.
+func (s *TeacherScopeService) ListAttendanceChangeLogsByClass(ctx context.Context, teacherUserID, classID uuid.UUID,
+	studentID *uuid.UUID, status *string, from, to time.Time, limit, offset int) ([]model.AttendanceChangeLog, int, error) {
+	if teacherUserID == uuid.Nil {
+		return nil, 0, ErrInvalidUserID
+	}
+
+	if classID == uuid.Nil {
+		return nil, 0, ErrInvalidClassID
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	if status != nil {
+		if !isValidAttendanceStatus(*status) {
+			return nil, 0, ErrInvalidStatus
+		}
+	}
+
+	logs, total, err := s.teacherScopeRepo.ListAttendanceChangeLogsByClass(ctx, teacherUserID, classID, studentID, status, from, to, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list class attendance change logs: %w", err)
+	}
+
+	return logs, total, nil
+}
+
+func isValidAttendanceStatus(status string) bool {
+	return status == "present" || status == "absent" || status == "late" || status == "excused"
 }
 
 // CreateHealthLog tạo nhật ký sức khỏe mới cho học sinh

@@ -44,6 +44,20 @@ export const teacherApi = {
   },
 
   /**
+   * Huỷ điểm danh đã lưu trong ngày
+   * DELETE /api/v1/teacher/attendance?student_id=...&date=...
+   */
+  cancelAttendance: async (studentId: string, date: string) => {
+    const res = await apiClient.delete('/teacher/attendance', {
+      params: {
+        student_id: studentId,
+        date,
+      },
+    });
+    return res.data;
+  },
+
+  /**
    * Lấy lịch sử điểm danh của học sinh
    * GET /api/v1/teacher/students/:student_id/attendance
    */
@@ -67,6 +81,25 @@ export const teacherApi = {
     const query = params.toString() ? `?${params.toString()}` : '';
     const res = await apiClient.get<ApiResponse<AttendanceChangeLog[]>>(`/teacher/students/${studentId}/attendance-changes${query}`);
     return res.data.data;
+  },
+
+  /**
+   * Lấy lịch sử chỉnh sửa điểm danh theo lớp (phân trang)
+   * GET /api/v1/teacher/classes/:class_id/attendance-changes
+   */
+  getClassAttendanceChanges: async (
+    classId: string,
+    params?: {
+      from?: string;
+      to?: string;
+      student_id?: string;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) => {
+    const res = await apiClient.get<ApiResponse<AttendanceChangeLog[]>>(`/teacher/classes/${classId}/attendance-changes`, { params });
+    return res.data;
   },
 
   /**

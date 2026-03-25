@@ -173,6 +173,60 @@ func (r *TeacherScopeRepo) UpsertAttendance(ctx context.Context, teacherUserID, 
 	return tx.Commit(ctx)
 }
 
+// DeleteAttendanceForDate huỷ bản ghi điểm danh của một học sinh trong ngày nếu giáo viên có quyền.
+func (r *TeacherScopeRepo) DeleteAttendanceForDate(ctx context.Context, teacherUserID, studentID uuid.UUID, date time.Time) error {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	const qExisting = `
+		SELECT ar.attendance_id, ar.status, COALESCE(ar.note, '')
+		FROM attendance_records ar
+		JOIN students s ON s.student_id = ar.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+		  AND ar.student_id = $2
+		  AND ar.date = $3
+		FOR UPDATE;
+	`
+
+	var attendanceID uuid.UUID
+	var oldStatus string
+	var oldNote string
+	if err := tx.QueryRow(ctx, qExisting, teacherUserID, studentID, date).Scan(&attendanceID, &oldStatus, &oldNote); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNoRowsUpdated
+		}
+		return err
+	}
+
+	const qDelete = `
+		DELETE FROM attendance_records
+		WHERE attendance_id = $1;
+	`
+	if tag, err := tx.Exec(ctx, qDelete, attendanceID); err != nil {
+		return err
+	} else if tag.RowsAffected() == 0 {
+		return ErrNoRowsUpdated
+	}
+
+	const qInsertDeleteLog = `
+		INSERT INTO attendance_change_logs (
+			attendance_id, student_id, date, change_type,
+			old_status, old_note, changed_by
+		)
+		VALUES ($1, $2, $3, 'delete', $4, $5, $6);
+	`
+	if _, err := tx.Exec(ctx, qInsertDeleteLog, attendanceID, studentID, date, oldStatus, oldNote, teacherUserID); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
 // CreateHealthLog tạo mới bản ghi sức khỏe cho học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
 func (r *TeacherScopeRepo) CreateHealthLog(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	recordedAt *time.Time, temperature *float64, symptoms string, severity *string, note string) (uuid.UUID, error) {
@@ -461,6 +515,50 @@ func (r *TeacherScopeRepo) ListAttendanceChangeLogsByStudent(ctx context.Context
 	}
 
 	return out, rows.Err()
+}
+
+// ListAttendanceChangeLogsByClass liệt kê lịch sử chỉnh sửa điểm danh theo lớp có phân trang.
+func (r *TeacherScopeRepo) ListAttendanceChangeLogsByClass(ctx context.Context, teacherUserID, classID uuid.UUID,
+	studentID *uuid.UUID, status *string, from, to time.Time, limit, offset int) ([]model.AttendanceChangeLog, int, error) {
+	const q = `
+		SELECT acl.change_id, acl.attendance_id, acl.student_id, s.full_name, acl.date, acl.change_type,
+			acl.old_status, acl.new_status, acl.old_note, acl.new_note,
+			acl.changed_by, acl.changed_at,
+			COUNT(*) OVER() AS total_count
+		FROM attendance_change_logs acl
+		JOIN students s ON s.student_id = acl.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+			AND s.current_class_id = $2
+			AND ($3::uuid IS NULL OR acl.student_id = $3)
+			AND ($4::varchar IS NULL OR COALESCE(acl.new_status, acl.old_status) = $4)
+			AND acl.date BETWEEN $5 AND $6
+		ORDER BY acl.changed_at DESC
+		LIMIT $7 OFFSET $8;
+	`
+
+	rows, err := r.pool.Query(ctx, q, teacherUserID, classID, studentID, status, from, to, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var out []model.AttendanceChangeLog
+	var total int
+	for rows.Next() {
+		var x model.AttendanceChangeLog
+		if err := rows.Scan(
+			&x.ChangeID, &x.AttendanceID, &x.StudentID, &x.StudentName, &x.Date, &x.ChangeType,
+			&x.OldStatus, &x.NewStatus, &x.OldNote, &x.NewNote,
+			&x.ChangedBy, &x.ChangedAt, &total,
+		); err != nil {
+			return nil, 0, err
+		}
+		out = append(out, x)
+	}
+
+	return out, total, rows.Err()
 }
 
 // ListStudentPosts liệt kê bài đăng của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.

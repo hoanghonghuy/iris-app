@@ -6,7 +6,7 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, Student, AttendanceStatus, AttendanceChangeLog } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,6 +36,8 @@ type AttendanceChangeHistoryRow = AttendanceChangeLog & {
   student_name: string;
 };
 
+type TakeListFilter = "all" | "pending" | "saved";
+
 function extractErrorMessage(err: unknown): string | undefined {
   return typeof err === "object" &&
     err !== null &&
@@ -43,6 +45,13 @@ function extractErrorMessage(err: unknown): string | undefined {
     typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
     ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
     : undefined;
+}
+
+function mapStatusLabel(status?: AttendanceStatus): string {
+  if (!status) {
+    return "-";
+  }
+  return statusLabel[status] || status;
 }
 
 export default function TeacherAttendancePage() {
@@ -58,11 +67,17 @@ export default function TeacherAttendancePage() {
   const [hasSavedToday, setHasSavedToday] = useState<Record<string, boolean>>({});
 
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState<string | null>(null);
   const [savingAll, setSavingAll] = useState(false);
+  const [savingDisplayed, setSavingDisplayed] = useState(false);
 
   const [historyOpen, setHistoryOpen] = useState<Set<string>>(new Set());
   const [historyLoading, setHistoryLoading] = useState<Set<string>>(new Set());
   const [historyByStudent, setHistoryByStudent] = useState<Record<string, AttendanceChangeLog[]>>({});
+  const [studentSearch, setStudentSearch] = useState("");
+  const [listOrderMode, setListOrderMode] = useState<"prioritize" | "original">("prioritize");
+  const [takeListFilter, setTakeListFilter] = useState<TakeListFilter>("all");
+  const [showMobileTakeControls, setShowMobileTakeControls] = useState(false);
 
   const [today] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -77,6 +92,10 @@ export default function TeacherAttendancePage() {
   const [historyStatus, setHistoryStatus] = useState<AttendanceStatus | "all">("all");
   const [historyListLoading, setHistoryListLoading] = useState(false);
   const [historyList, setHistoryList] = useState<AttendanceChangeHistoryRow[]>([]);
+  const [historyOffset, setHistoryOffset] = useState(0);
+  const [historyLimit] = useState(20);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
 
   const isRowDirty = useCallback((studentId: string) => {
     const current = attendance[studentId];
@@ -91,6 +110,35 @@ export default function TeacherAttendancePage() {
   }, [attendance, savedAttendance, hasSavedToday]);
 
   const dirtyCount = students.filter((student) => isRowDirty(student.student_id)).length;
+
+  const displayedStudentsBase = useMemo(() => {
+    const normalizedSearch = studentSearch.trim().toLowerCase();
+    const searched = normalizedSearch
+      ? students.filter((student) => student.full_name.toLowerCase().includes(normalizedSearch))
+      : students;
+
+    if (takeListFilter === "pending") {
+      return searched.filter((student) => isRowDirty(student.student_id));
+    }
+    if (takeListFilter === "saved") {
+      return searched.filter((student) => !isRowDirty(student.student_id));
+    }
+    return searched;
+  }, [students, studentSearch, takeListFilter, isRowDirty]);
+
+  const displayedStudents = useMemo(() => {
+    if (listOrderMode === "original") {
+      return displayedStudentsBase;
+    }
+
+    const unfinished = displayedStudentsBase.filter((student) => isRowDirty(student.student_id));
+    const finished = displayedStudentsBase.filter((student) => !isRowDirty(student.student_id));
+    return [...unfinished, ...finished];
+  }, [displayedStudentsBase, isRowDirty, listOrderMode]);
+
+  const displayedDirtyCount = displayedStudents.filter((student) => isRowDirty(student.student_id)).length;
+  const displayedSavedCount = displayedStudents.length - displayedDirtyCount;
+  const globalPendingCount = students.length - students.filter((student) => !isRowDirty(student.student_id)).length;
 
   useEffect(() => {
     const load = async () => {
@@ -161,6 +209,14 @@ export default function TeacherAttendancePage() {
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
+  useEffect(() => {
+    setHistoryStudentId("all");
+    setHistoryList([]);
+    setHistoryOffset(0);
+    setHistoryTotal(0);
+    setHistoryHasMore(false);
+  }, [selectedClassId]);
+
   const handleMark = async (studentId: string) => {
     const att = attendance[studentId];
     if (!att) return;
@@ -173,6 +229,46 @@ export default function TeacherAttendancePage() {
       const message = extractErrorMessage(err);
       setError(message || "Lỗi điểm danh");
     } finally { setSubmitting(null); }
+  };
+
+  const handleRevertLocal = (studentId: string) => {
+    const saved = savedAttendance[studentId];
+    if (!saved) {
+      return;
+    }
+    setAttendance((prev) => ({
+      ...prev,
+      [studentId]: { status: saved.status, note: saved.note },
+    }));
+  };
+
+  const handleCancelSaved = async (studentId: string) => {
+    if (!hasSavedToday[studentId]) {
+      return;
+    }
+
+    setCanceling(studentId);
+    setError("");
+    try {
+      await teacherApi.cancelAttendance(studentId, today);
+
+      const defaultValue = { status: "present" as AttendanceStatus, note: "" };
+      setAttendance((prev) => ({ ...prev, [studentId]: defaultValue }));
+      setSavedAttendance((prev) => ({ ...prev, [studentId]: defaultValue }));
+      setHasSavedToday((prev) => ({ ...prev, [studentId]: false }));
+      setHistoryByStudent((prev) => {
+        const next = { ...prev };
+        delete next[studentId];
+        return next;
+      });
+
+      await loadClassHistory(0);
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err);
+      setError(message || "Không thể huỷ điểm danh đã lưu");
+    } finally {
+      setCanceling(null);
+    }
   };
 
   const handleSaveAll = async () => {
@@ -225,6 +321,71 @@ export default function TeacherAttendancePage() {
     }
   };
 
+  const handleSaveDisplayed = async () => {
+    const dirtyStudents = displayedStudents.filter((student) => isRowDirty(student.student_id));
+    if (dirtyStudents.length === 0) {
+      return;
+    }
+
+    setSavingDisplayed(true);
+    setError("");
+    try {
+      await Promise.all(
+        dirtyStudents.map(async (student) => {
+          const att = attendance[student.student_id];
+          if (!att) {
+            return;
+          }
+          await teacherApi.markAttendance({
+            student_id: student.student_id,
+            date: today,
+            status: att.status,
+            note: att.note,
+          });
+        })
+      );
+
+      setSavedAttendance((prev) => {
+        const next = { ...prev };
+        dirtyStudents.forEach((student) => {
+          const att = attendance[student.student_id];
+          if (att) {
+            next[student.student_id] = { status: att.status, note: att.note };
+          }
+        });
+        return next;
+      });
+
+      setHasSavedToday((prev) => {
+        const next = { ...prev };
+        dirtyStudents.forEach((student) => {
+          next[student.student_id] = true;
+        });
+        return next;
+      });
+    } catch (err: unknown) {
+      const message = extractErrorMessage(err);
+      setError(message || "Lỗi khi lưu danh sách đang hiển thị");
+    } finally {
+      setSavingDisplayed(false);
+    }
+  };
+
+  const applyStatusToDisplayed = (status: AttendanceStatus) => {
+    if (displayedStudents.length === 0) {
+      return;
+    }
+
+    setAttendance((prev) => {
+      const next = { ...prev };
+      displayedStudents.forEach((student) => {
+        const current = next[student.student_id] || { status: "present" as AttendanceStatus, note: "" };
+        next[student.student_id] = { ...current, status };
+      });
+      return next;
+    });
+  };
+
   const toggleHistory = async (studentId: string) => {
     const isOpened = historyOpen.has(studentId);
     const nextOpen = new Set(historyOpen);
@@ -259,9 +420,11 @@ export default function TeacherAttendancePage() {
     }
   };
 
-  const loadClassHistory = async () => {
+  const loadClassHistory = async (offset: number = historyOffset) => {
     if (!selectedClassId || students.length === 0) {
       setHistoryList([]);
+      setHistoryTotal(0);
+      setHistoryHasMore(false);
       return;
     }
 
@@ -269,41 +432,53 @@ export default function TeacherAttendancePage() {
     setError("");
 
     try {
-      const targetStudents = historyStudentId === "all"
-        ? students
-        : students.filter((student) => student.student_id === historyStudentId);
-
-      const responses = await Promise.all(
-        targetStudents.map(async (student) => {
-          const records = await teacherApi.getStudentAttendanceChanges(student.student_id, historyFrom, historyTo);
-          return (records || []).map((record) => ({
-            ...record,
-            student_name: student.full_name,
-          }));
-        })
-      );
-
-      let flattened = responses.flat();
-      if (historyStatus !== "all") {
-        flattened = flattened.filter((record) => record.new_status === historyStatus);
-      }
-
-      flattened.sort((a, b) => {
-        const dateCompare = new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime();
-        if (dateCompare !== 0) {
-          return dateCompare;
-        }
-        return a.student_name.localeCompare(b.student_name, "vi");
+      const response = await teacherApi.getClassAttendanceChanges(selectedClassId, {
+        from: historyFrom,
+        to: historyTo,
+        student_id: historyStudentId === "all" ? undefined : historyStudentId,
+        status: historyStatus === "all" ? undefined : historyStatus,
+        limit: historyLimit,
+        offset,
       });
 
-      setHistoryList(flattened);
+      const list = response.data || [];
+      const total = response.pagination?.total || 0;
+      const hasMore = response.pagination?.has_more || false;
+
+      setHistoryList(list.map((item) => ({
+        ...item,
+        student_name: item.student_name || students.find((student) => student.student_id === item.student_id)?.full_name || "Không rõ",
+      })));
+      setHistoryTotal(total);
+      setHistoryHasMore(hasMore);
+      setHistoryOffset(offset);
     } catch (err: unknown) {
       const message = extractErrorMessage(err);
       setError(message || "Không thể tải lịch sử điểm danh");
       setHistoryList([]);
+      setHistoryTotal(0);
+      setHistoryHasMore(false);
     } finally {
       setHistoryListLoading(false);
     }
+  };
+
+  const handleHistorySearch = () => {
+    loadClassHistory(0);
+  };
+
+  const handleHistoryPrev = () => {
+    if (historyOffset <= 0) {
+      return;
+    }
+    loadClassHistory(Math.max(0, historyOffset - historyLimit));
+  };
+
+  const handleHistoryNext = () => {
+    if (!historyHasMore) {
+      return;
+    }
+    loadClassHistory(historyOffset + historyLimit);
   };
 
   if (loadingClasses) {
@@ -312,34 +487,20 @@ export default function TeacherAttendancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <ClipboardCheck className="h-7 w-7" />
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Điểm danh</h1>
-            <p className="text-sm text-muted-foreground">Ngày: {today}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {students.length > 0 && (
-            <Button size="sm" variant="secondary" onClick={handleSaveAll} disabled={savingAll || dirtyCount === 0}>
-              {savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : `Lưu tất cả${dirtyCount > 0 ? ` (${dirtyCount})` : ""}`}
-            </Button>
-          )}
-          {classes.length > 0 && (
-            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
-              <SelectContent>
-                {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      </div>
-
       <div className="flex items-center gap-2">
         <Button size="sm" variant={viewMode === "take" ? "default" : "outline"} onClick={() => setViewMode("take")}>Điểm danh hôm nay</Button>
         <Button size="sm" variant={viewMode === "history" ? "default" : "outline"} onClick={() => setViewMode("history")}>Lịch sử lớp</Button>
+      </div>
+
+      <div className="flex items-center gap-2">
+        {classes.length > 0 && (
+          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+            <SelectTrigger className="w-full sm:w-[220px]"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
+            <SelectContent>
+              {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
@@ -354,7 +515,103 @@ export default function TeacherAttendancePage() {
 
       {!loadingStudents && students.length > 0 && viewMode === "take" && (
         <div className="space-y-2.5">
-          {students.map((s) => {
+          <Card>
+            <CardContent className="py-3">
+              <div className="flex items-center justify-between gap-2 sm:hidden">
+                <p className="text-xs text-muted-foreground">
+                  Hiển thị {displayedStudents.length}/{students.length} • Chờ lưu {displayedDirtyCount}
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2.5 text-xs"
+                  onClick={() => setShowMobileTakeControls((prev) => !prev)}
+                  aria-expanded={showMobileTakeControls}
+                >
+                  {showMobileTakeControls ? "Ẩn bộ lọc" : "Mở bộ lọc"}
+                </Button>
+              </div>
+
+              <div className={`${showMobileTakeControls ? "mt-2" : "hidden"} sm:mt-0 sm:block`}>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  <Input
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    placeholder="Tìm học sinh theo tên..."
+                    className="h-9 text-sm"
+                    aria-label="Tìm học sinh theo tên"
+                  />
+
+                  <Select value={takeListFilter} onValueChange={(value: TakeListFilter) => setTakeListFilter(value)}>
+                    <SelectTrigger className="h-9 text-sm" aria-label="Lọc theo trạng thái lưu">
+                      <SelectValue placeholder="Lọc danh sách" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả học sinh</SelectItem>
+                      <SelectItem value="pending">Chưa lưu / đang sửa</SelectItem>
+                      <SelectItem value="saved">Đã lưu</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    size="sm"
+                    variant={listOrderMode === "prioritize" ? "default" : "outline"}
+                    onClick={() => setListOrderMode("prioritize")}
+                    className="h-9"
+                  >
+                    Ưu tiên chưa lưu
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={listOrderMode === "original" ? "default" : "outline"}
+                    onClick={() => setListOrderMode("original")}
+                    className="h-9"
+                  >
+                    Giữ nguyên thứ tự
+                  </Button>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <Badge variant="outline" className="text-xs">
+                    Toàn lớp chờ lưu: {globalPendingCount}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Đang hiển thị: {displayedStudents.length}/{students.length}
+                  </Badge>
+                  <Badge variant={displayedDirtyCount > 0 ? "secondary" : "outline"} className="text-xs">
+                    Chờ lưu trong danh sách: {displayedDirtyCount}
+                  </Badge>
+                  <Badge variant={displayedSavedCount > 0 ? "default" : "outline"} className="text-xs">
+                    Đã lưu trong danh sách: {displayedSavedCount}
+                  </Badge>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => applyStatusToDisplayed("present")}>Đặt tất cả hiển thị: Có mặt</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyStatusToDisplayed("absent")}>Đặt tất cả hiển thị: Vắng</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyStatusToDisplayed("late")}>Đặt tất cả hiển thị: Muộn</Button>
+                  <Button size="sm" variant="outline" onClick={() => applyStatusToDisplayed("excused")}>Đặt tất cả hiển thị: Có phép</Button>
+                  <Button size="sm" onClick={handleSaveDisplayed} disabled={savingDisplayed || displayedDirtyCount === 0}>
+                    {savingDisplayed ? <Loader2 className="h-4 w-4 animate-spin" /> : `Lưu danh sách hiển thị${displayedDirtyCount > 0 ? ` (${displayedDirtyCount})` : ""}`}
+                  </Button>
+                </div>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {listOrderMode === "prioritize" ? "Đang ưu tiên chưa lưu" : "Đang giữ nguyên thứ tự"} • Dùng “Lưu danh sách hiển thị” để chốt nhanh phần đang lọc.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {displayedStudents.length === 0 && (
+            <Card>
+              <CardContent className="py-6 text-sm text-muted-foreground">
+                Không có học sinh phù hợp với bộ lọc hiện tại. Hãy đổi từ khóa tìm kiếm hoặc chuyển bộ lọc danh sách.
+              </CardContent>
+            </Card>
+          )}
+
+          {displayedStudents.map((s) => {
             const att = attendance[s.student_id] || { status: "present", note: "" };
             const isDirty = isRowDirty(s.student_id);
             const isSavingThisRow = submitting === s.student_id;
@@ -409,6 +666,27 @@ export default function TeacherAttendancePage() {
                       variant={!isDirty && hasSavedToday[s.student_id] ? "outline" : "default"}>
                       {isSavingThisRow ? <Loader2 className="h-4 w-4 animate-spin" /> : !isDirty && hasSavedToday[s.student_id] ? <Check className="h-4 w-4" /> : hasSavedToday[s.student_id] ? "Cập nhật" : "Lưu"}
                     </Button>
+                    {hasSavedToday[s.student_id] && isDirty && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-xs"
+                        onClick={() => handleRevertLocal(s.student_id)}
+                      >
+                        Hoàn tác
+                      </Button>
+                    )}
+                    {hasSavedToday[s.student_id] && !isDirty && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 px-2 text-xs text-destructive hover:text-destructive"
+                        disabled={canceling === s.student_id}
+                        onClick={() => handleCancelSaved(s.student_id)}
+                      >
+                        {canceling === s.student_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Huỷ lưu hôm nay"}
+                      </Button>
+                    )}
                   </div>
 
                   <div className="mt-2">
@@ -438,11 +716,23 @@ export default function TeacherAttendancePage() {
                               <div key={record.change_id} className="space-y-0.5 text-xs">
                                 <div className="flex items-start justify-between gap-2">
                                   <span className="text-muted-foreground">{new Date(record.changed_at).toLocaleString("vi-VN")}</span>
-                                  <span className="font-medium">{record.change_type === "create" ? "Tạo mới" : "Cập nhật"}</span>
+                                  <span className="font-medium">
+                                    {record.change_type === "create" ? "Tạo mới" : record.change_type === "delete" ? "Huỷ lưu" : "Cập nhật"}
+                                  </span>
                                 </div>
                                 <div className="flex items-start justify-between gap-2 text-muted-foreground">
-                                  <span>{statusLabel[record.old_status as AttendanceStatus] || "-"} → {statusLabel[record.new_status]}</span>
-                                  <span className="line-clamp-1 max-w-[45%] text-right">{record.old_note || "-"} → {record.new_note || "-"}</span>
+                                  <span>
+                                    {record.change_type === "create"
+                                      ? `Tạo: ${mapStatusLabel(record.new_status)}`
+                                      : record.change_type === "delete"
+                                        ? `${mapStatusLabel(record.old_status)} → Đã huỷ`
+                                        : `${mapStatusLabel(record.old_status)} → ${mapStatusLabel(record.new_status)}`}
+                                  </span>
+                                  <span className="line-clamp-1 max-w-[45%] text-right">
+                                    {record.change_type === "delete"
+                                      ? `${record.old_note || "-"} → Đã xoá`
+                                      : `${record.old_note || "-"} → ${record.new_note || "-"}`}
+                                  </span>
                                 </div>
                               </div>
                             ))}
@@ -455,6 +745,30 @@ export default function TeacherAttendancePage() {
               </Card>
             );
           })}
+
+          {(displayedDirtyCount > 0 || globalPendingCount > 0) && (
+            <div className="sticky bottom-3 z-20 rounded-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  Còn {displayedDirtyCount} học sinh chưa lưu trong danh sách hiển thị • Toàn lớp còn {globalPendingCount} học sinh chưa lưu.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSaveDisplayed}
+                    disabled={savingDisplayed || displayedDirtyCount === 0}
+                  >
+                    {savingDisplayed ? <Loader2 className="h-4 w-4 animate-spin" /> : `Lưu danh sách hiển thị${displayedDirtyCount > 0 ? ` (${displayedDirtyCount})` : ""}`}
+                  </Button>
+                  <Button size="sm" onClick={handleSaveAll} disabled={savingAll || dirtyCount === 0}>
+                    {savingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : `Lưu toàn lớp${dirtyCount > 0 ? ` (${dirtyCount})` : ""}`}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -488,10 +802,10 @@ export default function TeacherAttendancePage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Button size="sm" onClick={loadClassHistory} disabled={historyListLoading}>
+                <Button size="sm" onClick={handleHistorySearch} disabled={historyListLoading}>
                   {historyListLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Xem lịch sử"}
                 </Button>
-                <p className="text-xs text-muted-foreground">Tổng bản ghi: {historyList.length}</p>
+                <p className="text-xs text-muted-foreground">Tổng bản ghi: {historyTotal}</p>
               </div>
             </CardContent>
           </Card>
@@ -514,8 +828,18 @@ export default function TeacherAttendancePage() {
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-medium">{statusLabel[record.old_status as AttendanceStatus] || "-"} → {statusLabel[record.new_status]}</p>
-                        <p className="line-clamp-1 text-xs text-muted-foreground">{record.old_note || "-"} → {record.new_note || "-"}</p>
+                        <p className="text-sm font-medium">
+                          {record.change_type === "create"
+                            ? `Tạo: ${mapStatusLabel(record.new_status)}`
+                            : record.change_type === "delete"
+                              ? `${mapStatusLabel(record.old_status)} → Đã huỷ`
+                              : `${mapStatusLabel(record.old_status)} → ${mapStatusLabel(record.new_status)}`}
+                        </p>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">
+                          {record.change_type === "delete"
+                            ? `${record.old_note || "-"} → Đã xoá`
+                            : `${record.old_note || "-"} → ${record.new_note || "-"}`}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -523,6 +847,20 @@ export default function TeacherAttendancePage() {
               )}
             </CardContent>
           </Card>
+
+          {!historyListLoading && (
+            <div className="flex items-center justify-between">
+              <Button size="sm" variant="outline" onClick={handleHistoryPrev} disabled={historyOffset === 0}>
+                Trang trước
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {historyTotal === 0 ? "0-0" : `${historyOffset + 1}-${Math.min(historyOffset + historyLimit, historyTotal)}`} / {historyTotal}
+              </p>
+              <Button size="sm" variant="outline" onClick={handleHistoryNext} disabled={!historyHasMore}>
+                Trang sau
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

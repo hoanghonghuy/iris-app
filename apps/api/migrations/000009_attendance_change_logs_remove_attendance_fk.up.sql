@@ -1,0 +1,2 @@
+ALTER TABLE attendance_change_logs
+DROP CONSTRAINT IF EXISTS attendance_change_logs_attendance_id_fkey;

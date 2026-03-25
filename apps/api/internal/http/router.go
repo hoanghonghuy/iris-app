@@ -104,6 +104,7 @@ func NewRouter(
 
 				// giáo viên điểm danh cho học sinh trong lớp của mình
 				teacherScope.POST("/attendance", teacherScopeHandler.MarkAttendance)
+				teacherScope.DELETE("/attendance", teacherScopeHandler.CancelAttendance)
 
 				// Giáo viên tạo nhật ký sức khỏe cho học sinh trong lớp của mình
 				teacherScope.POST("/health", teacherScopeHandler.CreateHealth)
@@ -114,6 +115,7 @@ func NewRouter(
 				// giáo viên xem lịch sử điểm danh của một học sinh trong lớp của mình
 				teacherScope.GET("/students/:student_id/attendance", teacherScopeHandler.ListAttendance)
 				teacherScope.GET("/students/:student_id/attendance-changes", teacherScopeHandler.ListAttendanceChangeLogs)
+				teacherScope.GET("/classes/:class_id/attendance-changes", teacherScopeHandler.ListClassAttendanceChangeLogs)
 
 				// giáo viên cập nhật hồ sơ cá nhân của mình
 				teacherScope.PUT("/profile", teacherScopeHandler.UpdateMyProfile)

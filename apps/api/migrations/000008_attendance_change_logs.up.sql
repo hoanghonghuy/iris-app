@@ -1,16 +1,21 @@
 -- Audit trail cho thay đổi điểm danh
 CREATE TABLE IF NOT EXISTS attendance_change_logs (
   change_id       uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  attendance_id   uuid NOT NULL REFERENCES attendance_records(attendance_id) ON DELETE CASCADE,
+  attendance_id   uuid NOT NULL,
   student_id      uuid NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
   date            date NOT NULL,
-  change_type     varchar(10) NOT NULL CHECK (change_type IN ('create', 'update')),
+  change_type     varchar(10) NOT NULL CHECK (change_type IN ('create', 'update', 'delete')),
   old_status      varchar(20) CHECK (old_status IN ('present','absent','late','excused')),
-  new_status      varchar(20) NOT NULL CHECK (new_status IN ('present','absent','late','excused')),
+  new_status      varchar(20) CHECK (new_status IN ('present','absent','late','excused')),
   old_note        text,
   new_note        text,
   changed_by      uuid NOT NULL REFERENCES users(user_id) ON DELETE RESTRICT,
-  changed_at      timestamptz NOT NULL DEFAULT now()
+  changed_at      timestamptz NOT NULL DEFAULT now(),
+  CHECK (
+    (change_type = 'create' AND old_status IS NULL AND new_status IS NOT NULL) OR
+    (change_type = 'update' AND new_status IS NOT NULL) OR
+    (change_type = 'delete' AND new_status IS NULL)
+  )
 );
 
 CREATE INDEX IF NOT EXISTS idx_attendance_change_logs_student_date
