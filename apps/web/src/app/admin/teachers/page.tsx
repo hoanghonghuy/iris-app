@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
-import { BookUser, Loader2, Phone, Mail, Link2, Unlink, Search, X } from "lucide-react";
+import { Phone, Mail, Link2, Search, X } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Input } from "@/components/ui/input"; // Added missing import for Input
 
@@ -120,11 +120,6 @@ export default function AdminTeachersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <BookUser className="h-7 w-7" />
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý Giáo viên</h1>
-      </div>
-
       {/* Toolbar: Search */}
       {!loading && !error && teachers.length > 0 && (
         <div className="relative max-w-sm">

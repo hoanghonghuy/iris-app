@@ -23,7 +23,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
 import {
-  UserCog, Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, CheckCircle2, Search
+  Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, Search
 } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
@@ -55,7 +55,6 @@ export default function AdminUsersPage() {
   const [formRoles, setFormRoles] = useState<string[]>(["TEACHER"]);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const [authActionAlert, setAuthActionAlert] = useState<{isOpen: boolean, userId: string | null, action: "lock" | "unlock" | null}>({isOpen: false, userId: null, action: null});
 
@@ -104,7 +103,7 @@ export default function AdminUsersPage() {
     if (!formEmail.trim()) { setFormError("Email không được trống"); return; }
     if (formRoles.length === 0) { setFormError("Chọn ít nhất 1 vai trò"); return; }
     try {
-      setSubmitting(true); setFormError(""); setSuccess("");
+      setSubmitting(true); setFormError("");
       await adminApi.createUser({ email: formEmail, roles: formRoles });
       toast.success(`Đã tạo user ${formEmail}. User cần kích hoạt tài khoản.`);
       setFormEmail(""); setFormRoles(["TEACHER"]); setShowForm(false); fetchUsers();
@@ -127,11 +126,7 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <UserCog className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý Người dùng</h1>
-        </div>
-        <Button size="sm" onClick={() => { setShowForm(!showForm); setSuccess(""); }}>
+        <Button size="sm" onClick={() => { setShowForm(!showForm); }}>
           {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
           {showForm ? "Hủy" : "Tạo user"}
         </Button>

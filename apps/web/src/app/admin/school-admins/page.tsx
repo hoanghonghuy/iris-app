@@ -109,10 +109,6 @@ export default function AdminSchoolAdminsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý School Admin</h1>
-        </div>
         <Button size="sm" onClick={() => { setShowForm(!showForm); setSuccess(""); }}>
           {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
           {showForm ? "Hủy" : "Thêm School Admin"}

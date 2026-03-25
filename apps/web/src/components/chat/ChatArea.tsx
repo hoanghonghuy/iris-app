@@ -52,7 +52,7 @@ export default function ChatArea({
       {selectedConv ? (
         <>
           {/* Chat Header */}
-          <div className="shrink-0 flex items-center gap-3 bg-background/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-2 py-2.5 z-10 shadow-sm md:shadow-none pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <div className="shrink-0 flex items-center gap-3 bg-background/80 backdrop-blur-md border-b border-border px-2 py-2.5 z-10 shadow-sm md:shadow-none pt-[max(0.5rem,env(safe-area-inset-top))]">
             {/* Nút back (chỉ hiện trên mobile) */}
             <button
               onClick={onBack}
@@ -70,14 +70,14 @@ export default function ChatArea({
 
             {/* Tên và trạng thái */}
             <div className="flex-1 overflow-hidden cursor-pointer">
-              <p className="text-base font-bold text-zinc-900 dark:text-zinc-100 truncate tracking-tight">
+              <p className="text-base font-bold text-foreground truncate tracking-tight">
                 {selectedConv.name ||
                   selectedConv.participants
                     ?.map((p) => p.full_name || p.email)
                     .join(", ") ||
                   "Cuộc hội thoại"}
               </p>
-              <p className="text-[12px] text-zinc-500 dark:text-zinc-400 truncate">
+              <p className="text-[12px] text-muted-foreground truncate">
                 {selectedConv.type === "direct"
                   ? "Đang trực tuyến"
                   : `${selectedConv.participants?.length || 0} thành viên`}
@@ -94,7 +94,7 @@ export default function ChatArea({
             {/* Indicator đang tải thêm */}
             {loadingMore && (
               <div className="flex justify-center py-3 sticky top-0 z-10">
-                <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm rounded-full px-4 py-1.5 flex items-center gap-2 border border-zinc-200 dark:border-zinc-800">
+                <div className="bg-background/80 backdrop-blur-sm shadow-sm rounded-full px-4 py-1.5 flex items-center gap-2 border border-border">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <span className="text-xs font-medium text-muted-foreground">
                     Đang tải lịch sử...
@@ -106,8 +106,8 @@ export default function ChatArea({
             {/* Nhãn "Khởi đầu cuộc trò chuyện" khi đã load hết */}
             {!hasMore && messages.length > 0 && (
               <div className="flex justify-center py-4">
-                <div className="bg-zinc-200/60 dark:bg-zinc-800/60 rounded-xl px-4 py-1.5">
-                  <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <div className="bg-muted/60 rounded-xl px-4 py-1.5">
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                     Khởi đầu cuộc trò chuyện
                   </p>
                 </div>
@@ -116,11 +116,11 @@ export default function ChatArea({
 
             {/* Danh sách tin nhắn hoặc empty state */}
             {messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-500 opacity-60">
-                <div className="bg-zinc-200/50 dark:bg-zinc-800/50 p-6 rounded-3xl mb-4">
-                  <MessageSquare className="h-10 w-10 text-zinc-500 dark:text-zinc-400" />
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground opacity-60">
+                <div className="bg-muted/50 p-6 rounded-3xl mb-4">
+                  <MessageSquare className="h-10 w-10 text-muted-foreground" />
                 </div>
-                <p className="text-[15px] font-medium text-zinc-600 dark:text-zinc-400">
+                <p className="text-[15px] font-medium text-muted-foreground">
                   Gửi lời chào đầu tiên!
                 </p>
               </div>
@@ -152,7 +152,7 @@ export default function ChatArea({
           </div>
 
           {/* Input gửi tin nhắn */}
-          <div className="shrink-0 bg-background px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-4 md:py-4 border-t border-zinc-200 dark:border-zinc-900">
+          <div className="shrink-0 bg-background px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-4 md:py-4 border-t border-border">
             <div className="flex items-end gap-2 max-w-4xl mx-auto">
               {/* Nút đính kèm (placeholder) */}
               <button className="flex-shrink-0 p-2.5 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
@@ -171,7 +171,7 @@ export default function ChatArea({
                   }}
                   onKeyDown={onKeyDown}
                   placeholder="Nhắn tin..."
-                  className="w-full bg-transparent border-none px-4 py-3 text-[15px] text-zinc-900 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-0 resize-none max-h-[120px] rounded-3xl"
+                  className="w-full bg-transparent border-none px-4 py-3 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 resize-none max-h-[120px] rounded-3xl"
                   style={{ minHeight: "44px" }}
                 />
               </div>
@@ -201,7 +201,7 @@ export default function ChatArea({
           <div className="w-24 h-24 rounded-full bg-secondary/30 shadow-sm flex items-center justify-center mb-6">
             <MessageSquare className="h-10 w-10 text-primary opacity-60" />
           </div>
-          <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zinc-600 to-zinc-400">
+          <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground/80 to-muted-foreground">
             Ứng dụng Nhắn tin IRIS
           </p>
           <p className="text-sm font-medium mt-2">Chọn một cuộc trò chuyện để bắt đầu</p>

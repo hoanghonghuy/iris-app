@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 
+function extractErrorMessage(err: unknown): string | undefined {
+    return (
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+            : undefined
+    );
+}
+
 function ResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -45,8 +53,8 @@ function ResetPasswordForm() {
             await authApi.resetPassword(token, password);
             setSuccess(true);
             setTimeout(() => router.push("/login"), 3000);
-        } catch (err: any) {
-            setError(err.response?.data?.error || "Không thể đặt lại mật khẩu. Token có thể đã hết hạn.");
+        } catch (err: unknown) {
+            setError(extractErrorMessage(err) || "Không thể đặt lại mật khẩu. Token có thể đã hết hạn.");
         } finally {
             setIsSubmitting(false);
         }
@@ -93,7 +101,7 @@ function ResetPasswordForm() {
             <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-4">
                     {error && (
-                        <div className="p-3 text-sm text-white bg-destructive rounded-md">
+                        <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
                             {error}
                         </div>
                     )}

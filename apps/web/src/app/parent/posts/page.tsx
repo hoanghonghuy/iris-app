@@ -37,11 +37,6 @@ export default function ParentPostsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <MessageSquare className="h-7 w-7" />
-        <h1 className="text-2xl font-bold tracking-tight">Bảng tin</h1>
-      </div>
-
       {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}

@@ -15,6 +15,14 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Mail, CheckCircle2, Loader2 } from "lucide-react";
 
+function extractErrorMessage(err: unknown): string | undefined {
+    return (
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+            : undefined
+    );
+}
+
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,8 +37,8 @@ export default function ForgotPasswordPage() {
         try {
             await authApi.forgotPassword(email);
             setSent(true);
-        } catch (err: any) {
-            setError(err.response?.data?.error || "Không thể gửi yêu cầu. Vui lòng thử lại.");
+        } catch (err: unknown) {
+            setError(extractErrorMessage(err) || "Không thể gửi yêu cầu. Vui lòng thử lại.");
         } finally {
             setIsSubmitting(false);
         }
@@ -68,7 +76,7 @@ export default function ForgotPasswordPage() {
                     <form onSubmit={handleSubmit}>
                         <CardContent className="space-y-4">
                             {error && (
-                                <div className="p-3 text-sm text-white bg-destructive rounded-md">
+                                <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
                                     {error}
                                 </div>
                             )}

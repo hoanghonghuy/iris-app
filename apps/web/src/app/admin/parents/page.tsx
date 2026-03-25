@@ -17,7 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
-import { Heart, Loader2, Phone, Mail, Link2, Unlink, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
+import { Heart, Loader2, Phone, Mail, Link2, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 
 export default function AdminParentsPage() {
@@ -133,11 +133,6 @@ export default function AdminParentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Heart className="h-7 w-7" />
-        <h1 className="text-2xl font-bold tracking-tight">Quản lý Phụ huynh</h1>
-      </div>
-
       {success && <Alert><CheckCircle2 className="h-4 w-4 text-success" /><AlertDescription>{success}</AlertDescription></Alert>}
       {error && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{error}</AlertDescription></Alert>}
 

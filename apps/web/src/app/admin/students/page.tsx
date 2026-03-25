@@ -28,7 +28,6 @@ export default function AdminStudentsPage() {
   const [selectedSchoolId, setSelectedSchoolId] = useState("");
   const [selectedClassId, setSelectedClassId] = useState("");
   const [loadingSchools, setLoadingSchools] = useState(true);
-  const [loadingClasses, setLoadingClasses] = useState(false);
 
   const [students, setStudents] = useState<Student[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,13 +66,12 @@ export default function AdminStudentsPage() {
     if (!selectedSchoolId) return;
     const load = async () => {
       try {
-        setLoadingClasses(true); setSelectedClassId(""); setStudents([]); setSearchQuery("");
+        setSelectedClassId(""); setStudents([]); setSearchQuery("");
         const response = await adminApi.getClassesBySchool(selectedSchoolId);
         const data = response.data;
         setClasses(data || []);
         if (data && data.length > 0) setSelectedClassId(data[0].class_id);
       } catch { setClasses([]); }
-      finally { setLoadingClasses(false); }
     };
     load();
   }, [selectedSchoolId]);
@@ -165,10 +163,6 @@ export default function AdminStudentsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Users className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý Học sinh</h1>
-        </div>
         <div className="flex flex-wrap items-center gap-2">
           {role === 'SUPER_ADMIN' && (
             <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>

@@ -67,12 +67,12 @@ export default function ParentDashboard() {
           {/* Quick Actions / Bento Box */}
           <div className="grid gap-2.5 md:gap-3 grid-cols-2">
             <Link href="/parent/children" className="group h-full">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-amber-500/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-amber-50/50 dark:hover:to-amber-950/20">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-chart-2/10 dark:hover:to-chart-2/20">
                 <CardContent className="p-2.5 md:p-4 flex flex-col items-center justify-center gap-1.5 md:gap-2 h-full text-center">
-                  <div className="p-2.5 md:p-3 bg-amber-500/10 text-amber-600 rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">
+                  <div className="p-2.5 md:p-3 bg-chart-2/10 text-chart-2 rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">
                     <Baby className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
-                  <p className="font-medium md:font-semibold text-xs md:text-sm text-foreground group-hover:text-amber-600 transition-colors">Hồ sơ con</p>
+                  <p className="font-medium md:font-semibold text-xs md:text-sm text-foreground group-hover:text-chart-2 transition-colors">Hồ sơ con</p>
                 </CardContent>
               </Card>
             </Link>

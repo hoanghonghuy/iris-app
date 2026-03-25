@@ -199,7 +199,7 @@ export default function ChatPage() {
   /* ────────────────────────────── render ────────────────────────────── */
 
   return (
-    <div className="relative flex h-full w-full bg-background overflow-hidden rounded-xl md:rounded-none md:border-l md:border-zinc-200 md:dark:border-zinc-800">
+    <div className="relative flex h-full w-full bg-background overflow-hidden rounded-xl md:rounded-none md:border-l md:border-border">
       <ChatSidebar
         loading={loading}
         conversations={conversations}

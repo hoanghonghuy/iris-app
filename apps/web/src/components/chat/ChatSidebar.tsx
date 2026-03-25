@@ -56,27 +56,27 @@ export default function ChatSidebar({
     <div className="flex w-full md:w-80 flex-col border-r border-border bg-background z-0 h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 md:py-5 border-b border-transparent">
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">
           Tin nhắn
         </h2>
         <div className="flex items-center gap-3">
           {/* Trạng thái kết nối WebSocket */}
           {isConnected ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/30">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
               </span>
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest hidden md:inline-block">
+              <span className="text-[10px] font-bold text-success uppercase tracking-widest hidden md:inline-block">
                 Online
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted">
               {/* WifiOff icon inline để tránh import thêm prop */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-3 w-3 text-zinc-500"
+                className="h-3 w-3 text-muted-foreground"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -92,7 +92,7 @@ export default function ChatSidebar({
                 <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
                 <line x1="12" y1="20" x2="12.01" y2="20" />
               </svg>
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest hidden md:inline-block">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hidden md:inline-block">
                 Offline
               </span>
             </div>

@@ -75,12 +75,7 @@ export default function TeacherClassesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <GraduationCap className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Lớp của tôi</h1>
-        </div>
-
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         {classes.length > 0 && (
           <div className="relative">
             <select

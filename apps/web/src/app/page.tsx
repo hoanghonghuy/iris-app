@@ -39,25 +39,25 @@ export default function Home() {
       {/* ─── Hero Section ───────────────────────────────────────────────────────────── */}
       <main className="flex-1">
         {/* Keeps a dark scheme for both modes as a prominent visual focal point (Dark Hero Pattern) */}
-        <section className="relative px-4 py-24 md:py-32 lg:py-40 bg-slate-900 text-white overflow-hidden">
+        <section className="relative px-4 py-24 md:py-32 lg:py-40 bg-primary text-primary-foreground overflow-hidden">
           {/* Background pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:14px_24px] opacity-30"></div>
           
           <div className="container mx-auto relative z-10 text-center lg:max-w-5xl">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-slate-100 to-slate-400">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground to-primary-foreground/70">
               Nền tảng Quản lý Tập trung dành cho Trường học
             </h1>
-            <p className="mx-auto max-w-[700px] text-lg md:text-xl text-slate-400 mb-8 font-light">
+            <p className="mx-auto max-w-[700px] text-lg md:text-xl text-primary-foreground/80 mb-8 font-light">
               Iris School kết nối Quản trị viên, Giáo viên và Phụ huynh trên một hệ thống duy nhất. Tối ưu hóa quy trình, nâng cao trải nghiệm giáo dục.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/login" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full bg-white text-slate-900 hover:bg-slate-200">
+                <Button size="lg" className="w-full bg-background text-foreground hover:bg-background/90">
                   Bắt đầu ngay <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link href="#features" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full border-slate-700 text-slate-300 bg-transparent hover:bg-slate-800 hover:text-white">
+                <Button size="lg" variant="outline" className="w-full border-primary-foreground/30 text-primary-foreground bg-transparent hover:bg-primary-foreground/10 hover:text-primary-foreground">
                   Khám phá Tính năng
                 </Button>
               </Link>

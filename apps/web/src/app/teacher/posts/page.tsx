@@ -103,11 +103,7 @@ export default function TeacherPostsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <MessageSquare className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Bài đăng</h1>
-        </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex items-center gap-2">
           {classes.length > 0 && (
             <Select value={selectedClassId} onValueChange={setSelectedClassId}>

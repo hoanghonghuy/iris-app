@@ -11,7 +11,7 @@ import { useParams } from "next/navigation";
 import { parentApi } from "@/lib/api/parent.api";
 import { Student } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { User, Loader2, Calendar, ArrowLeft } from "lucide-react";
+import { Loader2, Calendar, ArrowLeft } from "lucide-react";
 import { formatDateVN } from "@/lib/utils";
 
 const genderLabel: Record<string, string> = { male: "Nam", female: "Nữ", other: "Khác" };
@@ -99,11 +99,6 @@ export default function ParentChildDetailPage() {
 
       {!loading && !error && child && (
         <>
-          <div className="flex items-center gap-3">
-            <User className="h-8 w-8" />
-            <h1 className="text-3xl font-bold tracking-tight">Thông tin con</h1>
-          </div>
-
           <Card>
             <CardHeader>
               <CardTitle>{child.full_name}</CardTitle>

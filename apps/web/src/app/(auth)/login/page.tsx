@@ -16,6 +16,19 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { UserRole } from '@/types';
 
+type LoginResponse = {
+  data?: { access_token?: string };
+  access_token?: string;
+};
+
+function extractErrorMessage(err: unknown): string | undefined {
+  return (
+    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+      : undefined
+  );
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,7 +43,7 @@ export default function LoginPage() {
 
     try {
       // 1. Gọi API login → backend trả về { data: { access_token, ... } }
-      const response = await authApi.login({ email, password }) as any;
+      const response = await authApi.login({ email, password }) as LoginResponse;
       const token = response.data?.access_token || response.access_token;
 
       if (!token) {
@@ -47,8 +60,8 @@ export default function LoginPage() {
 
       // 4. Lưu vào AuthProvider (sẽ redirect dựa theo role)
       login(token, primaryRole);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err) || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -66,7 +79,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-white bg-destructive rounded-md">
+              <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
                 {error}
               </div>
             )}

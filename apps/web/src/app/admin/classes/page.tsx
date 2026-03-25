@@ -82,10 +82,6 @@ export default function AdminClassesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <GraduationCap className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý Lớp học</h1>
-        </div>
         <div className="flex items-center gap-2">
           {role === 'SUPER_ADMIN' && (
             <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>

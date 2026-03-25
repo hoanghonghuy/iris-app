@@ -13,6 +13,14 @@ import { Input } from "@/components/ui/input";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+function extractErrorMessage(err: unknown): string | undefined {
+  return (
+    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+      : undefined
+  );
+}
+
 export default function ActivateAccountPage() {
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
@@ -31,8 +39,8 @@ export default function ActivateAccountPage() {
       setSubmitting(true); setError("");
       await authApi.activateWithToken({ token: token.trim(), password });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể kích hoạt tài khoản");
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err) || "Không thể kích hoạt tài khoản");
     } finally { setSubmitting(false); }
   };
 
@@ -82,7 +90,7 @@ export default function ActivateAccountPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Đã có tài khoản?{" "}
-              <Link href="/login" className="font-medium text-zinc-900 dark:text-zinc-100 hover:underline">Đăng nhập</Link>
+              <Link href="/login" className="font-medium text-foreground hover:underline">Đăng nhập</Link>
             </p>
           </form>
         </CardContent>

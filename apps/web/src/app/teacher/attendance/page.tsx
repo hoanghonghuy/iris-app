@@ -653,7 +653,7 @@ export default function TeacherAttendancePage() {
                       {statusOptions.map((opt) => (
                         <Badge key={opt.value}
                           variant={att.status === opt.value ? opt.variant : "outline"}
-                          className={`h-6 cursor-pointer select-none px-2 text-xs transition-all ${att.status === opt.value ? "ring-2 ring-offset-1 ring-zinc-400" : "opacity-70 hover:opacity-100"}`}
+                          className={`h-6 cursor-pointer select-none px-2 text-xs transition-all ${att.status === opt.value ? "ring-2 ring-offset-1 ring-ring" : "opacity-70 hover:opacity-100"}`}
                           onClick={() => setAttendance((prev) => ({ ...prev, [s.student_id]: { ...att, status: opt.value } }))}
                         >{opt.label}</Badge>
                       ))}

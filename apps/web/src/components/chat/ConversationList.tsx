@@ -32,16 +32,16 @@ export default function ConversationList({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-300 dark:text-zinc-700" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-400 dark:text-zinc-600 space-y-4">
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-4">
         <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-          <MessageSquare className="h-8 w-8 text-zinc-300 dark:text-zinc-700" />
+          <MessageSquare className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium">Chưa có tin nhắn nào</p>
       </div>
@@ -68,8 +68,8 @@ export default function ConversationList({
             <div
               className={`h-12 w-12 flex-shrink-0 rounded-full flex items-center justify-center font-bold text-lg shadow-sm ${
                 isSelected
-                  ? "bg-white/20 text-white"
-                  : "bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-700 text-zinc-600 dark:text-zinc-300"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {getInitials(displayName)}
@@ -78,7 +78,7 @@ export default function ConversationList({
             {/* Info */}
             <div className="flex-1 overflow-hidden flex flex-col justify-center">
               <div className="flex items-center justify-between mb-0.5">
-                <p className={`font-semibold truncate text-[15px] ${isSelected ? "text-white" : ""}`}>
+                <p className={`font-semibold truncate text-[15px] ${isSelected ? "text-primary-foreground" : ""}`}>
                   {displayName}
                 </p>
               </div>

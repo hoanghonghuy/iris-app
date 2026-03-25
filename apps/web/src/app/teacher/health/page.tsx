@@ -17,13 +17,23 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Heart, Loader2, Plus, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, X, AlertCircle, CheckCircle2 } from "lucide-react";
 
 const severityOptions = [
   { value: "normal", label: "Bình thường", variant: "secondary" as const },
   { value: "watch", label: "Theo dõi", variant: "outline" as const },
   { value: "urgent", label: "Khẩn cấp", variant: "destructive" as const },
 ];
+
+type Severity = "normal" | "watch" | "urgent";
+
+function extractErrorMessage(err: unknown): string | undefined {
+  return (
+    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+      : undefined
+  );
+}
 
 export default function TeacherHealthPage() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -37,7 +47,7 @@ export default function TeacherHealthPage() {
   const [formStudentId, setFormStudentId] = useState("");
   const [temperature, setTemperature] = useState("");
   const [symptoms, setSymptoms] = useState("");
-  const [severity, setSeverity] = useState("normal");
+  const [severity, setSeverity] = useState<Severity>("normal");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -62,8 +72,8 @@ export default function TeacherHealthPage() {
       const data = await teacherApi.getStudentsInClass(selectedClassId);
       setStudents(data || []);
       if (data && data.length > 0) setFormStudentId(data[0].student_id);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải HS");
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err) || "Không thể tải HS");
     } finally { setLoadingStudents(false); }
   }, [selectedClassId]);
 
@@ -78,13 +88,13 @@ export default function TeacherHealthPage() {
         student_id: formStudentId,
         temperature: temperature ? parseFloat(temperature) : undefined,
         symptoms: symptoms || undefined,
-        severity: severity as any,
+        severity,
         note: note || undefined,
       });
       setSuccess("Đã ghi nhận sức khỏe thành công!");
       setTemperature(""); setSymptoms(""); setSeverity("normal"); setNote("");
-    } catch (err: any) {
-      setFormError(err.response?.data?.error || "Lỗi ghi nhận");
+    } catch (err: unknown) {
+      setFormError(extractErrorMessage(err) || "Lỗi ghi nhận");
     } finally { setSubmitting(false); }
   };
 
@@ -94,11 +104,7 @@ export default function TeacherHealthPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <Heart className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Sức khỏe Học sinh</h1>
-        </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
         <div className="flex items-center gap-2">
           {classes.length > 0 && (
             <Select value={selectedClassId} onValueChange={setSelectedClassId}>
@@ -148,7 +154,7 @@ export default function TeacherHealthPage() {
                 <div className="flex gap-2">
                   {severityOptions.map((opt) => (
                     <Badge key={opt.value} variant={severity === opt.value ? opt.variant : "outline"}
-                      className={`cursor-pointer select-none transition-all ${severity === opt.value ? "ring-2 ring-offset-1 ring-zinc-400" : "opacity-60 hover:opacity-100"}`}
+                        className={`cursor-pointer select-none transition-all ${severity === opt.value ? "ring-2 ring-offset-1 ring-ring" : "opacity-60 hover:opacity-100"}`}
                       onClick={() => setSeverity(opt.value)}>{opt.label}</Badge>
                   ))}
                 </div>

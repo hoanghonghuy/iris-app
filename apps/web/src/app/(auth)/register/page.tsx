@@ -13,6 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Heart, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+function extractErrorMessage(err: unknown): string | undefined {
+  return (
+    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
+      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+      : undefined
+  );
+}
+
 export default function RegisterParentPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,8 +41,8 @@ export default function RegisterParentPage() {
       setSubmitting(true); setError("");
       await authApi.registerParent({ email, password, parent_code: parentCode });
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể đăng ký");
+    } catch (err: unknown) {
+      setError(extractErrorMessage(err) || "Không thể đăng ký");
     } finally { setSubmitting(false); }
   };
 
@@ -94,7 +102,7 @@ export default function RegisterParentPage() {
             </Button>
             <p className="text-center text-sm text-muted-foreground">
               Đã có tài khoản?{" "}
-              <Link href="/login" className="font-medium text-zinc-900 dark:text-zinc-100 hover:underline">Đăng nhập</Link>
+              <Link href="/login" className="font-medium text-foreground hover:underline">Đăng nhập</Link>
             </p>
           </form>
         </CardContent>

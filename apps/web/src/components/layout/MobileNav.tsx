@@ -39,7 +39,7 @@ export function MobileNav() {
 
           <nav className="flex-1 flex flex-col py-8 px-6">
             <div className="flex flex-col gap-2">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500 mb-2 px-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2 px-2">
                 Điều hướng
               </p>
               <a

@@ -8,7 +8,7 @@ import React, { useEffect, useState } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, TeacherAnalytics } from "@/types";
 import { useAuth } from "@/providers/AuthProvider";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { GraduationCap, Users, ClipboardCheck, Heart, Loader2, BookOpen, MessageSquare, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -79,15 +79,15 @@ export default function TeacherDashboard() {
             </Link>
 
             <Link href="/teacher/classes" className="group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-amber-500/30 relative overflow-hidden">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden">
                 <CardContent className="p-3.5 md:p-6">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 md:space-y-3">
                       <p className="text-[11px] md:text-sm font-semibold md:font-medium text-muted-foreground uppercase tracking-wider">Học sinh quản lý</p>
-                      <p className="text-2xl md:text-4xl font-bold text-foreground group-hover:text-amber-500 transition-colors">{stats?.total_students || 0}</p>
+                      <p className="text-2xl md:text-4xl font-bold text-foreground group-hover:text-chart-2 transition-colors">{stats?.total_students || 0}</p>
                     </div>
                     {/* Amber Pill Icon Badge */}
-                    <div className="p-3.5 bg-amber-500/10 rounded-2xl text-amber-500 transition-transform group-hover:scale-110 duration-300">
+                    <div className="p-3.5 bg-chart-2/10 rounded-2xl text-chart-2 transition-transform group-hover:scale-110 duration-300">
                       <GraduationCap className="h-6 w-6" />
                     </div>
                   </div>

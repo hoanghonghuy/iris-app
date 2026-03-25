@@ -85,10 +85,6 @@ export default function AdminSchoolsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <SchoolIcon className="h-7 w-7" />
-          <h1 className="text-2xl font-bold tracking-tight">Quản lý Trường học</h1>
-        </div>
         <Button onClick={() => setShowForm(!showForm)}>
           {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
           {showForm ? "Hủy" : "Thêm trường"}

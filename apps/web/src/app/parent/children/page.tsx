@@ -41,11 +41,6 @@ export default function ParentChildrenPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Users className="h-7 w-7" />
-        <h1 className="text-2xl font-bold tracking-tight">Con của tôi</h1>
-      </div>
-
       {error && <div className="rounded-md bg-destructive/10 p-4 text-sm text-destructive">{error}</div>}
 
       {loading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>}

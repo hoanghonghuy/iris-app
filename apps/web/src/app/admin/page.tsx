@@ -9,7 +9,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { Card, CardContent } from '@/components/ui/card';
 import { adminApi } from '@/lib/api/admin.api';
 import { AdminAnalytics } from '@/types';
-import { School, BookOpen, Users, GraduationCap, UsersRound, Loader2, ChevronRight, Settings } from 'lucide-react';
+import { School, BookOpen, Users, GraduationCap, UsersRound, Loader2, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
 
             {/* Students Stats - Amber Pill */}
             <Link href="/admin/students" className="group md:col-span-2 xl:col-span-1">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-chart-2/10 dark:hover:to-chart-2/20">
+              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden">
                 <CardContent className="p-3.5 md:p-5">
                   <div className="flex flex-col h-full justify-between gap-2.5 md:gap-4">
                     <div className="p-3 bg-chart-2/10 text-chart-2 rounded-2xl w-fit transition-transform group-hover:scale-110 duration-300">
