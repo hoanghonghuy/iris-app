@@ -97,13 +97,13 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 	return info, rows.Err()
 }
 
-// List lấy danh sách users kèm roles (có thể lọc theo school_id).
+// List lấy danh sách users kèm roles (có thể lọc theo school_id và role).
 //
 // schoolID == nil: tất cả users (SUPER_ADMIN).
 //
 // schoolID != nil: chỉ users thuộc trường đó qua teachers/parents (SCHOOL_ADMIN).
-func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.UserInfo, int, error) {
-	const qAll = `
+func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, roleFilter string, limit, offset int) ([]model.UserInfo, int, error) {
+	qAll := `
 		-- ARRAY_AGG(): gom nhiều dòng thành một array
 		-- COUNT(*) OVER(): tính tổng số dòng mà không bị ảnh hưởng bởi LIMIT/OFFSET
 		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
@@ -111,11 +111,18 @@ func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset 
 		FROM users u
 		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
 		LEFT JOIN roles r ON r.role_id = ur.role_id
+		WHERE 1=1
+	`
+	if roleFilter != "" {
+		qAll += ` AND EXISTS (SELECT 1 FROM user_roles ur2 JOIN roles r2 ON ur2.role_id = r2.role_id WHERE ur2.user_id = u.user_id AND r2.name = '` + roleFilter + `')`
+	}
+	qAll += `
 		GROUP BY u.user_id, u.email, u.status
 		ORDER BY u.created_at DESC
 		LIMIT $1 OFFSET $2;
 	`
-	const qBySchool = `
+
+	qBySchool := `
 		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
 		       COUNT(*) OVER() as total_count
 		FROM users u
@@ -126,6 +133,11 @@ func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset 
 			UNION
 			SELECT user_id FROM parents WHERE school_id = $3
 		)
+	`
+	if roleFilter != "" {
+		qBySchool += ` AND EXISTS (SELECT 1 FROM user_roles ur2 JOIN roles r2 ON ur2.role_id = r2.role_id WHERE ur2.user_id = u.user_id AND r2.name = '` + roleFilter + `')`
+	}
+	qBySchool += `
 		GROUP BY u.user_id, u.email, u.status
 		ORDER BY u.created_at DESC
 		LIMIT $1 OFFSET $2;

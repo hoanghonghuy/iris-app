@@ -8,12 +8,14 @@
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { UserInfo, Pagination } from "@/types";
+import { useAuth } from "@/providers/AuthProvider";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import { CardSkeleton } from "@/components/shared/CardSkeleton";
@@ -37,6 +39,7 @@ const statusLabel: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserInfo[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -44,6 +47,7 @@ export default function AdminUsersPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
   const [currentOffset, setCurrentOffset] = useState(0);
+  const [roleFilter, setRoleFilter] = useState("ALL");
 
   const [showForm, setShowForm] = useState(false);
   const [formEmail, setFormEmail] = useState("");
@@ -55,7 +59,11 @@ export default function AdminUsersPage() {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true); setError("");
-      const response = await adminApi.getUsers({ limit: 20, offset: currentOffset });
+      const params: any = { limit: 20, offset: currentOffset };
+      if (roleFilter !== "ALL") {
+        params.role = roleFilter;
+      }
+      const response = await adminApi.getUsers(params);
       const data = (response as any).data || response || [];
       setUsers(Array.isArray(data) ? data : []);
       if (response.pagination) setPagination(response.pagination);
@@ -64,7 +72,7 @@ export default function AdminUsersPage() {
       setError(msg);
       toast.error(msg);
     } finally { setLoading(false); }
-  }, [currentOffset]);
+  }, [currentOffset, roleFilter]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -153,17 +161,38 @@ export default function AdminUsersPage() {
 
 
 
-      {/* Toolbar: Search box */}
-      {!loading && !error && users.length > 0 && !showForm && (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Tìm theo email..."
-            className="pl-8 bg-background"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Toolbar: Search box & Role Filter */}
+      {!loading && !error && (users.length > 0 || roleFilter !== "ALL") && !showForm && (
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Tìm theo email..."
+              className="pl-8 bg-background min-w-0"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          
+          <Select 
+            value={roleFilter} 
+            onValueChange={(val) => { 
+              setRoleFilter(val); 
+              setCurrentOffset(0); 
+            }}
+          >
+            <SelectTrigger className="w-[140px] shrink-0">
+              <SelectValue placeholder="Tất cả vai trò" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả vai trò</SelectItem>
+              <SelectItem value="TEACHER">Giáo viên</SelectItem>
+              <SelectItem value="PARENT">Phụ huynh</SelectItem>
+              <SelectItem value="SCHOOL_ADMIN">School Admin</SelectItem>
+              <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       )}
 
@@ -178,7 +207,7 @@ export default function AdminUsersPage() {
         </>
       )}
 
-      {!loading && users.length === 0 && !error && (
+      {!loading && users.length === 0 && roleFilter === "ALL" && !error && (
         <EmptyState
           icon={UserCog}
           title="Chưa có người dùng nào"
@@ -190,6 +219,12 @@ export default function AdminUsersPage() {
             </Button>
           }
         />
+      )}
+
+      {!loading && users.length === 0 && roleFilter !== "ALL" && !error && (
+        <div className="rounded-lg border border-dashed p-8 text-center mt-4">
+          <p className="text-sm text-muted-foreground">Không tìm thấy người dùng nào với vai trò này.</p>
+        </div>
       )}
 
       {!loading && users.length > 0 && filteredUsers.length === 0 && (
@@ -225,7 +260,7 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {user.status === "active" ? (
-                        <Button variant="ghost" size="sm" onClick={() => handleLock(user.user_id)} disabled={actionLoading === user.user_id}>
+                        <Button variant="ghost" size="sm" onClick={() => handleLock(user.user_id)} disabled={actionLoading === user.user_id || currentUser?.user_id === user.user_id} title={currentUser?.user_id === user.user_id ? "Bạn không thể tự khóa chính mình" : ""}>
                           {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="mr-1 h-4 w-4" />} Khóa
                         </Button>
                       ) : user.status === "locked" ? (
@@ -258,7 +293,7 @@ export default function AdminUsersPage() {
                   </div>
                   <div>
                     {user.status === "active" ? (
-                      <Button variant="ghost" size="sm" onClick={() => handleLock(user.user_id)} disabled={actionLoading === user.user_id}>
+                      <Button variant="ghost" size="sm" onClick={() => handleLock(user.user_id)} disabled={actionLoading === user.user_id || currentUser?.user_id === user.user_id} title={currentUser?.user_id === user.user_id ? "Bạn không thể tự khóa chính mình" : ""}>
                         {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                       </Button>
                     ) : user.status === "locked" ? (

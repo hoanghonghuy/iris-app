@@ -54,7 +54,7 @@ export const adminApi = {
   },
 
   // --- USERS ---
-  getUsers: async (params?: PaginationParams) => {
+  getUsers: async (params?: PaginationParams & { role?: string }) => {
     const res = await apiClient.get<ApiResponse<UserInfo[]>>('/admin/users', { params });
     return res.data;
   },

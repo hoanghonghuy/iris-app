@@ -224,7 +224,7 @@ func (s *UserService) FindByID(ctx context.Context, adminSchoolID *uuid.UUID, us
 }
 
 // List lấy danh sách users.
-func (s *UserService) List(ctx context.Context, adminSchoolID *uuid.UUID, limit, offset int) ([]model.UserInfo, int, error) {
+func (s *UserService) List(ctx context.Context, adminSchoolID *uuid.UUID, roleFilter string, limit, offset int) ([]model.UserInfo, int, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -234,7 +234,13 @@ func (s *UserService) List(ctx context.Context, adminSchoolID *uuid.UUID, limit,
 	if offset < 0 {
 		offset = 0
 	}
-	return s.userRepo.List(ctx, adminSchoolID, limit, offset)
+
+	validRoles := map[string]bool{"SUPER_ADMIN": true, "SCHOOL_ADMIN": true, "TEACHER": true, "PARENT": true}
+	if roleFilter != "" && !validRoles[roleFilter] {
+		return nil, 0, fmt.Errorf("%w: %s", ErrInvalidRoleName, roleFilter)
+	}
+
+	return s.userRepo.List(ctx, adminSchoolID, roleFilter, limit, offset)
 }
 
 // UpdateEmail cập nhật email của user (admin only)

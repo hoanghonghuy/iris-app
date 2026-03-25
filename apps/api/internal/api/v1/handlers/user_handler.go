@@ -290,11 +290,12 @@ func (h *UserHandler) List(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
 		return
 	}
+	roleFilter := c.Query("role")
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	users, total, err := h.userService.List(ctx, adminSchoolID, params.Limit, params.Offset)
+	users, total, err := h.userService.List(ctx, adminSchoolID, roleFilter, params.Limit, params.Offset)
 	if err != nil {
 		if errors.Is(err, service.ErrSchoolAccessDenied) {
 			response.Fail(c, http.StatusForbidden, "access denied")
