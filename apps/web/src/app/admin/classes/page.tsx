@@ -16,8 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GraduationCap, Plus, X, Loader2, Calendar, AlertCircle } from "lucide-react";
-
+import { useAuth } from "@/providers/AuthProvider";
 export default function AdminClassesPage() {
+  const { role } = useAuth();
   const [schools, setSchools] = useState<School[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
   const [loadingSchools, setLoadingSchools] = useState(true);
@@ -86,12 +87,14 @@ export default function AdminClassesPage() {
           <h1 className="text-2xl font-bold tracking-tight">Quản lý Lớp học</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Chọn trường" /></SelectTrigger>
-            <SelectContent>
-              {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {role === 'SUPER_ADMIN' && (
+            <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Chọn trường" /></SelectTrigger>
+              <SelectContent>
+                {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
           {selectedSchoolId && (
             <Button size="sm" onClick={() => setShowForm(!showForm)}>
               {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}

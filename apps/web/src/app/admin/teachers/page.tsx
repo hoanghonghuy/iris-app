@@ -14,13 +14,17 @@ import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ActionModal } from "@/components/shared/ActionModal";
+import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
 import { BookUser, Loader2, Phone, Mail, Link2, Unlink, Search, X } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
+import { Input } from "@/components/ui/input"; // Added missing import for Input
 
 export default function AdminTeachersPage() {
+  const { role } = useAuth();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -32,8 +36,10 @@ export default function AdminTeachersPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState("");
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [assigningTeacherId, setAssigningTeacherId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const [assignModal, setAssignModal] = useState<{isOpen: boolean, teacherId: string | null, teacherName: string | null}>({isOpen: false, teacherId: null, teacherName: null});
+  const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, teacherId: string | null, classId: string | null, className: string | null}>({isOpen: false, teacherId: null, classId: null, className: null});
 
   const fetchTeachers = useCallback(async () => {
     try {
@@ -75,27 +81,27 @@ export default function AdminTeachersPage() {
     load();
   }, [selectedSchoolId]);
 
-  const handleAssign = async (teacherId: string) => {
-    if (!selectedClassId) return;
+  const handleAssign = async () => {
+    if (!selectedClassId || !assignModal.teacherId) return;
     try {
       setActionLoading(true);
-      await adminApi.assignTeacherToClass(teacherId, selectedClassId);
+      await adminApi.assignTeacherToClass(assignModal.teacherId, selectedClassId);
       const className = classes.find((c) => c.class_id === selectedClassId)?.name || "";
       toast.success(`Đã gán giáo viên vào lớp ${className}`);
-      setAssigningTeacherId(null);
+      setAssignModal({ isOpen: false, teacherId: null, teacherName: null });
       fetchTeachers();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Không thể gán lớp");
     } finally { setActionLoading(false); }
   };
 
-  const handleUnassign = async (teacherId: string, classId: string, className: string) => {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(`Bạn có chắc chắn muốn hủy gán lớp ${className}?`)) return;
+  const confirmUnassign = async () => {
+    if (!unassignAlert.teacherId || !unassignAlert.classId) return;
     try {
       setActionLoading(true);
-      await adminApi.unassignTeacherFromClass(teacherId, classId);
-      toast.success(`Đã hủy gán lớp ${className}`);
+      await adminApi.unassignTeacherFromClass(unassignAlert.teacherId, unassignAlert.classId);
+      toast.success(`Đã hủy gán lớp ${unassignAlert.className}`);
+      setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null });
       fetchTeachers();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Không thể hủy gán lớp");
@@ -188,7 +194,7 @@ export default function AdminTeachersPage() {
                             <Badge key={c.class_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
                               {c.name}
                               <button
-                                onClick={() => handleUnassign(t.teacher_id, c.class_id, c.name)}
+                                onClick={() => setUnassignAlert({ isOpen: true, teacherId: t.teacher_id, classId: c.class_id, className: c.name })}
                                 className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                                 aria-label="Remove"
                               >
@@ -202,32 +208,9 @@ export default function AdminTeachersPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right align-middle">
-                      {assigningTeacherId === t.teacher_id ? (
-                        <div className="flex items-center justify-end gap-2">
-                          <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
-                            <SelectTrigger className="w-[140px]" size="sm"><SelectValue placeholder="Trường" /></SelectTrigger>
-                            <SelectContent>
-                              {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                            <SelectTrigger className="w-[120px]" size="sm"><SelectValue placeholder="Lớp" /></SelectTrigger>
-                            <SelectContent>
-                              {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
-                            {actionLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Link2 className="h-3 w-3" />}
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => setAssigningTeacherId(null)}>
-                            <Unlink className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button variant="ghost" size="sm" onClick={() => setAssigningTeacherId(t.teacher_id)}>
+                        <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
                           <Link2 className="mr-1 h-4 w-4" /> Gán lớp
                         </Button>
-                      )}
                     </td>
                   </tr>
                 ))}
@@ -256,9 +239,9 @@ export default function AdminTeachersPage() {
                       {t.classes.map(c => (
                         <Badge key={c.class_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
                           {c.name}
-                          <button
-                            onClick={(e) => { e.preventDefault(); handleUnassign(t.teacher_id, c.class_id, c.name); }}
-                            className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
+                            <button
+                              onClick={(e) => { e.preventDefault(); setUnassignAlert({ isOpen: true, teacherId: t.teacher_id, classId: c.class_id, className: c.name }); }}
+                              className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
                             aria-label="Remove class"
                           >
                             <X className="h-3 w-3" />
@@ -274,28 +257,9 @@ export default function AdminTeachersPage() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-start">
-                  {assigningTeacherId === t.teacher_id ? (
-                    <div className="flex flex-wrap items-center gap-2 w-full">
-                      <div className="flex w-full gap-2">
-                        <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                          <SelectTrigger className="flex-1" size="sm"><SelectValue placeholder="Chọn Lớp" /></SelectTrigger>
-                          <SelectContent>
-                            {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex w-full gap-2 mt-1">
-                        <Button size="sm" className="flex-1" onClick={() => handleAssign(t.teacher_id)} disabled={actionLoading}>
-                          {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Link2 className="h-4 w-4 mr-1" />} Gán
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1" onClick={() => setAssigningTeacherId(null)}>Hủy</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssigningTeacherId(t.teacher_id)}>
+                    <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
                     </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -307,6 +271,53 @@ export default function AdminTeachersPage() {
       {!loading && teachers.length > 0 && (
         <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
+
+      {/* Assign Modal */}
+      <ActionModal
+        isOpen={assignModal.isOpen}
+        onClose={() => setAssignModal({ isOpen: false, teacherId: null, teacherName: null })}
+        onConfirm={handleAssign}
+        title="Gán lớp phụ trách"
+        description={<>Chọn trường và lớp để gán cho giáo viên <strong>{assignModal.teacherName}</strong>.</>}
+        loading={actionLoading}
+        disabled={!selectedClassId}
+        confirmText="Gán lớp"
+      >
+        <div className="grid gap-4 py-2">
+          {role === 'SUPER_ADMIN' && (
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Chọn trường" /></SelectTrigger>
+                  <SelectContent>
+                    {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Lớp học</label>
+            <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => <SelectItem key={c.class_id} value={c.class_id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </ActionModal>
+
+      {/* Unassign Alert */}
+      <ConfirmAlertDialog
+        isOpen={unassignAlert.isOpen}
+        onClose={() => setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null })}
+        onConfirm={confirmUnassign}
+        title="Xác nhận hủy gán"
+        description={<>Bạn có chắc chắn muốn hủy gán lớp <strong>{unassignAlert.className}</strong> khỏi giáo viên này? Hành động này sẽ thay đổi quyền truy cập của giáo viên đối với lớp học.</>}
+        loading={actionLoading}
+        confirmText="Chắc chắn hủy"
+      />
     </div>
   );
 }

@@ -15,11 +15,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import {
   Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
 } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function AdminStudentsPage() {
+  const { role } = useAuth();
   const [schools, setSchools] = useState<School[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState("");
@@ -39,6 +42,7 @@ export default function AdminStudentsPage() {
 
   const [generatingCode, setGeneratingCode] = useState<string | null>(null);
   const [revokingCode, setRevokingCode] = useState<string | null>(null);
+  const [revokeAlert, setRevokeAlert] = useState<{isOpen: boolean, studentId: string | null}>({isOpen: false, studentId: null});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [codeError, setCodeError] = useState("");
 
@@ -126,12 +130,13 @@ export default function AdminStudentsPage() {
     } finally { setGeneratingCode(null); }
   };
 
-  const handleRevokeCode = async (studentId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn thu hồi mã phụ huynh này không?")) return;
+  const confirmRevokeCode = async () => {
+    if (!revokeAlert.studentId) return;
     try {
-      setRevokingCode(studentId); setCodeError("");
-      await adminApi.revokeParentCode(studentId);
-      setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, active_parent_code: undefined, code_expires_at: undefined } : s));
+      setRevokingCode(revokeAlert.studentId); setCodeError("");
+      await adminApi.revokeParentCode(revokeAlert.studentId);
+      setStudents(prev => prev.map(s => s.student_id === revokeAlert.studentId ? { ...s, active_parent_code: undefined, code_expires_at: undefined } : s));
+      setRevokeAlert({ isOpen: false, studentId: null });
     } catch (err: any) {
       setCodeError(err.response?.data?.error || "Không thể thu hồi mã");
     } finally { setRevokingCode(null); }
@@ -165,12 +170,14 @@ export default function AdminStudentsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Quản lý Học sinh</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Chọn trường" /></SelectTrigger>
-            <SelectContent>
-              {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {role === 'SUPER_ADMIN' && (
+            <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Chọn trường" /></SelectTrigger>
+              <SelectContent>
+                {schools.map((s) => <SelectItem key={s.school_id} value={s.school_id}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
           {classes.length > 0 && (
             <Select value={selectedClassId} onValueChange={setSelectedClassId}>
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Chọn lớp" /></SelectTrigger>
@@ -300,7 +307,7 @@ export default function AdminStudentsPage() {
                               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
                                 {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => handleRevokeCode(s.student_id)} disabled={revokingCode === s.student_id}>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
                                 {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
                               </Button>
                            </div>
@@ -343,7 +350,7 @@ export default function AdminStudentsPage() {
                         <Button variant="secondary" size="sm" className="h-8 shadow-sm" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
                           {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                         </Button>
-                        <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => handleRevokeCode(s.student_id)} disabled={revokingCode === s.student_id}>
+                        <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
                           {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
                         </Button>
                       </div>
@@ -359,6 +366,17 @@ export default function AdminStudentsPage() {
           ))}
         </div>
       )}
+
+      {/* Revoke Code Alert */}
+      <ConfirmAlertDialog
+        isOpen={revokeAlert.isOpen}
+        onClose={() => setRevokeAlert({ isOpen: false, studentId: null })}
+        onConfirm={confirmRevokeCode}
+        title="Xác nhận thu hồi mã"
+        description="Bạn có chắc chắn muốn thu hồi mã phụ huynh này không? Mã hiện tại sẽ bị vô hiệu hóa ngay lập tức."
+        loading={!!revokingCode}
+        confirmText="Thu hồi ngay"
+      />
     </div>
   );
 }
