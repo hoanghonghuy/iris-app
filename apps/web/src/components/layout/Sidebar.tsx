@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
 import {
   School,
   GraduationCap,
@@ -33,6 +34,7 @@ export interface SidebarItem {
   label: string;
   href: string;
   icon: React.ReactNode;
+  roles?: string[];
 }
 
 export const adminMenuItems: SidebarItem[] = [
@@ -43,7 +45,7 @@ export const adminMenuItems: SidebarItem[] = [
   { label: "Người dùng", href: "/admin/users", icon: <UserCog className="h-5 w-5" /> },
   { label: "Giáo viên", href: "/admin/teachers", icon: <BookUser className="h-5 w-5" /> },
   { label: "Phụ huynh", href: "/admin/parents", icon: <Heart className="h-5 w-5" /> },
-  { label: "School Admin", href: "/admin/school-admins", icon: <ShieldCheck className="h-5 w-5" /> },
+  { label: "School Admin", href: "/admin/school-admins", icon: <ShieldCheck className="h-5 w-5" />, roles: ["SUPER_ADMIN"] },
   { label: "Tin nhắn", href: "/admin/chat", icon: <MessageSquare className="h-5 w-5" /> },
 ];
 
@@ -73,6 +75,10 @@ interface SidebarProps {
 
 export function Sidebar({ items, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { role } = useAuth();
+
+  // Lọc items theo role
+  const visibleItems = items.filter(item => !item.roles || (role && item.roles.includes(role)));
 
   // Kiểm tra active: exact match cho root paths, startsWith cho sub-paths
   const isActive = (href: string) => {
@@ -117,7 +123,7 @@ export function Sidebar({ items, isOpen, onClose }: SidebarProps) {
 
         {/* ── Navigation ── */}
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

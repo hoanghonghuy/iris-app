@@ -11,12 +11,18 @@ import { UserInfo, School, Pagination } from "@/types";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/AuthProvider";
+import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export default function AdminSchoolAdminsPage() {
+  const { role } = useAuth();
+  const router = useRouter();
+
   const [admins, setAdmins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,8 +38,10 @@ export default function AdminSchoolAdminsPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteAlert, setDeleteAlert] = useState<{isOpen: boolean, adminId: string | null}>({isOpen: false, adminId: null});
 
   const fetchAdmins = useCallback(async () => {
+    if (role !== "SUPER_ADMIN") return;
     try {
       setLoading(true); setError("");
       const response = await adminApi.getSchoolAdmins({ limit: 20, offset: currentOffset });
@@ -42,9 +50,15 @@ export default function AdminSchoolAdminsPage() {
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể tải danh sách");
     } finally { setLoading(false); }
-  }, [currentOffset]);
+  }, [currentOffset, role]);
 
-  useEffect(() => { fetchAdmins(); }, [fetchAdmins]);
+  useEffect(() => { 
+    if (role && role !== "SUPER_ADMIN") {
+      router.replace("/admin");
+    } else if (role === "SUPER_ADMIN") {
+      fetchAdmins(); 
+    }
+  }, [fetchAdmins, role, router]);
 
   useEffect(() => {
     if (!showForm) return;
@@ -78,14 +92,18 @@ export default function AdminSchoolAdminsPage() {
     } finally { setSubmitting(false); }
   };
 
-  const handleDelete = async (adminId: string) => {
+  const confirmDelete = async () => {
+    if (!deleteAlert.adminId) return;
     try {
-      setDeletingId(adminId);
-      await adminApi.deleteSchoolAdmin(adminId);
+      setDeletingId(deleteAlert.adminId);
+      await adminApi.deleteSchoolAdmin(deleteAlert.adminId);
       fetchAdmins();
     } catch (err: any) {
       setError(err.response?.data?.error || "Không thể xóa");
-    } finally { setDeletingId(null); }
+    } finally { 
+      setDeletingId(null); 
+      setDeleteAlert({ isOpen: false, adminId: null });
+    }
   };
 
   return (
@@ -167,7 +185,7 @@ export default function AdminSchoolAdminsPage() {
                     <td className="px-6 py-4 font-medium">{a.email || a.user_id}</td>
                     <td className="px-6 py-4 text-muted-foreground">{a.school_name || a.school_id}</td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(a.school_admin_id || a.user_id)} disabled={deletingId === (a.school_admin_id || a.user_id)}>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: a.school_admin_id || a.user_id })} disabled={deletingId === (a.school_admin_id || a.user_id)}>
                         {deletingId === (a.school_admin_id || a.user_id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4 text-destructive" />} Xóa
                       </Button>
                     </td>
@@ -190,7 +208,7 @@ export default function AdminSchoolAdminsPage() {
                     <p className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4 text-muted-foreground" /> {a.email || a.user_id}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{a.school_name || a.school_id}</p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDelete(a.school_admin_id || a.user_id)}>
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: a.school_admin_id || a.user_id })}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>
@@ -204,6 +222,17 @@ export default function AdminSchoolAdminsPage() {
       {!loading && admins.length > 0 && (
         <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmAlertDialog
+        isOpen={deleteAlert.isOpen}
+        onClose={() => setDeleteAlert({ isOpen: false, adminId: null })}
+        onConfirm={confirmDelete}
+        title="Xác nhận xóa"
+        description="Bạn có chắc chắn muốn xóa School Admin này? Hành động này không thể hoàn tác."
+        loading={!!deletingId}
+        confirmText="Xác nhận xóa"
+      />
     </div>
   );
 }

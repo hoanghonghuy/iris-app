@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
 import {
   UserCog, Loader2, Lock, Unlock, Shield, Mail, Plus, X, AlertCircle, CheckCircle2, Search
@@ -56,6 +57,8 @@ export default function AdminUsersPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [authActionAlert, setAuthActionAlert] = useState<{isOpen: boolean, userId: string | null, action: "lock" | "unlock" | null}>({isOpen: false, userId: null, action: null});
+
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true); setError("");
@@ -76,15 +79,24 @@ export default function AdminUsersPage() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const handleLock = async (userId: string) => {
-    try { setActionLoading(userId); await adminApi.lockUser(userId); toast.success("Đã khóa người dùng"); fetchUsers(); }
-    catch (err: any) { toast.error(err.response?.data?.error || "Không thể khóa"); }
-    finally { setActionLoading(null); }
-  };
-  const handleUnlock = async (userId: string) => {
-    try { setActionLoading(userId); await adminApi.unlockUser(userId); toast.success("Đã mở khóa người dùng"); fetchUsers(); }
-    catch (err: any) { toast.error(err.response?.data?.error || "Không thể mở khóa"); }
-    finally { setActionLoading(null); }
+  const confirmAuthAction = async () => {
+    if (!authActionAlert.userId || !authActionAlert.action) return;
+    try {
+      setActionLoading(authActionAlert.userId);
+      if (authActionAlert.action === "lock") {
+        await adminApi.lockUser(authActionAlert.userId);
+        toast.success("Đã khóa người dùng");
+      } else {
+        await adminApi.unlockUser(authActionAlert.userId);
+        toast.success("Đã mở khóa người dùng");
+      }
+      fetchUsers();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || `Không thể ${authActionAlert.action === "lock" ? "khóa" : "mở khóa"}`);
+    } finally {
+      setActionLoading(null);
+      setAuthActionAlert({ isOpen: false, userId: null, action: null });
+    }
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -260,12 +272,12 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {user.status === "active" ? (
-                        <Button variant="ghost" size="sm" onClick={() => handleLock(user.user_id)} disabled={actionLoading === user.user_id || currentUser?.user_id === user.user_id} title={currentUser?.user_id === user.user_id ? "Bạn không thể tự khóa chính mình" : ""}>
-                          {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="mr-1 h-4 w-4" />} Khóa
+                        <Button variant="ghost" size="sm" onClick={() => setAuthActionAlert({ isOpen: true, userId: user.user_id, action: "lock" })} disabled={actionLoading === user.user_id || currentUser?.user_id === user.user_id} title={currentUser?.user_id === user.user_id ? "Bạn không thể tự khóa chính mình" : ""}>
+                          {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="mr-1 h-4 w-4 text-destructive" />} <span className="text-destructive">Khóa</span>
                         </Button>
                       ) : user.status === "locked" ? (
-                        <Button variant="ghost" size="sm" onClick={() => handleUnlock(user.user_id)} disabled={actionLoading === user.user_id}>
-                          {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="mr-1 h-4 w-4" />} Mở khóa
+                        <Button variant="ghost" size="sm" onClick={() => setAuthActionAlert({ isOpen: true, userId: user.user_id, action: "unlock" })} disabled={actionLoading === user.user_id}>
+                          {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="mr-1 h-4 w-4 text-success" />} <span className="text-success">Mở khóa</span>
                         </Button>
                       ) : null}
                     </td>
@@ -293,12 +305,12 @@ export default function AdminUsersPage() {
                   </div>
                   <div>
                     {user.status === "active" ? (
-                      <Button variant="ghost" size="sm" onClick={() => handleLock(user.user_id)} disabled={actionLoading === user.user_id || currentUser?.user_id === user.user_id} title={currentUser?.user_id === user.user_id ? "Bạn không thể tự khóa chính mình" : ""}>
-                        {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                      <Button variant="ghost" size="sm" onClick={() => setAuthActionAlert({ isOpen: true, userId: user.user_id, action: "lock" })} disabled={actionLoading === user.user_id || currentUser?.user_id === user.user_id} title={currentUser?.user_id === user.user_id ? "Bạn không thể tự khóa chính mình" : ""}>
+                        {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4 text-destructive" />}
                       </Button>
                     ) : user.status === "locked" ? (
-                      <Button variant="ghost" size="sm" onClick={() => handleUnlock(user.user_id)} disabled={actionLoading === user.user_id}>
-                        {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
+                      <Button variant="ghost" size="sm" onClick={() => setAuthActionAlert({ isOpen: true, userId: user.user_id, action: "unlock" })} disabled={actionLoading === user.user_id}>
+                        {actionLoading === user.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4 text-success" />}
                       </Button>
                     ) : null}
                   </div>
@@ -313,6 +325,17 @@ export default function AdminUsersPage() {
       {!loading && users.length > 0 && (
         <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
+
+      {/* Lock/Unlock Confirmation */}
+      <ConfirmAlertDialog
+        isOpen={authActionAlert.isOpen}
+        onClose={() => setAuthActionAlert({ isOpen: false, userId: null, action: null })}
+        onConfirm={confirmAuthAction}
+        title={authActionAlert.action === "lock" ? "Xác nhận khóa tài khoản" : "Xác nhận mở khóa tài khoản"}
+        description={authActionAlert.action === "lock" ? "Việc khóa tài khoản sẽ ngay lập tức vô hiệu hóa các phiên đăng nhập của người dùng này và ngăn họ truy cập vào hệ thống. Bạn có chắc chắn muốn khóa?" : "Tài khoản sẽ có thể đăng nhập lại bình thường sau khi được mở khóa. Bạn có tiếp tục?"}
+        loading={!!actionLoading}
+        confirmText={authActionAlert.action === "lock" ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+      />
     </div>
   );
 }
