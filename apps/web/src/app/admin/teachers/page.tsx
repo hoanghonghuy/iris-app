@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
-import { Phone, Mail, Link2, Search, X } from "lucide-react";
+import { Phone, Mail, Link2, Search, X, BookUser } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Input } from "@/components/ui/input"; // Added missing import for Input
 
@@ -41,14 +41,23 @@ export default function AdminTeachersPage() {
   const [assignModal, setAssignModal] = useState<{isOpen: boolean, teacherId: string | null, teacherName: string | null}>({isOpen: false, teacherId: null, teacherName: null});
   const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, teacherId: string | null, classId: string | null, className: string | null}>({isOpen: false, teacherId: null, classId: null, className: null});
 
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const response = (error as { response?: { data?: { error?: string } } }).response;
+      return response?.data?.error || fallback;
+    }
+
+    return fallback;
+  };
+
   const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true); setError("");
       const response = await adminApi.getTeachers({ limit: 20, offset: currentOffset });
       setTeachers(response.data || []);
       if (response.pagination) setPagination(response.pagination);
-    } catch (err: any) {
-      const msg = err.response?.data?.error || "Không thể tải danh sách giáo viên";
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err, "Không thể tải danh sách giáo viên");
       setError(msg);
       toast.error(msg);
     } finally { setLoading(false); }
@@ -90,8 +99,8 @@ export default function AdminTeachersPage() {
       toast.success(`Đã gán giáo viên vào lớp ${className}`);
       setAssignModal({ isOpen: false, teacherId: null, teacherName: null });
       fetchTeachers();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể gán lớp");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Không thể gán lớp"));
     } finally { setActionLoading(false); }
   };
 
@@ -103,8 +112,8 @@ export default function AdminTeachersPage() {
       toast.success(`Đã hủy gán lớp ${unassignAlert.className}`);
       setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null });
       fetchTeachers();
-    } catch (err: any) {
-      toast.error(err.response?.data?.error || "Không thể hủy gán lớp");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Không thể hủy gán lớp"));
     } finally { setActionLoading(false); }
   };
 
@@ -251,7 +260,7 @@ export default function AdminTeachersPage() {
                   )}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-start">
+                <div className="mt-4 pt-4 border-t border-border/60 flex items-center justify-start">
                     <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
                     </Button>

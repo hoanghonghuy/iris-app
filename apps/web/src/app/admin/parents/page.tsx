@@ -41,14 +41,23 @@ export default function AdminParentsPage() {
   const [assignModal, setAssignModal] = useState<{isOpen: boolean, parentId: string | null, parentName: string | null}>({isOpen: false, parentId: null, parentName: null});
   const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, parentId: string | null, studentId: string | null, studentName: string | null}>({isOpen: false, parentId: null, studentId: null, studentName: null});
 
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (typeof error === "object" && error !== null && "response" in error) {
+      const response = (error as { response?: { data?: { error?: string } } }).response;
+      return response?.data?.error || fallback;
+    }
+
+    return fallback;
+  };
+
   const fetchParents = useCallback(async () => {
     try {
       setLoading(true); setError("");
       const response = await adminApi.getParents({ limit: 20, offset: currentOffset });
       setParents(response.data || []);
       if (response.pagination) setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải danh sách phụ huynh");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Không thể tải danh sách phụ huynh"));
     } finally { setLoading(false); }
   }, [currentOffset]);
 
@@ -103,8 +112,8 @@ export default function AdminParentsPage() {
       setSuccess(`Đã gán phụ huynh cho ${studentName}`);
       setAssignModal({ isOpen: false, parentId: null, parentName: null });
       fetchParents();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể gán");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Không thể gán"));
     } finally { setActionLoading(false); }
   };
 
@@ -116,8 +125,8 @@ export default function AdminParentsPage() {
       setSuccess(`Đã hủy gán học sinh ${unassignAlert.studentName}`);
       setUnassignAlert({ isOpen: false, parentId: null, studentId: null, studentName: null });
       fetchParents();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể hủy gán");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Không thể hủy gán"));
     } finally { setActionLoading(false); }
   };
 
@@ -241,7 +250,7 @@ export default function AdminParentsPage() {
                         <Badge key={c.student_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
                           {c.full_name}
                           <button 
-                            onClick={(e: any) => { e.preventDefault(); setUnassignAlert({ isOpen: true, parentId: p.parent_id, studentId: c.student_id, studentName: c.full_name }); }}
+                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); setUnassignAlert({ isOpen: true, parentId: p.parent_id, studentId: c.student_id, studentName: c.full_name }); }}
                             className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
                             aria-label="Remove child"
                           >
@@ -257,7 +266,7 @@ export default function AdminParentsPage() {
                   )}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-zinc-100 flex items-center justify-start">
+                <div className="mt-4 pt-4 border-t border-border/60 flex items-center justify-start">
                     <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, parentId: p.parent_id, parentName: p.full_name })}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán học sinh
                     </Button>
