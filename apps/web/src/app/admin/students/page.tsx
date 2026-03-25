@@ -38,7 +38,7 @@ export default function AdminStudentsPage() {
   const [formError, setFormError] = useState("");
 
   const [generatingCode, setGeneratingCode] = useState<string | null>(null);
-  const [parentCodes, setParentCodes] = useState<Record<string, string>>({});
+  const [revokingCode, setRevokingCode] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [codeError, setCodeError] = useState("");
 
@@ -119,16 +119,35 @@ export default function AdminStudentsPage() {
       setGeneratingCode(studentId); setCodeError("");
       const res = await adminApi.generateParentCode(studentId);
       const code = (res as any)?.data?.parent_code || (res as any)?.parent_code || "";
-      setParentCodes((prev) => ({ ...prev, [studentId]: code }));
+      const expiresAt = (res as any)?.data?.expires_at || (res as any)?.expires_at || "";
+      setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, active_parent_code: code, code_expires_at: expiresAt } : s));
     } catch (err: any) {
       setCodeError(err.response?.data?.error || "Không thể tạo mã");
     } finally { setGeneratingCode(null); }
   };
 
-  const handleCopy = (studentId: string) => {
-    navigator.clipboard.writeText(parentCodes[studentId] || "");
-    setCopiedId(studentId);
+  const handleRevokeCode = async (studentId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn thu hồi mã phụ huynh này không?")) return;
+    try {
+      setRevokingCode(studentId); setCodeError("");
+      await adminApi.revokeParentCode(studentId);
+      setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, active_parent_code: undefined, code_expires_at: undefined } : s));
+    } catch (err: any) {
+      setCodeError(err.response?.data?.error || "Không thể thu hồi mã");
+    } finally { setRevokingCode(null); }
+  };
+
+  const handleCopy = (code: string, id: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const getDaysLeft = (dateString?: string) => {
+    if (!dateString) return null;
+    const diff = new Date(dateString).getTime() - new Date().getTime();
+    if (diff <= 0) return "Hết hạn";
+    return `Còn ${Math.ceil(diff / (1000 * 3600 * 24))} ngày`;
   };
 
   const selectedClassName = classes.find((c) => c.class_id === selectedClassId)?.name || "";
@@ -274,12 +293,18 @@ export default function AdminStudentsPage() {
                     <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
                     <td className="px-6 py-4"><Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge></td>
                     <td className="px-6 py-4 text-right">
-                      {parentCodes[s.student_id] ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
-                          <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
-                            {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
-                          </Button>
+                      {s.active_parent_code ? (
+                        <div className="flex flex-col items-end gap-1">
+                           <div className="flex items-center gap-1">
+                              <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{s.active_parent_code}</code>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
+                                {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => handleRevokeCode(s.student_id)} disabled={revokingCode === s.student_id}>
+                                {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                              </Button>
+                           </div>
+                           <span className={`text-[10px] ${getDaysLeft(s.code_expires_at) === 'Hết hạn' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{getDaysLeft(s.code_expires_at)}</span>
                         </div>
                       ) : (
                         <Button variant="ghost" size="sm" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
@@ -308,16 +333,24 @@ export default function AdminStudentsPage() {
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {s.dob}</span>
                     <Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge>
                   </div>
-                  {parentCodes[s.student_id] ? (
-                    <div className="mt-2 flex items-center gap-1">
-                      <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{parentCodes[s.student_id]}</code>
-                      <Button variant="ghost" size="sm" onClick={() => handleCopy(s.student_id)}>
-                        {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
-                      </Button>
+                  {s.active_parent_code ? (
+                    <div className="mt-2 flex items-center justify-between gap-1 w-full bg-muted/50 p-2 rounded-md">
+                      <div>
+                        <code className="rounded bg-background px-2 py-0.5 text-sm font-mono tracking-wider shadow-sm">{s.active_parent_code}</code>
+                        <div className={`text-[10px] mt-1 ${getDaysLeft(s.code_expires_at) === 'Hết hạn' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{getDaysLeft(s.code_expires_at)}</div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="secondary" size="sm" className="h-8 shadow-sm" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
+                          {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => handleRevokeCode(s.student_id)} disabled={revokingCode === s.student_id}>
+                          {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <Button variant="ghost" size="sm" className="mt-2" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
-                      {generatingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <KeyRound className="mr-1 h-3 w-3" />} Tạo mã PH
+                    <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
+                      {generatingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <KeyRound className="mr-2 h-3 w-3" />} Tạo mã PH
                     </Button>
                   )}
                 </div>

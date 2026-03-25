@@ -44,7 +44,7 @@ export default function ParentDashboard() {
     <div className="space-y-8 pb-8">
       {/* Hero Header Area */}
       <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="hidden md:flex items-center gap-2 mb-1">
           <span className="bg-primary/15 text-primary px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">
             Parent Portal
           </span>
@@ -52,7 +52,7 @@ export default function ParentDashboard() {
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
           Xin chào, {user?.full_name || user?.email?.split('@')[0]}
         </h1>
-        <p className="text-muted-foreground text-base max-w-2xl mt-1">
+        <p className="text-muted-foreground text-base max-w-2xl mt-1 hidden md:block">
           Hôm nay con bạn có hoạt động gì mới? Bạn hiện đang theo dõi hồ sơ của {children.length} bé.
         </p>
       </div>
@@ -64,41 +64,25 @@ export default function ParentDashboard() {
       ) : (
         <>
           {/* Quick Actions / Bento Box */}
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-2">
-            <Link href="/parent/children" className="group">
+          <div className="grid gap-2.5 md:gap-3 grid-cols-2">
+            <Link href="/parent/children" className="group h-full">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-amber-500/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-amber-50/50 dark:hover:to-amber-950/20">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-4 bg-amber-500/10 text-amber-600 rounded-2xl transition-transform group-hover:scale-110 duration-300">
-                        <Baby className="h-7 w-7" />
-                      </div>
-                      <div>
-                        <p className="text-xl font-bold text-foreground group-hover:text-amber-600 transition-colors">Hồ sơ Con em</p>
-                        <p className="text-sm text-muted-foreground mt-0.5">Quản lý và xem bảng điểm, sức khỏe</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                <CardContent className="p-2.5 md:p-4 flex flex-col items-center justify-center gap-1.5 md:gap-2 h-full text-center">
+                  <div className="p-2.5 md:p-3 bg-amber-500/10 text-amber-600 rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">
+                    <Baby className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
+                  <p className="font-medium md:font-semibold text-xs md:text-sm text-foreground group-hover:text-amber-600 transition-colors">Hồ sơ Con em</p>
                 </CardContent>
               </Card>
             </Link>
 
-            <Link href="/parent/posts" className="group">
+            <Link href="/parent/posts" className="group h-full">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-primary/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-primary/10 dark:hover:to-primary/20">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-4 bg-primary/10 text-primary rounded-2xl transition-transform group-hover:scale-110 duration-300">
-                        <MessageSquare className="h-7 w-7" />
-                      </div>
-                      <div>
-                        <p className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">Bảng tin Lớp</p>
-                        <p className="text-sm text-muted-foreground mt-0.5">Cập nhật thông báo từ giáo viên</p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground opacity-30 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                <CardContent className="p-2.5 md:p-4 flex flex-col items-center justify-center gap-1.5 md:gap-2 h-full text-center">
+                  <div className="p-2.5 md:p-3 bg-primary/10 text-primary rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">
+                    <MessageSquare className="h-5 w-5 md:h-6 md:w-6" />
                   </div>
+                  <p className="font-medium md:font-semibold text-xs md:text-sm text-foreground group-hover:text-primary transition-colors">Bảng tin Lớp</p>
                 </CardContent>
               </Card>
             </Link>
@@ -114,8 +98,8 @@ export default function ParentDashboard() {
                 <div className="grid gap-3">
                   {children.map((child) => (
                     <Card key={child.student_id} className="group hover:border-primary/50 transition-colors">
-                      <CardContent className="p-4 flex items-center gap-4">
-                        <div className="h-12 w-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
+                      <CardContent className="p-3 md:p-4 flex items-center gap-3 md:gap-4">
+                        <div className="h-10 w-10 md:h-12 md:w-12 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base md:text-lg">
                           {child.full_name?.charAt(0)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -158,7 +142,7 @@ export default function ParentDashboard() {
                     const config = postTypeConfig[p.type] || { label: p.type, colorClass: "bg-muted text-muted-foreground" };
                     return (
                       <Card key={p.post_id} className="group hover:shadow-md transition-shadow">
-                        <CardContent className="p-5">
+                        <CardContent className="p-4 md:p-5">
                           <div className="flex items-center justify-between mb-3 border-b border-border/50 pb-3">
                             <span className={`px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide ${config.colorClass}`}>
                               {config.label}
