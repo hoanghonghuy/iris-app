@@ -99,3 +99,33 @@ func (h *StudentHandler) ListByClass(c *gin.Context) {
 		HasMore: params.Offset+len(students) < total,
 	})
 }
+
+// GetProfile lấy thông tin chi tiết của một học sinh
+func (h *StudentHandler) GetProfile(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	profile, err := h.studentService.GetProfile(ctx, adminSchoolID, studentID)
+	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, service.ErrFailedToGetStudent) {
+			response.Fail(c, http.StatusNotFound, "student not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to fetch student profile")
+		return
+	}
+
+	response.OK(c, profile)
+}

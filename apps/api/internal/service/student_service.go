@@ -88,3 +88,18 @@ func (s *StudentService) ListByClass(ctx context.Context, adminSchoolID *uuid.UU
 	}
 	return s.studentRepo.ListByClass(ctx, classID, limit, offset)
 }
+
+// GetProfile lấy chi tiết một học sinh
+func (s *StudentService) GetProfile(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID) (*model.StudentProfile, error) {
+	profile, err := s.studentRepo.GetStudentProfile(ctx, studentID)
+	if err != nil {
+		return nil, ErrFailedToGetStudent
+	}
+
+	// SCHOOL_ADMIN: validate học sinh thuộc cùng school với admin
+	if adminSchoolID != nil && profile.SchoolID != *adminSchoolID {
+		return nil, ErrSchoolAccessDenied
+	}
+
+	return profile, nil
+}

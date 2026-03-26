@@ -31,3 +31,17 @@ type StudentParentCode struct {
 	MaxUsage   int
 	ExpiresAt  time.Time
 }
+
+// StudentParentInfo thông tin cha mẹ của học sinh (rút gọn)
+type StudentParentInfo struct {
+	ParentID uuid.UUID `json:"parent_id"`
+	FullName string    `json:"full_name"`
+	Phone    string    `json:"phone"`
+	Email    string    `json:"email"`
+}
+
+// StudentProfile Dữ liệu chi tiết về học sinh bao gồm phụ huynh
+type StudentProfile struct {
+	Student
+	Parents []StudentParentInfo `json:"parents"`
+}

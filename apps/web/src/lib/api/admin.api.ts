@@ -4,7 +4,7 @@
  */
 import { apiClient } from './client';
 import {
-  School, Class, Student, UserInfo, Teacher, Parent,
+  School, Class, Student, StudentProfile, UserInfo, Teacher, Parent,
   ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest, AdminAnalytics
 } from '@/types';
 
@@ -39,6 +39,10 @@ export const adminApi = {
   getStudentsByClass: async (classId: string, params?: PaginationParams) => {
     const res = await apiClient.get<ApiResponse<Student[]>>(`/admin/students/by-class/${classId}`, { params });
     return res.data;
+  },
+  getStudentProfile: async (studentId: string) => {
+    const res = await apiClient.get<ApiResponse<StudentProfile>>(`/admin/students/${studentId}`);
+    return res.data.data;
   },
   createStudent: async (data: CreateStudentRequest) => {
     const res = await apiClient.post('/admin/students', data);

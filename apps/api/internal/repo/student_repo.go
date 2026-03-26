@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -80,6 +81,52 @@ func (r *StudentRepo) GetByStudentID(ctx context.Context, studentID uuid.UUID) (
 		return nil, err
 	}
 	return &student, nil
+}
+
+// GetStudentProfile lấy chi tiết hồ sơ học sinh (Bao gồm tên lớp và danh sách Phụ huynh)
+func (r *StudentRepo) GetStudentProfile(ctx context.Context, studentID uuid.UUID) (*model.StudentProfile, error) {
+	const q = `
+		SELECT 
+			s.student_id, s.school_id, s.current_class_id, c.name as current_class_name, 
+			s.full_name, s.dob, s.gender,
+			COALESCE(
+				json_agg(
+					json_build_object(
+						'parent_id', p.parent_id,
+						'full_name', p.full_name,
+						'phone', COALESCE(p.phone, ''),
+						'email', u.email
+					)
+				) FILTER (WHERE p.parent_id IS NOT NULL),
+				'[]'
+			) as parents
+		FROM students s
+		LEFT JOIN classes c ON s.current_class_id = c.class_id
+		LEFT JOIN student_parents sp ON s.student_id = sp.student_id
+		LEFT JOIN parents p ON sp.parent_id = p.parent_id
+		LEFT JOIN users u ON p.user_id = u.user_id
+		WHERE s.student_id = $1
+		GROUP BY s.student_id, c.name;
+	`
+	var profile model.StudentProfile
+	var parentsJSON []byte
+
+	err := r.pool.QueryRow(ctx, q, studentID).Scan(
+		&profile.StudentID, &profile.SchoolID, &profile.CurrentClassID, 
+		&profile.CurrentClassName, &profile.FullName, &profile.DOB, &profile.Gender, 
+		&parentsJSON,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse parents JSON
+	if err := json.Unmarshal(parentsJSON, &profile.Parents); err != nil {
+		// Log lỗi unmarshal nếu cần, tạm thời gán rỗng
+		profile.Parents = []model.StudentParentInfo{}
+	}
+
+	return &profile, nil
 }
 
 // GetSchoolIDByStudentID lấy school_id của student

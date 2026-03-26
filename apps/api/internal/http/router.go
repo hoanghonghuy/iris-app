@@ -203,6 +203,7 @@ func NewRouter(
 				students := admin.Group("/students")
 				students.POST("", studentHandler.Create)
 				students.GET("/by-class/:class_id", studentHandler.ListByClass)
+				students.GET("/:student_id", studentHandler.GetProfile)
 
 				// User routes (quản lý users)
 				// AssignRole chỉ SUPER_ADMIN → đăng ký ở superOnly bên dưới

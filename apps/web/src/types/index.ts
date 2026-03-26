@@ -138,6 +138,23 @@ export interface Student {
 }
 
 /**
+ * StudentParentInfo - Thông tin cha mẹ (rút gọn) trả về cùng hồ sơ học sinh
+ */
+export interface StudentParentInfo {
+  parent_id: string;
+  full_name: string;
+  phone: string;
+  email: string;
+}
+
+/**
+ * StudentProfile - Hồ sơ chi tiết học sinh gồm cả cha mẹ
+ */
+export interface StudentProfile extends Student {
+  parents: StudentParentInfo[];
+}
+
+/**
  * StudentGender - Giới tính học sinh
  */
 export type StudentGender = "male" | "female" | "other";

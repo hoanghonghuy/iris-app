@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import Link from "next/link";
 import { adminApi } from "@/lib/api/admin.api";
 import { School, Class, Student } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -290,7 +291,11 @@ export default function AdminStudentsPage() {
               <tbody>
                 {filteredStudents.map((s) => (
                   <tr key={s.student_id} className="border-b last:border-0 hover:bg-muted">
-                    <td className="px-6 py-4 font-medium">{s.full_name}</td>
+                    <td className="px-6 py-4 font-medium">
+                      <Link href={`/admin/students/${s.student_id}`} className="hover:text-primary hover:underline transition-colors">
+                        {s.full_name}
+                      </Link>
+                    </td>
                     <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
                     <td className="px-6 py-4"><Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge></td>
                     <td className="px-6 py-4 text-right">
@@ -329,7 +334,11 @@ export default function AdminStudentsPage() {
               <CardContent className="flex items-start gap-3 py-4">
                 <User className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{s.full_name}</p>
+                  <p className="font-medium">
+                    <Link href={`/admin/students/${s.student_id}`} className="hover:text-primary hover:underline transition-colors">
+                      {s.full_name}
+                    </Link>
+                  </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {s.dob}</span>
                     <Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge>
