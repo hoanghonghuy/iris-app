@@ -32,6 +32,35 @@ type HeaderMeta = {
   icon?: React.ReactNode;
 };
 
+type HeaderPrefixMetaRule = {
+  prefixes: string[];
+  meta: HeaderMeta;
+};
+
+const EXACT_HEADER_META: Record<string, HeaderMeta> = {
+  "/teacher": { title: "Tổng quan giáo viên" },
+  "/parent": { title: "Tổng quan phụ huynh" },
+  "/admin": { title: "Tổng quan quản trị" },
+};
+
+const PREFIX_HEADER_META_RULES: HeaderPrefixMetaRule[] = [
+  { prefixes: ["/teacher/classes/"], meta: { title: "Chi tiết lớp học" } },
+  { prefixes: ["/teacher/classes"], meta: { title: "Lớp của tôi" } },
+  { prefixes: ["/teacher/health"], meta: { title: "Sức khỏe học sinh" } },
+  { prefixes: ["/teacher/posts"], meta: { title: "Bài đăng" } },
+  { prefixes: ["/teacher/profile"], meta: { title: "Hồ sơ cá nhân" } },
+  { prefixes: ["/parent/children/"], meta: { title: "Thông tin con" } },
+  { prefixes: ["/parent/children"], meta: { title: "Con của tôi" } },
+  { prefixes: ["/parent/profile"], meta: { title: "Hồ sơ cá nhân" } },
+  { prefixes: ["/admin/schools"], meta: { title: "Quản lý trường học" } },
+  { prefixes: ["/admin/school-admins"], meta: { title: "Quản lý School Admin" } },
+  { prefixes: ["/admin/classes"], meta: { title: "Quản lý lớp học" } },
+  { prefixes: ["/admin/teachers"], meta: { title: "Quản lý giáo viên" } },
+  { prefixes: ["/admin/students"], meta: { title: "Quản lý học sinh" } },
+  { prefixes: ["/admin/parents"], meta: { title: "Quản lý phụ huynh" } },
+  { prefixes: ["/admin/users"], meta: { title: "Quản lý người dùng" } },
+];
+
 function resolveHeaderMeta(pathname: string | null): HeaderMeta | null {
   if (!pathname) {
     return null;
@@ -47,80 +76,21 @@ function resolveHeaderMeta(pathname: string | null): HeaderMeta | null {
     };
   }
 
-  if (pathname.startsWith("/teacher/classes/")) {
-    return { title: "Chi tiết lớp học" };
-  }
-
-  if (pathname.startsWith("/teacher/classes")) {
-    return { title: "Lớp của tôi" };
-  }
-
-  if (pathname.startsWith("/teacher/health")) {
-    return { title: "Sức khỏe học sinh" };
-  }
-
-  if (pathname.startsWith("/teacher/posts")) {
-    return { title: "Bài đăng" };
-  }
-
-  if (pathname.startsWith("/teacher/profile")) {
-    return { title: "Hồ sơ cá nhân" };
-  }
-
-  if (pathname === "/teacher") {
-    return { title: "Tổng quan giáo viên" };
-  }
-
-  if (pathname.startsWith("/parent/children/")) {
-    return { title: "Thông tin con" };
-  }
-
-  if (pathname.startsWith("/parent/children")) {
-    return { title: "Con của tôi" };
-  }
-
   if (pathname.startsWith("/parent/posts") || pathname.startsWith("/parent/feed")) {
     return { title: "Bảng tin" };
   }
 
-  if (pathname.startsWith("/parent/profile")) {
-    return { title: "Hồ sơ cá nhân" };
+  const exactMeta = EXACT_HEADER_META[pathname];
+  if (exactMeta) {
+    return exactMeta;
   }
 
-  if (pathname === "/parent") {
-    return { title: "Tổng quan phụ huynh" };
-  }
+  const matchedPrefixRule = PREFIX_HEADER_META_RULES.find((rule) =>
+    rule.prefixes.some((prefix) => pathname.startsWith(prefix))
+  );
 
-  if (pathname.startsWith("/admin/schools")) {
-    return { title: "Quản lý trường học" };
-  }
-
-  if (pathname.startsWith("/admin/school-admins")) {
-    return { title: "Quản lý School Admin" };
-  }
-
-  if (pathname.startsWith("/admin/classes")) {
-    return { title: "Quản lý lớp học" };
-  }
-
-  if (pathname.startsWith("/admin/teachers")) {
-    return { title: "Quản lý giáo viên" };
-  }
-
-  if (pathname.startsWith("/admin/students")) {
-    return { title: "Quản lý học sinh" };
-  }
-
-  if (pathname.startsWith("/admin/parents")) {
-    return { title: "Quản lý phụ huynh" };
-  }
-
-  if (pathname.startsWith("/admin/users")) {
-    return { title: "Quản lý người dùng" };
-  }
-
-  if (pathname === "/admin") {
-    return { title: "Tổng quan quản trị" };
+  if (matchedPrefixRule) {
+    return matchedPrefixRule.meta;
   }
 
   return null;

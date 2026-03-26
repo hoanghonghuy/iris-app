@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { authHelpers } from '@/lib/api/client';
+import { getWsBaseUrl } from '@/lib/runtime-config';
 import { WSEvent, Message } from '@/types';
 
-const WS_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1')
-  .replace(/^http/, 'ws');
+const WS_BASE_URL = getWsBaseUrl();
 
 /**
  * useChatWebSocket - Hook quản lý kết nối WebSocket cho chat realtime.
