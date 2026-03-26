@@ -126,3 +126,120 @@
 - [ ] Quyết định chuẩn status code cho “không đủ quyền” ở LIST endpoints
 - [ ] Xem lại threat model cho WS/CORS & token-in-URL
 - [ ] Kiểm tra race condition cho parent_code và password_reset_tokens (atomic update/transaction)
+
+---
+
+## Frontend Follow-up Audit (2026-03-26)
+
+### Progress update (2026-03-26)
+- ✅ Hoàn tất P1-1: Chuẩn hóa API/WS base URL helper dùng chung (`runtime-config`).
+- ✅ Hoàn tất P1-2: Giảm hardcode chuỗi `if pathname` trong `Header` bằng mapping declarative.
+- ✅ Re-check sau refactor: `npx tsc --noEmit` và eslint scoped cho các file thay đổi đều sạch.
+
+### 1) Cấu hình frontend chính
+- `apps/web/package.json`
+  - Next.js `^16.2.1`, React `19.2.3`, TypeScript `^5`, ESLint `^9`.
+  - Có `lucide-react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `next-themes`.
+  - Có CLI `shadcn` trong devDependencies.
+- `apps/web/tsconfig.json`
+  - `strict: true`, `moduleResolution: bundler`, alias `@/*`.
+- `apps/web/components.json`
+  - `iconLibrary: "lucide"`, alias `ui: "@/components/ui"`, style `new-york`.
+- `apps/web/next.config.ts`
+  - Đang để mặc định, chưa có custom hardening/perf tuning riêng.
+
+### 2) Đánh giá readability (điểm nóng)
+- Các file TS/TSX lớn nhất hiện tại (line count):
+  - `apps/web/src/app/teacher/attendance/useTeacherAttendancePage.ts` (~494)
+  - `apps/web/src/types/index.ts` (~487)
+  - `apps/web/src/app/admin/students/page.tsx` (~348)
+  - `apps/web/src/app/admin/parents/page.tsx` (~314)
+  - `apps/web/src/app/admin/teachers/page.tsx` (~303)
+- Đánh giá nhanh:
+  - Batch refactor trước đó đã tách tốt attendance/admin users theo hooks/components.
+  - Vẫn còn cụm màn admin lớn (students/parents/teachers) nên tiếp tục tách dần để giảm cognitive load cho người mới.
+
+### 3) Rà soát hardcode (web)
+- Hardcode URL fallback local:
+  - `apps/web/src/lib/api/client.ts`
+    - `process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'`
+  - `apps/web/src/hooks/useChatWebSocket.ts`
+    - `process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'`
+- Hardcode route/title mapping dài theo `pathname`:
+  - `apps/web/src/components/layout/Header.tsx`
+  - Chuỗi `if (pathname.startsWith(...))` hiện khá dài, nên gom thành config map để dễ bảo trì.
+- Hardcode menu routes/role gate:
+  - `apps/web/src/components/layout/Sidebar.tsx`
+  - Chấp nhận được ở mức hiện tại, nhưng có thể tách config khỏi component render để gọn hơn.
+
+### 4) Xác minh shadcn/ui + lucide-react
+- `shadcn/ui` đang được dùng rộng trong app:
+  - Có nhiều import từ `@/components/ui/*` trên toàn bộ màn auth/admin/teacher/parent.
+- `lucide-react` đang dùng nhất quán cho icon:
+  - Có import ở layout/shared/pages/components và cả UI primitives (`dropdown-menu`, `select`, `dialog`, `sheet`, `sonner`).
+- Kết luận:
+  - Stack UI hiện tại đã đi đúng hướng shadcn + lucide và đã được áp dụng nhất quán.
+
+### 5) Smoke test checklist thủ công (ưu tiên chạy sau refactor)
+- Auth / Redirect
+  - Đăng nhập từng role (`SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`, `PARENT`) và xác nhận redirect đúng dashboard.
+  - Truy cập route trái quyền để xác nhận guard + redirect.
+- Admin users
+  - Tạo user mới.
+  - Lọc/sort/search list.
+  - Lock/unlock user và kiểm tra trạng thái hiển thị.
+- Teacher attendance
+  - Take mode: lọc theo trạng thái, search học sinh, mark + ghi chú + save.
+  - Revert/cancel thay đổi.
+  - History mode: lọc theo ngày/trạng thái/từ khóa, phân trang.
+- Feed interactions (teacher/parent)
+  - Like/unlike post, tạo comment, share.
+  - Reload trang để xác nhận dữ liệu persisted từ API.
+
+### 5.1) Kết quả smoke thực thi (API runtime) — 2026-03-26
+- Môi trường test local:
+  - Postgres qua Docker (`iris-postgres`, port `5433`), migration lên `10`.
+  - Seed demo data từ `scripts/db/seed_demo.sql`.
+  - API chạy local tại `http://localhost:8080`.
+- Script chạy smoke:
+  - `scripts/smoke/api-smoke.ps1`
+- Kết quả tổng quan:
+  - ✅ PASS `GET /api/v1/health`
+  - ✅ PASS login: teacher1 / parent1 / super admin
+  - ✅ PASS teacher flow: classes list, students list, mark attendance, create post, like/comment/share
+  - ✅ PASS parent flow: feed list, like/comment/share cùng post teacher vừa tạo
+  - ✅ PASS admin flow: users list
+- Evidence ID từ phiên chạy:
+  - `class_id = b56478a9-622b-4f02-ba06-8ba0d6ab5ba7`
+  - `student_id = 0ee05609-199d-49dc-a835-de72c06487bb`
+  - `post_id = 94f929d6-a1dc-4844-9e4d-cdcb0e22318f`
+  - Parent feed chứa post smoke: `YES`
+
+### 5.2) Kết quả smoke thực thi (Browser UI) — 2026-03-26
+- Môi trường test local:
+  - Frontend: `http://localhost:3000` (Next.js dev)
+  - Backend API: `http://localhost:8080` (Go/Gin)
+  - DB: Postgres local đã migrate + seed demo
+- Script chạy smoke:
+  - `scripts/smoke/ui-smoke.mjs` (Playwright, headless Chromium)
+- Checklist đã chạy:
+  - ✅ Guard redirect: truy cập `/admin/users` khi chưa login chuyển về `/login`
+  - ✅ Login + redirect đúng role:
+    - `admin@iris.local` → `/admin`
+    - `teacher1@iris.local` → `/teacher`
+    - `parent1@iris.local` → `/parent`
+  - ✅ Admin users screen hiển thị các thành phần cốt lõi:
+    - URL `/admin/users`
+    - Ô tìm kiếm `Tìm theo email...`
+    - Nút `Tạo user`
+  - ✅ Teacher attendance screen hiển thị các thành phần cốt lõi:
+    - Nút `Điểm danh hôm nay`
+    - Nút `Lịch sử lớp`
+    - Ô tìm kiếm `Tìm học sinh theo tên`
+- Kết quả tổng quan:
+  - `passed=6`, `failed=0`
+
+### 6) Ưu tiên kỹ thuật đề xuất tiếp theo
+- DONE: Tách `Header` title resolver thành cấu hình route metadata.
+- DONE: Chuẩn hóa `NEXT_PUBLIC_API_URL` thành helper chung để tránh lặp fallback.
+- P2: Tiếp tục decomposition các page admin lớn (`students`, `parents`, `teachers`) theo mẫu đã áp dụng ở `admin/users`.
