@@ -2,12 +2,27 @@ import { useMemo, useState } from "react";
 import { Student } from "@/types";
 import { TakeListFilter } from "./config";
 
-interface UseAttendanceTakeModeParams {
+export interface UseAttendanceTakeModeParams {
   students: Student[];
   isRowDirty: (studentId: string) => boolean;
 }
 
-export function useAttendanceTakeMode({ students, isRowDirty }: UseAttendanceTakeModeParams) {
+export interface UseAttendanceTakeModeResult {
+  studentSearch: string;
+  listOrderMode: "prioritize" | "original";
+  takeListFilter: TakeListFilter;
+  showMobileTakeControls: boolean;
+  displayedStudents: Student[];
+  displayedDirtyCount: number;
+  displayedSavedCount: number;
+  globalPendingCount: number;
+  setStudentSearch: (value: string) => void;
+  setListOrderMode: (value: "prioritize" | "original") => void;
+  setTakeListFilter: (value: TakeListFilter) => void;
+  setShowMobileTakeControls: (value: boolean | ((prev: boolean) => boolean)) => void;
+}
+
+export function useAttendanceTakeMode({ students, isRowDirty }: UseAttendanceTakeModeParams): UseAttendanceTakeModeResult {
   const [studentSearch, setStudentSearch] = useState("");
   const [listOrderMode, setListOrderMode] = useState<"prioritize" | "original">("prioritize");
   const [takeListFilter, setTakeListFilter] = useState<TakeListFilter>("all");

@@ -2,16 +2,80 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { AttendanceChangeLog, AttendanceStatus, Class, Student } from "@/types";
 import { extractAttendanceErrorMessage } from "./utils";
-import { useAttendanceTakeMode } from "./useAttendanceTakeMode";
-import { useAttendanceHistoryMode } from "./useAttendanceHistoryMode";
+import { useAttendanceTakeMode, UseAttendanceTakeModeResult } from "./useAttendanceTakeMode";
+import {
+  useAttendanceHistoryMode,
+  UseAttendanceHistoryModeResult,
+} from "./useAttendanceHistoryMode";
 
 type AttendanceValue = { status: AttendanceStatus; note: string };
+
+export interface UseTeacherAttendancePageResult {
+  classes: Class[];
+  selectedClassId: string;
+  students: Student[];
+  loadingClasses: boolean;
+  loadingStudents: boolean;
+  error: string;
+  submitting: string | null;
+  canceling: string | null;
+  savingAll: boolean;
+  savingDisplayed: boolean;
+  historyOpen: Set<string>;
+  historyLoading: Set<string>;
+  historyByStudent: Record<string, AttendanceChangeLog[]>;
+  viewMode: "take" | "history";
+  dirtyCount: number;
+  attendance: Record<string, AttendanceValue>;
+  hasSavedToday: Record<string, boolean>;
+  setSelectedClassId: (value: string) => void;
+  setViewMode: (value: "take" | "history") => void;
+  isRowDirty: (studentId: string) => boolean;
+  handleMark: (studentId: string) => Promise<void>;
+  handleRevertLocal: (studentId: string) => void;
+  handleCancelSaved: (studentId: string) => Promise<void>;
+  handleSaveAll: () => Promise<void>;
+  handleSaveDisplayed: () => Promise<void>;
+  applyStatusToDisplayed: (status: AttendanceStatus) => void;
+  toggleHistory: (studentId: string) => Promise<void>;
+  handleAttendanceStatusChange: (studentId: string, status: AttendanceStatus) => void;
+  handleAttendanceNoteChange: (studentId: string, note: string) => void;
+  studentSearch: UseAttendanceTakeModeResult["studentSearch"];
+  listOrderMode: UseAttendanceTakeModeResult["listOrderMode"];
+  takeListFilter: UseAttendanceTakeModeResult["takeListFilter"];
+  showMobileTakeControls: UseAttendanceTakeModeResult["showMobileTakeControls"];
+  displayedStudents: UseAttendanceTakeModeResult["displayedStudents"];
+  displayedDirtyCount: UseAttendanceTakeModeResult["displayedDirtyCount"];
+  displayedSavedCount: UseAttendanceTakeModeResult["displayedSavedCount"];
+  globalPendingCount: UseAttendanceTakeModeResult["globalPendingCount"];
+  setStudentSearch: UseAttendanceTakeModeResult["setStudentSearch"];
+  setListOrderMode: UseAttendanceTakeModeResult["setListOrderMode"];
+  setTakeListFilter: UseAttendanceTakeModeResult["setTakeListFilter"];
+  setShowMobileTakeControls: UseAttendanceTakeModeResult["setShowMobileTakeControls"];
+  historyFrom: UseAttendanceHistoryModeResult["historyFrom"];
+  historyTo: UseAttendanceHistoryModeResult["historyTo"];
+  historyStudentId: UseAttendanceHistoryModeResult["historyStudentId"];
+  historyStatus: UseAttendanceHistoryModeResult["historyStatus"];
+  historyListLoading: UseAttendanceHistoryModeResult["historyListLoading"];
+  historyList: UseAttendanceHistoryModeResult["historyList"];
+  historyOffset: UseAttendanceHistoryModeResult["historyOffset"];
+  historyLimit: UseAttendanceHistoryModeResult["historyLimit"];
+  historyTotal: UseAttendanceHistoryModeResult["historyTotal"];
+  historyHasMore: UseAttendanceHistoryModeResult["historyHasMore"];
+  setHistoryFrom: UseAttendanceHistoryModeResult["setHistoryFrom"];
+  setHistoryTo: UseAttendanceHistoryModeResult["setHistoryTo"];
+  setHistoryStudentId: UseAttendanceHistoryModeResult["setHistoryStudentId"];
+  setHistoryStatus: UseAttendanceHistoryModeResult["setHistoryStatus"];
+  handleHistorySearch: UseAttendanceHistoryModeResult["handleHistorySearch"];
+  handleHistoryPrev: UseAttendanceHistoryModeResult["handleHistoryPrev"];
+  handleHistoryNext: UseAttendanceHistoryModeResult["handleHistoryNext"];
+}
 
 function getDefaultAttendanceValue(): AttendanceValue {
   return { status: "present", note: "" };
 }
 
-export function useTeacherAttendancePage() {
+export function useTeacherAttendancePage(): UseTeacherAttendancePageResult {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState("");
   const [students, setStudents] = useState<Student[]>([]);

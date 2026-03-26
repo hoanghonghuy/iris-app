@@ -7,13 +7,34 @@ export type AttendanceChangeHistoryRow = AttendanceChangeLog & {
   student_name: string;
 };
 
-interface UseAttendanceHistoryModeParams {
+export interface UseAttendanceHistoryModeParams {
   selectedClassId: string;
   students: Student[];
   onError: (message: string) => void;
 }
 
-export function useAttendanceHistoryMode({ selectedClassId, students, onError }: UseAttendanceHistoryModeParams) {
+export interface UseAttendanceHistoryModeResult {
+  historyFrom: string;
+  historyTo: string;
+  historyStudentId: string;
+  historyStatus: AttendanceStatus | "all";
+  historyListLoading: boolean;
+  historyList: AttendanceChangeHistoryRow[];
+  historyOffset: number;
+  historyLimit: number;
+  historyTotal: number;
+  historyHasMore: boolean;
+  setHistoryFrom: (value: string) => void;
+  setHistoryTo: (value: string) => void;
+  setHistoryStudentId: (value: string) => void;
+  setHistoryStatus: (value: AttendanceStatus | "all") => void;
+  loadClassHistory: (offset?: number) => Promise<void>;
+  handleHistorySearch: () => void;
+  handleHistoryPrev: () => void;
+  handleHistoryNext: () => void;
+}
+
+export function useAttendanceHistoryMode({ selectedClassId, students, onError }: UseAttendanceHistoryModeParams): UseAttendanceHistoryModeResult {
   const [historyFrom, setHistoryFrom] = useState(() => {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 7);
