@@ -5,10 +5,11 @@
  */
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authHelpers } from '@/lib/api/client';
 import { authApi } from '@/lib/api/auth.api';
+import { getDashboardRouteByRole } from '@/lib/auth-config';
 import { UserInfo, UserRole } from '@/types';
 
 interface AuthContextType {
@@ -26,6 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [role, setRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  const logout = useCallback(() => {
+    authHelpers.removeToken();
+    setUser(null);
+    setRole(null);
+    router.push('/login');
+  }, [router]);
 
   // Kiểm tra trạng thái đăng nhập khi app khởi chạy
   useEffect(() => {
@@ -48,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initAuth();
-  }, []);
+  }, [logout]);
 
   const login = (token: string, userRole: UserRole) => {
     authHelpers.setToken(token);
@@ -58,30 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Sau khi login, fetch thông tin user
     authApi.getMe().then(userData => {
       setUser(userData);
-      
-      // Redirect dựa trên role
-      switch (userRole) {
-        case 'SUPER_ADMIN':
-        case 'SCHOOL_ADMIN':
-          router.push('/admin');
-          break;
-        case 'TEACHER':
-          router.push('/teacher');
-          break;
-        case 'PARENT':
-          router.push('/parent');
-          break;
-        default:
-          router.push('/');
-      }
-    });
-  };
 
-  const logout = () => {
-    authHelpers.removeToken();
-    setUser(null);
-    setRole(null);
-    router.push('/login');
+      router.push(getDashboardRouteByRole(userRole));
+    });
   };
 
   return (

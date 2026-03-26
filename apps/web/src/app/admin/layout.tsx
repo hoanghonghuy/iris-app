@@ -9,10 +9,11 @@ import React from "react";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { adminMenuItems } from "@/components/layout/Sidebar";
+import { ADMIN_ALLOWED_ROLES } from "@/lib/auth-config";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ProtectedRoute allowedRoles={["SUPER_ADMIN", "SCHOOL_ADMIN"]}>
+    <ProtectedRoute allowedRoles={ADMIN_ALLOWED_ROLES}>
       <AppShell menuItems={adminMenuItems}>
         {children}
       </AppShell>

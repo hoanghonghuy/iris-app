@@ -20,21 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ClipboardCheck, LogOut, Menu, UserCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-
-const roleLabels: Record<string, string> = {
-  SUPER_ADMIN: "Quản trị viên cấp cao",
-  SCHOOL_ADMIN: "Quản trị viên trường",
-  TEACHER: "Giáo viên",
-  PARENT: "Phụ huynh",
-};
-
-// Map role to profile route
-const profileRoutes: Record<string, string | null> = {
-  SUPER_ADMIN: null, // Admin hasn't got a profile page yet
-  SCHOOL_ADMIN: null,
-  TEACHER: "/teacher/profile",
-  PARENT: "/parent/profile",
-};
+import { PROFILE_ROUTE_BY_ROLE, ROLE_LABELS } from "@/lib/auth-config";
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -143,7 +129,7 @@ function resolveHeaderMeta(pathname: string | null): HeaderMeta | null {
 export function Header({ onMenuToggle }: HeaderProps) {
   const { user, role, logout } = useAuth();
   const pathname = usePathname();
-  const profileRoute = role ? profileRoutes[role] : null;
+  const profileRoute = role ? PROFILE_ROUTE_BY_ROLE[role] : null;
   const headerMeta = resolveHeaderMeta(pathname);
 
   // Generate initials for avatar
@@ -162,7 +148,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
           <Menu className="h-5 w-5 text-foreground" />
         </button>
         <span className="text-sm text-muted-foreground hidden sm:inline">
-          {role && roleLabels[role]}
+          {role && ROLE_LABELS[role]}
         </span>
       </div>
 
@@ -202,7 +188,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none truncate">{user?.email}</p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {role && roleLabels[role]}
+                  {role && ROLE_LABELS[role]}
                 </p>
               </div>
             </DropdownMenuLabel>

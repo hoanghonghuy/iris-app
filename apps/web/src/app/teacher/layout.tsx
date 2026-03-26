@@ -9,10 +9,11 @@ import React from "react";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { AppShell } from "@/components/layout/AppShell";
 import { teacherMenuItems } from "@/components/layout/Sidebar";
+import { TEACHER_ALLOWED_ROLES } from "@/lib/auth-config";
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ProtectedRoute allowedRoles={["TEACHER"]}>
+    <ProtectedRoute allowedRoles={TEACHER_ALLOWED_ROLES}>
       <AppShell menuItems={teacherMenuItems}>
         {children}
       </AppShell>

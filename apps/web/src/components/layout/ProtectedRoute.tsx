@@ -8,6 +8,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/AuthProvider';
+import { getDashboardRouteByRole } from '@/lib/auth-config';
 import { UserRole } from '@/types';
 
 interface ProtectedRouteProps {
@@ -30,22 +31,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
       // 2. Nếu có yêu cầu role cụ thể mà user không có -> redirect về dashboard tương ứng
       if (allowedRoles && !allowedRoles.includes(role)) {
         console.warn(`Access denied for role: ${role}. Allowed roles: ${allowedRoles}`);
-        
-        // Redirect về dashboard mặc định của role đó
-        switch (role) {
-          case 'SUPER_ADMIN':
-          case 'SCHOOL_ADMIN':
-            router.push('/admin');
-            break;
-          case 'TEACHER':
-            router.push('/teacher');
-            break;
-          case 'PARENT':
-            router.push('/parent');
-            break;
-          default:
-            router.push('/');
-        }
+
+        router.push(getDashboardRouteByRole(role));
       }
     }
   }, [user, role, isLoading, allowedRoles, router]);
