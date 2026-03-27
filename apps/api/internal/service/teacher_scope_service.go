@@ -386,7 +386,7 @@ func (s *TeacherScopeService) ListClassPosts(ctx context.Context, teacherUserID,
 	posts, total, err := s.teacherScopeRepo.ListClassPosts(ctx, teacherUserID, classID, limit, offset)
 	if err != nil {
 		if errors.Is(err, repo.ErrNoRowsUpdated) {
-			return nil, 0, ErrForbidden
+			return []model.Post{}, 0, nil
 		}
 		return nil, 0, fmt.Errorf("failed to list class posts: %w", err)
 	}
@@ -418,7 +418,7 @@ func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserI
 	posts, total, err := s.teacherScopeRepo.ListStudentPosts(ctx, teacherUserID, studentID, limit, offset)
 	if err != nil {
 		if errors.Is(err, repo.ErrNoRowsUpdated) {
-			return nil, 0, ErrForbidden
+			return []model.Post{}, 0, nil
 		}
 		return nil, 0, fmt.Errorf("failed to list student posts: %w", err)
 	}

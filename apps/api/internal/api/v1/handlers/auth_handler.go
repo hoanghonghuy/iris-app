@@ -119,6 +119,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 // ResetPassword xử lý đặt lại mật khẩu bằng token
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req struct {
+		Email    string `json:"email" binding:"required,email"`
 		Token    string `json:"token" binding:"required"`
 		Password string `json:"password" binding:"required,min=6"`
 	}
@@ -130,7 +131,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 	defer cancel()
 
-	if err := h.userService.ResetPasswordWithToken(ctx, req.Token, req.Password); err != nil {
+	if err := h.userService.ResetPasswordWithToken(ctx, req.Email, req.Token, req.Password); err != nil {
 		if errors.Is(err, service.ErrResetTokenInvalid) {
 			response.Fail(c, http.StatusBadRequest, "token không hợp lệ hoặc đã hết hạn")
 			return

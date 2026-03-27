@@ -1,19 +1,20 @@
 package config
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 )
 
 type Config struct {
-	DatabaseURL    string
-	DBMaxConns     int32
-	JWTSecret      string
-	JWTTTLMinutes  int
-	Port           string
-	AllowedOrigins []string // CORS + WS origin allowlist
+	DatabaseURL               string
+	DBMaxConns                int32
+	JWTSecret                 string
+	JWTTTLMinutes             int
+	Port                      string
+	AllowedOrigins            []string // CORS + WS origin allowlist
+	WSAllowQueryTokenFallback bool
 
 	// SMTP (empty = dev mode, uses LogEmailSender)
 	SMTPHost    string
@@ -24,7 +25,7 @@ type Config struct {
 }
 
 // Load reads configuration from environment variables.
-func Load() Config {
+func Load() (Config, error) {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -53,25 +54,49 @@ func Load() Config {
 		}
 	}
 
-	return Config{
-		DatabaseURL:    must("DATABASE_URL"),
-		DBMaxConns:     maxConns,
-		JWTSecret:      must("JWT_SECRET"),
-		JWTTTLMinutes:  ttl,
-		Port:           port,
-		AllowedOrigins: allowedOrigins,
-		SMTPHost:       os.Getenv("SMTP_HOST"),
-		SMTPPort:       os.Getenv("SMTP_PORT"),
-		SMTPUser:       os.Getenv("SMTP_USER"),
-		SMTPPass:       os.Getenv("SMTP_PASS"),
-		FrontendURL:    os.Getenv("FRONTEND_URL"),
+	databaseURL, err := must("DATABASE_URL")
+	if err != nil {
+		return Config{}, err
 	}
+	jwtSecret, err := must("JWT_SECRET")
+	if err != nil {
+		return Config{}, err
+	}
+
+	return Config{
+		DatabaseURL:               databaseURL,
+		DBMaxConns:                maxConns,
+		JWTSecret:                 jwtSecret,
+		JWTTTLMinutes:             ttl,
+		Port:                      port,
+		AllowedOrigins:            allowedOrigins,
+		WSAllowQueryTokenFallback: parseBoolEnv("WS_ALLOW_QUERY_TOKEN_FALLBACK", false),
+		SMTPHost:                  os.Getenv("SMTP_HOST"),
+		SMTPPort:                  os.Getenv("SMTP_PORT"),
+		SMTPUser:                  os.Getenv("SMTP_USER"),
+		SMTPPass:                  os.Getenv("SMTP_PASS"),
+		FrontendURL:               os.Getenv("FRONTEND_URL"),
+	}, nil
 }
 
-func must(k string) string {
+func must(k string) (string, error) {
 	v := os.Getenv(k)
 	if v == "" {
-		log.Fatalf("[config] missing required env variable: %s", k)
+		return "", fmt.Errorf("[config] missing required env variable: %s", k)
 	}
-	return v
+	return v, nil
+}
+
+func parseBoolEnv(key string, defaultVal bool) bool {
+	raw := strings.TrimSpace(strings.ToLower(os.Getenv(key)))
+	switch raw {
+	case "1", "true", "yes", "y", "on":
+		return true
+	case "0", "false", "no", "n", "off":
+		return false
+	case "":
+		return defaultVal
+	default:
+		return defaultVal
+	}
 }

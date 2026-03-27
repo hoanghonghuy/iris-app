@@ -324,15 +324,13 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 		return nil
 	}
 
-	// Tạo reset link
-	resetLink := fmt.Sprintf("%s/reset-password?token=%s", s.frontendURL, plainToken)
-
 	htmlBody := fmt.Sprintf(`
 <h2>Đặt lại mật khẩu — Iris</h2>
-<p>Bạn đã yêu cầu đặt lại mật khẩu. Click vào link bên dưới (hết hạn sau 15 phút):</p>
-<p><a href="%s">%s</a></p>
+<p>Bạn đã yêu cầu đặt lại mật khẩu. Sử dụng mã bên dưới (hết hạn sau 15 phút):</p>
+<p><b>%s</b></p>
+<p>Vào trang đặt lại mật khẩu và nhập email cùng mã này để hoàn tất.</p>
 <p>Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
-`, resetLink, resetLink)
+`, plainToken)
 
 	// _ = s.emailSender.Send(email, "Đặt lại mật khẩu — Iris", htmlBody)
 	// gửi email ngầm bằng goroutine để không block API
@@ -353,12 +351,20 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 }
 
 // ResetPasswordWithToken xác thực token và đặt mật khẩu mới
-func (s *UserService) ResetPasswordWithToken(ctx context.Context, plainToken, newPassword string) error {
+func (s *UserService) ResetPasswordWithToken(ctx context.Context, email, plainToken, newPassword string) error {
+	if email == "" {
+		return ErrResetTokenInvalid
+	}
 	if plainToken == "" {
 		return ErrResetTokenInvalid
 	}
 	if newPassword == "" {
 		return ErrPasswordCannotBeEmpty
+	}
+
+	user, err := s.userRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return ErrResetTokenInvalid
 	}
 
 	// Hash token đầu vào để so khớp với DB
@@ -368,6 +374,11 @@ func (s *UserService) ResetPasswordWithToken(ctx context.Context, plainToken, ne
 	// Tìm token
 	rt, err := s.resetTokenRepo.FindByTokenHash(ctx, tokenHash)
 	if err != nil {
+		return ErrResetTokenInvalid
+	}
+
+	// Token phải thuộc đúng email gửi kèm.
+	if rt.UserID != user.UserID {
 		return ErrResetTokenInvalid
 	}
 
@@ -382,12 +393,6 @@ func (s *UserService) ResetPasswordWithToken(ctx context.Context, plainToken, ne
 		return ErrFailedToHashPassword
 	}
 
-	// Lấy email user (cần cho UpdatePassword)
-	userInfo, err := s.userRepo.FindByID(ctx, rt.UserID)
-	if err != nil {
-		return ErrUserNotFound
-	}
-
 	// Đánh dấu token đã sử dụng TRƯỚC khi đặt mật khẩu (fail-fast chống TOCTOU race)
 	// Nếu 2 request đồng thời: request thứ 2 sẽ thất bại ở bước này
 	// repo.ErrNoRowsUpdated cho biết token đã bị mark bởi request khác
@@ -399,7 +404,7 @@ func (s *UserService) ResetPasswordWithToken(ctx context.Context, plainToken, ne
 	}
 
 	// Cập nhật mật khẩu
-	if err := s.userRepo.UpdatePassword(ctx, rt.UserID, userInfo.Email, string(passwordHash)); err != nil {
+	if err := s.userRepo.UpdatePassword(ctx, rt.UserID, user.Email, string(passwordHash)); err != nil {
 		return ErrFailedToUpdatePassword
 	}
 

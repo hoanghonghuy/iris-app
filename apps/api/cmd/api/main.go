@@ -21,7 +21,10 @@ func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Println("Warning: No .env file found or error parsing it:", err)
 	}
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Database connection
 	pool, err := db.NewPool(context.Background(), cfg.DatabaseURL, cfg.DBMaxConns)
@@ -107,7 +110,7 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
-	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
+	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins, cfg.WSAllowQueryTokenFallback)
 
 	// Router
 	r := httpapi.NewRouter(

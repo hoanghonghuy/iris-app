@@ -24,23 +24,25 @@ import (
 // upgrader sẽ được build trong NewChatHandler để inject allowedOrigins
 // ChatHandler xử lý các endpoint REST và WebSocket cho hệ thống chat
 type ChatHandler struct {
-	chatService    *service.ChatService
-	hub            *ws.Hub
-	jwtSecret      string
-	allowedOrigins map[string]struct{} // origin allowlist cho WS
+	chatService             *service.ChatService
+	hub                     *ws.Hub
+	jwtSecret               string
+	allowedOrigins          map[string]struct{} // origin allowlist cho WS
+	allowQueryTokenFallback bool
 }
 
 // NewChatHandler tạo mới ChatHandler
-func NewChatHandler(chatService *service.ChatService, hub *ws.Hub, jwtSecret string, allowedOrigins []string) *ChatHandler {
+func NewChatHandler(chatService *service.ChatService, hub *ws.Hub, jwtSecret string, allowedOrigins []string, allowQueryTokenFallback bool) *ChatHandler {
 	set := make(map[string]struct{}, len(allowedOrigins))
 	for _, o := range allowedOrigins {
 		set[o] = struct{}{}
 	}
 	return &ChatHandler{
-		chatService:    chatService,
-		hub:            hub,
-		jwtSecret:      jwtSecret,
-		allowedOrigins: set,
+		chatService:             chatService,
+		hub:                     hub,
+		jwtSecret:               jwtSecret,
+		allowedOrigins:          set,
+		allowQueryTokenFallback: allowQueryTokenFallback,
 	}
 }
 
@@ -230,10 +232,12 @@ func (h *ChatHandler) HandleWS(c *gin.Context) {
 		}
 	}
 
-	// Fallback: nhận token qua query param để tương thích một số proxy
-	// có thể không forward Sec-WebSocket-Protocol đầy đủ.
-	if tokenStr == "" {
+	// Fallback query param chỉ bật khi cấu hình tương thích được enable.
+	if tokenStr == "" && h.allowQueryTokenFallback {
 		tokenStr = c.Query("token")
+		if tokenStr != "" {
+			log.Printf("[WS] query-token fallback used")
+		}
 	}
 	if tokenStr == "" {
 		response.Fail(c, http.StatusUnauthorized, "missing token in Sec-WebSocket-Protocol")

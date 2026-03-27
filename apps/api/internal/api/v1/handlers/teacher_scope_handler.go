@@ -134,7 +134,7 @@ func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "forbidden: you can only view students in your assigned classes")
+			response.OK(c, []any{})
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to fetch students")
@@ -851,10 +851,6 @@ func (h *TeacherScopeHandler) ListClassPosts(c *gin.Context) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID or class ID")
 			return
 		}
-		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "not assigned to this class")
-			return
-		}
 		response.Fail(c, http.StatusInternalServerError, "failed to list class posts")
 		return
 	}
@@ -902,10 +898,6 @@ func (h *TeacherScopeHandler) ListStudentPosts(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID or student ID")
-			return
-		}
-		if errors.Is(err, service.ErrForbidden) {
-			response.Fail(c, http.StatusForbidden, "not assigned to this student's class")
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to list student posts")
