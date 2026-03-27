@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"time"
 
 	"github.com/google/uuid"
@@ -324,13 +325,28 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 		return nil
 	}
 
+	resetURL, err := url.Parse(s.frontendURL)
+	if err != nil {
+		log.Printf("[Fatal Error] Unable to parse frontendURL: %v", err)
+		return nil
+	}
+
+	resetURL.Path = "/reset-password"
+	query := resetURL.Query()
+	query.Set("token", plainToken)
+	query.Set("email", email)
+	resetURL.RawQuery = query.Encode()
+
 	htmlBody := fmt.Sprintf(`
 <h2>Đặt lại mật khẩu — Iris</h2>
 <p>Bạn đã yêu cầu đặt lại mật khẩu. Sử dụng mã bên dưới (hết hạn sau 15 phút):</p>
-<p><b>%s</b></p>
-<p>Vào trang đặt lại mật khẩu và nhập email cùng mã này để hoàn tất.</p>
-<p>Nếu bạn không yêu cầu, hãy bỏ qua email này.</p>
-`, plainToken)
+<p><strong>%s</strong></p>
+
+<p><a href="%s" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">Đặt lại mật khẩu</a></p>
+
+<p style="color: #666; font-size: 12px;">Hoặc sao chép mã trên vào form reset password</p>
+<p>Nếu bạn không yêu cầu, hãy bỏ qua email này để bảo vệ tài khoản.</p>
+`, plainToken, resetURL.String())
 
 	// _ = s.emailSender.Send(email, "Đặt lại mật khẩu — Iris", htmlBody)
 	// gửi email ngầm bằng goroutine để không block API
