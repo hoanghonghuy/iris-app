@@ -30,7 +30,7 @@ export function AppShell({ children, menuItems }: AppShellProps) {
       {/* Main area (Header + Content) */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>

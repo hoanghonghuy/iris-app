@@ -108,7 +108,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
     : "U";
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-background px-4 lg:px-6 transition-colors duration-300">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-background/80 backdrop-blur-md px-5 lg:px-8 transition-colors duration-300 sticky top-0 z-30">
       {/* Left: hamburger (mobile/tablet) + role label */}
       <div className="flex items-center gap-3">
         <button
