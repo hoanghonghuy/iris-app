@@ -56,6 +56,10 @@ func main() {
 
 	// Authenticator
 	jwtAuth := auth.NewAuthenticator(cfg.JWTSecret, cfg.JWTTTLMinutes)
+	googleVerifier, err := auth.NewGoogleIDTokenVerifier(cfg.GoogleClientID)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Email sender (dev mode: log to console; prod: set SMTP_HOST env)
 	frontendURL := cfg.FrontendURL
@@ -75,7 +79,7 @@ func main() {
 	// Services
 	// TODO: tách ra hàm helper initServices(repos, jwtAuth) *Services
 	var (
-		authService         = service.NewAuthService(repos.UserRepo, repos.SchoolAdminRepo, jwtAuth)
+		authService         = service.NewAuthService(repos.UserRepo, repos.SchoolAdminRepo, jwtAuth, googleVerifier, cfg.GoogleLoginEnabled, cfg.GoogleHostedDomain)
 		schoolService       = service.NewSchoolService(repos.SchoolRepo)
 		classService        = service.NewClassService(repos.ClassRepo)
 		studentService      = service.NewStudentService(repos.StudentRepo, repos.ClassRepo)

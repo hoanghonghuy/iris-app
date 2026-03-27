@@ -12,6 +12,15 @@ export interface LoginRequest {
 }
 
 /**
+ * GoogleLoginRequest - Gửi Google ID token lên backend.
+ * password là optional để xác nhận link account local lần đầu.
+ */
+export interface GoogleLoginRequest {
+  id_token: string;
+  password?: string;
+}
+
+/**
  * LoginResponse - Backend trả về sau khi đăng nhập thành công
  * Backend: apps/api/internal/service/auth_service.go
  */

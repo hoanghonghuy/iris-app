@@ -1,4 +1,15 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is the Iris web frontend built with [Next.js](https://nextjs.org).
+
+## Environment Variables
+
+Create `.env.local` in `apps/web`:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+```
+
+`NEXT_PUBLIC_GOOGLE_CLIENT_ID` is required to render the Google sign-in button on the login page.
 
 ## Getting Started
 

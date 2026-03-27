@@ -12,6 +12,7 @@ type User struct {
 	Email        string    `db:"email"`
 	PasswordHash string    `db:"password_hash"`
 	Status       string    `db:"status"`
+	GoogleSub    string    `db:"google_sub"`
 }
 
 // UserInfo chứa thông tin user trả cho client

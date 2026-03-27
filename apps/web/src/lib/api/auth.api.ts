@@ -4,7 +4,7 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/auth_handler.go + user_handler.go
  */
 import { apiClient } from './client';
-import { LoginRequest, LoginResponse, RegisterParentRequest } from '@/types';
+import { GoogleLoginRequest, LoginRequest, LoginResponse, RegisterParentRequest } from '@/types';
 
 export const authApi = {
   /**
@@ -13,6 +13,15 @@ export const authApi = {
    */
   login: async (data: LoginRequest) => {
     const res = await apiClient.post<LoginResponse>('/auth/login', data);
+    return res.data;
+  },
+
+  /**
+   * Đăng nhập bằng Google ID token
+   * POST /api/v1/auth/login/google
+   */
+  loginWithGoogle: async (data: GoogleLoginRequest) => {
+    const res = await apiClient.post<LoginResponse>('/auth/login/google', data);
     return res.data;
   },
 

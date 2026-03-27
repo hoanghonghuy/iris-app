@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,12 +23,53 @@ func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
 // FindByEmail truy vấn thông tin người dùng theo email.
 // Trả về con trỏ tới User nếu tìm thấy, hoặc lỗi nếu không tìm thấy hoặc có lỗi truy vấn.
 func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*model.User, error) {
-	const q = `SELECT user_id, email, password_hash, status FROM users WHERE email=$1 LIMIT 1;`
+	const q = `
+		SELECT user_id, email, password_hash, status, COALESCE(google_sub, '') AS google_sub
+		FROM users
+		WHERE email = $1
+		LIMIT 1;
+	`
 	u := &model.User{}
-	if err := r.pool.QueryRow(ctx, q, email).Scan(&u.UserID, &u.Email, &u.PasswordHash, &u.Status); err != nil {
+	if err := r.pool.QueryRow(ctx, q, email).Scan(&u.UserID, &u.Email, &u.PasswordHash, &u.Status, &u.GoogleSub); err != nil {
 		return nil, err
 	}
 	return u, nil
+}
+
+// FindByGoogleSub truy vấn người dùng đã liên kết theo Google sub.
+func (r *UserRepo) FindByGoogleSub(ctx context.Context, googleSub string) (*model.User, error) {
+	const q = `
+		SELECT user_id, email, password_hash, status, COALESCE(google_sub, '') AS google_sub
+		FROM users
+		WHERE google_sub = $1
+		LIMIT 1;
+	`
+	u := &model.User{}
+	if err := r.pool.QueryRow(ctx, q, googleSub).Scan(&u.UserID, &u.Email, &u.PasswordHash, &u.Status, &u.GoogleSub); err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+// LinkGoogleSub liên kết tài khoản local với Google sub.
+// Chỉ link nếu user chưa liên kết trước đó hoặc đã liên kết đúng sub này.
+func (r *UserRepo) LinkGoogleSub(ctx context.Context, userID uuid.UUID, googleSub string) error {
+	const q = `
+		UPDATE users
+		SET google_sub = $2,
+		    google_linked_at = now(),
+		    updated_at = now()
+		WHERE user_id = $1
+		  AND (google_sub IS NULL OR google_sub = '' OR google_sub = $2);
+	`
+	res, err := r.pool.Exec(ctx, q, userID, googleSub)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return errors.New("user already linked with a different google account")
+	}
+	return nil
 }
 
 func (r *UserRepo) RolesOfUser(ctx context.Context, userID uuid.UUID) ([]string, error) {

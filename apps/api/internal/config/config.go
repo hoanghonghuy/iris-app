@@ -12,6 +12,9 @@ type Config struct {
 	DBMaxConns                int32
 	JWTSecret                 string
 	JWTTTLMinutes             int
+	GoogleLoginEnabled        bool
+	GoogleClientID            string
+	GoogleHostedDomain        string
 	Port                      string
 	AllowedOrigins            []string // CORS + WS origin allowlist
 	WSAllowQueryTokenFallback bool
@@ -68,6 +71,9 @@ func Load() (Config, error) {
 		DBMaxConns:                maxConns,
 		JWTSecret:                 jwtSecret,
 		JWTTTLMinutes:             ttl,
+		GoogleLoginEnabled:        parseBoolEnv("GOOGLE_LOGIN_ENABLED", false),
+		GoogleClientID:            os.Getenv("GOOGLE_CLIENT_ID"),
+		GoogleHostedDomain:        os.Getenv("GOOGLE_HOSTED_DOMAIN"),
 		Port:                      port,
 		AllowedOrigins:            allowedOrigins,
 		WSAllowQueryTokenFallback: parseBoolEnv("WS_ALLOW_QUERY_TOKEN_FALLBACK", false),

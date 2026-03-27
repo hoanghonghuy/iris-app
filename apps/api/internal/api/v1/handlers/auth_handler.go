@@ -33,6 +33,11 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
+type GoogleLoginRequest struct {
+	IDToken  string `json:"id_token" binding:"required"`
+	Password string `json:"password,omitempty"`
+}
+
 // Login xử lý đăng nhập
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
@@ -60,6 +65,47 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		}
 		response.Fail(c, http.StatusInternalServerError, "server error")
 		return
+	}
+
+	response.OK(c, resp)
+}
+
+// LoginWithGoogle xử lý đăng nhập bằng Google ID token.
+func (h *AuthHandler) LoginWithGoogle(c *gin.Context) {
+	var req GoogleLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 8*time.Second)
+	defer cancel()
+
+	resp, err := h.authService.LoginWithGoogleToken(ctx, req.IDToken, req.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrGoogleLoginDisabled):
+			response.Fail(c, http.StatusNotFound, "google login is disabled")
+			return
+		case errors.Is(err, service.ErrGoogleDomainNotAllowed):
+			response.Fail(c, http.StatusForbidden, "google account domain not allowed")
+			return
+		case errors.Is(err, service.ErrGoogleAccountNotProvisioned):
+			response.Fail(c, http.StatusUnauthorized, "google account is not provisioned")
+			return
+		case errors.Is(err, service.ErrGoogleLinkPasswordRequired):
+			response.Fail(c, http.StatusForbidden, "password confirmation required to link google account")
+			return
+		case errors.Is(err, auth.ErrInvalidCredentials):
+			response.Fail(c, http.StatusUnauthorized, "invalid credentials")
+			return
+		case errors.Is(err, auth.ErrUserLocked):
+			response.Fail(c, http.StatusForbidden, "user account locked")
+			return
+		default:
+			response.Fail(c, http.StatusInternalServerError, "server error")
+			return
+		}
 	}
 
 	response.OK(c, resp)

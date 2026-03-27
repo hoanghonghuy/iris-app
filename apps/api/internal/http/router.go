@@ -71,6 +71,7 @@ func NewRouter(
 			response.OK(c, gin.H{"ok": true})
 		})
 		v1.POST("/auth/login", authHandler.Login)
+		v1.POST("/auth/login/google", authHandler.LoginWithGoogle)
 		v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
 		v1.POST("/auth/reset-password", authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)

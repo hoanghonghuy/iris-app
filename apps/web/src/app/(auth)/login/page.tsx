@@ -14,6 +14,7 @@ import { authHelpers } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { UserRole } from '@/types';
 
 type LoginResponse = {
@@ -36,6 +37,13 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
 
+  const finalizeLogin = async (token: string) => {
+    authHelpers.setToken(token);
+    const userData = await authApi.getMe();
+    const primaryRole = userData.roles[0] as UserRole;
+    login(token, primaryRole);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -51,20 +59,22 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Lưu token vào localStorage TRƯỚC khi gọi /me
-      authHelpers.setToken(token);
-
-      // 3. Gọi /me để lấy role (giờ interceptor sẽ gắn token vào header)
-      const userData = await authApi.getMe();
-      const primaryRole = userData.roles[0] as UserRole;
-
-      // 4. Lưu vào AuthProvider (sẽ redirect dựa theo role)
-      login(token, primaryRole);
+      // 2. Hoàn tất lifecycle login theo flow hiện tại
+      await finalizeLogin(token);
     } catch (err: unknown) {
       setError(extractErrorMessage(err) || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleGoogleSubmit = async ({ idToken, password }: { idToken: string; password?: string }) => {
+    const response = await authApi.loginWithGoogle({ id_token: idToken, password }) as LoginResponse;
+    const token = response.data?.access_token || response.access_token;
+    if (!token) {
+      throw new Error('Không nhận được token từ server');
+    }
+    await finalizeLogin(token);
   };
 
   return (
@@ -83,6 +93,30 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
+
+            <GoogleSignInButton
+              onSubmitGoogle={async ({ idToken, password }) => {
+                try {
+                  await handleGoogleSubmit({ idToken, password });
+                } catch (err: unknown) {
+                  setError(extractErrorMessage(err) || 'Đăng nhập Google thất bại.');
+                  throw err;
+                }
+              }}
+              errorMessage={error}
+              clearError={() => setError('')}
+              disabled={isSubmitting}
+            />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">hoặc đăng nhập bằng email</span>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">Email</label>
               <Input

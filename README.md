@@ -175,6 +175,12 @@ DATABASE_URL=postgres://postgres:iris@localhost:5433/iris_db?sslmode=disable
 # JWT
 JWT_SECRET=your-secret-key-here
 JWT_TTL_MINUTES=60
+
+# Google Sign-In (phase 1)
+GOOGLE_LOGIN_ENABLED=false
+GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+# Optional: restrict sign-in to a Google Workspace domain
+GOOGLE_HOSTED_DOMAIN=
 ```
 
 ### Database Setup
@@ -224,7 +230,13 @@ Authorization: Bearer <token>
 |--------|----------|-------------|
 | GET | `/api/v1/health` | Health check |
 | POST | `/api/v1/auth/login` | User login |
+| POST | `/api/v1/auth/login/google` | Google login with ID token |
 | POST | `/api/v1/users/activate` | Activate user account |
+
+> Google login phase 1 policy:
+> - Existing local users only (no auto-provision)
+> - First-time Google linking requires password confirmation
+> - Google One Tap is not enabled in this phase
 
 ### Protected Endpoints
 
