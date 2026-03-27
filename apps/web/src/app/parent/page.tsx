@@ -6,12 +6,11 @@
 
 import React, { useEffect, useState } from "react";
 import { parentApi } from "@/lib/api/parent.api";
-import { Student, Post } from "@/types";
+import { Post } from "@/types";
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare, Loader2, Baby, CalendarClock } from "lucide-react";
 import Link from "next/link";
-import { formatDateVN } from "@/lib/utils";
 
 const postTypeConfig: Record<string, { label: string, colorClass: string }> = {
   announcement: { label: "Thông báo", colorClass: "bg-primary/10 text-primary" },
@@ -22,18 +21,13 @@ const postTypeConfig: Record<string, { label: string, colorClass: string }> = {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
-  const [children, setChildren] = useState<Student[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [childData, feedData] = await Promise.all([
-          parentApi.getMyChildren(),
-          parentApi.getMyFeed({ limit: 5 }),
-        ]);
-        setChildren(childData || []);
+        const feedData = await parentApi.getMyFeed({ limit: 5 });
         setPosts(feedData?.data || []);
       } catch { /* ignore */ }
       finally { setLoading(false); }
@@ -42,7 +36,7 @@ export default function ParentDashboard() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500 shrink-0">
         <div className="hidden md:flex items-center gap-2 mb-1">
           <span className="bg-primary/15 text-primary px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">
@@ -90,7 +84,7 @@ export default function ParentDashboard() {
 
           <div className="flex-1 min-h-0 overflow-hidden">
             {/* Recent Feed - Focused View */}
-            <div className="h-full flex flex-col space-y-4">
+            <div className="flex h-full min-h-0 flex-col gap-4">
               <div className="flex items-center justify-between shrink-0">
                 <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
                   Hoạt động mới nhất
@@ -100,9 +94,9 @@ export default function ParentDashboard() {
                 </Link>
               </div>
 
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="custom-scrollbar flex-1 min-h-0 overflow-y-auto pr-2">
                 {posts.length > 0 ? (
-                  <div className="space-y-4 max-w-4xl mx-auto">
+                  <div className="mx-auto max-w-4xl space-y-4 pb-4">
                     {posts.map((p) => {
                       const config = postTypeConfig[p.type] || { label: p.type, colorClass: "bg-muted text-muted-foreground" };
                       return (
@@ -118,7 +112,7 @@ export default function ParentDashboard() {
                               </span>
                             </div>
                             <p className="text-sm md:text-base text-foreground/90 leading-relaxed whitespace-pre-line font-medium italic">
-                              "{p.content}"
+                              &ldquo;{p.content}&rdquo;
                             </p>
                           </CardContent>
                         </Card>

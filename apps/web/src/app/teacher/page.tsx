@@ -37,7 +37,7 @@ export default function TeacherDashboard() {
   }, []);
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="flex h-full min-h-0 flex-col gap-6">
       {/* Hero Header Area (No card, pure typography & airy spacing) */}
       <div className="flex flex-col gap-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500 shrink-0">
         <div className="hidden md:flex items-center gap-2 mb-1">
@@ -59,7 +59,6 @@ export default function TeacherDashboard() {
         </div>
       ) : (
         <>
-          {/* Stats Overview - Bento Grid */}
           {/* Stats Overview - Bento Grid */}
           <div className="grid gap-2.5 md:gap-3 grid-cols-3 shrink-0">
             <Link href="/teacher/classes" className="group">
@@ -99,9 +98,9 @@ export default function TeacherDashboard() {
             </Link>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-3 flex-1 min-h-0 overflow-hidden">
+          <div className="grid flex-1 min-h-0 gap-6 overflow-hidden lg:grid-cols-3">
             {/* Quick Actions (Bento Box style) */}
-            <div className="lg:col-span-1 flex flex-col min-h-0 space-y-4">
+            <div className="flex min-h-0 flex-col gap-4 lg:col-span-1">
               <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2 shrink-0">
                 Hoạt động Nhanh
               </h2>
@@ -145,7 +144,7 @@ export default function TeacherDashboard() {
             </div>
 
             {/* My Classes List - Spans 2 columns */}
-            <div className="lg:col-span-2 flex flex-col min-h-0 space-y-4">
+            <div className="flex min-h-0 flex-col gap-4 lg:col-span-2">
               <div className="flex items-center justify-between shrink-0">
                 <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
                   Lớp Được Phân Công
@@ -155,9 +154,9 @@ export default function TeacherDashboard() {
                 </Link>
               </div>
               
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="custom-scrollbar flex-1 min-h-0 overflow-y-auto pr-2">
                 {classes.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 pb-4 sm:grid-cols-2">
                     {classes.map((cls) => (
                       <Card key={cls.class_id} className="group hover:shadow-lg transition-all border-border/50 hover:border-primary/20 bg-card/50 backdrop-blur-sm">
                         <CardContent className="p-4 md:p-5">
@@ -186,8 +185,16 @@ export default function TeacherDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <Card className="border-dashed shadow-none">
-                    {/* ... empty ... */}
+                  <Card className="border-dashed bg-card/40 shadow-none">
+                    <CardContent className="flex min-h-[280px] flex-col items-center justify-center py-16 text-center">
+                      <div className="mb-4 rounded-full bg-muted p-4">
+                        <GraduationCap className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-lg font-semibold text-foreground">Chưa có lớp học</p>
+                      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+                        Bạn chưa được phân bổ vào danh sách lớp giảng dạy nào. Vui lòng liên hệ Admin.
+                      </p>
+                    </CardContent>
                   </Card>
                 )}
               </div>
