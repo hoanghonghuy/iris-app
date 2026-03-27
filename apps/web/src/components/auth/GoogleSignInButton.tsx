@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,6 @@ declare global {
 
 type Props = {
   onSubmitGoogle: (payload: { idToken: string; password?: string }) => Promise<void>;
-  errorMessage?: string;
   /** error_code machine-readable từ backend (dùng để detect trạng thái, không phải text) */
   errorCode?: string;
   clearError: () => void;
@@ -37,13 +36,13 @@ type Props = {
 
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
-export function GoogleSignInButton({ onSubmitGoogle, errorMessage, errorCode, clearError, disabled }: Props) {
+export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disabled }: Props) {
   const [scriptReady, setScriptReady] = useState(false);
   const [pendingCredential, setPendingCredential] = useState("");
   const [linkPassword, setLinkPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const clientId = useMemo(() => process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "", []);
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
   useEffect(() => {
     if (!clientId) {

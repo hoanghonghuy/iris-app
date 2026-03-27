@@ -35,7 +35,7 @@ type LoginRequest struct {
 
 type GoogleLoginRequest struct {
 	IDToken  string `json:"id_token" binding:"required"`
-	Password string `json:"password,omitempty"`
+	Password string `json:"password"`
 }
 
 // Login xử lý đăng nhập

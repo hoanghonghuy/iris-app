@@ -125,9 +125,9 @@
   --popover: oklch(0.22 0 0);
   --popover-foreground: oklch(0.96 0 0);
 
-  /* Primary: Xanh ngọc (#4DB6AC) nổi bật cực đẹp trên nền đen */
-  --primary: oklch(0.71 0.1 180);
-  --primary-foreground: oklch(0.1 0 0); /* Chữ đen để tương phản */
+  /* Primary: Xanh ngọc (#4DB6AC) - Giảm độ sáng ở Dark Mode để dịu mắt hơn */
+  --primary: oklch(0.55 0.08 180);
+  --primary-foreground: oklch(1 0 0); /* Trắng — vì primary (teal) giống light mode, foreground cũng phải giống */
 
   /* Secondary / Muted */
   --secondary: oklch(0.3 0 0);
@@ -148,13 +148,13 @@
   /* Border / Input: Viền mờ */
   --border: oklch(0.3 0 0);
   --input: oklch(0.3 0 0);
-  --ring: oklch(0.71 0.1 180);
+  --ring: oklch(0.55 0.08 180);
 
   /* Sidebar */
   --sidebar: oklch(0.18 0 0);
   --sidebar-foreground: oklch(0.85 0 0);
-  --sidebar-primary: oklch(0.71 0.1 180);
-  --sidebar-primary-foreground: oklch(0.1 0 0);
+  --sidebar-primary: oklch(0.55 0.08 180);
+  --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.25 0 0);
   --sidebar-accent-foreground: oklch(0.96 0 0);
   --sidebar-border: oklch(0.25 0 0);

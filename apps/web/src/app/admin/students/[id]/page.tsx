@@ -111,7 +111,7 @@ export default function AdminStudentDetailPage() {
           {/* Main ID Card */}
           <Card className="border-border/60 shadow-sm overflow-hidden relative">
             {/* Color banner */}
-            <div className="h-20 bg-gradient-to-r from-primary/30 to-blue-500/20 w-full absolute top-0 left-0" />
+            <div className="h-20 bg-gradient-to-r from-primary/30 to-primary/20 w-full absolute top-0 left-0" />
             <CardContent className="pt-10 px-6 pb-6 relative z-10 flex flex-col items-center text-center">
               <div className="h-24 w-24 rounded-full bg-card border-4 border-card shadow-sm flex items-center justify-center mb-4">
                  {/* Fake Avatar */}
@@ -150,7 +150,7 @@ export default function AdminStudentDetailPage() {
                   {profile.parents.map((parent, idx) => (
                     <div key={parent.parent_id || idx} className="p-5 flex flex-col gap-3 hover:bg-muted/10 transition-colors">
                       <div className="flex items-center gap-3">
-                         <div className="h-10 w-10 rounded-full bg-blue-500/10 text-blue-600 flex items-center justify-center text-sm font-semibold uppercase">
+                         <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold uppercase">
                            {parent.full_name.charAt(0)}
                          </div>
                          <div className="flex-1 min-w-0">
@@ -188,7 +188,7 @@ export default function AdminStudentDetailPage() {
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card className="border-border/60 shadow-sm bg-card hover:bg-muted/10 transition-colors">
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-orange-100 dark:bg-orange-500/20 text-orange-500 flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-xl bg-chart-2/10 text-chart-2 flex items-center justify-center">
                     <ClipboardList className="h-6 w-6" />
                   </div>
                   <div>
@@ -203,7 +203,7 @@ export default function AdminStudentDetailPage() {
 
               <Card className="border-border/60 shadow-sm bg-card hover:bg-muted/10 transition-colors">
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-500/20 text-green-500 flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-xl bg-success/10 text-success flex items-center justify-center">
                     <HeartPulse className="h-6 w-6" />
                   </div>
                   <div>
@@ -217,7 +217,7 @@ export default function AdminStudentDetailPage() {
 
               <Card className="border-border/60 shadow-sm bg-card hover:bg-muted/10 transition-colors sm:col-span-2 lg:col-span-1">
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-500/20 text-blue-500 flex items-center justify-center">
+                  <div className="h-12 w-12 rounded-xl bg-chart-3/10 text-chart-3 flex items-center justify-center">
                     <Activity className="h-6 w-6" />
                   </div>
                   <div>
@@ -244,17 +244,17 @@ export default function AdminStudentDetailPage() {
                <div className="p-8">
                  <div className="border-l-2 border-border/50 ml-4 pl-8 py-2 relative space-y-10">
                     <div className="relative">
-                       <span className="absolute -left-[45px] top-1 h-6 w-6 rounded-full bg-card border-4 border-green-500" />
+                       <span className="absolute -left-[45px] top-1 h-6 w-6 rounded-full bg-card border-4 border-success" />
                        <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Hôm qua, 08:30 <span className="mx-2">•</span> <span className="font-medium text-green-600 dark:text-green-400">Có mặt</span></p>
+                          <p className="text-xs text-muted-foreground mb-1">Hôm qua, 08:30 <span className="mx-2">•</span> <span className="font-medium text-success">Có mặt</span></p>
                           <p className="text-sm font-medium text-foreground">Điểm danh sáng</p>
                           <p className="text-xs text-muted-foreground mt-2">Giáo viên: Nguyễn Văn A ghi nhận</p>
                        </div>
                     </div>
                     <div className="relative">
-                       <span className="absolute -left-[45px] top-1 h-6 w-6 rounded-full bg-card border-4 border-orange-500" />
+                       <span className="absolute -left-[45px] top-1 h-6 w-6 rounded-full bg-card border-4 border-chart-2" />
                        <div className="bg-muted/30 p-4 rounded-xl border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Tuần trước, 09:15 <span className="mx-2">•</span> <span className="font-medium text-orange-600 dark:text-orange-400">Sức khỏe</span></p>
+                          <p className="text-xs text-muted-foreground mb-1">Tuần trước, 09:15 <span className="mx-2">•</span> <span className="font-medium text-chart-2">Sức khỏe</span></p>
                           <p className="text-sm font-medium text-foreground">Kiểm tra Y tế định kỳ</p>
                           <p className="text-sm text-foreground/80 mt-1">Chiều cao: 120cm, Cân nặng: 22kg. Sức khỏe bình thường.</p>
                        </div>

@@ -38,12 +38,17 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
 
-  const finalizeLogin = async (token: string) => {
+  const finalizeLogin = useCallback(async (token: string) => {
     authHelpers.setToken(token);
     const userData = await authApi.getMe();
     const primaryRole = userData.roles[0] as UserRole;
     login(token, primaryRole);
-  };
+  }, [login]);
+
+  const clearGoogleError = useCallback(() => {
+    setError('');
+    setErrorCode(undefined);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,8 +84,20 @@ export default function LoginPage() {
     await finalizeLogin(token);
   }, [finalizeLogin]);
 
+  const onGoogleSignIn = useCallback(async ({ idToken, password }: { idToken: string; password?: string }) => {
+    try {
+      setErrorCode(undefined);
+      await handleGoogleSubmit({ idToken, password });
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string; error_code?: string } } };
+      setError(axiosErr.response?.data?.error || extractErrorMessage(err) || 'Đăng nhập Google thất bại.');
+      setErrorCode(axiosErr.response?.data?.error_code);
+      throw err;
+    }
+  }, [handleGoogleSubmit]);
+
   return (
-    <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
+    <div className="flex w-full max-w-screen-xl items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Iris School</CardTitle>
@@ -95,33 +112,6 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-
-            <GoogleSignInButton
-              onSubmitGoogle={async ({ idToken, password }) => {
-                try {
-                  setErrorCode(undefined);
-                  await handleGoogleSubmit({ idToken, password });
-                } catch (err: unknown) {
-                  const axiosErr = err as { response?: { data?: { error?: string; error_code?: string } } };
-                  setError(axiosErr.response?.data?.error || extractErrorMessage(err) || 'Đăng nhập Google thất bại.');
-                  setErrorCode(axiosErr.response?.data?.error_code);
-                  throw err;
-                }
-              }}
-              errorMessage={error}
-              errorCode={errorCode}
-              clearError={() => { setError(''); setErrorCode(undefined); }}
-              disabled={isSubmitting}
-            />
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">hoặc đăng nhập bằng email</span>
-              </div>
-            </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="email">Email</label>
@@ -164,6 +154,25 @@ export default function LoginPage() {
                 'Đăng nhập'
               )}
             </Button>
+
+            <div className="w-full space-y-3">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">phương thức khác</span>
+                </div>
+              </div>
+
+              <GoogleSignInButton
+                onSubmitGoogle={onGoogleSignIn}
+                errorCode={errorCode}
+                clearError={clearGoogleError}
+                disabled={isSubmitting}
+              />
+            </div>
+
             <p className="text-sm text-center text-muted-foreground">
               Phụ huynh chưa có tài khoản?{' '}
               <Link href="/register" className="font-medium text-primary hover:underline">
