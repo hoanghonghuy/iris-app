@@ -1,20 +1,13 @@
-// Package repo — health_log_repo.go
-//
-// [MAINTAINABILITY NOTE] HealthLogRepo hiện KHÔNG được wire vào Repositories struct
-// và không được sử dụng trong flow chính. Logic query health log cho TEACHER
-// đã được implement trực tiếp trong TeacherScopeRepo (teacher_scope_repo.go).
-//
-// TODO: Quyết định một trong hai:
-//   a) Xóa file này nếu TeacherScopeRepo đủ đáp ứng mọi use case.
-//   b) Wire HealthLogRepo vào Repositories nếu cần dùng cho flow khác (e.g., admin view).
 package repo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -40,6 +33,31 @@ func (r *HealthLogRepo) Create(ctx context.Context, studentID, recordedBy uuid.U
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, q, studentID, temperature, symptoms, severity, note, recordedBy).Scan(&id)
 	return id, err
+}
+
+// CreateByStudentAndTeacher tạo mới bản ghi sức khỏe nếu giáo viên được phân công dạy học sinh đó.
+func (r *HealthLogRepo) CreateByStudentAndTeacher(ctx context.Context, teacherUserID, studentID uuid.UUID,
+	recordedAt *time.Time, temperature *float64, symptoms string, severity *string, note string) (uuid.UUID, error) {
+	const q = `
+		INSERT INTO health_logs (student_id, recorded_at, temperature, symptoms, severity, note, recorded_by)
+		SELECT $2, COALESCE($3, now()), $4, $5, $6, $7, $1
+		FROM students s
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1 AND s.student_id = $2
+		RETURNING health_log_id;
+	`
+
+	var id uuid.UUID
+	err := r.pool.QueryRow(ctx, q, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note).Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return uuid.Nil, ErrNoRowsUpdated
+		}
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
 
 // ListByStudentAndTeacher liệt kê bản ghi sức khỏe cho học sinh nếu giáo viên được phân công dạy lớp của học sinh đó

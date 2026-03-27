@@ -46,6 +46,7 @@ func main() {
 		TeacherRepo:         repo.NewTeacherRepo(pool),
 		TeacherClassRepo:    repo.NewTeacherClassRepo(pool),
 		TeacherScopeRepo:    repo.NewTeacherScopeRepo(pool),
+		HealthLogRepo:       repo.NewHealthLogRepo(pool),
 		ParentScopeRepo:     repo.NewParentScopeRepo(pool),
 		PostInteractionRepo: repo.NewPostInteractionRepo(pool),
 		SchoolAdminRepo:     repo.NewSchoolAdminRepo(pool),
@@ -80,7 +81,7 @@ func main() {
 		studentService      = service.NewStudentService(repos.StudentRepo, repos.ClassRepo)
 		userService         = service.NewUserService(repos.UserRepo, repos.ResetTokenRepo, jwtAuth, emailSender, frontendURL)
 		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo, repos.ClassRepo)
-		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.TeacherRepo, repos.PostInteractionRepo)
+		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.HealthLogRepo, repos.TeacherRepo, repos.PostInteractionRepo)
 		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo)
 		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo, repos.PostInteractionRepo)
 		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth)

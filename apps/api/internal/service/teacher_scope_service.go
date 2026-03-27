@@ -16,13 +16,15 @@ import (
 
 type TeacherScopeService struct {
 	teacherScopeRepo *repo.TeacherScopeRepo
+	healthLogRepo    *repo.HealthLogRepo
 	teacherRepo      *repo.TeacherRepo
 	postInteractRepo *repo.PostInteractionRepo
 }
 
-func NewTeacherScopeService(teacherScopeRepo *repo.TeacherScopeRepo, teacherRepo *repo.TeacherRepo, postInteractRepo *repo.PostInteractionRepo) *TeacherScopeService {
+func NewTeacherScopeService(teacherScopeRepo *repo.TeacherScopeRepo, healthLogRepo *repo.HealthLogRepo, teacherRepo *repo.TeacherRepo, postInteractRepo *repo.PostInteractionRepo) *TeacherScopeService {
 	return &TeacherScopeService{
 		teacherScopeRepo: teacherScopeRepo,
+		healthLogRepo:    healthLogRepo,
 		teacherRepo:      teacherRepo,
 		postInteractRepo: postInteractRepo,
 	}
@@ -234,7 +236,7 @@ func (s *TeacherScopeService) CreateHealthLog(ctx context.Context, teacherUserID
 	}
 
 	// xác minh giáo viên có quyền truy cập
-	id, err := s.teacherScopeRepo.CreateHealthLog(ctx, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note)
+	id, err := s.healthLogRepo.CreateByStudentAndTeacher(ctx, teacherUserID, studentID, recordedAt, temperature, symptoms, severity, note)
 	if err != nil {
 		if errors.Is(err, repo.ErrNoRowsUpdated) {
 			return uuid.Nil, ErrForbidden
@@ -258,7 +260,7 @@ func (s *TeacherScopeService) ListHealthLogs(ctx context.Context, teacherUserID,
 		return nil, ErrInvalidUserID
 	}
 
-	healthLogs, err := s.teacherScopeRepo.ListHealthLogsByStudent(ctx, teacherUserID, studentID, from, to)
+	healthLogs, err := s.healthLogRepo.ListByStudentAndTeacher(ctx, teacherUserID, studentID, from, to)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) || errors.Is(err, repo.ErrNoRowsUpdated) {
 			return []model.HealthLog{}, nil
