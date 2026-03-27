@@ -1,381 +1,271 @@
-# Iris School Management API
+# Iris School Management Platform
 
-A RESTful API for school management systems built with Go, designed to handle student attendance, health records, and teacher-class assignments with role-based access control.
+![Go](https://img.shields.io/badge/Go-1.25.5-00ADD8?logo=go&logoColor=white)
+![Gin](https://img.shields.io/badge/Gin-1.11-009688?logo=gin&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=0A0A0A)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-> **Note**: This project is currently under active development as part of an undergraduate thesis. Some features may be incomplete or subject to change.
+Iris is a full-stack school management platform built for an undergraduate thesis, with a Go (Gin + PostgreSQL) backend and a Next.js frontend.
 
-## Table of Contents
+It supports role-based workflows for super admins, school admins, teachers, and parents, including attendance, health logs, posts/feed interactions, chat, and account management.
 
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Database Setup](#database-setup)
-  - [Running the Application](#running-the-application)
-- [API Reference](#api-reference)
-  - [Authentication](#authentication)
-  - [Public Endpoints](#public-endpoints)
-  - [Protected Endpoints](#protected-endpoints)
-  - [Teacher Endpoints](#teacher-endpoints)
-  - [Admin Endpoints](#admin-endpoints)
-- [Database Schema](#database-schema)
-- [Development](#development)
-- [Testing](#testing)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+> [!IMPORTANT]
+> This repository is actively developed. APIs, UI flows, and deployment defaults may evolve.
 
-## Overview
+## What Is Included
 
-Iris is a school management system API that provides functionality for:
+- Backend API (`apps/api`)
+  - Layered architecture: handler -> service -> repository
+  - PostgreSQL persistence with SQL migrations
+  - JWT authentication and role-based authorization
+  - Google sign-in (phase 1) for existing accounts
+  - WebSocket chat with origin checks and subprotocol auth
+- Frontend Web App (`apps/web`)
+  - Next.js App Router + React 19 + TypeScript
+  - Role-based dashboards and guarded routes
+  - Teacher/parent post interactions (like/comment/share)
+  - Attendance and admin management screens
+- Infrastructure and scripts
+  - Local PostgreSQL with Docker Compose
+  - DB migration and demo seed helpers
+  - API and UI smoke scripts
 
-- Managing schools, classes, students, teachers, and parents
-- Student attendance tracking with multiple status types
-- Health log management for students
-- Role-based access control (Admin, Teacher, Parent)
-- JWT-based authentication
+## Tech Stack
 
-## Features
+### Backend
+- Go `1.25.5`
+- Gin
+- PostgreSQL + `pgx/v5`
+- JWT (`golang-jwt/jwt/v5`)
+- Google ID token verification (`google.golang.org/api/idtoken`)
 
-- **Authentication and Authorization**
-  - JWT-based authentication
-  - Role-based access control (RBAC)
-  - Account activation workflow
+### Frontend
+- Next.js `16.x`
+- React `19`
+- TypeScript `5`
+- Tailwind CSS `4`
+- shadcn/ui + lucide-react
 
-- **Attendance Management**
-  - Support for multiple attendance statuses (present, absent, late, excused)
-  - Optional check-in and check-out time tracking
-  - Teacher-scoped access (teachers can only manage their assigned classes)
+## Repository Structure
 
-- **Health Log Management**
-  - Record student health information
-  - Temperature tracking
-  - Symptom documentation with severity levels
-
-- **User Management**
-  - Admin-controlled user creation
-  - Account locking and unlocking
-  - Role assignment
-
-## Architecture
-
-The project follows a **Layered Architecture** pattern:
-
-```
-Handler Layer (HTTP)
-    |
-    v
-Service Layer (Business Logic)
-    |
-    v
-Repository Layer (Data Access)
-    |
-    v
-Database (PostgreSQL)
-```
-
-Each layer has distinct responsibilities:
-
-- **Handler Layer**: Request parsing, input validation, HTTP response formatting
-- **Service Layer**: Business logic, authorization rules, data transformation
-- **Repository Layer**: Database queries, data persistence, low-level access control
-
-## Technology Stack
-
-| Component | Technology |
-|-----------|------------|
-| Language | Go 1.25 |
-| Web Framework | Gin |
-| Database | PostgreSQL |
-| Database Driver | pgx/v5 (with connection pooling) |
-| Authentication | JWT (golang-jwt/jwt/v5) |
-| Password Hashing | bcrypt |
-| Migration Tool | golang-migrate |
-| Configuration | Environment variables (godotenv) |
-
-## Project Structure
-
-```
+```text
 iris-app/
 ├── apps/
-│   └── api/
-│       ├── cmd/
-│       │   └── api/
-│       │       └── main.go              # Application entry point
-│       ├── internal/
-│       │   ├── api/
-│       │   │   └── v1/
-│       │   │       └── handlers/        # HTTP handlers
-│       │   ├── auth/                    # Authentication utilities
-│       │   ├── config/                  # Configuration management
-│       │   ├── db/                      # Database connection
-│       │   ├── http/                    # Router setup
-│       │   ├── middleware/              # HTTP middleware
-│       │   ├── model/                   # Domain models
-│       │   ├── repo/                    # Repository layer
-│       │   ├── response/                # Response utilities
-│       │   └── service/                 # Business logic layer
-│       └── migrations/                  # Database migrations
-├── infra/
-│   └── docker/
-│       └── docker-compose.yml           # Docker Compose configuration
-├── scripts/
-│   └── db/
-│       └── seed_demo.sql                # Demo data seeding script
-├── go.mod
-├── go.sum
-└── README.md
+│   ├── api/
+│   │   ├── cmd/api/                 # API entrypoint
+│   │   ├── internal/                # Core backend modules
+│   │   └── migrations/              # SQL migrations
+│   └── web/
+│       ├── src/app/                 # Next.js routes
+│       ├── src/components/          # UI components
+│       ├── src/lib/                 # API clients/utilities
+│       └── src/hooks/               # Frontend hooks
+├── infra/docker/                    # Docker compose + deploy env example
+├── scripts/db/                      # DB seed/cleanup scripts
+├── scripts/smoke/                   # API/UI smoke tests
+└── docs/                            # Audit notes and implementation docs
 ```
 
-## Getting Started
+## Core Features
 
-### Prerequisites
+- Authentication and Authorization
+  - Email/password login
+  - Google login endpoint: `POST /api/v1/auth/login/google`
+  - Role-scoped access control for admin/teacher/parent
+- School Domain Management
+  - Schools, classes, students, teachers, parents
+  - Teacher-class assignment and parent-student linkage
+- Attendance and Health
+  - Teacher attendance marking + history
+  - Health log recording and listing
+- Posts and Feed
+  - Teacher posts (class/student scope)
+  - Parent feed aggregation
+  - Persisted like/comment/share interactions
+- Chat
+  - Conversation and messages endpoints
+  - WebSocket delivery
 
-- Go 1.21 or higher
-- PostgreSQL 14 or higher
-- Docker and Docker Compose (optional, for containerized database)
-- golang-migrate CLI tool
+## Current Google Auth Status
 
-### Installation
+- Implemented (phase 1)
+  - Google login for existing users
+  - Optional hosted-domain restriction
+  - First-time Google linking requires password confirmation
+- Not implemented yet
+  - Parent Google sign-up flow (`/register/parent/google`) is still planned (see `docs/google-signup-integration-proposal.md`)
 
-1. Clone the repository:
+## Prerequisites
 
-```bash
-git clone https://github.com/hoanghonghuy/iris-app.git
-cd iris-app
-```
+- Go `>= 1.25`
+- Node.js `>= 20`
+- npm
+- Docker + Docker Compose
+- PostgreSQL migration CLI (`migrate`)
 
-2. Install dependencies:
-
-```bash
-go mod download
-```
-
-3. Install golang-migrate:
+Install `migrate`:
 
 ```bash
 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 ```
 
-### Configuration
+## Quick Start (Local)
 
-Create a `.env` file in the project root:
-
-```env
-# Server
-PORT=8080
-
-# Database
-DATABASE_URL=postgres://postgres:iris@localhost:5433/iris_db?sslmode=disable
-
-# JWT
-JWT_SECRET=your-secret-key-here
-JWT_TTL_MINUTES=60
-
-# Google Sign-In (phase 1)
-GOOGLE_LOGIN_ENABLED=false
-GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
-# Optional: restrict sign-in to a Google Workspace domain
-GOOGLE_HOSTED_DOMAIN=
-```
-
-### Database Setup
-
-1. Start the PostgreSQL database using Docker:
+### 1) Start local PostgreSQL
 
 ```bash
 cd infra/docker
 docker-compose up -d
 ```
 
-2. Run database migrations:
+### 2) Configure backend environment
 
-```bash
-migrate -path apps/api/migrations \
-        -database "postgres://postgres:iris@localhost:5433/iris_db?sslmode=disable" \
-        up
+Create `apps/api/cmd/api/.env` from `apps/api/cmd/api/.env.example`.
+
+Minimum required values:
+
+```env
+DATABASE_URL=postgres://postgres:iris@localhost:5433/iris_db?sslmode=disable
+JWT_SECRET=replace-with-strong-secret
+PORT=8080
 ```
 
-3. (Optional) Seed demo data:
+Useful optional values:
+
+```env
+DB_MAX_CONNS=50
+JWT_TTL_MINUTES=1440
+ALLOWED_ORIGINS=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
+
+# Google login (phase 1)
+GOOGLE_LOGIN_ENABLED=false
+GOOGLE_CLIENT_ID=
+GOOGLE_HOSTED_DOMAIN=
+
+# Compatibility mode (keep false in production)
+WS_ALLOW_QUERY_TOKEN_FALLBACK=false
+
+# Optional SMTP
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+```
+
+### 3) Run migrations
+
+```bash
+migrate -path apps/api/migrations -database "postgres://postgres:iris@localhost:5433/iris_db?sslmode=disable" up
+```
+
+### 4) (Optional) Seed demo data
 
 ```bash
 docker exec -i iris-postgres psql -U postgres -d iris_db < scripts/db/seed_demo.sql
 ```
 
-### Running the Application
+### 5) Run backend
 
 ```bash
-go run apps/api/cmd/api/main.go
+cd apps/api/cmd/api
+go run main.go
 ```
 
-The API will be available at `http://localhost:8080`.
+Backend base URL: `http://localhost:8080/api/v1`
 
-## API Reference
+### 6) Configure frontend environment
 
-### Authentication
+Create `apps/web/.env.local`:
 
-All protected endpoints require a valid JWT token in the Authorization header:
-
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+NEXT_PUBLIC_WS_QUERY_TOKEN_FALLBACK=false
 ```
-Authorization: Bearer <token>
-```
 
-### Public Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/health` | Health check |
-| POST | `/api/v1/auth/login` | User login |
-| POST | `/api/v1/auth/login/google` | Google login with ID token |
-| POST | `/api/v1/users/activate` | Activate user account |
-
-> Google login phase 1 policy:
-> - Existing local users only (no auto-provision)
-> - First-time Google linking requires password confirmation
-> - Google One Tap is not enabled in this phase
-
-### Protected Endpoints
-
-These endpoints require authentication (valid JWT):
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/me` | Get current user info |
-| PUT | `/api/v1/me/password` | Update own password |
-| DELETE | `/api/v1/me` | Delete own account |
-
-### Teacher Endpoints
-
-These endpoints require authentication and TEACHER role:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/teacher/classes` | List assigned classes |
-| GET | `/api/v1/teacher/classes/:class_id/students` | List students in class |
-| POST | `/api/v1/teacher/attendance` | Mark student attendance |
-| GET | `/api/v1/teacher/students/:student_id/attendance` | List student attendance history |
-| POST | `/api/v1/teacher/health` | Create health log |
-| GET | `/api/v1/teacher/students/:student_id/health` | List student health logs |
-| PUT | `/api/v1/teacher/profile` | Update own profile |
-| POST | `/api/v1/teacher/posts` | Create post (class or student scope) |
-| GET | `/api/v1/teacher/classes/:class_id/posts` | List class posts |
-| GET | `/api/v1/teacher/students/:student_id/posts` | List student posts |
-
-### Parent Endpoints
-
-These endpoints require authentication and PARENT role:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/parent/children` | List own children |
-| GET | `/api/v1/parent/feed` | Get aggregated feed of all children's posts |
-| GET | `/api/v1/parent/children/:student_id/class-posts` | List class posts for child |
-| GET | `/api/v1/parent/children/:student_id/student-posts` | List student-specific posts for child |
-| GET | `/api/v1/parent/children/:student_id/posts` | List all posts related to child |
-
-### Admin Endpoints
-
-These endpoints require authentication and ADMIN role:
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/admin/schools` | Create school |
-| GET | `/api/v1/admin/schools` | List schools |
-| POST | `/api/v1/admin/classes/school` | Create class |
-| GET | `/api/v1/admin/classes/school/:school_id` | List classes by school |
-| POST | `/api/v1/admin/students/student` | Create student |
-| GET | `/api/v1/admin/students/student/:current_class_id` | List students by class |
-| POST | `/api/v1/admin/users` | Create user |
-| GET | `/api/v1/admin/users` | List users |
-| GET | `/api/v1/admin/users/:userid` | Get user by ID |
-| POST | `/api/v1/admin/users/:userid/lock` | Lock user account |
-| POST | `/api/v1/admin/users/:userid/unlock` | Unlock user account |
-| POST | `/api/v1/admin/users/:userid/roles` | Assign role to user |
-| GET | `/api/v1/admin/teachers` | List teachers |
-| GET | `/api/v1/admin/teachers/:teacher_id` | Get teacher by ID |
-| PUT | `/api/v1/admin/teachers/:teacher_id` | Update teacher |
-| GET | `/api/v1/admin/teachers/class/:class_id` | List teachers of class |
-| POST | `/api/v1/admin/teachers/:teacher_id/classes/:class_id` | Assign teacher to class |
-| DELETE | `/api/v1/admin/teachers/:teacher_id/classes/:class_id` | Unassign teacher from class |
-| GET | `/api/v1/admin/parents` | List parents |
-| GET | `/api/v1/admin/parents/:parent_id` | Get parent by ID |
-| POST | `/api/v1/admin/parents/:parent_id/students/:student_id` | Assign parent to student |
-| DELETE | `/api/v1/admin/parents/:parent_id/students/:student_id` | Unassign parent from student |
-
-## Database Schema
-
-The database consists of the following main entities:
-
-- **users**: User accounts with authentication credentials
-- **roles**: Available roles (ADMIN, TEACHER, PARENT)
-- **user_roles**: User-role assignments
-- **schools**: School information
-- **classes**: Class information linked to schools
-- **students**: Student records
-- **teachers**: Teacher profiles linked to users
-- **teacher_classes**: Teacher-class assignments
-- **parents**: Parent profiles
-- **student_parents**: Student-parent relationships
-- **attendance**: Daily attendance records
-- **health_logs**: Student health records
-
-For detailed schema information, refer to the migration files in `apps/api/migrations/`.
-
-## Development
-
-### Code Style
-
-This project follows standard Go conventions and uses:
-
-- Constructor pattern with unexported fields for services and handlers
-- Explicit dependency injection
-- Error wrapping with context
-- Table-driven tests (planned)
-
-### Adding New Features
-
-1. Define models in `internal/model/`
-2. Create repository methods in `internal/repo/`
-3. Implement business logic in `internal/service/`
-4. Add HTTP handlers in `internal/api/v1/handlers/`
-5. Register routes in `internal/http/router.go`
-6. Update `main.go` to wire dependencies
-
-### Database Migrations
-
-Create new migrations using golang-migrate:
+### 7) Run frontend
 
 ```bash
-migrate create -ext sql -dir apps/api/migrations -seq <migration_name>
+cd apps/web
+npm install
+npm run dev
 ```
 
-For migration guidelines, see `apps/api/migrations/README.md`.
+Frontend URL: `http://localhost:3000`
 
-## Testing
+## Smoke and Validation
 
-Testing infrastructure is planned but not yet implemented.
+### Backend and frontend type/build checks
 
-Planned test coverage:
+```bash
+# From repository root
+go test ./...
 
-- Unit tests for services
-- Integration tests for repositories
-- End-to-end tests for API endpoints
+# From apps/web
+npx tsc --noEmit
+npx eslint
+```
 
-## License
+### API smoke script
 
-This project is developed as part of an undergraduate thesis. License terms to be determined.
+```bash
+powershell -File scripts/smoke/api-smoke.ps1
+```
 
-## Acknowledgments
+### UI smoke script
 
-- Gin Web Framework
-- pgx PostgreSQL Driver
-- golang-migrate
-- golang-jwt
+```bash
+node scripts/smoke/ui-smoke.mjs
+```
+
+> [!NOTE]
+> Current smoke scripts validate core auth/admin/teacher/parent flows. Google-login-specific smoke coverage is planned.
+
+## API Surface (High Level)
+
+- Public
+  - `GET /api/v1/health`
+  - `POST /api/v1/auth/login`
+  - `POST /api/v1/auth/login/google`
+  - `POST /api/v1/auth/forgot-password`
+  - `POST /api/v1/auth/reset-password`
+  - `POST /api/v1/users/activate-token`
+  - `POST /api/v1/register/parent`
+- Protected
+  - `GET /api/v1/me`
+  - `PUT /api/v1/me/password`
+  - `DELETE /api/v1/me`
+  - `/api/v1/teacher/*`
+  - `/api/v1/parent/*`
+  - `/api/v1/admin/*`
+  - `/api/v1/chat/*` and `/api/v1/chat/ws`
+
+For detailed endpoint behavior and open issues, see:
+- `docs/iris-issues-audit.md`
+- `docs/remaining-issues.md`
+
+## Security Notes
+
+- CORS uses origin allowlist, not wildcard reflection.
+- WebSocket validates origin; token via subprotocol is preferred.
+- Query-token WebSocket fallback exists for compatibility and should remain disabled in production.
+- Password reset race-condition guards are implemented; token-in-URL hardening is still tracked in audit.
+
+## Development Notes
+
+- The backend is organized with explicit service/repository boundaries to keep business logic testable.
+- The frontend uses domain-driven route sections (`admin`, `teacher`, `parent`) and shared typed API clients.
+- Migration files are incremental and live in `apps/api/migrations`.
 
 ---
 
-**Status**: Work in Progress
+If you are preparing a thesis demo, start with:
+1. `infra/docker/docker-compose.yml`
+2. `apps/api/cmd/api/.env`
+3. `scripts/db/seed_demo.sql`
+4. `scripts/smoke/api-smoke.ps1` and `scripts/smoke/ui-smoke.mjs`
