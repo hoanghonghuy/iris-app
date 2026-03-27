@@ -56,9 +56,12 @@ func main() {
 
 	// Authenticator
 	jwtAuth := auth.NewAuthenticator(cfg.JWTSecret, cfg.JWTTTLMinutes)
-	googleVerifier, err := auth.NewGoogleIDTokenVerifier(cfg.GoogleClientID)
-	if err != nil {
-		log.Fatal(err)
+	var googleVerifier auth.GoogleTokenVerifier
+	if cfg.GoogleLoginEnabled {
+		googleVerifier, err = auth.NewGoogleIDTokenVerifier(cfg.GoogleClientID)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Email sender (dev mode: log to console; prod: set SMTP_HOST env)

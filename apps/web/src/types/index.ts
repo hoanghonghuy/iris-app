@@ -458,10 +458,11 @@ export interface ApiResponse<T = unknown> {
 
 /**
  * ApiError - Response lỗi
- * Backend: { "error": "message" }
+ * Backend: { "error": "message", "error_code": "MACHINE_CODE" }
  */
 export interface ApiError {
   error: string;
+  error_code?: string;
 }
 
 // ============================================================================

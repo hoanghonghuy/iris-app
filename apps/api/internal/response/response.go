@@ -37,6 +37,12 @@ func Fail(c *gin.Context, status int, msg string) {
 	c.JSON(status, gin.H{"error": msg})
 }
 
+// FailWithCode trả về response lỗi với status code, message và error_code machine-readable.
+// Frontend nên ưu tiên dùng error_code thay vì parse error message.
+func FailWithCode(c *gin.Context, status int, msg, code string) {
+	c.JSON(status, gin.H{"error": msg, "error_code": code})
+}
+
 // Pagination chứa metadata phân trang cho response
 type Pagination struct {
 	Total   int  `json:"total"`

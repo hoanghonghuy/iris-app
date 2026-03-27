@@ -94,7 +94,7 @@ func (h *AuthHandler) LoginWithGoogle(c *gin.Context) {
 			response.Fail(c, http.StatusUnauthorized, "google account is not provisioned")
 			return
 		case errors.Is(err, service.ErrGoogleLinkPasswordRequired):
-			response.Fail(c, http.StatusForbidden, "password confirmation required to link google account")
+			response.FailWithCode(c, http.StatusForbidden, "password confirmation required to link google account", "GOOGLE_LINK_PASSWORD_REQUIRED")
 			return
 		case errors.Is(err, auth.ErrInvalidCredentials):
 			response.Fail(c, http.StatusUnauthorized, "invalid credentials")

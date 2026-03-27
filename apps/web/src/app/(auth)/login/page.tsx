@@ -5,7 +5,7 @@
  */
 "use client";
 
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
@@ -34,6 +34,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
 
@@ -47,6 +48,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setErrorCode(undefined);
     setIsSubmitting(true);
 
     try {
@@ -68,14 +70,14 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSubmit = async ({ idToken, password }: { idToken: string; password?: string }) => {
+  const handleGoogleSubmit = useCallback(async ({ idToken, password }: { idToken: string; password?: string }) => {
     const response = await authApi.loginWithGoogle({ id_token: idToken, password }) as LoginResponse;
     const token = response.data?.access_token || response.access_token;
     if (!token) {
       throw new Error('Không nhận được token từ server');
     }
     await finalizeLogin(token);
-  };
+  }, [finalizeLogin]);
 
   return (
     <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
@@ -97,14 +99,18 @@ export default function LoginPage() {
             <GoogleSignInButton
               onSubmitGoogle={async ({ idToken, password }) => {
                 try {
+                  setErrorCode(undefined);
                   await handleGoogleSubmit({ idToken, password });
                 } catch (err: unknown) {
-                  setError(extractErrorMessage(err) || 'Đăng nhập Google thất bại.');
+                  const axiosErr = err as { response?: { data?: { error?: string; error_code?: string } } };
+                  setError(axiosErr.response?.data?.error || extractErrorMessage(err) || 'Đăng nhập Google thất bại.');
+                  setErrorCode(axiosErr.response?.data?.error_code);
                   throw err;
                 }
               }}
               errorMessage={error}
-              clearError={() => setError('')}
+              errorCode={errorCode}
+              clearError={() => { setError(''); setErrorCode(undefined); }}
               disabled={isSubmitting}
             />
 

@@ -29,13 +29,15 @@ declare global {
 type Props = {
   onSubmitGoogle: (payload: { idToken: string; password?: string }) => Promise<void>;
   errorMessage?: string;
+  /** error_code machine-readable từ backend (dùng để detect trạng thái, không phải text) */
+  errorCode?: string;
   clearError: () => void;
   disabled?: boolean;
 };
 
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
-export function GoogleSignInButton({ onSubmitGoogle, errorMessage, clearError, disabled }: Props) {
+export function GoogleSignInButton({ onSubmitGoogle, errorMessage, errorCode, clearError, disabled }: Props) {
   const [scriptReady, setScriptReady] = useState(false);
   const [pendingCredential, setPendingCredential] = useState("");
   const [linkPassword, setLinkPassword] = useState("");
@@ -103,7 +105,7 @@ export function GoogleSignInButton({ onSubmitGoogle, errorMessage, clearError, d
   }, [clearError, clientId, onSubmitGoogle, scriptReady]);
 
   const showPasswordLinkStep = Boolean(
-    pendingCredential && errorMessage?.toLowerCase().includes("password confirmation required")
+    pendingCredential && errorCode === "GOOGLE_LINK_PASSWORD_REQUIRED"
   );
 
   const handleLinkAndLogin = async () => {
