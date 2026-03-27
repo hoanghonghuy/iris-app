@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS roles (
   role_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name    varchar(30) NOT NULL UNIQUE
-    CHECK (name IN ('ADMIN', 'TEACHER', 'PARENT'))
+    CONSTRAINT roles_name_check CHECK (name IN ('ADMIN', 'TEACHER', 'PARENT'))
 );
 
 INSERT INTO roles (name) VALUES ('ADMIN'), ('TEACHER'), ('PARENT')

@@ -1,5 +1,3 @@
-ALTER TABLE attendance_change_logs
-ADD CONSTRAINT attendance_change_logs_attendance_id_fkey
-FOREIGN KEY (attendance_id)
-REFERENCES attendance_records(attendance_id)
-ON DELETE CASCADE;
+-- Cố tình để trống file này vì bảng attendance_change_logs
+-- ở version 8 vốn dĩ không có foreign key constraints cho attendance_id.
+-- Việc thêm lại constraint ở đây sẽ gây lỗi dữ liệu mồ côi khi rollback.

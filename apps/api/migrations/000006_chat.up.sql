@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_conv_participants_user
 CREATE TABLE IF NOT EXISTS messages (
   message_id      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   conversation_id uuid NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
-  sender_id       uuid NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  sender_id       uuid REFERENCES users(user_id) ON DELETE SET NULL,
   content         text NOT NULL,
   created_at      timestamptz NOT NULL DEFAULT now()
 );
