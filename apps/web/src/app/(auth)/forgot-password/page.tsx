@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">Quên mật khẩu</CardTitle>
                     <CardDescription className="text-center">
-                        Nhập email để nhận link đặt lại mật khẩu
+						Nhập email để nhận mã đặt lại mật khẩu
                     </CardDescription>
                 </CardHeader>
 
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
                             <CheckCircle2 className="h-12 w-12 text-success" />
                             <p className="text-center text-sm text-muted-foreground">
                                 Nếu email <span className="font-medium text-foreground">{email}</span> tồn tại trong hệ thống,
-                                bạn sẽ nhận được link đặt lại mật khẩu trong vài phút.
+								bạn sẽ nhận được mã đặt lại mật khẩu trong vài phút.
                             </p>
                         </CardContent>
                         <CardFooter>
@@ -101,7 +101,7 @@ export default function ForgotPasswordPage() {
                                 {isSubmitting ? (
                                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang gửi...</>
                                 ) : (
-                                    "Gửi link đặt lại mật khẩu"
+								"Gửi mã đặt lại mật khẩu"
                                 )}
                             </Button>
                             <Link href="/login" className="text-sm text-muted-foreground hover:text-primary transition-colors">

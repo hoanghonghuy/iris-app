@@ -65,8 +65,8 @@ export const authApi = {
    * Đặt lại mật khẩu bằng token
    * POST /api/v1/auth/reset-password
    */
-  resetPassword: async (token: string, password: string) => {
-    const res = await apiClient.post('/auth/reset-password', { token, password });
+  resetPassword: async (email: string, token: string, password: string) => {
+    const res = await apiClient.post('/auth/reset-password', { email, token, password });
     return res.data;
   },
 };
