@@ -93,3 +93,100 @@ func (r *ParentCodeRepo) IncrementUsageIfNotMaxed(ctx context.Context, code stri
 	return nil
 }
 
+type RegisterParentTxParams struct {
+	UserID       uuid.UUID
+	Email        string
+	PasswordHash string
+	FullName     string
+	Phone        string
+	SchoolID     uuid.UUID
+	StudentID    uuid.UUID
+	Code         string
+	GoogleSub    string // Optional
+}
+
+// RegisterParentTx thực thi toàn bộ luồng đăng ký tài khoản Parent trong một transaction.
+// Bao gồm: Tạo User, Assign Role PARENT, Tạo Parent, Link StudentParent,
+// Set Google Sub (nếu có), và Increment Usage Code.
+func (r *ParentCodeRepo) RegisterParentTx(ctx context.Context, p RegisterParentTxParams) (uuid.UUID, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Tạo User
+	const qUser = `
+		INSERT INTO users (user_id, email, password_hash, status)
+		VALUES ($1, $2, $3, 'active');
+	`
+	if _, err := tx.Exec(ctx, qUser, p.UserID, p.Email, p.PasswordHash); err != nil {
+		return uuid.Nil, err
+	}
+
+	// 2. Assign ROLE PARENT
+	const qRole = `
+		INSERT INTO user_roles (user_id, role_id)
+		SELECT $1, role_id FROM roles WHERE name = 'PARENT';
+	`
+	if _, err := tx.Exec(ctx, qRole, p.UserID); err != nil {
+		return uuid.Nil, err
+	}
+
+	// 3. Tạo Parent record
+	const qParent = `
+		INSERT INTO parents (user_id, school_id, full_name, phone)
+		VALUES ($1, $2, $3, $4)
+		RETURNING parent_id;
+	`
+	var parentID uuid.UUID
+	if err := tx.QueryRow(ctx, qParent, p.UserID, p.SchoolID, p.FullName, p.Phone).Scan(&parentID); err != nil {
+		return uuid.Nil, err
+	}
+
+	// 4. Liên kết Student - Parent
+	const qLink = `
+		INSERT INTO student_parents (student_id, parent_id, relationship)
+		VALUES ($1, $2, 'parent')
+		ON CONFLICT (student_id, parent_id) DO UPDATE
+		SET relationship = EXCLUDED.relationship;
+	`
+	if _, err := tx.Exec(ctx, qLink, p.StudentID, parentID); err != nil {
+		return uuid.Nil, err
+	}
+
+	// 5. Link Google Sub (nếu có)
+	if p.GoogleSub != "" {
+		const qSub = `
+			UPDATE users 
+			SET google_sub = $2 
+			WHERE user_id = $1;
+		`
+		if _, err := tx.Exec(ctx, qSub, p.UserID, p.GoogleSub); err != nil {
+			return uuid.Nil, err
+		}
+	}
+
+	// 6. Tăng usage count một cách atomic và kiểm tra max_usage
+	const qInc = `
+		UPDATE student_parent_codes
+		SET usage_count = usage_count + 1
+		WHERE code = $1
+		  AND usage_count < max_usage
+		  AND expires_at > now();
+	`
+	tag, err := tx.Exec(ctx, qInc, p.Code)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if tag.RowsAffected() == 0 {
+		return uuid.Nil, ErrNoRowsUpdated // Parent code expired or max usage reached
+	}
+
+	// Commit transaction
+	if err := tx.Commit(ctx); err != nil {
+		return uuid.Nil, err
+	}
+
+	return parentID, nil
+}

@@ -76,6 +76,7 @@ func NewRouter(
 		v1.POST("/auth/reset-password", authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
 		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
+		v1.POST("/register/parent/google", parentCodeHandler.RegisterParentWithGoogle)
 
 		// WebSocket endpoint (auth qua Sec-WebSocket-Protocol header)
 		v1.GET("/chat/ws", chatHandler.HandleWS)

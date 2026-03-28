@@ -85,7 +85,7 @@ func (h *AuthHandler) LoginWithGoogle(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrGoogleLoginDisabled):
-			response.Fail(c, http.StatusNotFound, "google login is disabled")
+			response.Fail(c, http.StatusForbidden, "google login is disabled")
 			return
 		case errors.Is(err, service.ErrGoogleDomainNotAllowed):
 			response.Fail(c, http.StatusForbidden, "google account domain not allowed")

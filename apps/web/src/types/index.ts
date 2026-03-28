@@ -49,6 +49,15 @@ export interface RegisterParentRequest {
   parent_code: string;
 }
 
+/**
+ * RegisterParentWithGoogleRequest - Phụ huynh tự đăng ký bằng Google với parent code
+ * Backend: apps/api/internal/api/v1/handlers/parent_code_handler.go
+ */
+export interface RegisterParentWithGoogleRequest {
+  id_token: string;
+  parent_code: string;
+}
+
 // ============================================================================
 // USER TYPES
 // ============================================================================

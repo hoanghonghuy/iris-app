@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -63,6 +64,52 @@ func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
 	})
 }
 
+// RegisterParentWithGoogle xử lý việc phụ huynh đăng ký tài khoản liên kết Google bằng Parent Code.
+func (h *ParentCodeHandler) RegisterParentWithGoogle(c *gin.Context) {
+	var req struct {
+		IDToken    string `json:"id_token" binding:"required"`
+		ParentCode string `json:"parent_code" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	resp, err := h.parentCodeService.RegisterParentWithGoogle(ctx, req.IDToken, req.ParentCode)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrGoogleLoginDisabled):
+			response.Fail(c, http.StatusForbidden, "tính năng đăng nhập Google đang tắt")
+			return
+		case errors.Is(err, service.ErrGoogleDomainNotAllowed):
+			response.Fail(c, http.StatusForbidden, "tên miền Google không hợp lệ")
+			return
+		case errors.Is(err, auth.ErrInvalidCredentials):
+			response.Fail(c, http.StatusUnauthorized, "xác thực Google thất bại")
+			return
+		case errors.Is(err, service.ErrInvalidParentCode):
+			response.Fail(c, http.StatusBadRequest, "mã phụ huynh không hợp lệ/hết hạn/hết lượt dùng")
+			return
+		case errors.Is(err, service.ErrParentCodeExpired):
+			response.Fail(c, http.StatusBadRequest, "mã phụ huynh không hợp lệ/hết hạn/hết lượt dùng")
+			return
+		case errors.Is(err, service.ErrParentCodeMaxUsageReached):
+			response.Fail(c, http.StatusBadRequest, "mã phụ huynh không hợp lệ/hết hạn/hết lượt dùng")
+			return
+		case errors.Is(err, service.ErrEmailAlreadyExists):
+			response.Fail(c, http.StatusConflict, "Email này đã được đăng ký. Vui lòng quay lại trang Đăng nhập")
+			return
+		default:
+			response.Fail(c, http.StatusInternalServerError, "server error")
+			return
+		}
+	}
+
+	response.OK(c, resp)
+}
 // RevokeParentCode thu hồi parent code cua hs
 func (h *ParentCodeHandler) RevokeParentCode(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)

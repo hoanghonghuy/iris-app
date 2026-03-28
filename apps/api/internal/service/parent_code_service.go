@@ -12,6 +12,7 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,10 +23,13 @@ type ParentCodeService struct {
 	studentParentRepo *repo.StudentParentRepo
 	studentRepo       *repo.StudentRepo
 	jwtAuth           *auth.Authenticator
+	googleVerifier    auth.GoogleTokenVerifier
+	googleEnabled     bool
+	googleHD          string
 }
 
 func NewParentCodeService(parentCodeRepo *repo.ParentCodeRepo, userRepo *repo.UserRepo, parentRepo *repo.ParentRepo,
-	studentParentRepo *repo.StudentParentRepo, studentRepo *repo.StudentRepo, jwtAuth *auth.Authenticator) *ParentCodeService {
+	studentParentRepo *repo.StudentParentRepo, studentRepo *repo.StudentRepo, jwtAuth *auth.Authenticator, googleVerifier auth.GoogleTokenVerifier, googleEnabled bool, googleHD string) *ParentCodeService {
 	return &ParentCodeService{
 		parentCodeRepo:    parentCodeRepo,
 		userRepo:          userRepo,
@@ -33,6 +37,9 @@ func NewParentCodeService(parentCodeRepo *repo.ParentCodeRepo, userRepo *repo.Us
 		studentParentRepo: studentParentRepo,
 		studentRepo:       studentRepo,
 		jwtAuth:           jwtAuth,
+		googleVerifier:    googleVerifier,
+		googleEnabled:     googleEnabled,
+		googleHD:          googleHD,
 	}
 }
 
@@ -120,7 +127,9 @@ func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password,
 		// Nếu không có lỗi → email đã tồn tại
 		return nil, ErrEmailAlreadyExists
 	}
-	// Nếu lỗi != ErrNotFound → có lỗi khác → báo lỗi
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
 
 	// Hash password
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -181,6 +190,97 @@ func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password,
 		// Nếu generate token thất bại, vẫn trả về success
 		// Parent có thể login sau với email/password
 		token = "" // hoặc có thể return error
+	}
+
+	return &LoginResponse{
+		AccessToken: token,
+		TokenType:   "Bearer",
+		ExpiresIn:   s.jwtAuth.TTLSeconds,
+	}, nil
+}
+
+// RegisterParentWithGoogle đăng ký parent mới bằng Google
+func (s *ParentCodeService) RegisterParentWithGoogle(ctx context.Context, idToken string, parentCode string) (*LoginResponse, error) {
+	if !s.googleEnabled || s.googleVerifier == nil {
+		return nil, ErrGoogleLoginDisabled
+	}
+
+	// 1. Verify Google Token
+	claims, err := s.googleVerifier.Verify(ctx, idToken)
+	if err != nil {
+		return nil, auth.ErrInvalidCredentials
+	}
+	if s.googleHD != "" && claims.HostedDomain != s.googleHD {
+		return nil, ErrGoogleDomainNotAllowed
+	}
+
+	email := claims.Email
+	if !claims.EmailVerified {
+		return nil, auth.ErrInvalidCredentials
+	}
+
+	// 2. Load Parent Code
+	codeInfo, err := s.parentCodeRepo.FindByCode(ctx, parentCode)
+	if err != nil {
+		return nil, ErrInvalidParentCode
+	}
+	if codeInfo.ExpiresAt.Before(time.Now()) {
+		return nil, ErrParentCodeExpired
+	}
+
+	// 3. Check if email already exists
+	_, err = s.userRepo.FindByEmail(ctx, email)
+	if err == nil {
+		return nil, ErrEmailAlreadyExists
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	// 4. Lấy thông tin student (để lấy school_id)
+	schoolID, err := s.studentRepo.GetSchoolIDByStudentID(ctx, codeInfo.StudentID)
+	if err != nil {
+		return nil, ErrFailedToGetStudent
+	}
+
+	// 5. Hash random password fallback
+	randomPwd := generateRandomCode(16)
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(randomPwd), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, ErrFailedToHashPassword
+	}
+
+	fullName := claims.Name
+	if fullName == "" {
+		fullName = "Google Parent"
+	}
+
+	// 6. Execute Transaction
+	userID := uuid.New()
+	roles := []string{"PARENT"}
+	token, err := s.jwtAuth.SignToken(userID.String(), email, roles, "")
+	if err != nil {
+		return nil, err
+	}
+
+	txParams := repo.RegisterParentTxParams{
+		UserID:       userID,
+		Email:        email,
+		PasswordHash: string(passwordHash),
+		FullName:     fullName,
+		Phone:        "", // Optional
+		SchoolID:     schoolID,
+		StudentID:    codeInfo.StudentID,
+		Code:         parentCode,
+		GoogleSub:    claims.Sub,
+	}
+
+	_, err = s.parentCodeRepo.RegisterParentTx(ctx, txParams)
+	if err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return nil, ErrParentCodeMaxUsageReached
+		}
+		return nil, fmt.Errorf("failed to register parent: %w", err)
 	}
 
 	return &LoginResponse{

@@ -5,8 +5,12 @@
  */
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { authApi } from "@/lib/api/auth.api";
+import { authHelpers } from "@/lib/api/client";
+import { useAuth } from "@/providers/AuthProvider";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { UserRole } from "@/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +32,45 @@ export default function RegisterParentPage() {
   const [parentCode, setParentCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
   const [success, setSuccess] = useState(false);
+  
+  const { login } = useAuth();
+
+  const clearGoogleError = useCallback(() => {
+    setError('');
+    setErrorCode(undefined);
+  }, []);
+
+  const finalizeLogin = useCallback(async (token: string) => {
+    authHelpers.setToken(token);
+    const userData = await authApi.getMe();
+    const primaryRole = userData.roles[0] as UserRole;
+    login(token, primaryRole);
+  }, [login]);
+
+  const onGoogleSignIn = useCallback(async ({ idToken }: { idToken: string }) => {
+    if (!parentCode.trim()) {
+      setError("Vui lòng nhập Mã phụ huynh ở trên trước khi bấm Đăng ký bằng Google");
+      return;
+    }
+    try {
+      setErrorCode(undefined);
+      const response = await authApi.registerParentWithGoogle({
+        id_token: idToken,
+        parent_code: parentCode,
+      });
+      const token = response.access_token;
+      if (!token) {
+        throw new Error("Không nhận được token từ server");
+      }
+      await finalizeLogin(token);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: string; error_code?: string } } };
+      setError(axiosErr.response?.data?.error || extractErrorMessage(err) || "Đăng ký bằng Google thất bại.");
+      setErrorCode(axiosErr.response?.data?.error_code);
+    }
+  }, [parentCode, finalizeLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +80,7 @@ export default function RegisterParentPage() {
     if (!parentCode.trim()) { setError("Mã phụ huynh không được trống"); return; }
 
     try {
-      setSubmitting(true); setError("");
+      setSubmitting(true); setError(""); setErrorCode(undefined);
       await authApi.registerParent({ email, password, parent_code: parentCode });
       setSuccess(true);
     } catch (err: unknown) {
@@ -97,9 +139,27 @@ export default function RegisterParentPage() {
                   Đang xử lý...
                 </>
               ) : (
-                "Đăng ký"
+                "Đăng ký bằng Email"
               )}
             </Button>
+
+            <div className="w-full space-y-3 pt-2">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Hoặc đăng nhập bằng</span>
+                </div>
+              </div>
+
+              <GoogleSignInButton
+                onSubmitGoogle={onGoogleSignIn}
+                errorCode={errorCode}
+                clearError={clearGoogleError}
+                disabled={submitting}
+              />
+            </div>
             <p className="text-center text-sm text-muted-foreground">
               Đã có tài khoản?{" "}
               <Link href="/login" className="font-medium text-foreground hover:underline">Đăng nhập</Link>

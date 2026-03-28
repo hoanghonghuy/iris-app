@@ -4,7 +4,7 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/auth_handler.go + user_handler.go
  */
 import { apiClient } from './client';
-import { GoogleLoginRequest, LoginRequest, LoginResponse, RegisterParentRequest } from '@/types';
+import { GoogleLoginRequest, LoginRequest, LoginResponse, RegisterParentRequest, RegisterParentWithGoogleRequest } from '@/types';
 
 export const authApi = {
   /**
@@ -58,6 +58,15 @@ export const authApi = {
    */
   registerParent: async (data: RegisterParentRequest) => {
     const res = await apiClient.post('/register/parent', data);
+    return res.data;
+  },
+
+  /**
+   * Phụ huynh tự đăng ký bằng Google ID token và mã code
+   * POST /api/v1/register/parent/google
+   */
+  registerParentWithGoogle: async (data: RegisterParentWithGoogleRequest) => {
+    const res = await apiClient.post<LoginResponse>('/register/parent/google', data);
     return res.data;
   },
 
