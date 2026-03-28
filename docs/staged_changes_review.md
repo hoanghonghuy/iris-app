@@ -197,3 +197,17 @@ const showPasswordLinkStep = Boolean(
 | 3 | 🟡 **Trung bình** | Password link detection dùng string matching → fragile coupling | `GoogleSignInButton.tsx` |
 | 4 | 🟢 **Thấp** | `LinkGoogleSub` trả inline error thay vì sentinel error | `user_repo.go` |
 | 5 | 🟢 **Thấp** | `omitempty` trên request struct không có tác dụng khi unmarshal | `auth_handler.go` |
+
+---
+
+## Post-review Status (2026-03-28)
+
+Sau khi commit, các mục cần fix đã được xử lý như sau:
+
+| # | Vấn đề | Trạng thái | Evidence |
+|---|--------|-----------|---------|
+| 1 | Google verifier crash khi disabled | ✅ **RESOLVED** | `main.go`: conditional init `if cfg.GoogleLoginEnabled` |
+| 2 | `onSubmitGoogle` inline → re-render | ✅ **RESOLVED** | `login/page.tsx`: `handleGoogleSubmit` wrapped in `useCallback` |
+| 3 | Password link string matching | ✅ **RESOLVED** | FE dùng `errorCode === "GOOGLE_LINK_PASSWORD_REQUIRED"`, BE trả `FailWithCode` |
+| 4 | `LinkGoogleSub` inline error | ✅ **RESOLVED** | `repo/errors.go`: sentinel `ErrGoogleAlreadyLinkedDifferent` (2026-03-28) |
+| 5 | `omitempty` vô tác dụng | ✅ **RESOLVED** | `auth_handler.go`: đã bỏ `omitempty` khỏi `Password` field |

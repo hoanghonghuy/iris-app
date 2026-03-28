@@ -128,10 +128,14 @@ Tài liệu audit cũ có một số điểm đã lỗi thời. Sau khi rà soá
 
 ### 3.8 Còn TODO comment trong repo
 - Severity: Low
-- Evidence:
-  - `apps/api/internal/repo/teacher_scope_repo.go` còn comment `TODO`.
+- Evidence (cập nhật 2026-03-28):
+  - `apps/api/cmd/api/main.go` — 3 TODO: tách helper functions (giữ lại, cải tiến dài hạn)
+  - `apps/api/internal/ws/hub.go` — TODO: Horizontal Scaling (giữ lại, thiết kế tương lai)
+  - `apps/api/internal/service/parent_code_service.go` — TODO: Parent name (giữ lại, cần business decision)
+  - `apps/api/internal/api/v1/handlers/student_handler.go` — TODO: school_id source (giữ lại, cần business decision)
+  - Đã dọn dẹp: `response.go`, `teacher_scope_repo.go`, `jwt.go`, `student_handler.go:61` (2026-03-28)
 - Impact:
-  - Không ảnh hưởng runtime, nhưng giảm độ rõ ràng khi bảo trì.
+  - Không ảnh hưởng runtime, các TODO còn lại đều có giá trị ghi chú cho tương lai.
 
 ---
 
