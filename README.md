@@ -147,9 +147,6 @@ GOOGLE_LOGIN_ENABLED=false
 GOOGLE_CLIENT_ID=
 GOOGLE_HOSTED_DOMAIN=
 
-# Compatibility mode (keep false in production)
-WS_ALLOW_QUERY_TOKEN_FALLBACK=false
-
 # Optional SMTP
 SMTP_HOST=
 SMTP_PORT=
@@ -185,7 +182,6 @@ Create `apps/web/.env.local`:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=
-NEXT_PUBLIC_WS_QUERY_TOKEN_FALLBACK=false
 ```
 
 ### 7) Run frontend
@@ -252,9 +248,8 @@ For detailed endpoint behavior and open issues, see:
 ## Security Notes
 
 - CORS uses origin allowlist, not wildcard reflection.
-- WebSocket validates origin; token via subprotocol is preferred.
-- Query-token WebSocket fallback exists for compatibility and should remain disabled in production.
-- Password reset race-condition guards are implemented; token-in-URL hardening is still tracked in audit.
+- WebSocket validates origin; token is sent exclusively via Sec-WebSocket-Protocol subprotocol.
+- Password reset tokens are no longer embedded in URL query strings; users enter the reset code manually.
 
 ## Development Notes
 
