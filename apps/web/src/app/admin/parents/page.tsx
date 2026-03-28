@@ -19,6 +19,7 @@ import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { Heart, Loader2, Phone, Mail, Link2, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminParentsPage() {
   const { role } = useAuth();
@@ -41,15 +42,6 @@ export default function AdminParentsPage() {
   const [assignModal, setAssignModal] = useState<{isOpen: boolean, parentId: string | null, parentName: string | null}>({isOpen: false, parentId: null, parentName: null});
   const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, parentId: string | null, studentId: string | null, studentName: string | null}>({isOpen: false, parentId: null, studentId: null, studentName: null});
 
-  const getErrorMessage = (error: unknown, fallback: string) => {
-    if (typeof error === "object" && error !== null && "response" in error) {
-      const response = (error as { response?: { data?: { error?: string } } }).response;
-      return response?.data?.error || fallback;
-    }
-
-    return fallback;
-  };
-
   const fetchParents = useCallback(async () => {
     try {
       setLoading(true); setError("");
@@ -57,7 +49,7 @@ export default function AdminParentsPage() {
       setParents(response.data || []);
       if (response.pagination) setPagination(response.pagination);
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Không thể tải danh sách phụ huynh"));
+      setError(extractApiErrorMessage(err, "Không thể tải danh sách phụ huynh"));
     } finally { setLoading(false); }
   }, [currentOffset]);
 
@@ -113,7 +105,7 @@ export default function AdminParentsPage() {
       setAssignModal({ isOpen: false, parentId: null, parentName: null });
       fetchParents();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Không thể gán"));
+      setError(extractApiErrorMessage(err, "Không thể gán"));
     } finally { setActionLoading(false); }
   };
 
@@ -126,7 +118,7 @@ export default function AdminParentsPage() {
       setUnassignAlert({ isOpen: false, parentId: null, studentId: null, studentName: null });
       fetchParents();
     } catch (err: unknown) {
-      setError(getErrorMessage(err, "Không thể hủy gán"));
+      setError(extractApiErrorMessage(err, "Không thể hủy gán"));
     } finally { setActionLoading(false); }
   };
 

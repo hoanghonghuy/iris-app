@@ -18,14 +18,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
-
-function extractApiError(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { error?: string } } }).response;
-    return response?.data?.error || fallback;
-  }
-  return fallback;
-}
+import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminSchoolAdminsPage() {
   const { role } = useAuth();
@@ -48,6 +41,8 @@ export default function AdminSchoolAdminsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteAlert, setDeleteAlert] = useState<{isOpen: boolean, adminId: string | null}>({isOpen: false, adminId: null});
 
+  const getAdminId = (admin: SchoolAdmin): string => admin.admin_id;
+
   const fetchAdmins = useCallback(async () => {
     if (role !== "SUPER_ADMIN") return;
     try {
@@ -56,7 +51,7 @@ export default function AdminSchoolAdminsPage() {
       setAdmins(response.data || []);
       if (response.pagination) setPagination(response.pagination);
     } catch (error: unknown) {
-      setError(extractApiError(error, "Không thể tải danh sách"));
+      setError(extractApiErrorMessage(error, "Không thể tải danh sách"));
     } finally { setLoading(false); }
   }, [currentOffset, role]);
 
@@ -96,7 +91,7 @@ export default function AdminSchoolAdminsPage() {
       setSuccess("Đã tạo School Admin thành công!");
       setShowForm(false); fetchAdmins();
     } catch (error: unknown) {
-      setFormError(extractApiError(error, "Không thể tạo"));
+      setFormError(extractApiErrorMessage(error, "Không thể tạo"));
     } finally { setSubmitting(false); }
   };
 
@@ -107,7 +102,7 @@ export default function AdminSchoolAdminsPage() {
       await adminApi.deleteSchoolAdmin(deleteAlert.adminId);
       fetchAdmins();
     } catch (error: unknown) {
-      setError(extractApiError(error, "Không thể xóa"));
+      setError(extractApiErrorMessage(error, "Không thể xóa"));
     } finally { 
       setDeletingId(null); 
       setDeleteAlert({ isOpen: false, adminId: null });
@@ -185,12 +180,12 @@ export default function AdminSchoolAdminsPage() {
               </thead>
               <tbody>
                 {admins.map((a) => (
-                  <tr key={a.school_admin_id || a.user_id} className="border-b last:border-0 hover:bg-muted">
+                  <tr key={getAdminId(a)} className="border-b last:border-0 hover:bg-muted">
                     <td className="px-6 py-4 font-medium">{a.email || a.user_id}</td>
                     <td className="px-6 py-4 text-muted-foreground">{a.school_name || a.school_id}</td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: a.school_admin_id || a.user_id })} disabled={deletingId === (a.school_admin_id || a.user_id)}>
-                        {deletingId === (a.school_admin_id || a.user_id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4 text-destructive" />} Xóa
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: getAdminId(a) })} disabled={deletingId === getAdminId(a)}>
+                        {deletingId === getAdminId(a) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4 text-destructive" />} Xóa
                       </Button>
                     </td>
                   </tr>
@@ -205,14 +200,14 @@ export default function AdminSchoolAdminsPage() {
       {!loading && admins.length > 0 && (
         <div className="space-y-3 md:hidden">
           {admins.map((a) => (
-            <Card key={a.school_admin_id || a.user_id}>
+            <Card key={getAdminId(a)}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4 text-muted-foreground" /> {a.email || a.user_id}</p>
                     <p className="mt-1 text-sm text-muted-foreground">{a.school_name || a.school_id}</p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: a.school_admin_id || a.user_id })}>
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: getAdminId(a) })}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </div>

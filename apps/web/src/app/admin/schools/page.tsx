@@ -17,14 +17,7 @@ import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { toast } from "sonner";
 import { School as SchoolIcon, Plus, X, Loader2, MapPin } from "lucide-react";
-
-function extractApiError(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { error?: string } } }).response;
-    return response?.data?.error || fallback;
-  }
-  return fallback;
-}
+import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminSchoolsPage() {
   // ─── State ────────────────────────────────────────────────────────
@@ -51,7 +44,7 @@ export default function AdminSchoolsPage() {
       setSchools(response.data || []);
       if (response.pagination) setPagination(response.pagination);
     } catch (error: unknown) {
-      const msg = extractApiError(error, "Không thể tải danh sách trường học");
+      const msg = extractApiErrorMessage(error, "Không thể tải danh sách trường học");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -81,7 +74,7 @@ export default function AdminSchoolsPage() {
       toast.success("Tạo trường học thành công");
       fetchSchools(); // refresh list
     } catch (error: unknown) {
-      setFormError(extractApiError(error, "Không thể tạo trường học"));
+      setFormError(extractApiErrorMessage(error, "Không thể tạo trường học"));
     } finally {
       setSubmitting(false);
     }

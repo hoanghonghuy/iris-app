@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { Phone, Mail, Link2, Search, X, BookUser } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Input } from "@/components/ui/input"; // Added missing import for Input
+import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminTeachersPage() {
   const { role } = useAuth();
@@ -41,15 +42,6 @@ export default function AdminTeachersPage() {
   const [assignModal, setAssignModal] = useState<{isOpen: boolean, teacherId: string | null, teacherName: string | null}>({isOpen: false, teacherId: null, teacherName: null});
   const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, teacherId: string | null, classId: string | null, className: string | null}>({isOpen: false, teacherId: null, classId: null, className: null});
 
-  const getErrorMessage = (error: unknown, fallback: string) => {
-    if (typeof error === "object" && error !== null && "response" in error) {
-      const response = (error as { response?: { data?: { error?: string } } }).response;
-      return response?.data?.error || fallback;
-    }
-
-    return fallback;
-  };
-
   const fetchTeachers = useCallback(async () => {
     try {
       setLoading(true); setError("");
@@ -57,7 +49,7 @@ export default function AdminTeachersPage() {
       setTeachers(response.data || []);
       if (response.pagination) setPagination(response.pagination);
     } catch (err: unknown) {
-      const msg = getErrorMessage(err, "Không thể tải danh sách giáo viên");
+      const msg = extractApiErrorMessage(err, "Không thể tải danh sách giáo viên");
       setError(msg);
       toast.error(msg);
     } finally { setLoading(false); }
@@ -100,7 +92,7 @@ export default function AdminTeachersPage() {
       setAssignModal({ isOpen: false, teacherId: null, teacherName: null });
       fetchTeachers();
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Không thể gán lớp"));
+      toast.error(extractApiErrorMessage(err, "Không thể gán lớp"));
     } finally { setActionLoading(false); }
   };
 
@@ -113,7 +105,7 @@ export default function AdminTeachersPage() {
       setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null });
       fetchTeachers();
     } catch (err: unknown) {
-      toast.error(getErrorMessage(err, "Không thể hủy gán lớp"));
+      toast.error(extractApiErrorMessage(err, "Không thể hủy gán lớp"));
     } finally { setActionLoading(false); }
   };
 

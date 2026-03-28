@@ -17,14 +17,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { GraduationCap, Plus, X, Loader2, Calendar, AlertCircle } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-
-function extractApiError(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { error?: string } } }).response;
-    return response?.data?.error || fallback;
-  }
-  return fallback;
-}
+import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminClassesPage() {
   const { role } = useAuth();
@@ -62,7 +55,7 @@ export default function AdminClassesPage() {
       const data = response.data;
       setClasses(data || []);
     } catch (error: unknown) {
-      setError(extractApiError(error, "Không thể tải danh sách lớp"));
+      setError(extractApiErrorMessage(error, "Không thể tải danh sách lớp"));
     } finally { setLoadingClasses(false); }
   }, [selectedSchoolId]);
 
@@ -77,7 +70,7 @@ export default function AdminClassesPage() {
       await adminApi.createClass({ school_id: selectedSchoolId, name: formData.name, school_year: formData.school_year });
       setFormData({ name: "", school_year: "" }); setShowForm(false); fetchClasses();
     } catch (error: unknown) {
-      setFormError(extractApiError(error, "Không thể tạo lớp"));
+      setFormError(extractApiErrorMessage(error, "Không thể tạo lớp"));
     } finally { setSubmitting(false); }
   };
 

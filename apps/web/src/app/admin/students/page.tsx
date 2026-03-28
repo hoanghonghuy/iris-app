@@ -21,14 +21,7 @@ import {
   Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-
-function extractApiError(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { error?: string } } }).response;
-    return response?.data?.error || fallback;
-  }
-  return fallback;
-}
+import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminStudentsPage() {
   const { role } = useAuth();
@@ -93,7 +86,7 @@ export default function AdminStudentsPage() {
       const response = await adminApi.getStudentsByClass(selectedClassId);
       setStudents(response.data || []);
     } catch (error: unknown) {
-      setError(extractApiError(error, "Không thể tải danh sách học sinh"));
+      setError(extractApiErrorMessage(error, "Không thể tải danh sách học sinh"));
     } finally { setLoadingStudents(false); }
   }, [selectedClassId]);
 
@@ -120,7 +113,7 @@ export default function AdminStudentsPage() {
       setFormData({ full_name: "", dob: "", gender: "male" });
       setShowForm(false); fetchStudents();
     } catch (error: unknown) {
-      setFormError(extractApiError(error, "Không thể tạo học sinh"));
+      setFormError(extractApiErrorMessage(error, "Không thể tạo học sinh"));
     } finally { setSubmitting(false); }
   };
 
@@ -133,7 +126,7 @@ export default function AdminStudentsPage() {
       const expiresAt = res.data?.expires_at || "";
       setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, active_parent_code: code, code_expires_at: expiresAt } : s));
     } catch (error: unknown) {
-      setCodeError(extractApiError(error, "Không thể tạo mã"));
+      setCodeError(extractApiErrorMessage(error, "Không thể tạo mã"));
     } finally { setGeneratingCode(null); }
   };
 
@@ -145,7 +138,7 @@ export default function AdminStudentsPage() {
       setStudents(prev => prev.map(s => s.student_id === revokeAlert.studentId ? { ...s, active_parent_code: undefined, code_expires_at: undefined } : s));
       setRevokeAlert({ isOpen: false, studentId: null });
     } catch (error: unknown) {
-      setCodeError(extractApiError(error, "Không thể thu hồi mã"));
+      setCodeError(extractApiErrorMessage(error, "Không thể thu hồi mã"));
     } finally { setRevokingCode(null); }
   };
 

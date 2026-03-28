@@ -262,8 +262,7 @@ export interface CreateParentRequest {
  * SchoolAdmin - Thông tin quản trị trường
  */
 export interface SchoolAdmin {
-  admin_id?: string;
-  school_admin_id?: string;
+  admin_id: string;
   user_id: string;
   email?: string;
   full_name?: string;
