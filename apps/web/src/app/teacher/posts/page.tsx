@@ -276,6 +276,7 @@ export default function TeacherPostsPage() {
               key={post.post_id}
               post={post}
               audience="teacher"
+              enableShare={false}
               onPostPatched={patchPostById}
             />
           ))}

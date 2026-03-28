@@ -14,6 +14,7 @@ interface PostCardProps {
   post: Post;
   authorLabel?: string;
   enableInteractions?: boolean;
+  enableShare?: boolean;
   audience?: "teacher" | "parent";
   onPostPatched?: (postId: string, patch: Partial<Post>) => void;
 }
@@ -26,6 +27,7 @@ export function PostCard({
   post,
   authorLabel = "Giáo viên",
   enableInteractions = true,
+  enableShare = true,
   audience = "teacher",
   onPostPatched,
 }: PostCardProps) {
@@ -186,17 +188,19 @@ export function PostCard({
                 Bình luận ({commentCount})
               </Button>
 
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                className="text-muted-foreground"
-                onClick={handleShare}
-                disabled={processingShare}
-              >
-                <SendHorizontal className="mr-1 h-4 w-4" />
-                Chia sẻ ({shareCount})
-              </Button>
+              {enableShare && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={handleShare}
+                  disabled={processingShare}
+                >
+                  <SendHorizontal className="mr-1 h-4 w-4" />
+                  Chia sẻ ({shareCount})
+                </Button>
+              )}
             </div>
 
             {interactionError && <p className="text-xs text-destructive">{interactionError}</p>}

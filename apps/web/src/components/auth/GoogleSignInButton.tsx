@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,7 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
   const [pendingCredential, setPendingCredential] = useState("");
   const [linkPassword, setLinkPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initialized = useRef(false);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -78,20 +79,23 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
     }
     buttonRoot.innerHTML = "";
 
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      ux_mode: "popup",
-      callback: async (response) => {
-        clearError();
-        setPendingCredential(response.credential);
-        setIsSubmitting(true);
-        try {
-          await onSubmitGoogle({ idToken: response.credential });
-        } finally {
-          setIsSubmitting(false);
-        }
-      },
-    });
+    if (!initialized.current) {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        ux_mode: "popup",
+        callback: async (response) => {
+          clearError();
+          setPendingCredential(response.credential);
+          setIsSubmitting(true);
+          try {
+            await onSubmitGoogle({ idToken: response.credential });
+          } finally {
+            setIsSubmitting(false);
+          }
+        },
+      });
+      initialized.current = true;
+    }
 
     window.google.accounts.id.renderButton(buttonRoot, {
       type: "standard",

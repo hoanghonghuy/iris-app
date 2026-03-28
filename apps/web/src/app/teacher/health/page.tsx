@@ -1,14 +1,13 @@
 /**
  * Teacher Health Page
  * Ghi nhận sức khỏe HS: chọn lớp → HS → ghi nhận nhiệt độ, triệu chứng, mức độ.
- * API: GET /teacher/classes, GET /teacher/classes/:id/students, POST /teacher/health
- * API: GET /teacher/classes, GET /teacher/classes/:id/students, POST /teacher/health
+ * API: GET /teacher/classes, GET /teacher/classes/:id/students, POST /teacher/health, GET /teacher/students/:student_id/health
  */
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
-import { Class, Student } from "@/types";
+import { Class, HealthLog, Student } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Plus, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { Loader2, Plus, X, AlertCircle, CheckCircle2, HeartPulse, RefreshCw } from "lucide-react";
 
 type Severity = "normal" | "watch" | "urgent";
 
@@ -57,6 +57,13 @@ export default function TeacherHealthPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [historyStudentId, setHistoryStudentId] = useState("");
+  const [historyFrom, setHistoryFrom] = useState("");
+  const [historyTo, setHistoryTo] = useState("");
+  const [historyLogs, setHistoryLogs] = useState<HealthLog[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -75,13 +82,44 @@ export default function TeacherHealthPage() {
       setLoadingStudents(true); setError("");
       const data = await teacherApi.getStudentsInClass(selectedClassId);
       setStudents(data || []);
-      if (data && data.length > 0) setFormStudentId(data[0].student_id);
+      if (data && data.length > 0) {
+        setFormStudentId(data[0].student_id);
+        setHistoryStudentId(data[0].student_id);
+      } else {
+        setHistoryLogs([]);
+      }
     } catch (err: unknown) {
       setError(extractErrorMessage(err) || "Không thể tải HS");
     } finally { setLoadingStudents(false); }
   }, [selectedClassId]);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  const fetchHistory = useCallback(async () => {
+    if (!historyStudentId) {
+      setHistoryLogs([]);
+      return;
+    }
+
+    try {
+      setLoadingHistory(true);
+      setHistoryError("");
+      const logs = await teacherApi.getStudentHealth(
+        historyStudentId,
+        historyFrom || undefined,
+        historyTo || undefined,
+      );
+      setHistoryLogs(logs || []);
+    } catch (err: unknown) {
+      setHistoryError(extractErrorMessage(err) || "Không thể tải lịch sử sức khỏe");
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [historyStudentId, historyFrom, historyTo]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,9 +135,22 @@ export default function TeacherHealthPage() {
       });
       setSuccess("Đã ghi nhận sức khỏe thành công!");
       setTemperature(""); setSymptoms(""); setSeverity("normal"); setNote("");
+      fetchHistory();
     } catch (err: unknown) {
       setFormError(extractErrorMessage(err) || "Lỗi ghi nhận");
     } finally { setSubmitting(false); }
+  };
+
+  const severityLabel: Record<Severity, string> = {
+    normal: "Bình thường",
+    watch: "Theo dõi",
+    urgent: "Khẩn cấp",
+  };
+
+  const severityVariant: Record<Severity, "secondary" | "outline" | "destructive"> = {
+    normal: "secondary",
+    watch: "outline",
+    urgent: "destructive",
   };
 
   if (loadingClasses) {
@@ -183,6 +234,83 @@ export default function TeacherHealthPage() {
         <Card><CardContent className="py-4">
           <p className="text-sm text-muted-foreground">{students.length} học sinh trong lớp. Nhấn &ldquo;Ghi nhận&rdquo; để thêm nhật ký sức khỏe.</p>
         </CardContent></Card>
+      )}
+
+      {!loadingStudents && students.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Lịch sử sức khỏe</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-4">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Học sinh</Label>
+                <Select value={historyStudentId} onValueChange={setHistoryStudentId}>
+                  <SelectTrigger className="w-full"><SelectValue placeholder="Chọn HS" /></SelectTrigger>
+                  <SelectContent>
+                    {students.map((s) => (
+                      <SelectItem key={s.student_id} value={s.student_id}>{s.full_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="historyFrom">Từ ngày</Label>
+                <Input id="historyFrom" type="date" value={historyFrom} onChange={(e) => setHistoryFrom(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="historyTo">Đến ngày</Label>
+                <Input id="historyTo" type="date" value={historyTo} onChange={(e) => setHistoryTo(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button variant="outline" onClick={fetchHistory} disabled={loadingHistory || !historyStudentId}>
+                {loadingHistory ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Làm mới
+              </Button>
+            </div>
+
+            {historyError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{historyError}</AlertDescription>
+              </Alert>
+            )}
+
+            {!loadingHistory && historyLogs.length === 0 && !historyError && (
+              <EmptyState
+                icon={HeartPulse}
+                title="Chưa có nhật ký sức khỏe"
+                description="Nhật ký mới sẽ hiển thị sau khi giáo viên ghi nhận cho học sinh."
+              />
+            )}
+
+            {!loadingHistory && historyLogs.length > 0 && (
+              <div className="space-y-3">
+                {historyLogs.map((log) => (
+                  <div key={log.health_log_id} className="rounded-lg border p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm text-muted-foreground">{new Date(log.recorded_at).toLocaleString("vi-VN")}</p>
+                      <Badge variant={severityVariant[log.severity as Severity] || "outline"}>
+                        {severityLabel[log.severity as Severity] || log.severity}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <p><span className="font-medium">Nhiệt độ:</span> {typeof log.temperature === "number" ? `${log.temperature}°C` : "Không ghi"}</p>
+                      <p><span className="font-medium">Triệu chứng:</span> {log.symptoms || "Không ghi"}</p>
+                      <p><span className="font-medium">Ghi chú:</span> {log.note || "Không ghi"}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );
