@@ -2,7 +2,6 @@ package repo
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,7 +66,7 @@ func (r *UserRepo) LinkGoogleSub(ctx context.Context, userID uuid.UUID, googleSu
 		return err
 	}
 	if res.RowsAffected() == 0 {
-		return errors.New("user already linked with a different google account")
+		return ErrGoogleAlreadyLinkedDifferent
 	}
 	return nil
 }

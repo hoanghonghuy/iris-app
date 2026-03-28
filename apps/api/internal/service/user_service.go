@@ -332,10 +332,6 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 	}
 
 	resetURL.Path = "/reset-password"
-	query := resetURL.Query()
-	query.Set("token", plainToken)
-	query.Set("email", email)
-	resetURL.RawQuery = query.Encode()
 
 	htmlBody := fmt.Sprintf(`
 <h2>Đặt lại mật khẩu — Iris</h2>
@@ -344,7 +340,7 @@ func (s *UserService) RequestPasswordReset(ctx context.Context, email string) er
 
 <p><a href="%s" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none;">Đặt lại mật khẩu</a></p>
 
-<p style="color: #666; font-size: 12px;">Hoặc sao chép mã trên vào form reset password</p>
+<p style="color: #666; font-size: 12px;">Sao chép mã trên và nhập vào form đặt lại mật khẩu cùng với email của bạn</p>
 <p>Nếu bạn không yêu cầu, hãy bỏ qua email này để bảo vệ tài khoản.</p>
 `, plainToken, resetURL.String())
 

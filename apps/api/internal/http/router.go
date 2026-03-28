@@ -77,7 +77,7 @@ func NewRouter(
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
 		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
 
-		// WebSocket endpoint (auth qua query string ?token=JWT)
+		// WebSocket endpoint (auth qua Sec-WebSocket-Protocol header)
 		v1.GET("/chat/ws", chatHandler.HandleWS)
 
 		// Protected routes (require valid JWT)

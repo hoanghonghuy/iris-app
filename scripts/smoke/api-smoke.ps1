@@ -33,6 +33,28 @@ $adminLogin = Assert-Step "Login super admin" {
   Invoke-RestMethod -Method Post -Uri "$base/auth/login" -ContentType "application/json" -Body (@{ email = "admin@iris.local"; password = "123456" } | ConvertTo-Json)
 }
 
+# --- Google login negative guards ---
+Assert-Step "Google login without token (expect 400)" {
+  try {
+    Invoke-RestMethod -Method Post -Uri "$base/auth/login/google" -ContentType "application/json" -Body (@{ } | ConvertTo-Json)
+    throw "Expected 400"
+  } catch {
+    if ($_.Exception.Response.StatusCode.value__ -ne 400) { throw $_ }
+  }
+} | Out-Null
+
+# Google enabled → 401 (invalid token), Google disabled → 404
+# 500 = server bug → FAIL
+Assert-Step "Google login with invalid token (expect 401 or 404)" {
+  try {
+    Invoke-RestMethod -Method Post -Uri "$base/auth/login/google" -ContentType "application/json" -Body (@{ id_token = "invalid.token.here" } | ConvertTo-Json)
+    throw "Expected error"
+  } catch {
+    $code = $_.Exception.Response.StatusCode.value__
+    if ($code -notin @(401, 404)) { throw "Got unexpected $code (500 = server bug)" }
+  }
+} | Out-Null
+
 if (-not $teacherLogin -or -not $parentLogin -or -not $adminLogin) {
   throw "Missing login tokens; abort smoke."
 }

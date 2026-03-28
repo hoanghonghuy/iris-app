@@ -350,7 +350,7 @@ func (r *TeacherScopeRepo) DeletePost(ctx context.Context, authorUserID, postID 
 // ListClassPosts liệt kê bài đăng của một lớp nếu giáo viên được phân công dạy lớp đó.
 func (r *TeacherScopeRepo) ListClassPosts(ctx context.Context, teacherUserID, classID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
-	// TODO: comment giai thich
+	// Truy vấn join bổ sung dữ liệu quan hệ cho kết quả trả về
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
 			p.type, p.content,
@@ -533,7 +533,7 @@ func (r *TeacherScopeRepo) ListAttendanceChangeLogsByClass(ctx context.Context, 
 // ListStudentPosts liệt kê bài đăng của một học sinh nếu giáo viên được phân công dạy lớp của học sinh đó.
 func (r *TeacherScopeRepo) ListStudentPosts(ctx context.Context, teacherUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
-	// TODO: comment giai thich
+	// Truy vấn join bổ sung dữ liệu quan hệ cho kết quả trả về
 	const q = `
 		SELECT p.post_id, p.author_user_id, p.scope_type, p.school_id, p.class_id, p.student_id,
 			p.type, p.content,

@@ -50,7 +50,7 @@ func VerifyPassword(hash, plain string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
 }
 
-// TODO: kiểm tra file code chuẩn chưa
+// Parse giải mã và xác thực JWT token
 
 // Sign tạo ra một JWT token sử dụng thuật toán HS256 để ký với thông tin người dùng.
 // Các tham số:

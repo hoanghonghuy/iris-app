@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { authHelpers } from '@/lib/api/client';
-import { allowWsQueryTokenFallback, getWsBaseUrl } from '@/lib/runtime-config';
+import { getWsBaseUrl } from '@/lib/runtime-config';
 import { WSEvent, Message } from '@/types';
 
 const WS_BASE_URL = getWsBaseUrl();
-const WS_QUERY_FALLBACK_ENABLED = allowWsQueryTokenFallback();
 
 /**
  * useChatWebSocket - Hook quản lý kết nối WebSocket cho chat realtime.
@@ -28,11 +27,8 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
       wsRef.current.close();
     }
 
-    // Ưu tiên token qua Sec-WebSocket-Protocol.
-    // Query fallback chỉ bật khi cấu hình tương thích được enable.
-    const wsUrl = WS_QUERY_FALLBACK_ENABLED
-      ? `${WS_BASE_URL}/chat/ws?token=${encodeURIComponent(token)}`
-      : `${WS_BASE_URL}/chat/ws`;
+    // Token luôn qua Sec-WebSocket-Protocol (không dùng query param)
+    const wsUrl = `${WS_BASE_URL}/chat/ws`;
     const ws = new WebSocket(wsUrl, ['Bearer', token]);
 
 

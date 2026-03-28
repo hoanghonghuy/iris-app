@@ -11,7 +11,7 @@ import (
 // 	DefaultErrorType = "about:blank"
 // )
 
-// TODO: RFC 7807 standard
+// RFC 7807 standard (chưa triển khai, giữ reference cho tương lai)
 
 // type ProblemDetail struct {
 // 	Type     string            `json:"type"`
@@ -56,7 +56,7 @@ func OKPaginated(c *gin.Context, data any, p Pagination) {
 	c.JSON(http.StatusOK, gin.H{"data": data, "pagination": p})
 }
 
-// TODO: thêm hàm CreatedWithLocation(c *gin.Context, data any, location string)
+// CreatedWithLocation — helper hỗ trợ RFC 7231 cho 201 Created kèm Location header.
 // để hỗ trợ tiêu chuẩn RFC 7231 cho phản hồi 201 Created kèm theo header Location.
 // Hàm này sẽ hữu ích cho tất cả các endpoint POST tạo tài nguyên mới.
 // Tham khảo: https://datatracker.ietf.org/doc/html/rfc7231#section-7.1.2

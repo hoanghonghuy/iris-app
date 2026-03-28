@@ -14,10 +14,9 @@ type Config struct {
 	JWTTTLMinutes             int
 	GoogleLoginEnabled        bool
 	GoogleClientID            string
-	GoogleHostedDomain        string
-	Port                      string
-	AllowedOrigins            []string // CORS + WS origin allowlist
-	WSAllowQueryTokenFallback bool
+	GoogleHostedDomain string
+	Port               string
+	AllowedOrigins     []string // CORS + WS origin allowlist
 
 	// SMTP (empty = dev mode, uses LogEmailSender)
 	SMTPHost    string
@@ -75,8 +74,7 @@ func Load() (Config, error) {
 		GoogleClientID:            os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleHostedDomain:        os.Getenv("GOOGLE_HOSTED_DOMAIN"),
 		Port:                      port,
-		AllowedOrigins:            allowedOrigins,
-		WSAllowQueryTokenFallback: parseBoolEnv("WS_ALLOW_QUERY_TOKEN_FALLBACK", false),
+		AllowedOrigins: allowedOrigins,
 		SMTPHost:                  os.Getenv("SMTP_HOST"),
 		SMTPPort:                  os.Getenv("SMTP_PORT"),
 		SMTPUser:                  os.Getenv("SMTP_USER"),

@@ -15,7 +15,3 @@ export function getApiBaseUrl(): string {
 export function getWsBaseUrl(): string {
   return getApiBaseUrl().replace(/^http/, "ws");
 }
-
-export function allowWsQueryTokenFallback(): boolean {
-  return parseBoolEnv(process.env.NEXT_PUBLIC_WS_QUERY_TOKEN_FALLBACK, false);
-}
