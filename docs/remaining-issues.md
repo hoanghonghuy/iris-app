@@ -5,9 +5,11 @@
 
 ---
 
-## 1) Business policy chưa chốt
-- [ ] Xác định chính sách dữ liệu lịch sử: teacher/parent truy dữ liệu theo `students.current_class_id` hay theo snapshot thời điểm record tạo.
-- [ ] Quy định rõ status code cho LIST endpoints khi không đủ quyền: `403` hay `200 + []`.
+## 1) Business policy đã chốt
+- [x] Chính sách dữ liệu lịch sử (CHỐT): dùng `students.current_class_id` để kiểm soát phạm vi truy cập của teacher/parent.
+- [x] Authz semantics cho LIST endpoints (CHỐT):
+	- Trả `200 + []` khi user đã authenticated, đúng role endpoint nhưng không có bản ghi trong phạm vi được phép xem.
+	- Trả `403` khi user không có quyền truy cập endpoint theo role/scope policy ở mức endpoint.
 
 ## 2) Feature gap
 - [ ] Triển khai `POST /api/v1/register/parent/google` theo đề xuất `docs/google-signup-integration-proposal.md`.
@@ -18,7 +20,7 @@
 
 ## 4) Kiểm tra & ghi nhận
 - [ ] Tổ chức PR review với checklist (tsc/eslint/api-smoke/ui-smoke).
-- [ ] Cập nhật docs khi có quyết định business policy.
+- [x] Cập nhật docs sau khi chốt business policy (2026-03-28).
 
 ---
 
@@ -27,3 +29,6 @@
 - Reset token đã bỏ khỏi URL query (2026-03-28).
 - WS query-token fallback đã loại bỏ hoàn toàn (2026-03-28).
 - Smoke test đã bổ sung Google login negative cases (2026-03-28).
+- Business policy đã chốt (2026-03-28):
+	- Historical scope theo `students.current_class_id`.
+	- LIST authz dùng `200 + []` cho out-of-scope data, `403` cho endpoint-level forbidden.

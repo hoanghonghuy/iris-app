@@ -9,7 +9,7 @@
 ---
 
 ## 1) Kết luận tổng quan
-Tài liệu audit cũ có một số điểm đã lỗi thời. Sau khi rà soát lại mã nguồn hiện tại, các vấn đề sau đã **được xử lý**, và các mục còn lại bên dưới là danh sách **chưa triển khai xong / chưa chốt**.
+Tài liệu audit cũ có một số điểm đã lỗi thời. Sau khi rà soát lại mã nguồn hiện tại, các vấn đề sau đã **được xử lý**, và các mục còn lại bên dưới là danh sách **chưa triển khai xong / còn mở**.
 
 ---
 
@@ -85,25 +85,27 @@ Tài liệu audit cũ có một số điểm đã lỗi thời. Sau khi rà soá
 - Impact:
   - Chưa đáp ứng use case đăng ký mới bằng Google.
 
-## [P1] Business policy chưa chốt
+## [P1] Business policy đã chốt (2026-03-28)
 
 ### 3.4 Authz semantics cho LIST endpoint
 - Severity: Medium
-- Nội dung chưa chốt:
-  - Trả `403` hay `200 + empty` khi không đủ quyền xem list.
+- Quy định đã chốt:
+  - `200 + []` khi user đã authenticated, đúng role endpoint nhưng không có bản ghi trong phạm vi dữ liệu được phép xem.
+  - `403` khi user không có quyền truy cập endpoint ở mức role/scope policy.
 - Evidence:
   - Pattern LIST hiện tại ở scope repo thiên về empty result theo join filter.
 - Impact:
-  - Dễ không nhất quán contract giữa endpoint.
+  - Giảm không nhất quán contract giữa các LIST endpoint.
 
 ### 3.5 Data scope lịch sử theo `current_class_id` hay snapshot
 - Severity: Medium
-- Nội dung chưa chốt:
-  - Khi học sinh chuyển lớp, dữ liệu lịch sử nên được nhìn theo rule nào.
+- Quy định đã chốt:
+  - Dùng `students.current_class_id` làm nguồn kiểm soát truy cập cho teacher/parent ở thời điểm truy vấn.
+  - Không dùng snapshot assignment-at-time trong phase hiện tại.
 - Evidence:
   - Nhiều query teacher/parent scope dựa vào `students.current_class_id`.
 - Impact:
-  - Có thể gây lệch kỳ vọng nghiệp vụ nếu cần “historical access by assignment-at-time”.
+  - Hành vi truy cập lịch sử nhất quán với implementation hiện tại và không cần thay đổi schema.
 
 ## [P2] Testing completeness
 
@@ -158,7 +160,7 @@ Ghi chú:
 1. P0: Tắt tuyệt đối WS query-token fallback ở production và lập kế hoạch bỏ code path fallback.
 2. P0: Chuyển reset-password sang cơ chế không để token trong URL query.
 3. P1: Triển khai endpoint `POST /api/v1/register/parent/google` theo proposal đã lưu.
-4. P1: Chốt rule business cho LIST unauthorized và lịch sử theo class snapshot/current.
+4. P1: Theo dõi tính phù hợp của policy đã chốt sau UAT; nếu cần snapshot lịch sử, lập migration riêng.
 5. P2: Mở rộng `scripts/smoke/api-smoke.ps1` cho Google login + migration 000011 rehearsal.
 
 ---
