@@ -14,6 +14,14 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { ChangePasswordForm } from "@/components/shared/ChangePasswordForm";
 
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export default function TeacherProfilePage() {
   const { user } = useAuth();
   const [phone, setPhone] = useState("");
@@ -27,8 +35,8 @@ export default function TeacherProfilePage() {
       setSubmitting(true); setError(""); setSuccess("");
       await teacherApi.updateMyProfile(phone);
       setSuccess("Cập nhật thành công!");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể cập nhật");
+    } catch (error: unknown) {
+      setError(extractApiError(error, "Không thể cập nhật"));
     } finally { setSubmitting(false); }
   };
 

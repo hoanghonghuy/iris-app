@@ -12,6 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { KeyRound, Loader2 } from "lucide-react";
 
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export function ChangePasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,8 +37,8 @@ export function ChangePasswordForm() {
       await authApi.updateMyPassword(password);
       setSuccess("Đổi mật khẩu thành công!");
       setPassword(""); setConfirmPassword("");
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể đổi mật khẩu");
+    } catch (error: unknown) {
+      setError(extractApiError(error, "Không thể đổi mật khẩu"));
     } finally { setSubmitting(false); }
   };
 

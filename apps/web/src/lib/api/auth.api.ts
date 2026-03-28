@@ -4,7 +4,15 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/auth_handler.go + user_handler.go
  */
 import { apiClient } from './client';
-import { GoogleLoginRequest, LoginRequest, LoginResponse, RegisterParentRequest, RegisterParentWithGoogleRequest } from '@/types';
+import {
+  ApiResponse,
+  GoogleLoginRequest,
+  LoginRequest,
+  LoginResponse,
+  RegisterParentRequest,
+  RegisterParentWithGoogleRequest,
+  UserInfo,
+} from '@/types';
 
 export const authApi = {
   /**
@@ -30,7 +38,7 @@ export const authApi = {
    * GET /api/v1/me
    */
   getMe: async () => {
-    const res = await apiClient.get<{data: any}>('/me');
+    const res = await apiClient.get<ApiResponse<UserInfo>>('/me');
     return res.data.data;
   },
 

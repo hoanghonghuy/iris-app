@@ -7,7 +7,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api/admin.api";
-import { UserInfo, School, Pagination } from "@/types";
+import { UserInfo, School, Pagination, SchoolAdmin } from "@/types";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,19 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export default function AdminSchoolAdminsPage() {
   const { role } = useAuth();
   const router = useRouter();
 
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<SchoolAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
@@ -47,8 +55,8 @@ export default function AdminSchoolAdminsPage() {
       const response = await adminApi.getSchoolAdmins({ limit: 20, offset: currentOffset });
       setAdmins(response.data || []);
       if (response.pagination) setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải danh sách");
+    } catch (error: unknown) {
+      setError(extractApiError(error, "Không thể tải danh sách"));
     } finally { setLoading(false); }
   }, [currentOffset, role]);
 
@@ -70,7 +78,7 @@ export default function AdminSchoolAdminsPage() {
         ]);
         const schoolData = schoolResponse.data;
         setSchools(schoolData || []);
-        const userList = (userData as any).data || [];
+        const userList = userData.data || [];
         setUsers(Array.isArray(userList) ? userList : []);
         if (schoolData && schoolData.length > 0) setSelectedSchoolId(schoolData[0].school_id);
         if (userList && userList.length > 0) setSelectedUserId(userList[0].user_id);
@@ -87,8 +95,8 @@ export default function AdminSchoolAdminsPage() {
       await adminApi.createSchoolAdmin({ user_id: selectedUserId, school_id: selectedSchoolId });
       setSuccess("Đã tạo School Admin thành công!");
       setShowForm(false); fetchAdmins();
-    } catch (err: any) {
-      setFormError(err.response?.data?.error || "Không thể tạo");
+    } catch (error: unknown) {
+      setFormError(extractApiError(error, "Không thể tạo"));
     } finally { setSubmitting(false); }
   };
 
@@ -98,8 +106,8 @@ export default function AdminSchoolAdminsPage() {
       setDeletingId(deleteAlert.adminId);
       await adminApi.deleteSchoolAdmin(deleteAlert.adminId);
       fetchAdmins();
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể xóa");
+    } catch (error: unknown) {
+      setError(extractApiError(error, "Không thể xóa"));
     } finally { 
       setDeletingId(null); 
       setDeleteAlert({ isOpen: false, adminId: null });

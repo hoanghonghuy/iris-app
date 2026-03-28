@@ -5,7 +5,8 @@
 import { apiClient } from './client';
 import {
   School, Class, Student, StudentProfile, UserInfo, Teacher, Parent,
-  ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest, AdminAnalytics
+  ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest, AdminAnalytics,
+  SchoolAdmin, ParentCodeResponse
 } from '@/types';
 
 export const adminApi = {
@@ -49,7 +50,7 @@ export const adminApi = {
     return res.data;
   },
   generateParentCode: async (studentId: string) => {
-    const res = await apiClient.post(`/admin/students/${studentId}/generate-parent-code`);
+    const res = await apiClient.post<ApiResponse<ParentCodeResponse>>(`/admin/students/${studentId}/generate-parent-code`);
     return res.data;
   },
   revokeParentCode: async (studentId: string) => {
@@ -129,7 +130,7 @@ export const adminApi = {
 
   // --- SCHOOL ADMINS ---
   getSchoolAdmins: async (params?: PaginationParams) => {
-    const res = await apiClient.get<ApiResponse<any[]>>('/admin/school-admins', { params });
+    const res = await apiClient.get<ApiResponse<SchoolAdmin[]>>('/admin/school-admins', { params });
     return res.data;
   },
   createSchoolAdmin: async (data: { user_id: string; school_id: string }) => {

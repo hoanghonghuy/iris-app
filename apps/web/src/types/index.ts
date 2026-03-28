@@ -258,6 +258,31 @@ export interface CreateParentRequest {
   role: "PARENT";
 }
 
+/**
+ * SchoolAdmin - Thông tin quản trị trường
+ */
+export interface SchoolAdmin {
+  admin_id?: string;
+  school_admin_id?: string;
+  user_id: string;
+  email?: string;
+  full_name?: string;
+  phone?: string;
+  school_id: string;
+  school_name?: string;
+}
+
+/**
+ * ParentCodeResponse - Dữ liệu trả về sau khi tạo parent code
+ */
+export interface ParentCodeResponse {
+  student_id: string;
+  parent_code: string;
+  message?: string;
+  max_usage?: number;
+  expires_at: string;
+}
+
 // ============================================================================
 // ATTENDANCE TYPES
 // ============================================================================

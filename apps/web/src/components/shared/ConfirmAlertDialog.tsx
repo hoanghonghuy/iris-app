@@ -24,8 +24,8 @@ export function ConfirmAlertDialog({
           <AlertDialogDescription className="text-sm">{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={(e: any) => { e.preventDefault(); onClose(); }} disabled={loading}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction onClick={(e: any) => { e.preventDefault(); onConfirm(); }} disabled={loading} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+          <AlertDialogCancel onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); onClose(); }} disabled={loading}>{cancelText}</AlertDialogCancel>
+          <AlertDialogAction onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); onConfirm(); }} disabled={loading} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>

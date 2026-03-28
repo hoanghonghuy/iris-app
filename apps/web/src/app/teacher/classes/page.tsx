@@ -18,6 +18,14 @@ import {
   Calendar,
 } from "lucide-react";
 
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export default function TeacherClassesPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState("");
@@ -52,8 +60,8 @@ export default function TeacherClassesPage() {
       setError("");
       const data = await teacherApi.getStudentsInClass(selectedClassId);
       setStudents(data || []);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải danh sách học sinh");
+    } catch (error: unknown) {
+      setError(extractApiError(error, "Không thể tải danh sách học sinh"));
     } finally {
       setLoadingStudents(false);
     }

@@ -14,12 +14,20 @@ import { StudentProfile } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  ArrowLeft, Loader2, User, Calendar, MapPin, 
+  ArrowLeft, Loader2, User,
   HeartPulse, ClipboardList, Activity, Phone, Mail, GraduationCap
 } from "lucide-react";
 import { formatDateVN } from "@/lib/utils";
 
 const genderLabel: Record<string, string> = { male: "Nam", female: "Nữ", other: "Khác" };
+
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
 
 export default function AdminStudentDetailPage() {
   const params = useParams<{ id: string }>();
@@ -36,8 +44,8 @@ export default function AdminStudentDetailPage() {
         setLoading(true);
         const data = await adminApi.getStudentProfile(studentId);
         setProfile(data);
-      } catch (err: any) {
-        setError(err.response?.data?.error || "Không thể tải hồ sơ học sinh");
+      } catch (error: unknown) {
+        setError(extractApiError(error, "Không thể tải hồ sơ học sinh"));
       } finally {
         setLoading(false);
       }

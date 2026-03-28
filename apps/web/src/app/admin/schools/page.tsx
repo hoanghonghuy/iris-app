@@ -18,6 +18,14 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { toast } from "sonner";
 import { School as SchoolIcon, Plus, X, Loader2, MapPin } from "lucide-react";
 
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export default function AdminSchoolsPage() {
   // ─── State ────────────────────────────────────────────────────────
 
@@ -42,8 +50,8 @@ export default function AdminSchoolsPage() {
       const response = await adminApi.getSchools({ limit: 20, offset: currentOffset });
       setSchools(response.data || []);
       if (response.pagination) setPagination(response.pagination);
-    } catch (err: any) {
-      const msg = err.response?.data?.error || "Không thể tải danh sách trường học";
+    } catch (error: unknown) {
+      const msg = extractApiError(error, "Không thể tải danh sách trường học");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -72,8 +80,8 @@ export default function AdminSchoolsPage() {
       setShowForm(false);
       toast.success("Tạo trường học thành công");
       fetchSchools(); // refresh list
-    } catch (err: any) {
-      setFormError(err.response?.data?.error || "Không thể tạo trường học");
+    } catch (error: unknown) {
+      setFormError(extractApiError(error, "Không thể tạo trường học"));
     } finally {
       setSubmitting(false);
     }

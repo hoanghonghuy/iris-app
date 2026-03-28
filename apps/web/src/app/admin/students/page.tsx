@@ -22,6 +22,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 
+function extractApiError(error: unknown, fallback: string): string {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { error?: string } } }).response;
+    return response?.data?.error || fallback;
+  }
+  return fallback;
+}
+
 export default function AdminStudentsPage() {
   const { role } = useAuth();
   const [schools, setSchools] = useState<School[]>([]);
@@ -84,8 +92,8 @@ export default function AdminStudentsPage() {
       setLoadingStudents(true); setError("");
       const response = await adminApi.getStudentsByClass(selectedClassId);
       setStudents(response.data || []);
-    } catch (err: any) {
-      setError(err.response?.data?.error || "Không thể tải danh sách học sinh");
+    } catch (error: unknown) {
+      setError(extractApiError(error, "Không thể tải danh sách học sinh"));
     } finally { setLoadingStudents(false); }
   }, [selectedClassId]);
 
@@ -111,8 +119,8 @@ export default function AdminStudentsPage() {
       });
       setFormData({ full_name: "", dob: "", gender: "male" });
       setShowForm(false); fetchStudents();
-    } catch (err: any) {
-      setFormError(err.response?.data?.error || "Không thể tạo học sinh");
+    } catch (error: unknown) {
+      setFormError(extractApiError(error, "Không thể tạo học sinh"));
     } finally { setSubmitting(false); }
   };
 
@@ -121,11 +129,11 @@ export default function AdminStudentsPage() {
     try {
       setGeneratingCode(studentId); setCodeError("");
       const res = await adminApi.generateParentCode(studentId);
-      const code = (res as any)?.data?.parent_code || (res as any)?.parent_code || "";
-      const expiresAt = (res as any)?.data?.expires_at || (res as any)?.expires_at || "";
+      const code = res.data?.parent_code || "";
+      const expiresAt = res.data?.expires_at || "";
       setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, active_parent_code: code, code_expires_at: expiresAt } : s));
-    } catch (err: any) {
-      setCodeError(err.response?.data?.error || "Không thể tạo mã");
+    } catch (error: unknown) {
+      setCodeError(extractApiError(error, "Không thể tạo mã"));
     } finally { setGeneratingCode(null); }
   };
 
@@ -136,8 +144,8 @@ export default function AdminStudentsPage() {
       await adminApi.revokeParentCode(revokeAlert.studentId);
       setStudents(prev => prev.map(s => s.student_id === revokeAlert.studentId ? { ...s, active_parent_code: undefined, code_expires_at: undefined } : s));
       setRevokeAlert({ isOpen: false, studentId: null });
-    } catch (err: any) {
-      setCodeError(err.response?.data?.error || "Không thể thu hồi mã");
+    } catch (error: unknown) {
+      setCodeError(extractApiError(error, "Không thể thu hồi mã"));
     } finally { setRevokingCode(null); }
   };
 
