@@ -5,9 +5,7 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { teacherApi } from "@/lib/api/teacher.api";
-import { Class, HealthLog, Student } from "@/types";
+import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,8 +16,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Loader2, Plus, X, AlertCircle, CheckCircle2, HeartPulse, RefreshCw } from "lucide-react";
-
-type Severity = "normal" | "watch" | "urgent";
+import { Severity, useTeacherHealthPage } from "./useTeacherHealthPage";
 
 const severityOptions: Array<{
   value: Severity;
@@ -31,115 +28,42 @@ const severityOptions: Array<{
   { value: "urgent", label: "Khẩn cấp", variant: "destructive" as const },
 ];
 
-function extractErrorMessage(err: unknown): string | undefined {
-  return (
-    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-      : undefined
-  );
-}
-
 export default function TeacherHealthPage() {
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState("");
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(true);
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [error, setError] = useState("");
-
-  const [showForm, setShowForm] = useState(false);
-  const [formStudentId, setFormStudentId] = useState("");
-  const [temperature, setTemperature] = useState("");
-  const [symptoms, setSymptoms] = useState("");
-  const [severity, setSeverity] = useState<Severity>("normal");
-  const [note, setNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  const [historyStudentId, setHistoryStudentId] = useState("");
-  const [historyFrom, setHistoryFrom] = useState("");
-  const [historyTo, setHistoryTo] = useState("");
-  const [historyLogs, setHistoryLogs] = useState<HealthLog[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [historyError, setHistoryError] = useState("");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await teacherApi.getMyClasses();
-        setClasses(data || []);
-        if (data && data.length > 0) setSelectedClassId(data[0].class_id);
-      } catch { setError("Không thể tải lớp"); }
-      finally { setLoadingClasses(false); }
-    };
-    load();
-  }, []);
-
-  const fetchStudents = useCallback(async () => {
-    if (!selectedClassId) return;
-    try {
-      setLoadingStudents(true); setError("");
-      const data = await teacherApi.getStudentsInClass(selectedClassId);
-      setStudents(data || []);
-      if (data && data.length > 0) {
-        setFormStudentId(data[0].student_id);
-        setHistoryStudentId(data[0].student_id);
-      } else {
-        setHistoryLogs([]);
-      }
-    } catch (err: unknown) {
-      setError(extractErrorMessage(err) || "Không thể tải HS");
-    } finally { setLoadingStudents(false); }
-  }, [selectedClassId]);
-
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
-
-  const fetchHistory = useCallback(async () => {
-    if (!historyStudentId) {
-      setHistoryLogs([]);
-      return;
-    }
-
-    try {
-      setLoadingHistory(true);
-      setHistoryError("");
-      const logs = await teacherApi.getStudentHealth(
-        historyStudentId,
-        historyFrom || undefined,
-        historyTo || undefined,
-      );
-      setHistoryLogs(logs || []);
-    } catch (err: unknown) {
-      setHistoryError(extractErrorMessage(err) || "Không thể tải lịch sử sức khỏe");
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, [historyStudentId, historyFrom, historyTo]);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formStudentId) { setFormError("Chọn học sinh"); return; }
-    try {
-      setSubmitting(true); setFormError(""); setSuccess("");
-      await teacherApi.createHealthLog({
-        student_id: formStudentId,
-        temperature: temperature ? parseFloat(temperature) : undefined,
-        symptoms: symptoms || undefined,
-        severity,
-        note: note || undefined,
-      });
-      setSuccess("Đã ghi nhận sức khỏe thành công!");
-      setTemperature(""); setSymptoms(""); setSeverity("normal"); setNote("");
-      fetchHistory();
-    } catch (err: unknown) {
-      setFormError(extractErrorMessage(err) || "Lỗi ghi nhận");
-    } finally { setSubmitting(false); }
-  };
+  const {
+    classes,
+    selectedClassId,
+    students,
+    loadingClasses,
+    loadingStudents,
+    error,
+    showForm,
+    formStudentId,
+    temperature,
+    symptoms,
+    severity,
+    note,
+    submitting,
+    formError,
+    success,
+    historyStudentId,
+    historyFrom,
+    historyTo,
+    historyLogs,
+    loadingHistory,
+    historyError,
+    setSelectedClassId,
+    setShowForm,
+    setFormStudentId,
+    setTemperature,
+    setSymptoms,
+    setSeverity,
+    setNote,
+    setHistoryStudentId,
+    setHistoryFrom,
+    setHistoryTo,
+    fetchHistory,
+    handleSubmit,
+  } = useTeacherHealthPage();
 
   const severityLabel: Record<Severity, string> = {
     normal: "Bình thường",
