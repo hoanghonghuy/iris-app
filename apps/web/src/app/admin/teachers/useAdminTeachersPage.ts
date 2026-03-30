@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, Pagination, School, Teacher } from "@/types";
 import { extractApiErrorMessage } from "@/lib/api-error";
@@ -52,7 +53,9 @@ export function useAdminTeachersPage() {
         setPagination(response.pagination);
       }
     } catch (err: unknown) {
-      setError(extractApiErrorMessage(err, "Không thể tải danh sách giáo viên"));
+      const message = extractApiErrorMessage(err, "Không thể tải danh sách giáo viên");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
