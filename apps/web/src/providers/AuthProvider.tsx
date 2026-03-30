@@ -64,11 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRole(userRole);
     
     // Sau khi login, fetch thông tin user
-    authApi.getMe().then(userData => {
-      setUser(userData);
-
-      router.push(getDashboardRouteByRole(userRole));
-    });
+    void authApi.getMe()
+      .then((userData) => {
+        setUser(userData);
+        router.push(getDashboardRouteByRole(userRole));
+      })
+      .catch((error) => {
+        console.error("Login bootstrap failed:", error);
+        logout();
+      });
   };
 
   return (
