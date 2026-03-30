@@ -54,6 +54,7 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchool
 	}
 
 	// Validate tên role hợp lệ trước khi tạo user (tránh silent failure khi role không tồn tại trong DB)
+	// TODO: chặn SUPER_ADMIN ở flow thường; chỉ cho phép qua quy trình promote có kiểm soát + audit.
 	validRoles := map[string]bool{"SUPER_ADMIN": true, "SCHOOL_ADMIN": true, "TEACHER": true, "PARENT": true}
 	for _, role := range roles {
 		if !validRoles[role] {
@@ -179,6 +180,7 @@ func (s *UserService) ActivateUserWithToken(ctx context.Context, token, password
 // AssignRole gán role cho user
 func (s *UserService) AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error {
 	// Validate role name
+	// TODO: Tách endpoint/flow riêng cho SUPER_ADMIN (2-person approval), không dùng AssignRole chung.
 	validRoles := map[string]bool{
 		"SUPER_ADMIN":  true,
 		"SCHOOL_ADMIN": true,
