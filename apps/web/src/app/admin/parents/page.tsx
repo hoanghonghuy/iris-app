@@ -5,9 +5,7 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { adminApi } from "@/lib/api/admin.api";
-import { Parent, School, Class, Student, Pagination } from "@/types";
+import React from "react";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,118 +17,37 @@ import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { Heart, Loader2, Phone, Mail, Link2, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { extractApiErrorMessage } from "@/lib/api-error";
+import { useAdminParentsPage } from "./useAdminParentsPage";
 
 export default function AdminParentsPage() {
   const { role } = useAuth();
-  const [parents, setParents] = useState<Parent[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
-  const [currentOffset, setCurrentOffset] = useState(0);
-
-  const [schools, setSchools] = useState<School[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [selectedSchoolId, setSelectedSchoolId] = useState("");
-  const [selectedClassId, setSelectedClassId] = useState("");
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-
-  const [assignModal, setAssignModal] = useState<{isOpen: boolean, parentId: string | null, parentName: string | null}>({isOpen: false, parentId: null, parentName: null});
-  const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, parentId: string | null, studentId: string | null, studentName: string | null}>({isOpen: false, parentId: null, studentId: null, studentName: null});
-
-  const fetchParents = useCallback(async () => {
-    try {
-      setLoading(true); setError("");
-      const response = await adminApi.getParents({ limit: 20, offset: currentOffset });
-      setParents(response.data || []);
-      if (response.pagination) setPagination(response.pagination);
-    } catch (err: unknown) {
-      setError(extractApiErrorMessage(err, "Không thể tải danh sách phụ huynh"));
-    } finally { setLoading(false); }
-  }, [currentOffset]);
-
-  useEffect(() => { fetchParents(); }, [fetchParents]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await adminApi.getSchools();
-        const data = response.data;
-        setSchools(data || []);
-        if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
-      } catch { /* ignore */ }
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedSchoolId) return;
-    const load = async () => {
-      try {
-        const response = await adminApi.getClassesBySchool(selectedSchoolId);
-        const data = response.data;
-        setClasses(data || []);
-        if (data && data.length > 0) setSelectedClassId(data[0].class_id);
-        else { setSelectedClassId(""); setStudents([]); }
-      } catch { setClasses([]); }
-    };
-    load();
-  }, [selectedSchoolId]);
-
-  useEffect(() => {
-    if (!selectedClassId) return;
-    const load = async () => {
-      try {
-        const response = await adminApi.getStudentsByClass(selectedClassId);
-        const data = response.data;
-        setStudents(data || []);
-        if (data && data.length > 0) setSelectedStudentId(data[0].student_id);
-        else setSelectedStudentId("");
-      } catch { setStudents([]); }
-    };
-    load();
-  }, [selectedClassId]);
-
-  const handleAssign = async () => {
-    if (!selectedStudentId || !assignModal.parentId) return;
-    try {
-      setActionLoading(true); setSuccess("");
-      await adminApi.assignParentToStudent(assignModal.parentId, selectedStudentId);
-      const studentName = students.find((s) => s.student_id === selectedStudentId)?.full_name || "";
-      setSuccess(`Đã gán phụ huynh cho ${studentName}`);
-      setAssignModal({ isOpen: false, parentId: null, parentName: null });
-      fetchParents();
-    } catch (err: unknown) {
-      setError(extractApiErrorMessage(err, "Không thể gán"));
-    } finally { setActionLoading(false); }
-  };
-
-  const confirmUnassign = async () => {
-    if (!unassignAlert.parentId || !unassignAlert.studentId) return;
-    try {
-      setActionLoading(true); setSuccess("");
-      await adminApi.unassignParentFromStudent(unassignAlert.parentId, unassignAlert.studentId);
-      setSuccess(`Đã hủy gán học sinh ${unassignAlert.studentName}`);
-      setUnassignAlert({ isOpen: false, parentId: null, studentId: null, studentName: null });
-      fetchParents();
-    } catch (err: unknown) {
-      setError(extractApiErrorMessage(err, "Không thể hủy gán"));
-    } finally { setActionLoading(false); }
-  };
-
-  const filteredParents = useMemo(() => {
-    if (!searchQuery.trim()) return parents;
-    const q = searchQuery.toLowerCase();
-    return parents.filter((p) => 
-      p.full_name?.toLowerCase().includes(q) || 
-      p.email?.toLowerCase().includes(q) ||
-      p.phone?.includes(q)
-    );
-  }, [parents, searchQuery]);
+  const {
+    parents,
+    searchQuery,
+    loading,
+    error,
+    pagination,
+    schools,
+    classes,
+    students,
+    selectedSchoolId,
+    selectedClassId,
+    selectedStudentId,
+    actionLoading,
+    success,
+    assignModal,
+    unassignAlert,
+    filteredParents,
+    setSearchQuery,
+    setCurrentOffset,
+    setSelectedSchoolId,
+    setSelectedClassId,
+    setSelectedStudentId,
+    setAssignModal,
+    setUnassignAlert,
+    handleAssign,
+    confirmUnassign,
+  } = useAdminParentsPage();
 
   return (
     <div className="space-y-6">
