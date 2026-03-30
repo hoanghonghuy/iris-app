@@ -5,109 +5,45 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { adminApi } from "@/lib/api/admin.api";
-import { UserInfo, School, Pagination, SchoolAdmin } from "@/types";
+import React from "react";
+import { SchoolAdmin } from "@/types";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/providers/AuthProvider";
-import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
-import { extractApiErrorMessage } from "@/lib/api-error";
+import { useAdminSchoolAdminsPage } from "./useAdminSchoolAdminsPage";
 
 export default function AdminSchoolAdminsPage() {
-  const { role } = useAuth();
-  const router = useRouter();
-
-  const [admins, setAdmins] = useState<SchoolAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
-  const [currentOffset, setCurrentOffset] = useState(0);
-
-  const [showForm, setShowForm] = useState(false);
-  const [schools, setSchools] = useState<School[]>([]);
-  const [users, setUsers] = useState<UserInfo[]>([]);
-  const [selectedSchoolId, setSelectedSchoolId] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteAlert, setDeleteAlert] = useState<{isOpen: boolean, adminId: string | null}>({isOpen: false, adminId: null});
+  const {
+    admins,
+    loading,
+    error,
+    pagination,
+    showForm,
+    schools,
+    users,
+    selectedSchoolId,
+    selectedUserId,
+    submitting,
+    formError,
+    success,
+    deletingId,
+    deleteAlert,
+    setCurrentOffset,
+    setShowForm,
+    setSelectedSchoolId,
+    setSelectedUserId,
+    setSuccess,
+    setDeleteAlert,
+    handleCreate,
+    confirmDelete,
+  } = useAdminSchoolAdminsPage();
 
   const getAdminId = (admin: SchoolAdmin): string => admin.admin_id;
-
-  const fetchAdmins = useCallback(async () => {
-    if (role !== "SUPER_ADMIN") return;
-    try {
-      setLoading(true); setError("");
-      const response = await adminApi.getSchoolAdmins({ limit: 20, offset: currentOffset });
-      setAdmins(response.data || []);
-      if (response.pagination) setPagination(response.pagination);
-    } catch (error: unknown) {
-      setError(extractApiErrorMessage(error, "Không thể tải danh sách"));
-    } finally { setLoading(false); }
-  }, [currentOffset, role]);
-
-  useEffect(() => { 
-    if (role && role !== "SUPER_ADMIN") {
-      router.replace("/admin");
-    } else if (role === "SUPER_ADMIN") {
-      fetchAdmins(); 
-    }
-  }, [fetchAdmins, role, router]);
-
-  useEffect(() => {
-    if (!showForm) return;
-    const load = async () => {
-      try {
-        const [schoolResponse, userData] = await Promise.all([
-          adminApi.getSchools(),
-          adminApi.getUsers({ limit: 100 }),
-        ]);
-        const schoolData = schoolResponse.data;
-        setSchools(schoolData || []);
-        const userList = userData.data || [];
-        setUsers(Array.isArray(userList) ? userList : []);
-        if (schoolData && schoolData.length > 0) setSelectedSchoolId(schoolData[0].school_id);
-        if (userList && userList.length > 0) setSelectedUserId(userList[0].user_id);
-      } catch { /* ignore */ }
-    };
-    load();
-  }, [showForm]);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUserId || !selectedSchoolId) { setFormError("Chọn user và trường"); return; }
-    try {
-      setSubmitting(true); setFormError(""); setSuccess("");
-      await adminApi.createSchoolAdmin({ user_id: selectedUserId, school_id: selectedSchoolId });
-      setSuccess("Đã tạo School Admin thành công!");
-      setShowForm(false); fetchAdmins();
-    } catch (error: unknown) {
-      setFormError(extractApiErrorMessage(error, "Không thể tạo"));
-    } finally { setSubmitting(false); }
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteAlert.adminId) return;
-    try {
-      setDeletingId(deleteAlert.adminId);
-      await adminApi.deleteSchoolAdmin(deleteAlert.adminId);
-      fetchAdmins();
-    } catch (error: unknown) {
-      setError(extractApiErrorMessage(error, "Không thể xóa"));
-    } finally { 
-      setDeletingId(null); 
-      setDeleteAlert({ isOpen: false, adminId: null });
-    }
-  };
 
   return (
     <div className="space-y-6">
