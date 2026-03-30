@@ -5,9 +5,7 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { teacherApi } from "@/lib/api/teacher.api";
-import { Class, CreatePostRequest, Pagination, Post, PostType, Student } from "@/types";
+import React from "react";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,112 +19,35 @@ import { PostCard } from "@/components/shared/PostCard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AlertCircle, Loader2, MessageSquare, Plus, X } from "lucide-react";
 import { POST_SCOPE_LABELS, POST_TYPE_OPTIONS } from "@/lib/post-config";
-
-type ComposerScope = "class" | "student";
-
-function extractErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const response = (error as { response?: { data?: { error?: string } } }).response;
-    return response?.data?.error || fallback;
-  }
-
-  return fallback;
-}
-
-function isComposerScope(value: string): value is ComposerScope {
-  return value === "class" || value === "student";
-}
-
-function isPostType(value: string): value is PostType {
-  return POST_TYPE_OPTIONS.some((option) => option.value === value);
-}
+import { isComposerScope, isPostType, useTeacherPostsPage } from "./useTeacherPostsPage";
 
 export default function TeacherPostsPage() {
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState("");
-  const [students, setStudents] = useState<Student[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingPosts, setLoadingPosts] = useState(false);
-  const [error, setError] = useState("");
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
-  const [currentOffset, setCurrentOffset] = useState(0);
-
-  const [showForm, setShowForm] = useState(false);
-  const [scopeType, setScopeType] = useState<ComposerScope>("class");
-  const [formStudentId, setFormStudentId] = useState("");
-  const [postType, setPostType] = useState<PostType>("announcement");
-  const [content, setContent] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await teacherApi.getMyClasses();
-        setClasses(data || []);
-        if (data && data.length > 0) setSelectedClassId(data[0].class_id);
-      } catch { setError("Không thể tải lớp"); }
-      finally { setLoading(false); }
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedClassId) return;
-    setCurrentOffset(0);
-
-    const load = async () => {
-      try {
-        const data = await teacherApi.getStudentsInClass(selectedClassId);
-        setStudents(data || []);
-        if (data && data.length > 0) setFormStudentId(data[0].student_id);
-      } catch { /* ignore */ }
-    };
-    load();
-  }, [selectedClassId]);
-
-  const fetchPosts = useCallback(async () => {
-    if (!selectedClassId) return;
-    try {
-      setLoadingPosts(true); setError("");
-      const response = await teacherApi.getClassPosts(selectedClassId, { limit: 20, offset: currentOffset });
-      setPosts(response.data || []);
-      if (response.pagination) setPagination(response.pagination);
-    } catch (err: unknown) {
-      setError(extractErrorMessage(err, "Không thể tải bài đăng"));
-    } finally { setLoadingPosts(false); }
-  }, [selectedClassId, currentOffset]);
-
-  useEffect(() => { fetchPosts(); }, [fetchPosts]);
-
-  const patchPostById = useCallback((postId: string, patch: Partial<Post>) => {
-    setPosts((prev) => prev.map((item) => (item.post_id === postId ? { ...item, ...patch } : item)));
-  }, []);
-
-  const handleCreatePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim()) { setFormError("Nội dung không được trống"); return; }
-
-    const payload: CreatePostRequest = {
-      scope_type: scopeType,
-      type: postType,
-      content,
-      class_id: scopeType === "class" ? selectedClassId : undefined,
-      student_id: scopeType === "student" ? formStudentId : undefined,
-    };
-
-    try {
-      setSubmitting(true); setFormError("");
-      await teacherApi.createPost(payload);
-      setContent("");
-      setShowForm(false);
-      setCurrentOffset(0);
-      fetchPosts();
-    } catch (err: unknown) {
-      setFormError(extractErrorMessage(err, "Lỗi tạo bài đăng"));
-    } finally { setSubmitting(false); }
-  };
+  const {
+    classes,
+    selectedClassId,
+    students,
+    posts,
+    loading,
+    loadingPosts,
+    error,
+    pagination,
+    showForm,
+    scopeType,
+    formStudentId,
+    postType,
+    content,
+    submitting,
+    formError,
+    setSelectedClassId,
+    setCurrentOffset,
+    setShowForm,
+    setScopeType,
+    setFormStudentId,
+    setPostType,
+    setContent,
+    patchPostById,
+    handleCreatePost,
+  } = useTeacherPostsPage();
 
   if (loading) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
