@@ -5,10 +5,8 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React from "react";
 import Link from "next/link";
-import { adminApi } from "@/lib/api/admin.api";
-import { School, Class, Student } from "@/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,141 +19,43 @@ import {
   Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { extractApiErrorMessage } from "@/lib/api-error";
+import { genderLabel, useAdminStudentsPage } from "./useAdminStudentsPage";
 
 export default function AdminStudentsPage() {
   const { role } = useAuth();
-  const [schools, setSchools] = useState<School[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedSchoolId, setSelectedSchoolId] = useState("");
-  const [selectedClassId, setSelectedClassId] = useState("");
-  const [loadingSchools, setLoadingSchools] = useState(true);
-
-  const [students, setStudents] = useState<Student[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loadingStudents, setLoadingStudents] = useState(false);
-  const [error, setError] = useState("");
-
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ full_name: "", dob: "", gender: "male" });
-  const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState("");
-
-  const [generatingCode, setGeneratingCode] = useState<string | null>(null);
-  const [revokingCode, setRevokingCode] = useState<string | null>(null);
-  const [revokeAlert, setRevokeAlert] = useState<{isOpen: boolean, studentId: string | null}>({isOpen: false, studentId: null});
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [codeError, setCodeError] = useState("");
-
-  const genderLabel: Record<string, string> = { male: "Nam", female: "Nữ", other: "Khác" };
-
-  // ─── Fetch schools ─────────────────────────────────────────────
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await adminApi.getSchools();
-        const data = response.data;
-        setSchools(data || []);
-        if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
-      } catch { setError("Không thể tải danh sách trường"); }
-      finally { setLoadingSchools(false); }
-    };
-    load();
-  }, []);
-
-  // ─── Fetch classes khi đổi trường ─────────────────────────────
-  useEffect(() => {
-    if (!selectedSchoolId) return;
-    const load = async () => {
-      try {
-        setSelectedClassId(""); setStudents([]); setSearchQuery("");
-        const response = await adminApi.getClassesBySchool(selectedSchoolId);
-        const data = response.data;
-        setClasses(data || []);
-        if (data && data.length > 0) setSelectedClassId(data[0].class_id);
-      } catch { setClasses([]); }
-    };
-    load();
-  }, [selectedSchoolId]);
-
-  // ─── Fetch students khi đổi lớp ──────────────────────────────
-  const fetchStudents = useCallback(async () => {
-    if (!selectedClassId) return;
-    try {
-      setLoadingStudents(true); setError("");
-      const response = await adminApi.getStudentsByClass(selectedClassId);
-      setStudents(response.data || []);
-    } catch (error: unknown) {
-      setError(extractApiErrorMessage(error, "Không thể tải danh sách học sinh"));
-    } finally { setLoadingStudents(false); }
-  }, [selectedClassId]);
-
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
-
-  // ─── Filter students by search query ──────────────────────────
-  const filteredStudents = useMemo(() => {
-    if (!searchQuery.trim()) return students;
-    const q = searchQuery.toLowerCase();
-    return students.filter((s) => s.full_name.toLowerCase().includes(q));
-  }, [students, searchQuery]);
-
-  // ─── Create student ───────────────────────────────────────────
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.full_name.trim()) { setFormError("Họ tên không được để trống"); return; }
-    try {
-      setSubmitting(true); setFormError("");
-      await adminApi.createStudent({
-        school_id: selectedSchoolId, class_id: selectedClassId,
-        full_name: formData.full_name, dob: formData.dob,
-        gender: formData.gender as "male" | "female" | "other",
-      });
-      setFormData({ full_name: "", dob: "", gender: "male" });
-      setShowForm(false); fetchStudents();
-    } catch (error: unknown) {
-      setFormError(extractApiErrorMessage(error, "Không thể tạo học sinh"));
-    } finally { setSubmitting(false); }
-  };
-
-  // ─── Generate Parent Code ─────────────────────────────────────
-  const handleGenerateCode = async (studentId: string) => {
-    try {
-      setGeneratingCode(studentId); setCodeError("");
-      const res = await adminApi.generateParentCode(studentId);
-      const code = res.data?.parent_code || "";
-      const expiresAt = res.data?.expires_at || "";
-      setStudents(prev => prev.map(s => s.student_id === studentId ? { ...s, active_parent_code: code, code_expires_at: expiresAt } : s));
-    } catch (error: unknown) {
-      setCodeError(extractApiErrorMessage(error, "Không thể tạo mã"));
-    } finally { setGeneratingCode(null); }
-  };
-
-  const confirmRevokeCode = async () => {
-    if (!revokeAlert.studentId) return;
-    try {
-      setRevokingCode(revokeAlert.studentId); setCodeError("");
-      await adminApi.revokeParentCode(revokeAlert.studentId);
-      setStudents(prev => prev.map(s => s.student_id === revokeAlert.studentId ? { ...s, active_parent_code: undefined, code_expires_at: undefined } : s));
-      setRevokeAlert({ isOpen: false, studentId: null });
-    } catch (error: unknown) {
-      setCodeError(extractApiErrorMessage(error, "Không thể thu hồi mã"));
-    } finally { setRevokingCode(null); }
-  };
-
-  const handleCopy = (code: string, id: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const getDaysLeft = (dateString?: string) => {
-    if (!dateString) return null;
-    const diff = new Date(dateString).getTime() - new Date().getTime();
-    if (diff <= 0) return "Hết hạn";
-    return `Còn ${Math.ceil(diff / (1000 * 3600 * 24))} ngày`;
-  };
-
-  const selectedClassName = classes.find((c) => c.class_id === selectedClassId)?.name || "";
+  const {
+    schools,
+    classes,
+    selectedSchoolId,
+    selectedClassId,
+    loadingSchools,
+    students,
+    searchQuery,
+    loadingStudents,
+    error,
+    showForm,
+    formData,
+    submitting,
+    formError,
+    generatingCode,
+    revokingCode,
+    revokeAlert,
+    copiedId,
+    codeError,
+    filteredStudents,
+    selectedClassName,
+    setSelectedSchoolId,
+    setSelectedClassId,
+    setSearchQuery,
+    setShowForm,
+    setFormData,
+    setRevokeAlert,
+    handleCreate,
+    handleGenerateCode,
+    confirmRevokeCode,
+    handleCopy,
+    getDaysLeft,
+  } = useAdminStudentsPage();
 
   if (loadingSchools) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -227,7 +127,14 @@ export default function AdminStudentsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Giới tính</Label>
-                  <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => {
+                      if (value === "male" || value === "female" || value === "other") {
+                        setFormData({ ...formData, gender: value });
+                      }
+                    }}
+                  >
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="male">Nam</SelectItem>
