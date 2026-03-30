@@ -5,9 +5,6 @@
  */
 "use client";
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { adminApi } from "@/lib/api/admin.api";
-import { Teacher, School, Class, Pagination } from "@/types";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import { CardSkeleton } from "@/components/shared/CardSkeleton";
@@ -23,101 +20,67 @@ import { Phone, Mail, Link2, Search, X, BookUser } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Input } from "@/components/ui/input"; // Added missing import for Input
 import { extractApiErrorMessage } from "@/lib/api-error";
+import { useAdminTeachersPage } from "./useAdminTeachersPage";
 
 export default function AdminTeachersPage() {
   const { role } = useAuth();
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, limit: 20, offset: 0, has_more: false });
-  const [currentOffset, setCurrentOffset] = useState(0);
+  const {
+    teachers,
+    searchQuery,
+    loading,
+    error,
+    pagination,
+    schools,
+    classes,
+    selectedSchoolId,
+    selectedClassId,
+    actionLoading,
+    assignModal,
+    unassignAlert,
+    filteredTeachers,
+    setSearchQuery,
+    setCurrentOffset,
+    setSelectedSchoolId,
+    setSelectedClassId,
+    setActionLoading,
+    setAssignModal,
+    setUnassignAlert,
+    handleAssign,
+    confirmUnassign,
+  } = useAdminTeachersPage();
 
-  const [schools, setSchools] = useState<School[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedSchoolId, setSelectedSchoolId] = useState("");
-  const [selectedClassId, setSelectedClassId] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
+  const handleAssignWithFeedback = async () => {
+    if (!selectedClassId || !assignModal.teacherId) {
+      return;
+    }
 
-  const [assignModal, setAssignModal] = useState<{isOpen: boolean, teacherId: string | null, teacherName: string | null}>({isOpen: false, teacherId: null, teacherName: null});
-  const [unassignAlert, setUnassignAlert] = useState<{isOpen: boolean, teacherId: string | null, classId: string | null, className: string | null}>({isOpen: false, teacherId: null, classId: null, className: null});
-
-  const fetchTeachers = useCallback(async () => {
-    try {
-      setLoading(true); setError("");
-      const response = await adminApi.getTeachers({ limit: 20, offset: currentOffset });
-      setTeachers(response.data || []);
-      if (response.pagination) setPagination(response.pagination);
-    } catch (err: unknown) {
-      const msg = extractApiErrorMessage(err, "Không thể tải danh sách giáo viên");
-      setError(msg);
-      toast.error(msg);
-    } finally { setLoading(false); }
-  }, [currentOffset]);
-
-  useEffect(() => { fetchTeachers(); }, [fetchTeachers]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const response = await adminApi.getSchools();
-        const data = response.data;
-        setSchools(data || []);
-        if (data && data.length > 0) setSelectedSchoolId(data[0].school_id);
-      } catch { /* ignore */ }
-    };
-    load();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedSchoolId) return;
-    const load = async () => {
-      try {
-        const response = await adminApi.getClassesBySchool(selectedSchoolId);
-        const data = response.data;
-        setClasses(data || []);
-        if (data && data.length > 0) setSelectedClassId(data[0].class_id);
-      } catch { setClasses([]); }
-    };
-    load();
-  }, [selectedSchoolId]);
-
-  const handleAssign = async () => {
-    if (!selectedClassId || !assignModal.teacherId) return;
     try {
       setActionLoading(true);
-      await adminApi.assignTeacherToClass(assignModal.teacherId, selectedClassId);
-      const className = classes.find((c) => c.class_id === selectedClassId)?.name || "";
+      await handleAssign();
+      const className = classes.find((classInfo) => classInfo.class_id === selectedClassId)?.name || "";
       toast.success(`Đã gán giáo viên vào lớp ${className}`);
-      setAssignModal({ isOpen: false, teacherId: null, teacherName: null });
-      fetchTeachers();
     } catch (err: unknown) {
       toast.error(extractApiErrorMessage(err, "Không thể gán lớp"));
-    } finally { setActionLoading(false); }
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const confirmUnassign = async () => {
-    if (!unassignAlert.teacherId || !unassignAlert.classId) return;
+  const confirmUnassignWithFeedback = async () => {
+    if (!unassignAlert.teacherId || !unassignAlert.classId) {
+      return;
+    }
+
     try {
       setActionLoading(true);
-      await adminApi.unassignTeacherFromClass(unassignAlert.teacherId, unassignAlert.classId);
+      await confirmUnassign();
       toast.success(`Đã hủy gán lớp ${unassignAlert.className}`);
-      setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null });
-      fetchTeachers();
     } catch (err: unknown) {
       toast.error(extractApiErrorMessage(err, "Không thể hủy gán lớp"));
-    } finally { setActionLoading(false); }
+    } finally {
+      setActionLoading(false);
+    }
   };
-
-  const filteredTeachers = useMemo(() => {
-    if (!searchQuery.trim()) return teachers;
-    const q = searchQuery.toLowerCase();
-    return teachers.filter((t) =>
-      t.full_name?.toLowerCase().includes(q) ||
-      t.email?.toLowerCase().includes(q) ||
-      t.phone?.includes(q)
-    );
-  }, [teachers, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -272,7 +235,7 @@ export default function AdminTeachersPage() {
       <ActionModal
         isOpen={assignModal.isOpen}
         onClose={() => setAssignModal({ isOpen: false, teacherId: null, teacherName: null })}
-        onConfirm={handleAssign}
+        onConfirm={handleAssignWithFeedback}
         title="Gán lớp phụ trách"
         description={<>Chọn trường và lớp để gán cho giáo viên <strong>{assignModal.teacherName}</strong>.</>}
         loading={actionLoading}
@@ -308,7 +271,7 @@ export default function AdminTeachersPage() {
       <ConfirmAlertDialog
         isOpen={unassignAlert.isOpen}
         onClose={() => setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null })}
-        onConfirm={confirmUnassign}
+        onConfirm={confirmUnassignWithFeedback}
         title="Xác nhận hủy gán"
         description={<>Bạn có chắc chắn muốn hủy gán lớp <strong>{unassignAlert.className}</strong> khỏi giáo viên này? Hành động này sẽ thay đổi quyền truy cập của giáo viên đối với lớp học.</>}
         loading={actionLoading}
