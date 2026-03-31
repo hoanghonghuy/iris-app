@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, School, Student } from "@/types";
 import { extractApiErrorMessage } from "@/lib/api-error";
-import { fetchCollectionWithState, loadListWithDefaultSelection } from "@/lib/list-loaders";
+import { fetchCollectionWithState, loadListEffect } from "@/lib/list-loaders";
 
 type StudentFormData = {
   full_name: string;
@@ -54,8 +54,7 @@ export function useAdminStudentsPage() {
   }, []);
 
   useEffect(() => {
-    const loadSchools = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
         fetchList: async () => (await adminApi.getSchools()).data,
         setList: setSchools,
         setSelectedId: setSelectedSchoolId,
@@ -63,31 +62,22 @@ export function useAdminStudentsPage() {
         onError: () => setError("Không thể tải danh sách trường"),
         onFinally: () => setLoadingSchools(false),
       });
-    };
-
-    void loadSchools();
   }, []);
 
   useEffect(() => {
-    if (!selectedSchoolId) {
-      return;
-    }
-
-    const loadClasses = async () => {
-      setSelectedClassId("");
-      setStudents([]);
-      setSearchQuery("");
-
-      await loadListWithDefaultSelection({
+    void loadListEffect({
+        enabled: !!selectedSchoolId,
+        beforeLoad: () => {
+          setSelectedClassId("");
+          setStudents([]);
+          setSearchQuery("");
+        },
         fetchList: async () => (await adminApi.getClassesBySchool(selectedSchoolId)).data,
         setList: setClasses,
         setSelectedId: setSelectedClassId,
         getId: (classItem) => classItem.class_id,
         onError: () => setClasses([]),
       });
-    };
-
-    void loadClasses();
   }, [selectedSchoolId]);
 
   const fetchStudents = useCallback(async () => {

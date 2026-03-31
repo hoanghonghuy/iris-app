@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, HealthLog, Student } from "@/types";
-import { loadListWithDefaultSelection } from "@/lib/list-loaders";
+import { loadListEffect } from "@/lib/list-loaders";
 import { extractApiErrorRawMessage } from "@/lib/api-error";
 
 export type Severity = "normal" | "watch" | "urgent";
@@ -32,8 +32,7 @@ export function useTeacherHealthPage() {
   const [historyError, setHistoryError] = useState("");
 
   useEffect(() => {
-    const loadClasses = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
         fetchList: () => teacherApi.getMyClasses(),
         setList: setClasses,
         setSelectedId: setSelectedClassId,
@@ -41,9 +40,6 @@ export function useTeacherHealthPage() {
         onError: () => setError("Không thể tải lớp"),
         onFinally: () => setLoadingClasses(false),
       });
-    };
-
-    void loadClasses();
   }, []);
 
   const fetchStudents = useCallback(async () => {

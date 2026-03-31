@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, CreatePostRequest, Pagination, Post, PostType, Student } from "@/types";
 import { POST_TYPE_OPTIONS } from "@/lib/post-config";
-import { loadListWithDefaultSelection } from "@/lib/list-loaders";
+import { loadListEffect } from "@/lib/list-loaders";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
 export type ComposerScope = "class" | "student";
@@ -35,8 +35,7 @@ export function useTeacherPostsPage() {
   const [formError, setFormError] = useState("");
 
   useEffect(() => {
-    const loadClasses = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
         fetchList: () => teacherApi.getMyClasses(),
         setList: setClasses,
         setSelectedId: setSelectedClassId,
@@ -44,28 +43,17 @@ export function useTeacherPostsPage() {
         onError: () => setError("Không thể tải lớp"),
         onFinally: () => setLoading(false),
       });
-    };
-
-    void loadClasses();
   }, []);
 
   useEffect(() => {
-    if (!selectedClassId) {
-      return;
-    }
-
-    setCurrentOffset(0);
-
-    const loadStudents = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
+        enabled: !!selectedClassId,
+        beforeLoad: () => setCurrentOffset(0),
         fetchList: () => teacherApi.getStudentsInClass(selectedClassId),
         setList: setStudents,
         setSelectedId: setFormStudentId,
         getId: (student) => student.student_id,
       });
-    };
-
-    void loadStudents();
   }, [selectedClassId]);
 
   const fetchPosts = useCallback(async () => {

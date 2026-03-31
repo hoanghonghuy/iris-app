@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, Pagination, Parent, School, Student } from "@/types";
 import { extractApiErrorMessage } from "@/lib/api-error";
-import { fetchCollectionWithState, loadListWithDefaultSelection } from "@/lib/list-loaders";
+import { fetchCollectionWithState, loadListEffect } from "@/lib/list-loaders";
 
 type AssignModalState = {
   isOpen: boolean;
@@ -74,25 +74,17 @@ export function useAdminParentsPage() {
   }, [fetchParents]);
 
   useEffect(() => {
-    const loadSchools = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
         fetchList: async () => (await adminApi.getSchools()).data,
         setList: setSchools,
         setSelectedId: setSelectedSchoolId,
         getId: (school) => school.school_id,
       });
-    };
-
-    void loadSchools();
   }, []);
 
   useEffect(() => {
-    if (!selectedSchoolId) {
-      return;
-    }
-
-    const loadClasses = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
+        enabled: !!selectedSchoolId,
         fetchList: async () => (await adminApi.getClassesBySchool(selectedSchoolId)).data,
         setList: setClasses,
         setSelectedId: setSelectedClassId,
@@ -103,18 +95,11 @@ export function useAdminParentsPage() {
         },
         onError: () => setClasses([]),
       });
-    };
-
-    void loadClasses();
   }, [selectedSchoolId]);
 
   useEffect(() => {
-    if (!selectedClassId) {
-      return;
-    }
-
-    const loadStudents = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
+        enabled: !!selectedClassId,
         fetchList: async () => (await adminApi.getStudentsByClass(selectedClassId)).data,
         setList: setStudents,
         setSelectedId: setSelectedStudentId,
@@ -122,9 +107,6 @@ export function useAdminParentsPage() {
         onEmpty: () => setSelectedStudentId(""),
         onError: () => setStudents([]),
       });
-    };
-
-    void loadStudents();
   }, [selectedClassId]);
 
   const handleAssign = useCallback(async () => {

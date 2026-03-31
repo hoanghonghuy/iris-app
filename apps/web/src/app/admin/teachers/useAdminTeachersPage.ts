@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, Pagination, School, Teacher } from "@/types";
-import { fetchCollectionWithState, loadListWithDefaultSelection } from "@/lib/list-loaders";
+import { fetchCollectionWithState, loadListEffect } from "@/lib/list-loaders";
 
 type AssignModalState = {
   isOpen: boolean;
@@ -72,25 +72,17 @@ export function useAdminTeachersPage() {
   }, [fetchTeachers]);
 
   useEffect(() => {
-    const loadSchools = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
         fetchList: async () => (await adminApi.getSchools()).data,
         setList: setSchools,
         setSelectedId: setSelectedSchoolId,
         getId: (school) => school.school_id,
       });
-    };
-
-    void loadSchools();
   }, []);
 
   useEffect(() => {
-    if (!selectedSchoolId) {
-      return;
-    }
-
-    const loadClasses = async () => {
-      await loadListWithDefaultSelection({
+    void loadListEffect({
+        enabled: !!selectedSchoolId,
         fetchList: async () => (await adminApi.getClassesBySchool(selectedSchoolId)).data,
         setList: setClasses,
         setSelectedId: setSelectedClassId,
@@ -98,9 +90,6 @@ export function useAdminTeachersPage() {
         onEmpty: () => setSelectedClassId(""),
         onError: () => setClasses([]),
       });
-    };
-
-    void loadClasses();
   }, [selectedSchoolId]);
 
   const handleAssign = useCallback(async () => {

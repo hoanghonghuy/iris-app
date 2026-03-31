@@ -53,6 +53,11 @@ type LoadListWithDefaultSelectionOptions<T> = {
   onFinally?: () => void;
 };
 
+type LoadListEffectOptions<T> = LoadListWithDefaultSelectionOptions<T> & {
+  enabled?: boolean;
+  beforeLoad?: () => void;
+};
+
 export async function loadListWithDefaultSelection<T>({
   fetchList,
   setList,
@@ -76,4 +81,17 @@ export async function loadListWithDefaultSelection<T>({
   } finally {
     onFinally?.();
   }
+}
+
+export async function loadListEffect<T>({
+  enabled = true,
+  beforeLoad,
+  ...options
+}: LoadListEffectOptions<T>): Promise<void> {
+  if (!enabled) {
+    return;
+  }
+
+  beforeLoad?.();
+  await loadListWithDefaultSelection(options);
 }
