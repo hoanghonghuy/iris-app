@@ -50,6 +50,7 @@ export default function AdminStudentsPage() {
     setShowForm,
     setFormData,
     setRevokeAlert,
+    closeRevokeAlert,
     handleCreate,
     handleGenerateCode,
     confirmRevokeCode,
@@ -281,7 +282,7 @@ export default function AdminStudentsPage() {
       {/* Revoke Code Alert */}
       <ConfirmAlertDialog
         isOpen={revokeAlert.isOpen}
-        onClose={() => setRevokeAlert({ isOpen: false, studentId: null })}
+        onClose={closeRevokeAlert}
         onConfirm={confirmRevokeCode}
         title="Xác nhận thu hồi mã"
         description="Bạn có chắc chắn muốn thu hồi mã phụ huynh này không? Mã hiện tại sẽ bị vô hiệu hóa ngay lập tức."

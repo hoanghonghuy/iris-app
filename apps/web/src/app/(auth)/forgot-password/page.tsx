@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, Mail, CheckCircle2, Loader2 } from "lucide-react";
 import { extractApiErrorRawMessage } from "@/lib/api-error";
+import { AUTH_PAGE_CARD_CLASS, AUTH_PAGE_CONTAINER_CLASS } from "@/components/auth/auth-layout";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -38,8 +39,8 @@ export default function ForgotPasswordPage() {
     };
 
     return (
-        <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
-            <Card className="w-full max-w-md">
+        <div className={AUTH_PAGE_CONTAINER_CLASS}>
+            <Card className={AUTH_PAGE_CARD_CLASS}>
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">Quên mật khẩu</CardTitle>
                     <CardDescription className="text-center">

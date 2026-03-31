@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, Pagination, School, Teacher } from "@/types";
-import { extractApiErrorMessage } from "@/lib/api-error";
+import { fetchCollectionWithState, loadListWithDefaultSelection } from "@/lib/list-loaders";
 
 type AssignModalState = {
   isOpen: boolean;
@@ -15,6 +15,19 @@ type UnassignAlertState = {
   teacherId: string | null;
   classId: string | null;
   className: string | null;
+};
+
+const INITIAL_ASSIGN_MODAL_STATE: AssignModalState = {
+  isOpen: false,
+  teacherId: null,
+  teacherName: null,
+};
+
+const INITIAL_UNASSIGN_ALERT_STATE: UnassignAlertState = {
+  isOpen: false,
+  teacherId: null,
+  classId: null,
+  className: null,
 };
 
 export function useAdminTeachersPage() {
@@ -31,34 +44,27 @@ export function useAdminTeachersPage() {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [assignModal, setAssignModal] = useState<AssignModalState>({
-    isOpen: false,
-    teacherId: null,
-    teacherName: null,
-  });
-  const [unassignAlert, setUnassignAlert] = useState<UnassignAlertState>({
-    isOpen: false,
-    teacherId: null,
-    classId: null,
-    className: null,
-  });
+  const [assignModal, setAssignModal] = useState<AssignModalState>(INITIAL_ASSIGN_MODAL_STATE);
+  const [unassignAlert, setUnassignAlert] = useState<UnassignAlertState>(INITIAL_UNASSIGN_ALERT_STATE);
+
+  const closeAssignModal = useCallback(() => {
+    setAssignModal(INITIAL_ASSIGN_MODAL_STATE);
+  }, []);
+
+  const closeUnassignAlert = useCallback(() => {
+    setUnassignAlert(INITIAL_UNASSIGN_ALERT_STATE);
+  }, []);
 
   const fetchTeachers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await adminApi.getTeachers({ limit: 20, offset: currentOffset });
-      setTeachers(response.data || []);
-      if (response.pagination) {
-        setPagination(response.pagination);
-      }
-    } catch (err: unknown) {
-      const message = extractApiErrorMessage(err, "Không thể tải danh sách giáo viên");
-      setError(message);
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+    await fetchCollectionWithState({
+      fetcher: () => adminApi.getTeachers({ limit: 20, offset: currentOffset }),
+      setItems: setTeachers,
+      fallbackError: "Không thể tải danh sách giáo viên",
+      setLoading,
+      setError,
+      setPagination: (value) => setPagination(value as Pagination),
+      onErrorMessage: (message) => toast.error(message),
+    });
   }, [currentOffset]);
 
   useEffect(() => {
@@ -67,15 +73,12 @@ export function useAdminTeachersPage() {
 
   useEffect(() => {
     const loadSchools = async () => {
-      try {
-        const response = await adminApi.getSchools();
-        const schoolData = response.data;
-        setSchools(schoolData || []);
-        if (schoolData && schoolData.length > 0) {
-          setSelectedSchoolId(schoolData[0].school_id);
-        }
-      } catch {
-      }
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getSchools()).data,
+        setList: setSchools,
+        setSelectedId: setSelectedSchoolId,
+        getId: (school) => school.school_id,
+      });
     };
 
     void loadSchools();
@@ -87,19 +90,14 @@ export function useAdminTeachersPage() {
     }
 
     const loadClasses = async () => {
-      try {
-        const response = await adminApi.getClassesBySchool(selectedSchoolId);
-        const classData = response.data;
-        setClasses(classData || []);
-
-        if (classData && classData.length > 0) {
-          setSelectedClassId(classData[0].class_id);
-        } else {
-          setSelectedClassId("");
-        }
-      } catch {
-        setClasses([]);
-      }
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getClassesBySchool(selectedSchoolId)).data,
+        setList: setClasses,
+        setSelectedId: setSelectedClassId,
+        getId: (classItem) => classItem.class_id,
+        onEmpty: () => setSelectedClassId(""),
+        onError: () => setClasses([]),
+      });
     };
 
     void loadClasses();
@@ -111,9 +109,9 @@ export function useAdminTeachersPage() {
     }
 
     await adminApi.assignTeacherToClass(assignModal.teacherId, selectedClassId);
-    setAssignModal({ isOpen: false, teacherId: null, teacherName: null });
+    closeAssignModal();
     await fetchTeachers();
-  }, [assignModal.teacherId, fetchTeachers, selectedClassId]);
+  }, [assignModal.teacherId, closeAssignModal, fetchTeachers, selectedClassId]);
 
   const confirmUnassign = useCallback(async () => {
     if (!unassignAlert.teacherId || !unassignAlert.classId) {
@@ -121,9 +119,9 @@ export function useAdminTeachersPage() {
     }
 
     await adminApi.unassignTeacherFromClass(unassignAlert.teacherId, unassignAlert.classId);
-    setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null });
+    closeUnassignAlert();
     await fetchTeachers();
-  }, [fetchTeachers, unassignAlert.classId, unassignAlert.teacherId]);
+  }, [closeUnassignAlert, fetchTeachers, unassignAlert.classId, unassignAlert.teacherId]);
 
   const filteredTeachers = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -160,6 +158,8 @@ export function useAdminTeachersPage() {
     setActionLoading,
     setAssignModal,
     setUnassignAlert,
+    closeAssignModal,
+    closeUnassignAlert,
     handleAssign,
     confirmUnassign,
   };

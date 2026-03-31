@@ -45,6 +45,8 @@ export default function AdminParentsPage() {
     setSelectedStudentId,
     setAssignModal,
     setUnassignAlert,
+    closeAssignModal,
+    closeUnassignAlert,
     handleAssign,
     confirmUnassign,
   } = useAdminParentsPage();
@@ -194,7 +196,7 @@ export default function AdminParentsPage() {
       {/* Assign Modal */}
       <ActionModal
         isOpen={assignModal.isOpen}
-        onClose={() => setAssignModal({ isOpen: false, parentId: null, parentName: null })}
+        onClose={closeAssignModal}
         onConfirm={handleAssign}
         title="Gán học sinh"
         description={<>Chọn trường, lớp và học sinh để gán cho phụ huynh <strong>{assignModal.parentName}</strong>.</>}
@@ -237,7 +239,7 @@ export default function AdminParentsPage() {
       {/* Unassign Alert */}
       <ConfirmAlertDialog
         isOpen={unassignAlert.isOpen}
-        onClose={() => setUnassignAlert({ isOpen: false, parentId: null, studentId: null, studentName: null })}
+        onClose={closeUnassignAlert}
         onConfirm={confirmUnassign}
         title="Xác nhận hủy gán"
         description={<>Bạn có chắc chắn muốn hủy gán học sinh <strong>{unassignAlert.studentName}</strong> khỏi phụ huynh này?</>}

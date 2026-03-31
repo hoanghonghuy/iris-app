@@ -45,6 +45,8 @@ export default function AdminTeachersPage() {
     setActionLoading,
     setAssignModal,
     setUnassignAlert,
+    closeAssignModal,
+    closeUnassignAlert,
     handleAssign,
     confirmUnassign,
   } = useAdminTeachersPage();
@@ -234,7 +236,7 @@ export default function AdminTeachersPage() {
       {/* Assign Modal */}
       <ActionModal
         isOpen={assignModal.isOpen}
-        onClose={() => setAssignModal({ isOpen: false, teacherId: null, teacherName: null })}
+        onClose={closeAssignModal}
         onConfirm={handleAssignWithFeedback}
         title="Gán lớp phụ trách"
         description={<>Chọn trường và lớp để gán cho giáo viên <strong>{assignModal.teacherName}</strong>.</>}
@@ -270,7 +272,7 @@ export default function AdminTeachersPage() {
       {/* Unassign Alert */}
       <ConfirmAlertDialog
         isOpen={unassignAlert.isOpen}
-        onClose={() => setUnassignAlert({ isOpen: false, teacherId: null, classId: null, className: null })}
+        onClose={closeUnassignAlert}
         onConfirm={confirmUnassignWithFeedback}
         title="Xác nhận hủy gán"
         description={<>Bạn có chắc chắn muốn hủy gán lớp <strong>{unassignAlert.className}</strong> khỏi giáo viên này? Hành động này sẽ thay đổi quyền truy cập của giáo viên đối với lớp học.</>}

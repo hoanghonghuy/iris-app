@@ -39,6 +39,7 @@ export default function AdminSchoolAdminsPage() {
     setSelectedUserId,
     setSuccess,
     setDeleteAlert,
+    closeDeleteAlert,
     handleCreate,
     confirmDelete,
   } = useAdminSchoolAdminsPage();
@@ -161,7 +162,7 @@ export default function AdminSchoolAdminsPage() {
       {/* Delete Confirmation */}
       <ConfirmAlertDialog
         isOpen={deleteAlert.isOpen}
-        onClose={() => setDeleteAlert({ isOpen: false, adminId: null })}
+        onClose={closeDeleteAlert}
         onConfirm={confirmDelete}
         title="Xác nhận xóa"
         description="Bạn có chắc chắn muốn xóa School Admin này? Hành động này không thể hoàn tác."

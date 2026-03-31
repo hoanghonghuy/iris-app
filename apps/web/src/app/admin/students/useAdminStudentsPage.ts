@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, School, Student } from "@/types";
 import { extractApiErrorMessage } from "@/lib/api-error";
+import { fetchCollectionWithState, loadListWithDefaultSelection } from "@/lib/list-loaders";
 
 type StudentFormData = {
   full_name: string;
@@ -12,6 +13,11 @@ type StudentFormData = {
 type RevokeAlertState = {
   isOpen: boolean;
   studentId: string | null;
+};
+
+const INITIAL_REVOKE_ALERT_STATE: RevokeAlertState = {
+  isOpen: false,
+  studentId: null,
 };
 
 export const genderLabel: Record<string, string> = {
@@ -39,24 +45,24 @@ export function useAdminStudentsPage() {
 
   const [generatingCode, setGeneratingCode] = useState<string | null>(null);
   const [revokingCode, setRevokingCode] = useState<string | null>(null);
-  const [revokeAlert, setRevokeAlert] = useState<RevokeAlertState>({ isOpen: false, studentId: null });
+  const [revokeAlert, setRevokeAlert] = useState<RevokeAlertState>(INITIAL_REVOKE_ALERT_STATE);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [codeError, setCodeError] = useState("");
 
+  const closeRevokeAlert = useCallback(() => {
+    setRevokeAlert(INITIAL_REVOKE_ALERT_STATE);
+  }, []);
+
   useEffect(() => {
     const loadSchools = async () => {
-      try {
-        const response = await adminApi.getSchools();
-        const schoolData = response.data;
-        setSchools(schoolData || []);
-        if (schoolData && schoolData.length > 0) {
-          setSelectedSchoolId(schoolData[0].school_id);
-        }
-      } catch {
-        setError("Không thể tải danh sách trường");
-      } finally {
-        setLoadingSchools(false);
-      }
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getSchools()).data,
+        setList: setSchools,
+        setSelectedId: setSelectedSchoolId,
+        getId: (school) => school.school_id,
+        onError: () => setError("Không thể tải danh sách trường"),
+        onFinally: () => setLoadingSchools(false),
+      });
     };
 
     void loadSchools();
@@ -68,20 +74,17 @@ export function useAdminStudentsPage() {
     }
 
     const loadClasses = async () => {
-      try {
-        setSelectedClassId("");
-        setStudents([]);
-        setSearchQuery("");
+      setSelectedClassId("");
+      setStudents([]);
+      setSearchQuery("");
 
-        const response = await adminApi.getClassesBySchool(selectedSchoolId);
-        const classData = response.data;
-        setClasses(classData || []);
-        if (classData && classData.length > 0) {
-          setSelectedClassId(classData[0].class_id);
-        }
-      } catch {
-        setClasses([]);
-      }
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getClassesBySchool(selectedSchoolId)).data,
+        setList: setClasses,
+        setSelectedId: setSelectedClassId,
+        getId: (classItem) => classItem.class_id,
+        onError: () => setClasses([]),
+      });
     };
 
     void loadClasses();
@@ -92,16 +95,13 @@ export function useAdminStudentsPage() {
       return;
     }
 
-    try {
-      setLoadingStudents(true);
-      setError("");
-      const response = await adminApi.getStudentsByClass(selectedClassId);
-      setStudents(response.data || []);
-    } catch (errorValue: unknown) {
-      setError(extractApiErrorMessage(errorValue, "Không thể tải danh sách học sinh"));
-    } finally {
-      setLoadingStudents(false);
-    }
+    await fetchCollectionWithState({
+      fetcher: () => adminApi.getStudentsByClass(selectedClassId),
+      setItems: setStudents,
+      fallbackError: "Không thể tải danh sách học sinh",
+      setLoading: setLoadingStudents,
+      setError,
+    });
   }, [selectedClassId]);
 
   useEffect(() => {
@@ -182,13 +182,13 @@ export function useAdminStudentsPage() {
           : student
       )));
 
-      setRevokeAlert({ isOpen: false, studentId: null });
+      closeRevokeAlert();
     } catch (errorValue: unknown) {
       setCodeError(extractApiErrorMessage(errorValue, "Không thể thu hồi mã"));
     } finally {
       setRevokingCode(null);
     }
-  }, [revokeAlert.studentId]);
+  }, [closeRevokeAlert, revokeAlert.studentId]);
 
   const handleCopy = useCallback((code: string, studentId: string) => {
     void navigator.clipboard.writeText(code);
@@ -241,6 +241,7 @@ export function useAdminStudentsPage() {
     setShowForm,
     setFormData,
     setRevokeAlert,
+    closeRevokeAlert,
     handleCreate,
     handleGenerateCode,
     confirmRevokeCode,

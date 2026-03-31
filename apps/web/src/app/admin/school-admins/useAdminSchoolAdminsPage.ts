@@ -4,10 +4,16 @@ import { adminApi } from "@/lib/api/admin.api";
 import { useAuth } from "@/providers/AuthProvider";
 import { Pagination, School, SchoolAdmin, UserInfo } from "@/types";
 import { extractApiErrorMessage } from "@/lib/api-error";
+import { fetchCollectionWithState } from "@/lib/list-loaders";
 
 type DeleteAlertState = {
   isOpen: boolean;
   adminId: string | null;
+};
+
+const INITIAL_DELETE_ALERT_STATE: DeleteAlertState = {
+  isOpen: false,
+  adminId: null,
 };
 
 export function useAdminSchoolAdminsPage() {
@@ -29,26 +35,25 @@ export function useAdminSchoolAdminsPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteAlert, setDeleteAlert] = useState<DeleteAlertState>({ isOpen: false, adminId: null });
+  const [deleteAlert, setDeleteAlert] = useState<DeleteAlertState>(INITIAL_DELETE_ALERT_STATE);
+
+  const closeDeleteAlert = useCallback(() => {
+    setDeleteAlert(INITIAL_DELETE_ALERT_STATE);
+  }, []);
 
   const fetchAdmins = useCallback(async () => {
     if (role !== "SUPER_ADMIN") {
       return;
     }
 
-    try {
-      setLoading(true);
-      setError("");
-      const response = await adminApi.getSchoolAdmins({ limit: 20, offset: currentOffset });
-      setAdmins(response.data || []);
-      if (response.pagination) {
-        setPagination(response.pagination);
-      }
-    } catch (errorValue: unknown) {
-      setError(extractApiErrorMessage(errorValue, "Không thể tải danh sách"));
-    } finally {
-      setLoading(false);
-    }
+    await fetchCollectionWithState({
+      fetcher: () => adminApi.getSchoolAdmins({ limit: 20, offset: currentOffset }),
+      setItems: setAdmins,
+      fallbackError: "Không thể tải danh sách",
+      setLoading,
+      setError,
+      setPagination: (value) => setPagination(value as Pagination),
+    });
   }, [currentOffset, role]);
 
   useEffect(() => {
@@ -124,9 +129,9 @@ export function useAdminSchoolAdminsPage() {
       setError(extractApiErrorMessage(errorValue, "Không thể xóa"));
     } finally {
       setDeletingId(null);
-      setDeleteAlert({ isOpen: false, adminId: null });
+      closeDeleteAlert();
     }
-  }, [deleteAlert.adminId, fetchAdmins]);
+  }, [closeDeleteAlert, deleteAlert.adminId, fetchAdmins]);
 
   return {
     role,
@@ -150,6 +155,7 @@ export function useAdminSchoolAdminsPage() {
     setSelectedUserId,
     setSuccess,
     setDeleteAlert,
+    closeDeleteAlert,
     handleCreate,
     confirmDelete,
   };

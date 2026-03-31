@@ -3,6 +3,7 @@ import { teacherApi } from "@/lib/api/teacher.api";
 import { AttendanceChangeLog, AttendanceStatus, Class, Student } from "@/types";
 import { extractAttendanceErrorMessage } from "./utils";
 import { useAttendanceTakeMode, UseAttendanceTakeModeResult } from "./useAttendanceTakeMode";
+import { loadListWithDefaultSelection } from "@/lib/list-loaders";
 import {
   useAttendanceHistoryMode,
   UseAttendanceHistoryModeResult,
@@ -158,20 +159,17 @@ export function useTeacherAttendancePage(): UseTeacherAttendancePageResult {
 
   useEffect(() => {
     const loadClasses = async () => {
-      try {
-        const classList = await teacherApi.getMyClasses();
-        setClasses(classList || []);
-        if (classList && classList.length > 0) {
-          setSelectedClassId(classList[0].class_id);
-        }
-      } catch {
-        setError("Không thể tải lớp");
-      } finally {
-        setLoadingClasses(false);
-      }
+      await loadListWithDefaultSelection({
+        fetchList: () => teacherApi.getMyClasses(),
+        setList: setClasses,
+        setSelectedId: setSelectedClassId,
+        getId: (classItem) => classItem.class_id,
+        onError: () => setError("Không thể tải lớp"),
+        onFinally: () => setLoadingClasses(false),
+      });
     };
 
-    loadClasses();
+    void loadClasses();
   }, []);
 
   const fetchStudents = useCallback(async () => {

@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { extractApiErrorRawMessage } from "@/lib/api-error";
+import { AUTH_PAGE_CARD_CLASS, AUTH_PAGE_CONTAINER_CLASS } from "@/components/auth/auth-layout";
 
 export default function ActivateAccountPage() {
   const [token, setToken] = useState("");
@@ -39,8 +40,8 @@ export default function ActivateAccountPage() {
 
   if (success) {
     return (
-      <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
-        <Card className="w-full max-w-md">
+      <div className={AUTH_PAGE_CONTAINER_CLASS}>
+        <Card className={AUTH_PAGE_CARD_CLASS}>
           <CardContent className="flex flex-col items-center py-12">
             <ShieldCheck className="h-16 w-16 text-success" />
             <h2 className="mt-4 text-xl font-semibold">Kích hoạt thành công!</h2>
@@ -55,8 +56,8 @@ export default function ActivateAccountPage() {
   }
 
   return (
-    <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
-      <Card className="w-full max-w-md">
+    <div className={AUTH_PAGE_CONTAINER_CLASS}>
+      <Card className={AUTH_PAGE_CARD_CLASS}>
         <CardHeader className="text-center">
           <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
           <CardTitle className="mt-2 text-xl">Kích hoạt tài khoản</CardTitle>

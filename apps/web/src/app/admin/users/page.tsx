@@ -29,6 +29,12 @@ import { UsersToolbar } from "./components/UsersToolbar";
 import { UsersDesktopTable } from "./components/UsersDesktopTable";
 import { UsersMobileList } from "./components/UsersMobileList";
 
+const INITIAL_AUTH_ACTION_ALERT_STATE = {
+  isOpen: false,
+  userId: null,
+  action: null,
+} as const;
+
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserInfo[]>([]);
@@ -46,7 +52,13 @@ export default function AdminUsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  const [authActionAlert, setAuthActionAlert] = useState<{isOpen: boolean, userId: string | null, action: "lock" | "unlock" | null}>({isOpen: false, userId: null, action: null});
+  const [authActionAlert, setAuthActionAlert] = useState<{isOpen: boolean, userId: string | null, action: "lock" | "unlock" | null}>({
+    ...INITIAL_AUTH_ACTION_ALERT_STATE,
+  });
+
+  const closeAuthActionAlert = useCallback(() => {
+    setAuthActionAlert({ ...INITIAL_AUTH_ACTION_ALERT_STATE });
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -84,7 +96,7 @@ export default function AdminUsersPage() {
       toast.error(extractApiErrorMessage(err) || `Không thể ${authActionAlert.action === "lock" ? "khóa" : "mở khóa"}`);
     } finally {
       setActionLoading(null);
-      setAuthActionAlert({ isOpen: false, userId: null, action: null });
+      closeAuthActionAlert();
     }
   };
 
@@ -225,7 +237,7 @@ export default function AdminUsersPage() {
       {/* Lock/Unlock Confirmation */}
       <ConfirmAlertDialog
         isOpen={authActionAlert.isOpen}
-        onClose={() => setAuthActionAlert({ isOpen: false, userId: null, action: null })}
+        onClose={closeAuthActionAlert}
         onConfirm={confirmAuthAction}
         title={authActionAlert.action === "lock" ? "Xác nhận khóa tài khoản" : "Xác nhận mở khóa tài khoản"}
         description={authActionAlert.action === "lock" ? "Việc khóa tài khoản sẽ ngay lập tức vô hiệu hóa các phiên đăng nhập của người dùng này và ngăn họ truy cập vào hệ thống. Bạn có chắc chắn muốn khóa?" : "Tài khoản sẽ có thể đăng nhập lại bình thường sau khi được mở khóa. Bạn có tiếp tục?"}

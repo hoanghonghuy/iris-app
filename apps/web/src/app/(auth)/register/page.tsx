@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Heart, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { extractApiErrorRawMessage } from "@/lib/api-error";
+import { AUTH_PAGE_CARD_CLASS, AUTH_PAGE_CONTAINER_CLASS } from "@/components/auth/auth-layout";
 
 export default function RegisterParentPage() {
   const [email, setEmail] = useState("");
@@ -83,8 +84,8 @@ export default function RegisterParentPage() {
 
   if (success) {
     return (
-      <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
-        <Card className="w-full max-w-md">
+      <div className={AUTH_PAGE_CONTAINER_CLASS}>
+        <Card className={AUTH_PAGE_CARD_CLASS}>
           <CardContent className="flex flex-col items-center py-12">
             <Heart className="h-16 w-16 text-success" />
             <h2 className="mt-4 text-xl font-semibold">Đăng ký thành công!</h2>
@@ -99,8 +100,8 @@ export default function RegisterParentPage() {
   }
 
   return (
-    <div className="flex w-full items-center justify-center w-full max-w-screen-xl flex justify-center">
-      <Card className="w-full max-w-md">
+    <div className={AUTH_PAGE_CONTAINER_CLASS}>
+      <Card className={AUTH_PAGE_CARD_CLASS}>
         <CardHeader className="text-center">
           <Heart className="mx-auto h-10 w-10 text-muted-foreground" />
           <CardTitle className="mt-2 text-xl">Đăng ký Phụ huynh</CardTitle>

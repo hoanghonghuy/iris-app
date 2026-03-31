@@ -1,14 +1,10 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, HealthLog, Student } from "@/types";
+import { loadListWithDefaultSelection } from "@/lib/list-loaders";
+import { extractApiErrorRawMessage } from "@/lib/api-error";
 
 export type Severity = "normal" | "watch" | "urgent";
-
-function extractErrorMessage(err: unknown): string | undefined {
-  return typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-    ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-    : undefined;
-}
 
 export function useTeacherHealthPage() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -37,17 +33,14 @@ export function useTeacherHealthPage() {
 
   useEffect(() => {
     const loadClasses = async () => {
-      try {
-        const classData = await teacherApi.getMyClasses();
-        setClasses(classData || []);
-        if (classData && classData.length > 0) {
-          setSelectedClassId(classData[0].class_id);
-        }
-      } catch {
-        setError("Không thể tải lớp");
-      } finally {
-        setLoadingClasses(false);
-      }
+      await loadListWithDefaultSelection({
+        fetchList: () => teacherApi.getMyClasses(),
+        setList: setClasses,
+        setSelectedId: setSelectedClassId,
+        getId: (classItem) => classItem.class_id,
+        onError: () => setError("Không thể tải lớp"),
+        onFinally: () => setLoadingClasses(false),
+      });
     };
 
     void loadClasses();
@@ -71,7 +64,7 @@ export function useTeacherHealthPage() {
         setHistoryLogs([]);
       }
     } catch (err: unknown) {
-      setError(extractErrorMessage(err) || "Không thể tải HS");
+      setError(extractApiErrorRawMessage(err) || "Không thể tải HS");
     } finally {
       setLoadingStudents(false);
     }
@@ -97,7 +90,7 @@ export function useTeacherHealthPage() {
       );
       setHistoryLogs(logs || []);
     } catch (err: unknown) {
-      setHistoryError(extractErrorMessage(err) || "Không thể tải lịch sử sức khỏe");
+      setHistoryError(extractApiErrorRawMessage(err) || "Không thể tải lịch sử sức khỏe");
     } finally {
       setLoadingHistory(false);
     }
@@ -132,7 +125,7 @@ export function useTeacherHealthPage() {
       setNote("");
       await fetchHistory();
     } catch (err: unknown) {
-      setFormError(extractErrorMessage(err) || "Lỗi ghi nhận");
+      setFormError(extractApiErrorRawMessage(err) || "Lỗi ghi nhận");
     } finally {
       setSubmitting(false);
     }

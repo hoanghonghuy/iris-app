@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi } from "@/lib/api/admin.api";
 import { Class, Pagination, Parent, School, Student } from "@/types";
 import { extractApiErrorMessage } from "@/lib/api-error";
+import { fetchCollectionWithState, loadListWithDefaultSelection } from "@/lib/list-loaders";
 
 type AssignModalState = {
   isOpen: boolean;
@@ -14,6 +15,19 @@ type UnassignAlertState = {
   parentId: string | null;
   studentId: string | null;
   studentName: string | null;
+};
+
+const INITIAL_ASSIGN_MODAL_STATE: AssignModalState = {
+  isOpen: false,
+  parentId: null,
+  parentName: null,
+};
+
+const INITIAL_UNASSIGN_ALERT_STATE: UnassignAlertState = {
+  isOpen: false,
+  parentId: null,
+  studentId: null,
+  studentName: null,
 };
 
 export function useAdminParentsPage() {
@@ -33,28 +47,26 @@ export function useAdminParentsPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [success, setSuccess] = useState("");
 
-  const [assignModal, setAssignModal] = useState<AssignModalState>({ isOpen: false, parentId: null, parentName: null });
-  const [unassignAlert, setUnassignAlert] = useState<UnassignAlertState>({
-    isOpen: false,
-    parentId: null,
-    studentId: null,
-    studentName: null,
-  });
+  const [assignModal, setAssignModal] = useState<AssignModalState>(INITIAL_ASSIGN_MODAL_STATE);
+  const [unassignAlert, setUnassignAlert] = useState<UnassignAlertState>(INITIAL_UNASSIGN_ALERT_STATE);
+
+  const closeAssignModal = useCallback(() => {
+    setAssignModal(INITIAL_ASSIGN_MODAL_STATE);
+  }, []);
+
+  const closeUnassignAlert = useCallback(() => {
+    setUnassignAlert(INITIAL_UNASSIGN_ALERT_STATE);
+  }, []);
 
   const fetchParents = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await adminApi.getParents({ limit: 20, offset: currentOffset });
-      setParents(response.data || []);
-      if (response.pagination) {
-        setPagination(response.pagination);
-      }
-    } catch (err: unknown) {
-      setError(extractApiErrorMessage(err, "Không thể tải danh sách phụ huynh"));
-    } finally {
-      setLoading(false);
-    }
+    await fetchCollectionWithState({
+      fetcher: () => adminApi.getParents({ limit: 20, offset: currentOffset }),
+      setItems: setParents,
+      fallbackError: "Không thể tải danh sách phụ huynh",
+      setLoading,
+      setError,
+      setPagination: (value) => setPagination(value as Pagination),
+    });
   }, [currentOffset]);
 
   useEffect(() => {
@@ -63,15 +75,12 @@ export function useAdminParentsPage() {
 
   useEffect(() => {
     const loadSchools = async () => {
-      try {
-        const response = await adminApi.getSchools();
-        const schoolData = response.data;
-        setSchools(schoolData || []);
-        if (schoolData && schoolData.length > 0) {
-          setSelectedSchoolId(schoolData[0].school_id);
-        }
-      } catch {
-      }
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getSchools()).data,
+        setList: setSchools,
+        setSelectedId: setSelectedSchoolId,
+        getId: (school) => school.school_id,
+      });
     };
 
     void loadSchools();
@@ -83,20 +92,17 @@ export function useAdminParentsPage() {
     }
 
     const loadClasses = async () => {
-      try {
-        const response = await adminApi.getClassesBySchool(selectedSchoolId);
-        const classData = response.data;
-        setClasses(classData || []);
-
-        if (classData && classData.length > 0) {
-          setSelectedClassId(classData[0].class_id);
-        } else {
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getClassesBySchool(selectedSchoolId)).data,
+        setList: setClasses,
+        setSelectedId: setSelectedClassId,
+        getId: (classItem) => classItem.class_id,
+        onEmpty: () => {
           setSelectedClassId("");
           setStudents([]);
-        }
-      } catch {
-        setClasses([]);
-      }
+        },
+        onError: () => setClasses([]),
+      });
     };
 
     void loadClasses();
@@ -108,19 +114,14 @@ export function useAdminParentsPage() {
     }
 
     const loadStudents = async () => {
-      try {
-        const response = await adminApi.getStudentsByClass(selectedClassId);
-        const studentData = response.data;
-        setStudents(studentData || []);
-
-        if (studentData && studentData.length > 0) {
-          setSelectedStudentId(studentData[0].student_id);
-        } else {
-          setSelectedStudentId("");
-        }
-      } catch {
-        setStudents([]);
-      }
+      await loadListWithDefaultSelection({
+        fetchList: async () => (await adminApi.getStudentsByClass(selectedClassId)).data,
+        setList: setStudents,
+        setSelectedId: setSelectedStudentId,
+        getId: (student) => student.student_id,
+        onEmpty: () => setSelectedStudentId(""),
+        onError: () => setStudents([]),
+      });
     };
 
     void loadStudents();
@@ -137,14 +138,14 @@ export function useAdminParentsPage() {
       await adminApi.assignParentToStudent(assignModal.parentId, selectedStudentId);
       const studentName = students.find((student) => student.student_id === selectedStudentId)?.full_name || "";
       setSuccess(`Đã gán phụ huynh cho ${studentName}`);
-      setAssignModal({ isOpen: false, parentId: null, parentName: null });
+      closeAssignModal();
       await fetchParents();
     } catch (err: unknown) {
       setError(extractApiErrorMessage(err, "Không thể gán"));
     } finally {
       setActionLoading(false);
     }
-  }, [assignModal.parentId, fetchParents, selectedStudentId, students]);
+  }, [assignModal.parentId, closeAssignModal, fetchParents, selectedStudentId, students]);
 
   const confirmUnassign = useCallback(async () => {
     if (!unassignAlert.parentId || !unassignAlert.studentId) {
@@ -156,14 +157,14 @@ export function useAdminParentsPage() {
       setSuccess("");
       await adminApi.unassignParentFromStudent(unassignAlert.parentId, unassignAlert.studentId);
       setSuccess(`Đã hủy gán học sinh ${unassignAlert.studentName}`);
-      setUnassignAlert({ isOpen: false, parentId: null, studentId: null, studentName: null });
+      closeUnassignAlert();
       await fetchParents();
     } catch (err: unknown) {
       setError(extractApiErrorMessage(err, "Không thể hủy gán"));
     } finally {
       setActionLoading(false);
     }
-  }, [fetchParents, unassignAlert.parentId, unassignAlert.studentId, unassignAlert.studentName]);
+  }, [closeUnassignAlert, fetchParents, unassignAlert.parentId, unassignAlert.studentId, unassignAlert.studentName]);
 
   const filteredParents = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -203,6 +204,8 @@ export function useAdminParentsPage() {
     setSelectedStudentId,
     setAssignModal,
     setUnassignAlert,
+    closeAssignModal,
+    closeUnassignAlert,
     handleAssign,
     confirmUnassign,
   };
