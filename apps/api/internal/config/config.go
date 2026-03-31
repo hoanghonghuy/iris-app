@@ -8,17 +8,17 @@ import (
 )
 
 type Config struct {
-	DatabaseURL               string
-	DBMaxConns                int32
-	JWTSecret                 string
-	JWTTTLMinutes             int
-	GoogleLoginEnabled        bool
-	GoogleClientID            string
+	DatabaseURL        string
+	DBMaxConns         int32
+	JWTSecret          string
+	JWTTTLMinutes      int
+	GoogleLoginEnabled bool
+	GoogleClientID     string
 	GoogleHostedDomain string
 	Port               string
 	AllowedOrigins     []string // CORS + WS origin allowlist
 
-	// SMTP (empty = dev mode, uses LogEmailSender)
+	// SMTP (empty = dev mode, dùng LogEmailSender)
 	SMTPHost    string
 	SMTPPort    string
 	SMTPUser    string
@@ -26,7 +26,7 @@ type Config struct {
 	FrontendURL string
 }
 
-// Load reads configuration from environment variables.
+// Load đọc cấu hình từ các biến môi trường.
 func Load() (Config, error) {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -66,20 +66,20 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		DatabaseURL:               databaseURL,
-		DBMaxConns:                maxConns,
-		JWTSecret:                 jwtSecret,
-		JWTTTLMinutes:             ttl,
-		GoogleLoginEnabled:        parseBoolEnv("GOOGLE_LOGIN_ENABLED", false),
-		GoogleClientID:            os.Getenv("GOOGLE_CLIENT_ID"),
-		GoogleHostedDomain:        os.Getenv("GOOGLE_HOSTED_DOMAIN"),
-		Port:                      port,
-		AllowedOrigins: allowedOrigins,
-		SMTPHost:                  os.Getenv("SMTP_HOST"),
-		SMTPPort:                  os.Getenv("SMTP_PORT"),
-		SMTPUser:                  os.Getenv("SMTP_USER"),
-		SMTPPass:                  os.Getenv("SMTP_PASS"),
-		FrontendURL:               os.Getenv("FRONTEND_URL"),
+		DatabaseURL:        databaseURL,
+		DBMaxConns:         maxConns,
+		JWTSecret:          jwtSecret,
+		JWTTTLMinutes:      ttl,
+		GoogleLoginEnabled: parseBoolEnv("GOOGLE_LOGIN_ENABLED", false),
+		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		GoogleHostedDomain: os.Getenv("GOOGLE_HOSTED_DOMAIN"),
+		Port:               port,
+		AllowedOrigins:     allowedOrigins,
+		SMTPHost:           os.Getenv("SMTP_HOST"),
+		SMTPPort:           os.Getenv("SMTP_PORT"),
+		SMTPUser:           os.Getenv("SMTP_USER"),
+		SMTPPass:           os.Getenv("SMTP_PASS"),
+		FrontendURL:        os.Getenv("FRONTEND_URL"),
 	}, nil
 }
 

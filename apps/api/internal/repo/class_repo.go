@@ -56,7 +56,7 @@ func (r *ClassRepo) List(ctx context.Context, schoolID uuid.UUID, limit, offset 
 	return classes, total, rows.Err()
 }
 
-// GetByClassID lấy thông tin lớp học theo class_id (dùng cho cross-table validation)
+// GetByClassID lấy thông tin lớp học theo class_id
 func (r *ClassRepo) GetByClassID(ctx context.Context, classID uuid.UUID) (*model.Class, error) {
 	const q = `
 		SELECT class_id, school_id, name, school_year

@@ -49,7 +49,7 @@ func (r *ParentScopeRepo) ListMyChildren(ctx context.Context, parentUserID uuid.
 	return students, rows.Err()
 }
 
-// ListMyChildClassPosts liệt kê bài đăng của lớp con mình đang học
+// ListMyChildClassPosts liệt kê bài đăng của lớp con của phụ huynh đang học
 func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
@@ -116,7 +116,7 @@ func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserI
 	return posts, total, rows.Err()
 }
 
-// ListMyChildStudentPosts liệt kê bài đăng riêng của con mình (student scope)
+// ListMyChildStudentPosts liệt kê bài đăng riêng của con phụ huynh (student scope)
 func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
@@ -182,7 +182,7 @@ func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUse
 	return posts, total, rows.Err()
 }
 
-// ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con mình (cả class và student scope)
+// ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con phụ huynh (cả class và student scope)
 func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `
@@ -251,6 +251,7 @@ func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID,
 	return posts, total, rows.Err()
 }
 
+// GetMyFeed lấy tất cả bài đăng liên quan đến con phụ huynh, sắp xếp theo thời gian, có phân trang.
 func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	const q = `

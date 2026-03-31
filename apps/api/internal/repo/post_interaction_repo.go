@@ -19,6 +19,8 @@ func NewPostInteractionRepo(pool *pgxpool.Pool) *PostInteractionRepo {
 	return &PostInteractionRepo{pool: pool}
 }
 
+// TeacherCanAccessPost kiểm tra xem giáo viên có quyền truy cập bài đăng không
+// dựa trên phạm vi của bài đăng và mối quan hệ giữa giáo viên và lớp học.
 func (r *PostInteractionRepo) TeacherCanAccessPost(ctx context.Context, teacherUserID, postID uuid.UUID) (bool, error) {
 	const q = `
 		SELECT EXISTS (
@@ -52,6 +54,8 @@ func (r *PostInteractionRepo) TeacherCanAccessPost(ctx context.Context, teacherU
 	return ok, nil
 }
 
+// ParentCanAccessPost kiểm tra xem phụ huynh có quyền truy cập bài đăng không
+// dựa trên phạm vi của bài đăng và mối quan hệ giữa phụ huynh và học sinh.
 func (r *PostInteractionRepo) ParentCanAccessPost(ctx context.Context, parentUserID, postID uuid.UUID) (bool, error) {
 	const q = `
 		SELECT EXISTS (
@@ -93,6 +97,8 @@ func (r *PostInteractionRepo) ParentCanAccessPost(ctx context.Context, parentUse
 	return ok, nil
 }
 
+// ToggleLike thêm hoặc xóa like của user cho bài đăng.
+// Trả về trạng thái like mới và tổng số like sau khi cập nhật.
 func (r *PostInteractionRepo) ToggleLike(ctx context.Context, userID, postID uuid.UUID) (bool, int, error) {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -104,12 +110,14 @@ func (r *PostInteractionRepo) ToggleLike(ctx context.Context, userID, postID uui
 		DELETE FROM post_interactions
 		WHERE post_id = $1 AND user_id = $2 AND action_type = 'like'
 	`
+	// xóa like cũ
 	deleteTag, err := tx.Exec(ctx, qDelete, postID, userID)
 	if err != nil {
 		return false, 0, err
 	}
 
 	liked := false
+	// nếu không có like nào bị xóa (tức là user chưa like trước đó), thì thêm like mới
 	if deleteTag.RowsAffected() == 0 {
 		const qInsert = `
 			INSERT INTO post_interactions (post_id, user_id, action_type)
@@ -128,6 +136,7 @@ func (r *PostInteractionRepo) ToggleLike(ctx context.Context, userID, postID uui
 		WHERE post_id = $1 AND action_type = 'like'
 	`
 	var likeCount int
+	// đếm lại tổng số like sau khi đã thêm hoặc xóa
 	if err := tx.QueryRow(ctx, qCount, postID).Scan(&likeCount); err != nil {
 		return false, 0, err
 	}
@@ -139,6 +148,7 @@ func (r *PostInteractionRepo) ToggleLike(ctx context.Context, userID, postID uui
 	return liked, likeCount, nil
 }
 
+// AddComment thêm một bình luận mới cho bài đăng.
 func (r *PostInteractionRepo) AddComment(ctx context.Context, userID, postID uuid.UUID, content string) (model.PostComment, error) {
 	const q = `
 		WITH inserted AS (
@@ -171,6 +181,7 @@ func (r *PostInteractionRepo) AddComment(ctx context.Context, userID, postID uui
 	return out, nil
 }
 
+// ListComments lấy danh sách bình luận của bài đăng, sắp xếp theo thời gian tạo, có phân trang.
 func (r *PostInteractionRepo) ListComments(ctx context.Context, postID uuid.UUID, limit, offset int) ([]model.PostComment, int, error) {
 	const q = `
 		SELECT c.comment_id, c.post_id, c.author_user_id,
@@ -213,6 +224,7 @@ func (r *PostInteractionRepo) ListComments(ctx context.Context, postID uuid.UUID
 	return items, total, rows.Err()
 }
 
+// AddShare thêm một lượt chia sẻ mới cho bài đăng và trả về tổng số lượt chia sẻ sau khi cập nhật.
 func (r *PostInteractionRepo) AddShare(ctx context.Context, userID, postID uuid.UUID) (int, error) {
 	const qInsert = `
 		INSERT INTO post_interactions (post_id, user_id, action_type)
@@ -235,6 +247,7 @@ func (r *PostInteractionRepo) AddShare(ctx context.Context, userID, postID uuid.
 	return shareCount, nil
 }
 
+// CountComments đếm tổng số bình luận của một bài đăng.
 func (r *PostInteractionRepo) CountComments(ctx context.Context, postID uuid.UUID) (int, error) {
 	const q = `
 		SELECT COUNT(*)
@@ -248,6 +261,7 @@ func (r *PostInteractionRepo) CountComments(ctx context.Context, postID uuid.UUI
 	return count, nil
 }
 
+// EnsurePostExists kiểm tra xem bài đăng có tồn tại không.
 func (r *PostInteractionRepo) EnsurePostExists(ctx context.Context, postID uuid.UUID) error {
 	const q = `
 		SELECT 1

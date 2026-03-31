@@ -19,6 +19,7 @@ func NewParentRepo(pool *pgxpool.Pool) *ParentRepo {
 	}
 }
 
+// List lấy danh sách phụ huynh, có thể lọc theo schoolID (nếu không nil).
 func (r *ParentRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.Parent, int, error) {
 	const qAll = `
 		SELECT p.parent_id, p.user_id, u.email, p.full_name, COALESCE(p.phone,''), p.school_id,

@@ -15,7 +15,7 @@ type Student struct {
 	DOB              time.Time `json:"dob"`
 	Gender           string    `json:"gender"`
 
-	// Active parent code information (added from join)
+	// Active parent code information (join từ bảng student_parent_codes )
 	ActiveParentCode *string    `json:"active_parent_code,omitempty"`
 	CodeExpiresAt    *time.Time `json:"code_expires_at,omitempty"`
 	CodeUsageCount   *int       `json:"code_usage_count,omitempty"`

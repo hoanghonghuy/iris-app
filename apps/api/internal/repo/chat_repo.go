@@ -8,12 +8,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// ChatRepo xử lý truy vấn database cho hệ thống chat
 type ChatRepo struct {
 	pool *pgxpool.Pool
 }
 
-// NewChatRepo tạo mới ChatRepo
 func NewChatRepo(pool *pgxpool.Pool) *ChatRepo {
 	return &ChatRepo{pool: pool}
 }
@@ -264,7 +262,7 @@ func (r *ChatRepo) SearchUsersGlobal(ctx context.Context, keyword string, limit 
 	return parts, rows.Err()
 }
 
-// SearchUsersForSchoolAdmin tìm kiếm Giáo viên và Phụ huynh trong cùng trường
+// SearchUsersForSchoolAdmin tìm kiếm giáo viên và phụ huynh trong cùng trường
 func (r *ChatRepo) SearchUsersForSchoolAdmin(ctx context.Context, adminID uuid.UUID, keyword string, limit int) ([]model.ParticipantInfo, error) {
 	const q = `
 		SELECT u.user_id, u.email,
@@ -306,7 +304,7 @@ func (r *ChatRepo) SearchUsersForSchoolAdmin(ctx context.Context, adminID uuid.U
 	return parts, rows.Err()
 }
 
-// SearchUsersForTeacher tìm kiếm Phụ huynh (của hs mình dạy), Giáo viên & Admin cùng trường
+// SearchUsersForTeacher tìm kiếm phụ huynh (của hs mà gv hiện tại dạy), giáo viên & admin cùng trường
 func (r *ChatRepo) SearchUsersForTeacher(ctx context.Context, teacherID uuid.UUID, keyword string, limit int) ([]model.ParticipantInfo, error) {
 	const q = `
 		SELECT u.user_id, u.email,
@@ -359,7 +357,7 @@ func (r *ChatRepo) SearchUsersForTeacher(ctx context.Context, teacherID uuid.UUI
 	return parts, rows.Err()
 }
 
-// SearchUsersForParent tìm kiếm Giáo viên (dạy con mình) & Admin cùng trường
+// SearchUsersForParent tìm kiếm giáo viên (dạy con của parent hiện tại) & admin cùng trường
 func (r *ChatRepo) SearchUsersForParent(ctx context.Context, parentID uuid.UUID, keyword string, limit int) ([]model.ParticipantInfo, error) {
 	const q = `
 		SELECT u.user_id, u.email,

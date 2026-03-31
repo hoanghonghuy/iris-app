@@ -62,7 +62,7 @@ func (r *ParentCodeRepo) FindByCode(ctx context.Context, code string) (*model.St
 	return info, err
 }
 
-// IncrementUsage tăng usage_count (dùng nội bộ khi đã biết còn slot)
+// IncrementUsage tăng số lần sử dụng mà không kiểm tra max_usage hay expires_at. Chỉ sử dụng nội bộ khi đã xác nhận điều kiện.
 func (r *ParentCodeRepo) IncrementUsage(ctx context.Context, code string) error {
 	const q = `
 		UPDATE student_parent_codes
@@ -74,7 +74,7 @@ func (r *ParentCodeRepo) IncrementUsage(ctx context.Context, code string) error 
 }
 
 // IncrementUsageIfNotMaxed tăng usage_count chỉ khi chưa đạt giới hạn.
-// Trả về ErrParentCodeMaxUsageReached nếu đã full (atomic — tránh race condition).
+// Trả về ErrNoRowsUpdated nếu đã full
 func (r *ParentCodeRepo) IncrementUsageIfNotMaxed(ctx context.Context, code string) error {
 	const q = `
 		UPDATE student_parent_codes
@@ -93,6 +93,7 @@ func (r *ParentCodeRepo) IncrementUsageIfNotMaxed(ctx context.Context, code stri
 	return nil
 }
 
+// RegisterParentTxParams chứa các tham số cần thiết để đăng ký tài khoản Parent trong transaction.
 type RegisterParentTxParams struct {
 	UserID       uuid.UUID
 	Email        string
@@ -107,9 +108,9 @@ type RegisterParentTxParams struct {
 
 // RegisterParentTx thực thi toàn bộ luồng đăng ký tài khoản Parent trong một transaction.
 // Bao gồm: Tạo User, Assign Role PARENT, Tạo Parent, Link StudentParent,
-// Set Google Sub (nếu có), và Increment Usage Code.
+// Set Google Sub (nếu có), và tăng Usage Code.
 func (r *ParentCodeRepo) RegisterParentTx(ctx context.Context, p RegisterParentTxParams) (uuid.UUID, error) {
-	tx, err := r.pool.Begin(ctx)
+	tx, err := r.pool.Begin(ctx) // tx: transaction
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -167,7 +168,7 @@ func (r *ParentCodeRepo) RegisterParentTx(ctx context.Context, p RegisterParentT
 		}
 	}
 
-	// 6. Tăng usage count một cách atomic và kiểm tra max_usage
+	// 6. Tăng usage count và kiểm tra max_usage trong một thao tác duy nhất (đảm bảo an toàn khi nhiều người dùng dùng chung mã)
 	const qInc = `
 		UPDATE student_parent_codes
 		SET usage_count = usage_count + 1
@@ -180,7 +181,7 @@ func (r *ParentCodeRepo) RegisterParentTx(ctx context.Context, p RegisterParentT
 		return uuid.Nil, err
 	}
 	if tag.RowsAffected() == 0 {
-		return uuid.Nil, ErrNoRowsUpdated // Parent code expired or max usage reached
+		return uuid.Nil, ErrNoRowsUpdated // Parent code hết hạn hoặc đã đạt max usage
 	}
 
 	// Commit transaction
