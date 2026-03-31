@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { Heart, Loader2, Phone, Mail, Link2, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAdminParentsPage } from "./useAdminParentsPage";
@@ -85,9 +86,9 @@ export default function AdminParentsPage() {
         </div>
       )}
 
-      {/* Desktop Table */}
-      {!loading && filteredParents.length > 0 && (
-        <div className="hidden md:block">
+      <ResponsiveSplitView
+        show={!loading && filteredParents.length > 0}
+        desktop={(
           <Card><CardContent className="p-0">
             <table className="w-full">
               <thead>
@@ -114,7 +115,7 @@ export default function AdminParentsPage() {
                           {p.children.map(c => (
                             <Badge key={c.student_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
                               {c.full_name}
-                              <button 
+                              <button
                                 onClick={() => setUnassignAlert({ isOpen: true, parentId: p.parent_id, studentId: c.student_id, studentName: c.full_name })}
                                 className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                                 aria-label="Remove"
@@ -129,64 +130,63 @@ export default function AdminParentsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right align-middle">
-                        <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, parentId: p.parent_id, parentName: p.full_name })}>
-                          <Link2 className="mr-1 h-4 w-4" /> Gán HS
-                        </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, parentId: p.parent_id, parentName: p.full_name })}>
+                        <Link2 className="mr-1 h-4 w-4" /> Gán HS
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </CardContent></Card>
-        </div>
-      )}
+        )}
+        mobileClassName="space-y-3 md:hidden"
+        mobile={(
+          <>
+            {filteredParents.map((p) => (
+              <Card key={p.parent_id}>
+                <CardContent className="py-4">
+                  <p className="font-medium">{p.full_name}</p>
+                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {p.email}</p>
+                    {p.phone && <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {p.phone}</p>}
+                  </div>
 
-      {/* Mobile Cards */}
-      {!loading && filteredParents.length > 0 && (
-        <div className="space-y-3 md:hidden">
-          {filteredParents.map((p) => (
-            <Card key={p.parent_id}>
-              <CardContent className="py-4">
-                <p className="font-medium">{p.full_name}</p>
-                <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                  <p className="flex items-center gap-2"><Mail className="h-3 w-3" /> {p.email}</p>
-                  {p.phone && <p className="flex items-center gap-2"><Phone className="h-3 w-3" /> {p.phone}</p>}
-                </div>
+                  <div className="mt-4 border-t border-dashed pt-3">
+                    <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Học sinh thuộc quản lý</p>
+                    {p.children && p.children.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {p.children.map(c => (
+                          <Badge key={c.student_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
+                            {c.full_name}
+                            <button
+                              onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); setUnassignAlert({ isOpen: true, parentId: p.parent_id, studentId: c.student_id, studentName: c.full_name }); }}
+                              className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
+                              aria-label="Remove child"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground italic">
+                        Chưa ghép học sinh
+                      </div>
+                    )}
+                  </div>
 
-                <div className="mt-4 border-t border-dashed pt-3">
-                  <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Học sinh thuộc quản lý</p>
-                  {p.children && p.children.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {p.children.map(c => (
-                        <Badge key={c.student_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
-                          {c.full_name}
-                          <button 
-                            onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.preventDefault(); setUnassignAlert({ isOpen: true, parentId: p.parent_id, studentId: c.student_id, studentName: c.full_name }); }}
-                            className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
-                            aria-label="Remove child"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground italic">
-                      Chưa ghép học sinh
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-border/60 flex items-center justify-start">
+                  <div className="mt-4 pt-4 border-t border-border/60 flex items-center justify-start">
                     <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, parentId: p.parent_id, parentName: p.full_name })}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán học sinh
                     </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
+      />
 
       {/* Pagination */}
       {!loading && parents.length > 0 && (

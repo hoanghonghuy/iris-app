@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { toast } from "sonner";
 import { School as SchoolIcon, Plus, X, Loader2, MapPin } from "lucide-react";
 import { extractApiErrorMessage } from "@/lib/api-error";
@@ -148,17 +149,11 @@ export default function AdminSchoolsPage() {
         </div>
       )}
 
-      {/* Loading State */}
-      {loading && (
-        <>
-          <div className="hidden md:block">
-            <TableSkeleton columns={2} rows={5} />
-          </div>
-          <div className="md:hidden">
-            <CardSkeleton cards={3} />
-          </div>
-        </>
-      )}
+      <ResponsiveSplitView
+        show={loading}
+        desktop={<TableSkeleton columns={2} rows={5} />}
+        mobile={<CardSkeleton cards={3} />}
+      />
 
       {/* Empty State */}
       {!loading && !error && schools.length === 0 && (
@@ -174,9 +169,9 @@ export default function AdminSchoolsPage() {
         />
       )}
 
-      {/* Desktop Table (md+) */}
-      {!loading && schools.length > 0 && (
-        <div className="hidden md:block">
+      <ResponsiveSplitView
+        show={!loading && schools.length > 0}
+        desktop={(
           <Card>
             <CardContent className="p-0">
               <table className="w-full">
@@ -199,30 +194,29 @@ export default function AdminSchoolsPage() {
               </table>
             </CardContent>
           </Card>
-        </div>
-      )}
-
-      {/* Mobile Card List (<md) */}
-      {!loading && schools.length > 0 && (
-        <div className="space-y-3 md:hidden">
-          {schools.map((school) => (
-            <Card key={school.school_id}>
-              <CardContent className="flex items-start gap-3 py-4">
-                <SchoolIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{school.name}</p>
-                  {school.address && (
-                    <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {school.address}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        )}
+        mobileClassName="space-y-3 md:hidden"
+        mobile={(
+          <>
+            {schools.map((school) => (
+              <Card key={school.school_id}>
+                <CardContent className="flex items-start gap-3 py-4">
+                  <SchoolIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{school.name}</p>
+                    {school.address && (
+                      <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        {school.address}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
+      />
 
       {/* Pagination */}
       {!loading && schools.length > 0 && (

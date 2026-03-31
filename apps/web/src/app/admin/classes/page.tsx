@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { GraduationCap, Plus, X, Loader2, Calendar, AlertCircle } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { extractApiErrorMessage } from "@/lib/api-error";
@@ -145,9 +146,9 @@ export default function AdminClassesPage() {
         </CardContent></Card>
       )}
 
-      {/* Desktop Table */}
-      {!loadingClasses && classes.length > 0 && (
-        <div className="hidden md:block">
+      <ResponsiveSplitView
+        show={!loadingClasses && classes.length > 0}
+        desktop={(
           <Card><CardContent className="p-0">
             <table className="w-full">
               <thead>
@@ -166,28 +167,27 @@ export default function AdminClassesPage() {
               </tbody>
             </table>
           </CardContent></Card>
-        </div>
-      )}
-
-      {/* Mobile Cards */}
-      {!loadingClasses && classes.length > 0 && (
-        <div className="space-y-3 md:hidden">
-          {classes.map((cls) => (
-            <Card key={cls.class_id}>
-              <CardContent className="flex items-start gap-3 py-4">
-                <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{cls.name}</p>
-                  <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <Badge variant="secondary">{cls.school_year}</Badge>
+        )}
+        mobileClassName="space-y-3 md:hidden"
+        mobile={(
+          <>
+            {classes.map((cls) => (
+              <Card key={cls.class_id}>
+                <CardContent className="flex items-start gap-3 py-4">
+                  <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">{cls.name}</p>
+                    <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      <Badge variant="secondary">{cls.school_year}</Badge>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
+      />
     </div>
   );
 }

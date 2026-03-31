@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useAdminSchoolAdminsPage } from "./useAdminSchoolAdminsPage";
 
@@ -103,9 +104,9 @@ export default function AdminSchoolAdminsPage() {
         </CardContent></Card>
       )}
 
-      {/* Desktop Table */}
-      {!loading && admins.length > 0 && (
-        <div className="hidden md:block">
+      <ResponsiveSplitView
+        show={!loading && admins.length > 0}
+        desktop={(
           <Card><CardContent className="p-0">
             <table className="w-full">
               <thead>
@@ -130,29 +131,28 @@ export default function AdminSchoolAdminsPage() {
               </tbody>
             </table>
           </CardContent></Card>
-        </div>
-      )}
-
-      {/* Mobile Cards */}
-      {!loading && admins.length > 0 && (
-        <div className="space-y-3 md:hidden">
-          {admins.map((a) => (
-            <Card key={getAdminId(a)}>
-              <CardContent className="py-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4 text-muted-foreground" /> {a.email || a.user_id}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{a.school_name || a.school_id}</p>
+        )}
+        mobileClassName="space-y-3 md:hidden"
+        mobile={(
+          <>
+            {admins.map((a) => (
+              <Card key={getAdminId(a)}>
+                <CardContent className="py-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="flex items-center gap-2 font-medium"><Mail className="h-4 w-4 text-muted-foreground" /> {a.email || a.user_id}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{a.school_name || a.school_id}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: getAdminId(a) })}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: getAdminId(a) })}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
+      />
 
       {/* Pagination */}
       {!loading && admins.length > 0 && (

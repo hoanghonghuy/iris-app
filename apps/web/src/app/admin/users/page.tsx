@@ -15,6 +15,7 @@ import { TableSkeleton } from "@/components/shared/TableSkeleton";
 import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { toast } from "sonner";
 import { Plus, UserCog, X } from "lucide-react";
 import {
@@ -164,16 +165,11 @@ export default function AdminUsersPage() {
         />
       )}
 
-      {loading && (
-        <>
-          <div className="hidden md:block">
-            <TableSkeleton columns={4} rows={10} />
-          </div>
-          <div className="md:hidden">
-            <CardSkeleton cards={5} />
-          </div>
-        </>
-      )}
+      <ResponsiveSplitView
+        show={loading}
+        desktop={<TableSkeleton columns={4} rows={10} />}
+        mobile={<CardSkeleton cards={5} />}
+      />
 
       {!loading && users.length === 0 && roleFilter === "ALL" && !error && (
         <EmptyState
@@ -201,33 +197,33 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      {/* Desktop Table */}
-      {!loading && filteredUsers.length > 0 && (
-        <UsersDesktopTable
-          users={filteredUsers}
-          actionLoading={actionLoading}
-          currentUserId={currentUser?.user_id}
-          roleLabels={USER_ROLE_LABELS}
-          statusLabels={USER_STATUS_LABEL}
-          statusVariants={USER_STATUS_VARIANT}
-          onRequestLock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "lock" })}
-          onRequestUnlock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "unlock" })}
-        />
-      )}
-
-      {/* Mobile Cards */}
-      {!loading && filteredUsers.length > 0 && (
-        <UsersMobileList
-          users={filteredUsers}
-          actionLoading={actionLoading}
-          currentUserId={currentUser?.user_id}
-          roleLabels={USER_ROLE_LABELS}
-          statusLabels={USER_STATUS_LABEL}
-          statusVariants={USER_STATUS_VARIANT}
-          onRequestLock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "lock" })}
-          onRequestUnlock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "unlock" })}
-        />
-      )}
+      <ResponsiveSplitView
+        show={!loading && filteredUsers.length > 0}
+        desktop={(
+          <UsersDesktopTable
+            users={filteredUsers}
+            actionLoading={actionLoading}
+            currentUserId={currentUser?.user_id}
+            roleLabels={USER_ROLE_LABELS}
+            statusLabels={USER_STATUS_LABEL}
+            statusVariants={USER_STATUS_VARIANT}
+            onRequestLock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "lock" })}
+            onRequestUnlock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "unlock" })}
+          />
+        )}
+        mobile={(
+          <UsersMobileList
+            users={filteredUsers}
+            actionLoading={actionLoading}
+            currentUserId={currentUser?.user_id}
+            roleLabels={USER_ROLE_LABELS}
+            statusLabels={USER_STATUS_LABEL}
+            statusVariants={USER_STATUS_VARIANT}
+            onRequestLock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "lock" })}
+            onRequestUnlock={(userId) => setAuthActionAlert({ isOpen: true, userId, action: "unlock" })}
+          />
+        )}
+      />
 
       {/* Pagination */}
       {!loading && users.length > 0 && (

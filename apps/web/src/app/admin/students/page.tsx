@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import {
   Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
 } from "lucide-react";
@@ -184,9 +185,9 @@ export default function AdminStudentsPage() {
         </div>
       )}
 
-      {/* Desktop Table */}
-      {!loadingStudents && filteredStudents.length > 0 && (
-        <div className="hidden md:block">
+      <ResponsiveSplitView
+        show={!loadingStudents && filteredStudents.length > 0}
+        desktop={(
           <Card><CardContent className="p-0">
             <table className="w-full">
               <thead>
@@ -210,16 +211,16 @@ export default function AdminStudentsPage() {
                     <td className="px-6 py-4 text-right">
                       {s.active_parent_code ? (
                         <div className="flex flex-col items-end gap-1">
-                           <div className="flex items-center gap-1">
-                              <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{s.active_parent_code}</code>
-                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
-                                {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
-                                {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                              </Button>
-                           </div>
-                           <span className={`text-[10px] ${getDaysLeft(s.code_expires_at) === 'Hết hạn' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{getDaysLeft(s.code_expires_at)}</span>
+                          <div className="flex items-center gap-1">
+                            <code className="rounded bg-muted px-2 py-0.5 text-xs font-mono">{s.active_parent_code}</code>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
+                              {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
+                              {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                            </Button>
+                          </div>
+                          <span className={`text-[10px] ${getDaysLeft(s.code_expires_at) === 'Hết hạn' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{getDaysLeft(s.code_expires_at)}</span>
                         </div>
                       ) : (
                         <Button variant="ghost" size="sm" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
@@ -232,52 +233,51 @@ export default function AdminStudentsPage() {
               </tbody>
             </table>
           </CardContent></Card>
-        </div>
-      )}
-
-      {/* Mobile Cards */}
-      {!loadingStudents && filteredStudents.length > 0 && (
-        <div className="space-y-3 md:hidden">
-          {filteredStudents.map((s) => (
-            <Card key={s.student_id}>
-              <CardContent className="flex items-start gap-3 py-4">
-                <User className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">
-                    <Link href={`/admin/students/${s.student_id}`} className="hover:text-primary hover:underline transition-colors">
-                      {s.full_name}
-                    </Link>
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {s.dob}</span>
-                    <Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge>
-                  </div>
-                  {s.active_parent_code ? (
-                    <div className="mt-2 flex items-center justify-between gap-1 w-full bg-muted/50 p-2 rounded-md">
-                      <div>
-                        <code className="rounded bg-background px-2 py-0.5 text-sm font-mono tracking-wider shadow-sm">{s.active_parent_code}</code>
-                        <div className={`text-[10px] mt-1 ${getDaysLeft(s.code_expires_at) === 'Hết hạn' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{getDaysLeft(s.code_expires_at)}</div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button variant="secondary" size="sm" className="h-8 shadow-sm" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
-                          {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
-                          {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                        </Button>
-                      </div>
+        )}
+        mobileClassName="space-y-3 md:hidden"
+        mobile={(
+          <>
+            {filteredStudents.map((s) => (
+              <Card key={s.student_id}>
+                <CardContent className="flex items-start gap-3 py-4">
+                  <User className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium">
+                      <Link href={`/admin/students/${s.student_id}`} className="hover:text-primary hover:underline transition-colors">
+                        {s.full_name}
+                      </Link>
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {s.dob}</span>
+                      <Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge>
                     </div>
-                  ) : (
-                    <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
-                      {generatingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <KeyRound className="mr-2 h-3 w-3" />} Tạo mã PH
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+                    {s.active_parent_code ? (
+                      <div className="mt-2 flex items-center justify-between gap-1 w-full bg-muted/50 p-2 rounded-md">
+                        <div>
+                          <code className="rounded bg-background px-2 py-0.5 text-sm font-mono tracking-wider shadow-sm">{s.active_parent_code}</code>
+                          <div className={`text-[10px] mt-1 ${getDaysLeft(s.code_expires_at) === 'Hết hạn' ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>{getDaysLeft(s.code_expires_at)}</div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button variant="secondary" size="sm" className="h-8 shadow-sm" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
+                            {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
+                            {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button variant="secondary" size="sm" className="mt-3 w-full" onClick={() => handleGenerateCode(s.student_id)} disabled={generatingCode === s.student_id}>
+                        {generatingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <KeyRound className="mr-2 h-3 w-3" />} Tạo mã PH
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        )}
+      />
 
       {/* Revoke Code Alert */}
       <ConfirmAlertDialog
