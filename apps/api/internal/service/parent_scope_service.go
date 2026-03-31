@@ -38,7 +38,7 @@ func (s *ParentScopeService) ListMyChildren(ctx context.Context, parentUserID uu
 	return students, nil
 }
 
-// ListMyChildClassPosts liệt kê bài đăng của lớp con mình đang học
+// ListMyChildClassPosts liệt kê bài đăng của lớp con của phụ huynh đang học
 func (s *ParentScopeService) ListMyChildClassPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	// Validate parentUserID
@@ -76,7 +76,7 @@ func (s *ParentScopeService) ListMyChildClassPosts(ctx context.Context, parentUs
 	return posts, total, nil
 }
 
-// ListMyChildStudentPosts liệt kê bài đăng riêng của con mình (student scope)
+// ListMyChildStudentPosts liệt kê bài đăng riêng của con phụ huynh (student scope)
 func (s *ParentScopeService) ListMyChildStudentPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	// Validate parentUserID
@@ -114,7 +114,7 @@ func (s *ParentScopeService) ListMyChildStudentPosts(ctx context.Context, parent
 	return posts, total, nil
 }
 
-// ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con mình (cả class và student scope)
+// ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con của phụ huynh (cả class và student scope)
 func (s *ParentScopeService) ListAllMyChildPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
 	// Validate parentUserID

@@ -75,9 +75,6 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*Login
 }
 
 // LoginWithGoogleToken xử lý đăng nhập bằng Google ID token.
-// Chính sách phase 1:
-// - Chỉ user đã tồn tại local
-// - Nếu user chưa liên kết Google, phải xác nhận mật khẩu local trước khi link
 func (s *AuthService) LoginWithGoogleToken(ctx context.Context, googleIDToken, password string) (*LoginResponse, error) {
 	if !s.googleEnabled || s.googleVerifier == nil {
 		return nil, ErrGoogleLoginDisabled
@@ -91,7 +88,7 @@ func (s *AuthService) LoginWithGoogleToken(ctx context.Context, googleIDToken, p
 		return nil, ErrGoogleDomainNotAllowed
 	}
 
-	// 1) Ưu tiên lookup theo sub nếu đã link trước đó
+	// Tìm user đã link với sub này chưa
 	linkedUser, err := s.userRepo.FindByGoogleSub(ctx, identity.Sub)
 	if err == nil {
 		if linkedUser.Status == "locked" {
@@ -102,7 +99,7 @@ func (s *AuthService) LoginWithGoogleToken(ctx context.Context, googleIDToken, p
 		return nil, err
 	}
 
-	// 2) Chưa link theo sub: buộc phải có local account cùng email
+	// Nếu chưa có user nào link với sub này, tìm theo email xem có account local nào chưa link không
 	user, err := s.userRepo.FindByEmail(ctx, identity.Email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -114,7 +111,7 @@ func (s *AuthService) LoginWithGoogleToken(ctx context.Context, googleIDToken, p
 		return nil, auth.ErrUserLocked
 	}
 
-	// 3) Đã có account local nhưng chưa link: yêu cầu password để xác nhận chủ tài khoản
+	// Nếu đã có account local nhưng chưa link: yêu cầu password để xác nhận chủ tài khoản
 	if user.GoogleSub == "" {
 		if password == "" {
 			return nil, ErrGoogleLinkPasswordRequired
@@ -130,15 +127,16 @@ func (s *AuthService) LoginWithGoogleToken(ctx context.Context, googleIDToken, p
 	return s.buildLoginResponse(ctx, user)
 }
 
+// buildLoginResponse tạo JWT token và response body sau khi xác thực thành công.
 func (s *AuthService) buildLoginResponse(ctx context.Context, user *model.User) (*LoginResponse, error) {
 	var schoolID string
-	// 1. Lấy roles của user
+	// Lấy roles của user
 	roles, err := s.userRepo.RolesOfUser(ctx, user.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Nếu user có role SCHOOL_ADMIN → lấy school_id từ bảng school_admins
+	// Nếu user có role SCHOOL_ADMIN → lấy school_id từ bảng school_admins
 	for _, r := range roles {
 		if r == "SCHOOL_ADMIN" {
 			admin, err := s.schoolAdminRepo.GetByUserID(ctx, user.UserID)
@@ -149,7 +147,7 @@ func (s *AuthService) buildLoginResponse(ctx context.Context, user *model.User) 
 		}
 	}
 
-	// 3. Tạo JWT token (schoolID rỗng cho SUPER_ADMIN/TEACHER/PARENT)
+	// Tạo JWT token (schoolID rỗng cho SUPER_ADMIN/TEACHER/PARENT)
 	token, err := s.jwtAuth.SignToken(user.UserID.String(), user.Email, roles, schoolID)
 	if err != nil {
 		return nil, err
@@ -162,7 +160,7 @@ func (s *AuthService) buildLoginResponse(ctx context.Context, user *model.User) 
 	}, nil
 }
 
-// GetUserInfo trả về thông tin user theo ID, hiện tại chưa dùng.
+// GetUserInfo trả về thông tin user theo ID.
 func (s *AuthService) GetUserInfo(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error) {
 	return s.userRepo.FindByID(ctx, userID)
 }

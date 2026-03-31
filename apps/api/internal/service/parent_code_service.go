@@ -172,8 +172,8 @@ func (s *ParentCodeService) RegisterParent(ctx context.Context, email, password,
 		return nil, ErrFailedToLinkParentToStudent
 	}
 
-	// Atomic increment: kiểm tra + tăng usage_count trong 1 câu SQL
-	// Nếu code đã đạt max_usage giữa lúc đọc và lúc này → repo trả ErrNoRowsUpdated
+	// kiểm tra + tăng usage_count trong 1 câu SQL (an toàn khi nhiều người dùng dùng chung mã)
+	// Nếu code đã đạt max_usage giữa lúc kiểm tra và tăng → repo trả ErrNoRowsUpdated
 	// Service map sang business error ErrParentCodeMaxUsageReached
 	if err = s.parentCodeRepo.IncrementUsageIfNotMaxed(ctx, parentCode); err != nil {
 		if errors.Is(err, repo.ErrNoRowsUpdated) {
@@ -228,7 +228,7 @@ func (s *ParentCodeService) RegisterParentWithGoogle(ctx context.Context, idToke
 		return nil, ErrParentCodeExpired
 	}
 
-	// 3. Check if email already exists
+	// 3. Check email chưa tồn tại
 	_, err = s.userRepo.FindByEmail(ctx, email)
 	if err == nil {
 		return nil, ErrEmailAlreadyExists
@@ -255,7 +255,7 @@ func (s *ParentCodeService) RegisterParentWithGoogle(ctx context.Context, idToke
 		fullName = "Google Parent"
 	}
 
-	// 6. Execute Transaction
+	// 6. Execute transaction
 	userID := uuid.New()
 	roles := []string{"PARENT"}
 	token, err := s.jwtAuth.SignToken(userID.String(), email, roles, "")
