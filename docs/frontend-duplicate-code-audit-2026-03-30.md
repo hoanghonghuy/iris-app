@@ -6,14 +6,7 @@
 
 ## Executive Summary
 
-Frontend still contains meaningful duplication. The largest maintenance risks are:
-
-1. Repeated auth error helper across auth pages.
-2. Repeated role-chat wrappers.
-3. Repeated class/student loading orchestration across admin and teacher hooks (with school bootstrap mainly in admin hooks).
-4. Repeated admin desktop/mobile rendering structures.
-5. Repeated URL query-building snippets.
-6. Repeated modal close/reset state patterns.
+After the 2026-03-31 implementation passes (N1 + N2 + N3 slice), frontend duplication is reduced significantly. The largest remaining maintenance risk is residual load orchestration wrappers around shared utilities in admin/teacher hooks.
 
 ## Method
 
@@ -21,7 +14,119 @@ Frontend still contains meaningful duplication. The largest maintenance risks ar
 - Direct file read to confirm each cluster is real duplication (not false positives).
 - Group findings by impact on maintainability and risk of inconsistent fixes.
 
-## Confirmed Duplication Clusters
+## Implementation Update (2026-03-31)
+
+Applied refactors from this audit in current codebase:
+
+- Resolved cluster #1 (auth helper duplication): extracted shared parser via `extractApiErrorRawMessage` in `apps/web/src/lib/api-error.ts` and removed per-page helper redeclarations in auth pages.
+- Resolved cluster #2 (role chat wrapper duplication): extracted shared route wrapper `apps/web/src/components/chat/ChatRoutePage.tsx` and reused it in admin/teacher/parent chat pages.
+- Resolved cluster #6 (teacher API date-range query duplication): extracted `buildDateRangeQuery` into `apps/web/src/lib/api/query.ts` and reused in `teacher.api.ts`.
+
+Batch N1 implementation (completed):
+
+- Introduced shared loading utilities in `apps/web/src/lib/list-loaders.ts`:
+  - `fetchCollectionWithState` for fetch lifecycle (`loading/error/fetch/set/pagination/finally`).
+  - `loadListWithDefaultSelection` for dependent list loading + default selection.
+- Applied `fetchCollectionWithState` to all admin list callbacks in:
+  - `apps/web/src/app/admin/parents/useAdminParentsPage.ts`
+  - `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts`
+  - `apps/web/src/app/admin/students/useAdminStudentsPage.ts`
+  - `apps/web/src/app/admin/school-admins/useAdminSchoolAdminsPage.ts`
+- Applied `loadListWithDefaultSelection` across admin/teacher hooks in:
+  - `apps/web/src/app/admin/parents/useAdminParentsPage.ts`
+  - `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts`
+  - `apps/web/src/app/admin/students/useAdminStudentsPage.ts`
+  - `apps/web/src/app/teacher/posts/useTeacherPostsPage.ts`
+  - `apps/web/src/app/teacher/health/useTeacherHealthPage.ts`
+  - `apps/web/src/app/teacher/attendance/useTeacherAttendancePage.ts`
+
+Batch N2 implementation (completed):
+
+- Resolved cluster #3 (auth container class duplication): extracted shared auth layout constants in `apps/web/src/components/auth/auth-layout.ts` and reused them in auth pages (`register`, `activate`, `forgot-password`).
+- Resolved cluster #7 (modal/alert close-reset duplication): extracted reusable close handlers in admin hooks/pages and replaced inline `onClose={() => setX({ ...reset... })}` patterns.
+- Updated admin close-reset flow in:
+  - `apps/web/src/app/admin/parents/useAdminParentsPage.ts`
+  - `apps/web/src/app/admin/parents/page.tsx`
+  - `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts`
+  - `apps/web/src/app/admin/teachers/page.tsx`
+  - `apps/web/src/app/admin/students/useAdminStudentsPage.ts`
+  - `apps/web/src/app/admin/students/page.tsx`
+  - `apps/web/src/app/admin/school-admins/useAdminSchoolAdminsPage.ts`
+  - `apps/web/src/app/admin/school-admins/page.tsx`
+  - `apps/web/src/app/admin/users/page.tsx`
+
+Remaining active clusters after implementation pass:
+
+- None in tracked top-8 clusters.
+
+Measured delta after this implementation pass:
+
+- Resolved clusters: 8/8 (#1, #2, #3, #4, #5, #6, #7, #8)
+- Partially resolved clusters: 0/8
+- Remaining active clusters: 0/8
+
+Residual #4 cleanup (completed):
+
+- Added `loadListEffect` helper in `apps/web/src/lib/list-loaders.ts` to remove repeated `const loadX = async ...; void loadX();` effect wrappers while preserving guard and reset behaviors via `enabled` and `beforeLoad`.
+- Applied to admin/teacher hooks:
+  - `apps/web/src/app/admin/parents/useAdminParentsPage.ts`
+  - `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts`
+  - `apps/web/src/app/admin/students/useAdminStudentsPage.ts`
+  - `apps/web/src/app/teacher/posts/useTeacherPostsPage.ts`
+  - `apps/web/src/app/teacher/health/useTeacherHealthPage.ts`
+  - `apps/web/src/app/teacher/attendance/useTeacherAttendancePage.ts`
+- Verification signal: no remaining `const loadSchools/loadClasses/loadStudents` wrapper pattern in scoped hooks.
+- Validation: `npx tsc --noEmit` pass, targeted eslint pass, diagnostics clean on touched files.
+
+Batch N3 implementation (completed):
+
+- Added shared responsive primitive `apps/web/src/components/shared/ResponsiveSplitView.tsx`.
+- Replaced repeated desktop/mobile conditional wrappers in admin pages:
+  - `apps/web/src/app/admin/parents/page.tsx`
+  - `apps/web/src/app/admin/teachers/page.tsx`
+  - `apps/web/src/app/admin/students/page.tsx`
+  - `apps/web/src/app/admin/school-admins/page.tsx`
+  - `apps/web/src/app/admin/schools/page.tsx`
+  - `apps/web/src/app/admin/classes/page.tsx`
+  - `apps/web/src/app/admin/users/page.tsx`
+- Validation: `npx tsc --noEmit` pass and targeted eslint pass.
+- Structural duplication signal: admin page-level split markers reduced from 19 to 7 (remaining occurrences are shared primitive usage parameters and one non-list text visibility case on admin landing page).
+
+## Current Status Matrix (2026-03-31)
+
+1. #1 Auth helper duplication: Resolved (5 duplicated helpers removed).
+2. #2 Role chat wrapper duplication: Resolved (3 route wrappers unified).
+3. #3 Auth container wrapper class duplication: Resolved (5 duplicated wrapper occurrences replaced by shared constants).
+4. #4 Repeated load orchestration across hooks: Resolved (wrapper pattern unified via `loadListEffect`; hook-specific side effects remain explicit by design).
+5. #5 Repeated list-fetch callback pattern in admin hooks: Resolved (shared lifecycle helper applied).
+6. #6 URL query-builder duplication in teacher API: Resolved (3 repeated blocks unified).
+7. #7 Modal/alert close-reset pattern duplication: Resolved (inline close-reset objects replaced with reusable close handlers).
+8. #8 Admin desktop/mobile render structure duplication: Resolved (shared primitive adopted across target admin pages).
+
+## Post-Resolution Notes
+
+### Cluster #4 (Load orchestration duplication)
+
+- Former footprint was 11 call sites across 6 hooks. Wrapper duplication is now unified via `loadListEffect`, while hook-specific side effects remain explicit by design.
+- Primary files: `apps/web/src/app/admin/parents/useAdminParentsPage.ts`, `apps/web/src/app/admin/students/useAdminStudentsPage.ts`, `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts`, `apps/web/src/app/teacher/posts/useTeacherPostsPage.ts`, `apps/web/src/app/teacher/health/useTeacherHealthPage.ts`, `apps/web/src/app/teacher/attendance/useTeacherAttendancePage.ts`.
+- Validation completed with type/lint/diagnostics clean.
+
+### Cluster #5 (Admin fetch callback skeleton duplication)
+
+- Status: Resolved in Batch N1.
+- Delta: 4 duplicated callback skeletons replaced with shared `fetchCollectionWithState`.
+- Watchout retained: preserve role-specific guard behavior in `useAdminSchoolAdminsPage.ts` during future feature additions.
+
+## Next Batch Plan (Impact and Expected Effect)
+
+Top-8 tracked duplication clusters are now resolved. Next work should shift from structural dedup to regression confidence:
+
+- Optional UI smoke re-run on admin/teacher list flows.
+- Keep future feature work using `ResponsiveSplitView` and `loadListEffect` to prevent duplication reintroduction.
+
+## Historical Duplication Snapshot (Before 2026-03-31 Implementation)
+
+This section preserves the original duplication snapshot before the implementation pass. Current status and active scope are tracked in "Current Status Matrix", "Remaining Impact Zones", and "Next Batch Plan" above.
 
 ### 1) Auth helper duplication: `extractErrorMessage` repeated 5 times (High)
 
@@ -174,4 +279,4 @@ Risk:
 
 ## Final Verdict
 
-After re-verification, duplication is still present and should be treated as active technical debt. The codebase is partially improved compared to earlier state, but not yet "clean" regarding repeated logic and repeated UI structures.
+After re-verification and implementation passes (N1 + N2 + N3 + residual #4 cleanup, 2026-03-31), the codebase has reduced/cleared tracked duplication in 8/8 clusters (#1 through #8). Future focus should be guardrails and smoke checks to prevent reintroduction.
