@@ -10,7 +10,7 @@ Frontend still contains meaningful duplication. The largest maintenance risks ar
 
 1. Repeated auth error helper across auth pages.
 2. Repeated role-chat wrappers.
-3. Repeated school/class/student loading chains in multiple hooks.
+3. Repeated class/student loading orchestration across admin and teacher hooks (with school bootstrap mainly in admin hooks).
 4. Repeated admin desktop/mobile rendering structures.
 5. Repeated URL query-building snippets.
 6. Repeated modal close/reset state patterns.
@@ -64,9 +64,12 @@ Matches:
 Risk:
 - Styling/layout adjustments are scattered and easy to miss.
 
-### 4) Repeated load chain logic (`loadSchools`/`loadClasses`/`loadStudents`) across hooks (High)
+### 4) Repeated load orchestration across hooks (High)
 
-Highly similar effect/data-loading orchestration repeated in multiple domains.
+Highly similar effect/data-loading orchestration is repeated across multiple domains, but with two variants:
+
+- Admin hooks commonly use `loadSchools` + `loadClasses` (and in some cases `loadStudents`).
+- Teacher hooks commonly use `loadClasses` and/or `loadStudents` (without the full admin-style school bootstrap chain).
 
 - `apps/web/src/app/admin/parents/useAdminParentsPage.ts:65`
 - `apps/web/src/app/admin/parents/useAdminParentsPage.ts:85`
@@ -75,6 +78,9 @@ Highly similar effect/data-loading orchestration repeated in multiple domains.
 - `apps/web/src/app/admin/students/useAdminStudentsPage.ts:70`
 - `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts:69`
 - `apps/web/src/app/admin/teachers/useAdminTeachersPage.ts:89`
+
+Teacher-side related references (class/student loading orchestration):
+
 - `apps/web/src/app/teacher/posts/useTeacherPostsPage.ts:45`
 - `apps/web/src/app/teacher/posts/useTeacherPostsPage.ts:69`
 - `apps/web/src/app/teacher/health/useTeacherHealthPage.ts:39`
@@ -148,7 +154,7 @@ Risk:
 - High:
   - Auth helper duplication
   - Role-chat wrapper duplication
-  - School/class/student load chains
+  - Repeated admin/teacher data-loading orchestration (school/class/student variants)
 - Medium:
   - List-fetch callback pattern
   - URL query-builder duplication
@@ -161,7 +167,7 @@ Risk:
 
 1. Extract one shared auth error parser utility for all auth pages.
 2. Consolidate role chat wrappers into one shared route wrapper/layout.
-3. Introduce reusable data-loading hooks for school/class/student chain.
+3. Introduce reusable data-loading hooks for class/student loading, with an admin-only extension for school bootstrap.
 4. Extract shared admin list-view primitives (desktop/mobile pair abstractions).
 5. Extract common date-range query builder utility for API layer.
 6. Normalize modal close/reset helper utilities to reduce repetitive handlers.
