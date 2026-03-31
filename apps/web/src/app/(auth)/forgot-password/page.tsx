@@ -14,14 +14,7 @@ import {
     Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
 import { ArrowLeft, Mail, CheckCircle2, Loader2 } from "lucide-react";
-
-function extractErrorMessage(err: unknown): string | undefined {
-    return (
-        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-            : undefined
-    );
-}
+import { extractApiErrorRawMessage } from "@/lib/api-error";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -38,7 +31,7 @@ export default function ForgotPasswordPage() {
             await authApi.forgotPassword(email);
             setSent(true);
         } catch (err: unknown) {
-            setError(extractErrorMessage(err) || "Không thể gửi yêu cầu. Vui lòng thử lại.");
+            setError(extractApiErrorRawMessage(err) || "Không thể gửi yêu cầu. Vui lòng thử lại.");
         } finally {
             setIsSubmitting(false);
         }

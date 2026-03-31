@@ -12,14 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-function extractErrorMessage(err: unknown): string | undefined {
-  return (
-    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-      : undefined
-  );
-}
+import { extractApiErrorRawMessage } from "@/lib/api-error";
 
 export default function ActivateAccountPage() {
   const [token, setToken] = useState("");
@@ -40,7 +33,7 @@ export default function ActivateAccountPage() {
       await authApi.activateWithToken({ token: token.trim(), password });
       setSuccess(true);
     } catch (err: unknown) {
-      setError(extractErrorMessage(err) || "Không thể kích hoạt tài khoản");
+      setError(extractApiErrorRawMessage(err) || "Không thể kích hoạt tài khoản");
     } finally { setSubmitting(false); }
   };
 

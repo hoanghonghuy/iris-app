@@ -15,14 +15,7 @@ import {
     Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
-
-function extractErrorMessage(err: unknown): string | undefined {
-    return (
-        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-            : undefined
-    );
-}
+import { extractApiErrorRawMessage } from "@/lib/api-error";
 
 export default function ResetPasswordPage() {
     const router = useRouter();
@@ -61,7 +54,7 @@ export default function ResetPasswordPage() {
             setSuccess(true);
             setTimeout(() => router.push("/login"), 3000);
         } catch (err: unknown) {
-            setError(extractErrorMessage(err) || "Không thể đặt lại mật khẩu. Mã có thể đã hết hạn.");
+            setError(extractApiErrorRawMessage(err) || "Không thể đặt lại mật khẩu. Mã có thể đã hết hạn.");
         } finally {
             setIsSubmitting(false);
         }

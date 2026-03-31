@@ -16,14 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Heart, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-function extractErrorMessage(err: unknown): string | undefined {
-  return (
-    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === "string"
-      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-      : undefined
-  );
-}
+import { extractApiErrorRawMessage } from "@/lib/api-error";
 
 export default function RegisterParentPage() {
   const [email, setEmail] = useState("");
@@ -67,7 +60,7 @@ export default function RegisterParentPage() {
       await finalizeLogin(token);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string; error_code?: string } } };
-      setError(axiosErr.response?.data?.error || extractErrorMessage(err) || "Đăng ký bằng Google thất bại.");
+      setError(axiosErr.response?.data?.error || extractApiErrorRawMessage(err) || "Đăng ký bằng Google thất bại.");
       setErrorCode(axiosErr.response?.data?.error_code);
     }
   }, [parentCode, finalizeLogin]);
@@ -84,7 +77,7 @@ export default function RegisterParentPage() {
       await authApi.registerParent({ email, password, parent_code: parentCode });
       setSuccess(true);
     } catch (err: unknown) {
-      setError(extractErrorMessage(err) || "Không thể đăng ký");
+      setError(extractApiErrorRawMessage(err) || "Không thể đăng ký");
     } finally { setSubmitting(false); }
   };
 

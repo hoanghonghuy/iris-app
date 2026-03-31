@@ -16,19 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { UserRole } from '@/types';
+import { extractApiErrorRawMessage } from '@/lib/api-error';
 
 type LoginResponse = {
   data?: { access_token?: string };
   access_token?: string;
 };
-
-function extractErrorMessage(err: unknown): string | undefined {
-  return (
-    typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
-      ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-      : undefined
-  );
-}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -69,7 +62,7 @@ export default function LoginPage() {
       // 2. Hoàn tất lifecycle login theo flow hiện tại
       await finalizeLogin(token);
     } catch (err: unknown) {
-      setError(extractErrorMessage(err) || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
+      setError(extractApiErrorRawMessage(err) || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,7 +83,7 @@ export default function LoginPage() {
       await handleGoogleSubmit({ idToken, password });
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string; error_code?: string } } };
-      setError(axiosErr.response?.data?.error || extractErrorMessage(err) || 'Đăng nhập Google thất bại.');
+      setError(axiosErr.response?.data?.error || extractApiErrorRawMessage(err) || 'Đăng nhập Google thất bại.');
       setErrorCode(axiosErr.response?.data?.error_code);
       throw err;
     }

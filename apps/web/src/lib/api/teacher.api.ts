@@ -5,6 +5,7 @@
  */
 import { apiClient } from './client';
 import { Class, Student, ApiResponse, PaginationParams, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, AttendanceChangeLog, HealthLog, Post, TeacherAnalytics, PostComment, PostLikeResponse, PostShareResponse, CreatePostCommentRequest, CreatePostCommentResponse } from '@/types';
+import { buildDateRangeQuery } from './query';
 
 export const teacherApi = {
   /**
@@ -62,10 +63,7 @@ export const teacherApi = {
    * GET /api/v1/teacher/students/:student_id/attendance
    */
   getStudentAttendance: async (studentId: string, from?: string, to?: string) => {
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    const query = buildDateRangeQuery(from, to);
     const res = await apiClient.get<ApiResponse<AttendanceRecord[]>>(`/teacher/students/${studentId}/attendance${query}`);
     return res.data.data;
   },
@@ -75,10 +73,7 @@ export const teacherApi = {
    * GET /api/v1/teacher/students/:student_id/attendance-changes
    */
   getStudentAttendanceChanges: async (studentId: string, from?: string, to?: string) => {
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    const query = buildDateRangeQuery(from, to);
     const res = await apiClient.get<ApiResponse<AttendanceChangeLog[]>>(`/teacher/students/${studentId}/attendance-changes${query}`);
     return res.data.data;
   },
@@ -116,10 +111,7 @@ export const teacherApi = {
    * GET /api/v1/teacher/students/:student_id/health
    */
   getStudentHealth: async (studentId: string, from?: string, to?: string) => {
-    const params = new URLSearchParams();
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    const query = params.toString() ? `?${params.toString()}` : '';
+    const query = buildDateRangeQuery(from, to);
     const res = await apiClient.get<ApiResponse<HealthLog[]>>(`/teacher/students/${studentId}/health${query}`);
     return res.data.data;
   },
