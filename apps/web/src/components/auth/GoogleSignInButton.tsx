@@ -45,6 +45,7 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
   const oneTapPrompted = useRef(false);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+  const isUiBlocked = Boolean(disabled || isSubmitting);
 
   useEffect(() => {
     if (!clientId) {
@@ -100,6 +101,11 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
       initialized.current = true;
     }
 
+    if (isUiBlocked) {
+      buttonRoot.innerHTML = "";
+      return;
+    }
+
     window.google.accounts.id.renderButton(buttonRoot, {
       type: "standard",
       theme: isDarkTheme ? "filled_black" : "outline",
@@ -108,19 +114,19 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
       text: "signin_with",
       width: buttonWidth,
     });
-  }, [clearError, clientId, onSubmitGoogle, scriptReady]);
+  }, [clearError, clientId, isUiBlocked, onSubmitGoogle, scriptReady]);
 
   useEffect(() => {
     if (!scriptReady || !clientId || !window.google?.accounts?.id) {
       return;
     }
-    if (disabled || pendingCredential || oneTapPrompted.current) {
+    if (isUiBlocked || pendingCredential || oneTapPrompted.current) {
       return;
     }
 
     window.google.accounts.id.prompt();
     oneTapPrompted.current = true;
-  }, [clientId, disabled, pendingCredential, scriptReady]);
+  }, [clientId, isUiBlocked, pendingCredential, scriptReady]);
 
   const showPasswordLinkStep = Boolean(
     pendingCredential && errorCode === "GOOGLE_LINK_PASSWORD_REQUIRED"
@@ -149,7 +155,11 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
 
   return (
     <div className="space-y-3 w-full">
-      <div className="w-full flex justify-center" id="google-signin-render-root" />
+      <div
+        className="w-full flex justify-center"
+        id="google-signin-render-root"
+        aria-busy={isUiBlocked}
+      />
 
       {showPasswordLinkStep && (
         <div className="space-y-2 rounded-md border p-3">

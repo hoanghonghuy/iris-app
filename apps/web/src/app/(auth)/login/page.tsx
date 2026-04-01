@@ -13,7 +13,7 @@ import { authApi } from '@/lib/api/auth.api';
 import { authHelpers } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { UserRole } from '@/types';
 import { extractApiErrorRawMessage } from '@/lib/api-error';
@@ -93,7 +93,7 @@ export default function LoginPage() {
     <div className="flex w-full max-w-screen-xl items-center justify-center">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Iris School</CardTitle>
+          <h1 className="text-2xl font-bold text-center">Iris School</h1>
           <CardDescription className="text-center">
             Đăng nhập để quản lý thông tin trường học
           </CardDescription>
@@ -101,7 +101,11 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md"
+              >
                 {error}
               </div>
             )}
@@ -153,7 +157,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
+                <div className="relative flex justify-center text-xs">
                   <span className="bg-card px-2 text-muted-foreground">phương thức khác</span>
                 </div>
               </div>
