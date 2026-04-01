@@ -11,28 +11,19 @@
 
 Iris is a full-stack school management platform built for an undergraduate thesis, with a Go (Gin + PostgreSQL) backend and a Next.js frontend.
 
-It supports role-based workflows for super admins, school admins, teachers, and parents, including attendance, health logs, posts/feed interactions, chat, and account management.
+The platform supports role-based workflows for super admins, school admins, teachers, and parents.
 
 > [!IMPORTANT]
-> This repository is actively developed. APIs, UI flows, and deployment defaults may evolve.
+> This repository is actively developed. APIs and UI flows may evolve.
 
-## What Is Included
+## Highlights
 
-- Backend API (`apps/api`)
-  - Layered architecture: handler -> service -> repository
-  - PostgreSQL persistence with SQL migrations
-  - JWT authentication and role-based authorization
-  - Google sign-in (phase 1) for existing accounts
-  - WebSocket chat with origin checks and subprotocol auth
-- Frontend Web App (`apps/web`)
-  - Next.js App Router + React 19 + TypeScript
-  - Role-based dashboards and guarded routes
-  - Teacher/parent post interactions (like/comment/share)
-  - Attendance and admin management screens
-- Infrastructure and scripts
-  - Local PostgreSQL with Docker Compose
-  - DB migration and demo seed helpers
-  - API and UI smoke scripts
+- Role-based auth and authorization (admin, teacher, parent)
+- School domain management (schools, classes, students, teachers, parents)
+- Attendance and health logs
+- Posts/feed interactions (like, comment, share)
+- Real-time chat via WebSocket
+- Local dev stack with Docker, migrations, and smoke scripts
 
 ## Tech Stack
 
@@ -55,49 +46,19 @@ It supports role-based workflows for super admins, school admins, teachers, and 
 ```text
 iris-app/
 ├── apps/
-│   ├── api/
-│   │   ├── cmd/api/                 # API entrypoint
-│   │   ├── internal/                # Core backend modules
-│   │   └── migrations/              # SQL migrations
-│   └── web/
-│       ├── src/app/                 # Next.js routes
-│       ├── src/components/          # UI components
-│       ├── src/lib/                 # API clients/utilities
-│       └── src/hooks/               # Frontend hooks
-├── infra/docker/                    # Docker compose + deploy env example
-├── scripts/db/                      # DB seed/cleanup scripts
-├── scripts/smoke/                   # API/UI smoke tests
-└── docs/                            # Audit notes and implementation docs
+│   ├── api/                        # Go API (cmd, internal, migrations)
+│   └── web/                        # Next.js frontend app
+├── infra/docker/                   # Docker Compose and deploy env example
+├── scripts/db/                     # Seed and cleanup scripts
+├── scripts/smoke/                  # API/UI smoke checks
+└── docs/                           # Audit notes and design docs
 ```
 
-## Core Features
+## Google Auth Status
 
-- Authentication and Authorization
-  - Email/password login
-  - Google login endpoint: `POST /api/v1/auth/login/google`
-  - Role-scoped access control for admin/teacher/parent
-- School Domain Management
-  - Schools, classes, students, teachers, parents
-  - Teacher-class assignment and parent-student linkage
-- Attendance and Health
-  - Teacher attendance marking + history
-  - Health log recording and listing
-- Posts and Feed
-  - Teacher posts (class/student scope)
-  - Parent feed aggregation
-  - Persisted like/comment/share interactions
-- Chat
-  - Conversation and messages endpoints
-  - WebSocket delivery
-
-## Current Google Auth Status
-
-- Implemented (phase 1)
-  - Google login for existing users
-  - Optional hosted-domain restriction
-  - First-time Google linking requires password confirmation
-- Not implemented yet
-  - Parent Google sign-up flow (`/register/parent/google`) is still planned (see `docs/google-signup-integration-proposal.md`)
+- Implemented (phase 1): Google login for existing users
+- Optional hosted-domain restriction is supported
+- Planned: parent Google sign-up flow (`/register/parent/google`)
 
 ## Prerequisites
 
@@ -134,7 +95,7 @@ JWT_SECRET=replace-with-strong-secret
 PORT=8080
 ```
 
-Useful optional values:
+Optional values:
 
 ```env
 DB_MAX_CONNS=50
@@ -177,7 +138,9 @@ Backend base URL: `http://localhost:8080/api/v1`
 
 ### 6) Configure frontend environment
 
-Create `apps/web/.env.local`:
+Create `apps/web/.env.local` from `apps/web/.env.example`.
+
+Example values:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
@@ -196,7 +159,7 @@ Frontend URL: `http://localhost:3000`
 
 ## Smoke and Validation
 
-### Backend and frontend type/build checks
+### Type/build checks
 
 ```bash
 # From repository root
@@ -222,24 +185,10 @@ node scripts/smoke/ui-smoke.mjs
 > [!NOTE]
 > Current smoke scripts validate core auth/admin/teacher/parent flows. Google-login-specific smoke coverage is planned.
 
-## API Surface (High Level)
+## API Summary
 
-- Public
-  - `GET /api/v1/health`
-  - `POST /api/v1/auth/login`
-  - `POST /api/v1/auth/login/google`
-  - `POST /api/v1/auth/forgot-password`
-  - `POST /api/v1/auth/reset-password`
-  - `POST /api/v1/users/activate-token`
-  - `POST /api/v1/register/parent`
-- Protected
-  - `GET /api/v1/me`
-  - `PUT /api/v1/me/password`
-  - `DELETE /api/v1/me`
-  - `/api/v1/teacher/*`
-  - `/api/v1/parent/*`
-  - `/api/v1/admin/*`
-  - `/api/v1/chat/*` and `/api/v1/chat/ws`
+- Public: health, login, Google login, forgot/reset password, account activation, parent registration
+- Protected: profile (`/me`), role-scoped routes (`/admin/*`, `/teacher/*`, `/parent/*`), chat (`/chat/*`, `/chat/ws`)
 
 For detailed endpoint behavior and open issues, see:
 - `docs/iris-issues-audit.md`
