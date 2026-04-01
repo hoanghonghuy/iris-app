@@ -1,8 +1,9 @@
 # Stage 1: Build
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25 AS builder
 
 # Cài đặt git để download dependencies nếu cần
-RUN apk add --no-cache git
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -15,7 +16,7 @@ COPY . .
 
 # Build file thực thi của API
 # Lưu ý: file main nằm ở apps/api/cmd/api/main.go
-RUN go build -o iris-api ./apps/api/cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o iris-api ./apps/api/cmd/api/main.go
 
 # Stage 2: Run
 FROM alpine:latest
