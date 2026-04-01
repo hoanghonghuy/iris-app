@@ -42,6 +42,7 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
   const [linkPassword, setLinkPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialized = useRef(false);
+  const oneTapPrompted = useRef(false);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -78,6 +79,8 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
       return;
     }
     buttonRoot.innerHTML = "";
+    const isDarkTheme = document.documentElement.classList.contains("dark");
+    const buttonWidth = Math.min(360, Math.max(240, Math.floor(buttonRoot.clientWidth || 320)));
 
     if (!initialized.current) {
       window.google.accounts.id.initialize({
@@ -99,13 +102,25 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
 
     window.google.accounts.id.renderButton(buttonRoot, {
       type: "standard",
-      theme: "outline",
+      theme: isDarkTheme ? "filled_black" : "outline",
       size: "large",
       shape: "rectangular",
       text: "signin_with",
-      width: "320",
+      width: buttonWidth,
     });
   }, [clearError, clientId, onSubmitGoogle, scriptReady]);
+
+  useEffect(() => {
+    if (!scriptReady || !clientId || !window.google?.accounts?.id) {
+      return;
+    }
+    if (disabled || pendingCredential || oneTapPrompted.current) {
+      return;
+    }
+
+    window.google.accounts.id.prompt();
+    oneTapPrompted.current = true;
+  }, [clientId, disabled, pendingCredential, scriptReady]);
 
   const showPasswordLinkStep = Boolean(
     pendingCredential && errorCode === "GOOGLE_LINK_PASSWORD_REQUIRED"
@@ -134,7 +149,7 @@ export function GoogleSignInButton({ onSubmitGoogle, errorCode, clearError, disa
 
   return (
     <div className="space-y-3 w-full">
-      <div className="flex justify-center" id="google-signin-render-root" />
+      <div className="w-full flex justify-center" id="google-signin-render-root" />
 
       {showPasswordLinkStep && (
         <div className="space-y-2 rounded-md border p-3">
