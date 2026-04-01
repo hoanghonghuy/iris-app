@@ -31,6 +31,8 @@ func NewRouter(
 	chatHandler *v1handlers.ChatHandler,
 ) *gin.Engine {
 	r := gin.Default()
+	// Trust no proxy headers by default (safer for direct internet deployment).
+	_ = r.SetTrustedProxies(nil)
 
 	// Build origin set for O(1) lookup
 	originSet := make(map[string]struct{}, len(allowedOrigins))
@@ -64,6 +66,10 @@ func NewRouter(
 	})
 
 	// Setup routes
+	r.GET("/", func(c *gin.Context) {
+		response.OK(c, gin.H{"ok": true, "service": "iris-api"})
+	})
+
 	v1 := r.Group("/api/v1")
 	{
 		// Public routes
