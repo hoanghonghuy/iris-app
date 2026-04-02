@@ -11,6 +11,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
 import { GraduationCap, Users, ClipboardCheck, Heart, Loader2, BookOpen, MessageSquare, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -105,7 +106,7 @@ export default function TeacherDashboard() {
                 Hoạt động Nhanh
               </h2>
               <div className="grid gap-2 md:gap-3 grid-cols-3 shrink-0">
-                <Link href="/teacher/attendance" className="h-full">
+                <Link href="/teacher/attendance" className="block h-full">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
                     <CardContent className="p-2 flex flex-col items-center justify-center gap-1.5 h-full text-center">
                       <div className="p-2 bg-success/10 text-success rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
@@ -116,7 +117,7 @@ export default function TeacherDashboard() {
                   </Card>
                 </Link>
 
-                <Link href="/teacher/health" className="h-full">
+                <Link href="/teacher/health" className="block h-full">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
                     <CardContent className="p-2 flex flex-col items-center justify-center gap-1.5 h-full text-center">
                       <div className="p-2 bg-destructive/10 text-destructive rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
@@ -127,7 +128,7 @@ export default function TeacherDashboard() {
                   </Card>
                 </Link>
 
-                <Link href="/teacher/posts" className="h-full">
+                <Link href="/teacher/posts" className="block h-full">
                   <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
                     <CardContent className="p-2 flex flex-col items-center justify-center gap-1.5 h-full text-center">
                       <div className="p-2 bg-primary/10 text-primary rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
@@ -156,7 +157,7 @@ export default function TeacherDashboard() {
               
               <div className="custom-scrollbar flex-1 min-h-0 overflow-y-auto pr-2">
                 {classes.length > 0 ? (
-                  <div className="grid gap-4 pb-4 sm:grid-cols-2">
+                  <div className={cn("grid gap-4 pb-4", classes.length === 1 ? "grid-cols-1" : "sm:grid-cols-2")}>
                     {classes.map((cls) => (
                       <Card key={cls.class_id} className="group hover:shadow-lg transition-all border-border/50 hover:border-primary/20 bg-card/50 backdrop-blur-sm">
                         <CardContent className="p-4 md:p-5">
