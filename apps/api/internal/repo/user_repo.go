@@ -145,53 +145,8 @@ func (r *UserRepo) FindByID(ctx context.Context, userID uuid.UUID) (*model.UserI
 //
 // schoolID != nil: chỉ users thuộc trường đó qua teachers/parents (SCHOOL_ADMIN).
 func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, roleFilter string, limit, offset int) ([]model.UserInfo, int, error) {
-	qAll := `
-		-- ARRAY_AGG(): gom nhiều dòng thành một array
-		-- COUNT(*) OVER(): tính tổng số dòng mà không bị ảnh hưởng bởi LIMIT/OFFSET
-		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
-		       COUNT(*) OVER() as total_count
-		FROM users u
-		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
-		LEFT JOIN roles r ON r.role_id = ur.role_id
-		WHERE 1=1
-	`
-	if roleFilter != "" {
-		qAll += ` AND EXISTS (SELECT 1 FROM user_roles ur2 JOIN roles r2 ON ur2.role_id = r2.role_id WHERE ur2.user_id = u.user_id AND r2.name = '` + roleFilter + `')`
-	}
-	qAll += `
-		GROUP BY u.user_id, u.email, u.status
-		ORDER BY u.created_at DESC
-		LIMIT $1 OFFSET $2;
-	`
-
-	qBySchool := `
-		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
-		       COUNT(*) OVER() as total_count
-		FROM users u
-		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
-		LEFT JOIN roles r ON r.role_id = ur.role_id
-		WHERE u.user_id IN (
-			SELECT user_id FROM teachers WHERE school_id = $3
-			UNION
-			SELECT user_id FROM parents WHERE school_id = $3
-		)
-	`
-	if roleFilter != "" {
-		qBySchool += ` AND EXISTS (SELECT 1 FROM user_roles ur2 JOIN roles r2 ON ur2.role_id = r2.role_id WHERE ur2.user_id = u.user_id AND r2.name = '` + roleFilter + `')`
-	}
-	qBySchool += `
-		GROUP BY u.user_id, u.email, u.status
-		ORDER BY u.created_at DESC
-		LIMIT $1 OFFSET $2;
-	`
-
-	var rows pgx.Rows
-	var err error
-	if schoolID != nil {
-		rows, err = r.pool.Query(ctx, qBySchool, limit, offset, *schoolID)
-	} else {
-		rows, err = r.pool.Query(ctx, qAll, limit, offset)
-	}
+	query, params := buildUserListQuery(schoolID, roleFilter, limit, offset)
+	rows, err := r.pool.Query(ctx, query, params...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -208,6 +163,51 @@ func (r *UserRepo) List(ctx context.Context, schoolID *uuid.UUID, roleFilter str
 	}
 
 	return users, total, rows.Err()
+}
+
+func buildUserListQuery(schoolID *uuid.UUID, roleFilter string, limit, offset int) (string, []any) {
+	const queryTemplate = `
+		SELECT u.user_id, u.email, u.status, ARRAY_AGG(r.name ORDER BY r.name) as roles,
+		       COUNT(*) OVER() as total_count
+		FROM users u
+		LEFT JOIN user_roles ur ON ur.user_id = u.user_id
+		LEFT JOIN roles r ON r.role_id = ur.role_id
+		WHERE 1=1%s
+		GROUP BY u.user_id, u.email, u.status
+		ORDER BY u.created_at DESC
+		LIMIT $1 OFFSET $2;
+	`
+
+	// Quy ước tham số:
+	// $1 = limit, $2 = offset, các filter phía sau được thêm tuần tự.
+	params := []any{limit, offset}
+	where := ""
+
+	if schoolID != nil {
+		// school filter luôn đứng ngay sau limit/offset => dùng $3.
+		where += `
+		AND u.user_id IN (
+			SELECT user_id FROM teachers WHERE school_id = $3
+			UNION
+			SELECT user_id FROM parents WHERE school_id = $3
+		)`
+		params = append(params, *schoolID)
+	}
+
+	if roleFilter != "" {
+		// role filter dùng vị trí kế tiếp trong args để tránh hardcode $3/$4 theo nhánh.
+		roleParam := len(params) + 1
+		where += fmt.Sprintf(`
+		AND EXISTS (
+			SELECT 1
+			FROM user_roles ur2
+			JOIN roles r2 ON ur2.role_id = r2.role_id
+			WHERE ur2.user_id = u.user_id AND r2.name = $%d
+		)`, roleParam)
+		params = append(params, roleFilter)
+	}
+
+	return fmt.Sprintf(queryTemplate, where), params
 }
 
 // CreateActive tạo mới user với status='active'
