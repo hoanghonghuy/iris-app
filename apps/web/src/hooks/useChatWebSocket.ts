@@ -6,6 +6,7 @@ import { getWsBaseUrl } from '@/lib/runtime-config';
 import { WSEvent, Message } from '@/types';
 
 const WS_BASE_URL = getWsBaseUrl();
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 /**
  * useChatWebSocket - Hook quản lý kết nối WebSocket cho chat realtime.
@@ -33,7 +34,9 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
 
 
     ws.onopen = () => {
-      console.log('[WS] Connected');
+      if (IS_DEV) {
+        console.log('[WS] Connected');
+      }
       setIsConnected(true);
       reconnectAttemptsRef.current = 0;
     };
@@ -50,7 +53,9 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
     };
 
     ws.onclose = (event) => {
-      console.log('[WS] Disconnected:', event.code, event.reason);
+      if (IS_DEV) {
+        console.log('[WS] Disconnected:', event.code, event.reason);
+      }
       setIsConnected(false);
 
       // Auto-reconnect sau 3 giây (trừ khi đóng chủ ý)
@@ -63,7 +68,9 @@ export function useChatWebSocket(onNewMessage: (msg: Message) => void) {
         reconnectAttemptsRef.current += 1;
         const delayMs = Math.min(3000 * reconnectAttemptsRef.current, 15000);
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('[WS] Reconnecting... attempt', reconnectAttemptsRef.current);
+          if (IS_DEV) {
+            console.log('[WS] Reconnecting... attempt', reconnectAttemptsRef.current);
+          }
           connectRef.current();
         }, delayMs);
       }
