@@ -19,7 +19,8 @@ import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
 import { Phone, Mail, Link2, Search, X, BookUser } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { Input } from "@/components/ui/input"; // Added missing import for Input
+import { Input } from "@/components/ui/input";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { extractApiErrorMessage } from "@/lib/api-error";
 import { useAdminTeachersPage } from "./useAdminTeachersPage";
 
@@ -125,54 +126,54 @@ export default function AdminTeachersPage() {
         show={!loading && filteredTeachers.length > 0}
         desktop={(
           <Card><CardContent className="p-0">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-3 font-medium">Họ tên</th>
-                  <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Lớp Phụ Trách</th>
-                  <th className="px-6 py-3 font-medium text-right">Gán lớp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTeachers.map((t) => (
-                  <tr key={t.teacher_id} className="border-b last:border-0 hover:bg-muted leading-relaxed">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-foreground">{t.full_name}</div>
-                      <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <Phone className="h-3 w-3" /> {t.phone || "—"}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Họ tên</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Lớp Phụ Trách</TableHead>
+                <TableHead className="text-right">Gán lớp</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredTeachers.map((t) => (
+                <TableRow key={t.teacher_id}>
+                  <TableCell>
+                    <div className="font-medium text-foreground">{t.full_name}</div>
+                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      <Phone className="h-3 w-3" /> {t.phone || "—"}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">{t.email}</TableCell>
+                  <TableCell>
+                    {t.classes && t.classes.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {t.classes.map(c => (
+                          <Badge key={c.class_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
+                            {c.name}
+                            <button
+                              onClick={() => setUnassignAlert({ isOpen: true, teacherId: t.teacher_id, classId: c.class_id, className: c.name })}
+                              className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                              aria-label="Remove"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        ))}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{t.email}</td>
-                    <td className="px-6 py-4">
-                      {t.classes && t.classes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {t.classes.map(c => (
-                            <Badge key={c.class_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
-                              {c.name}
-                              <button
-                                onClick={() => setUnassignAlert({ isOpen: true, teacherId: t.teacher_id, classId: c.class_id, className: c.name })}
-                                className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-                                aria-label="Remove"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground italic">Chưa phân lớp</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right align-middle">
-                      <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
-                        <Link2 className="mr-1 h-4 w-4" /> Gán lớp
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    ) : (
+                      <span className="text-sm text-muted-foreground italic">Chưa phân lớp</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right align-middle">
+                    <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
+                      <Link2 className="mr-1 h-4 w-4" /> Gán lớp
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
           </CardContent></Card>
         )}
         mobileClassName="space-y-3 md:hidden"

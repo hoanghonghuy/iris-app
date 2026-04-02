@@ -18,6 +18,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { toast } from "sonner";
 import { School as SchoolIcon, Plus, X, Loader2, MapPin } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminSchoolsPage() {
@@ -174,24 +175,24 @@ export default function AdminSchoolsPage() {
         desktop={(
           <Card>
             <CardContent className="p-0">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b text-left text-sm text-muted-foreground">
-                    <th className="px-6 py-3 font-medium">Tên trường</th>
-                    <th className="px-6 py-3 font-medium">Địa chỉ</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên trường</TableHead>
+                    <TableHead>Địa chỉ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {schools.map((school) => (
-                    <tr key={school.school_id} className="border-b last:border-0 hover:bg-muted">
-                      <td className="px-6 py-4 font-medium">{school.name}</td>
-                      <td className="px-6 py-4 text-muted-foreground">
+                    <TableRow key={school.school_id}>
+                      <TableCell className="font-medium">{school.name}</TableCell>
+                      <TableCell className="text-muted-foreground">
                         {school.address || "—"}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}

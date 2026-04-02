@@ -17,6 +17,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { GraduationCap, Plus, X, Loader2, Calendar, AlertCircle } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAuth } from "@/providers/AuthProvider";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
@@ -150,22 +151,22 @@ export default function AdminClassesPage() {
         show={!loadingClasses && classes.length > 0}
         desktop={(
           <Card><CardContent className="p-0">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-3 font-medium">Tên lớp</th>
-                  <th className="px-6 py-3 font-medium">Năm học</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tên lớp</TableHead>
+                  <TableHead>Năm học</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {classes.map((cls) => (
-                  <tr key={cls.class_id} className="border-b last:border-0 hover:bg-muted">
-                    <td className="px-6 py-4 font-medium">{cls.name}</td>
-                    <td className="px-6 py-4"><Badge variant="secondary">{cls.school_year}</Badge></td>
-                  </tr>
+                  <TableRow key={cls.class_id}>
+                    <TableCell className="font-medium">{cls.name}</TableCell>
+                    <TableCell><Badge variant="secondary">{cls.school_year}</Badge></TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </CardContent></Card>
         )}
         mobileClassName="space-y-3 md:hidden"

@@ -17,6 +17,7 @@ import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { Heart, Loader2, Phone, Mail, Link2, AlertCircle, CheckCircle2, Search, X } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAuth } from "@/providers/AuthProvider";
 import { useAdminParentsPage } from "./useAdminParentsPage";
 
@@ -90,26 +91,26 @@ export default function AdminParentsPage() {
         show={!loading && filteredParents.length > 0}
         desktop={(
           <Card><CardContent className="p-0">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-3 font-medium">Họ tên</th>
-                  <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Học Sinh Quản Lý</th>
-                  <th className="px-6 py-3 font-medium text-right">Gán học sinh</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Họ tên</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Học Sinh Quản Lý</TableHead>
+                  <TableHead className="text-right">Gán học sinh</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredParents.map((p) => (
-                  <tr key={p.parent_id} className="border-b last:border-0 hover:bg-muted leading-relaxed">
-                    <td className="px-6 py-4">
+                  <TableRow key={p.parent_id}>
+                    <TableCell>
                       <div className="font-medium text-foreground">{p.full_name}</div>
                       <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                         <Phone className="h-3 w-3" /> {p.phone || "—"}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{p.email}</td>
-                    <td className="px-6 py-4">
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{p.email}</TableCell>
+                    <TableCell>
                       {p.children && p.children.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                           {p.children.map(c => (
@@ -128,16 +129,16 @@ export default function AdminParentsPage() {
                       ) : (
                         <span className="text-sm text-muted-foreground italic">Chưa ghép học sinh</span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 text-right align-middle">
+                    </TableCell>
+                    <TableCell className="text-right align-middle">
                       <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, parentId: p.parent_id, parentName: p.full_name })}>
                         <Link2 className="mr-1 h-4 w-4" /> Gán HS
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </CardContent></Card>
         )}
         mobileClassName="space-y-3 md:hidden"

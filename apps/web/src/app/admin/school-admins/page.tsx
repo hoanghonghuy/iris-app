@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAdminSchoolAdminsPage } from "./useAdminSchoolAdminsPage";
 
 export default function AdminSchoolAdminsPage() {
@@ -108,28 +109,28 @@ export default function AdminSchoolAdminsPage() {
         show={!loading && admins.length > 0}
         desktop={(
           <Card><CardContent className="p-0">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Trường</th>
-                  <th className="px-6 py-3 font-medium text-right">Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Trường</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {admins.map((a) => (
-                  <tr key={getAdminId(a)} className="border-b last:border-0 hover:bg-muted">
-                    <td className="px-6 py-4 font-medium">{a.email || a.user_id}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{a.school_name || a.school_id}</td>
-                    <td className="px-6 py-4 text-right">
+                  <TableRow key={getAdminId(a)}>
+                    <TableCell className="font-medium">{a.email || a.user_id}</TableCell>
+                    <TableCell className="text-muted-foreground">{a.school_name || a.school_id}</TableCell>
+                    <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, adminId: getAdminId(a) })} disabled={deletingId === getAdminId(a)}>
                         {deletingId === getAdminId(a) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="mr-1 h-4 w-4 text-destructive" />} Xóa
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </CardContent></Card>
         )}
         mobileClassName="space-y-3 md:hidden"

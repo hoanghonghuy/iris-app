@@ -19,6 +19,7 @@ import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import {
   Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
 } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAuth } from "@/providers/AuthProvider";
 import { genderLabel, useAdminStudentsPage } from "./useAdminStudentsPage";
 
@@ -189,26 +190,26 @@ export default function AdminStudentsPage() {
         show={!loadingStudents && filteredStudents.length > 0}
         desktop={(
           <Card><CardContent className="p-0">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-left text-sm text-muted-foreground">
-                  <th className="px-6 py-3 font-medium">Họ tên</th>
-                  <th className="px-6 py-3 font-medium">Ngày sinh</th>
-                  <th className="px-6 py-3 font-medium">Giới tính</th>
-                  <th className="px-6 py-3 font-medium text-right">Mã PH</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Họ tên</TableHead>
+                  <TableHead>Ngày sinh</TableHead>
+                  <TableHead>Giới tính</TableHead>
+                  <TableHead className="text-right">Mã PH</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filteredStudents.map((s) => (
-                  <tr key={s.student_id} className="border-b last:border-0 hover:bg-muted">
-                    <td className="px-6 py-4 font-medium">
+                  <TableRow key={s.student_id}>
+                    <TableCell className="font-medium">
                       <Link href={`/admin/students/${s.student_id}`} className="hover:text-primary hover:underline transition-colors">
                         {s.full_name}
                       </Link>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground">{s.dob}</td>
-                    <td className="px-6 py-4"><Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge></td>
-                    <td className="px-6 py-4 text-right">
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{s.dob}</TableCell>
+                    <TableCell><Badge variant="secondary">{genderLabel[s.gender] || s.gender}</Badge></TableCell>
+                    <TableCell className="text-right">
                       {s.active_parent_code ? (
                         <div className="flex flex-col items-end gap-1">
                           <div className="flex items-center gap-1">
@@ -227,11 +228,11 @@ export default function AdminStudentsPage() {
                           {generatingCode === s.student_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="mr-1 h-4 w-4" />} Tạo mã
                         </Button>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </CardContent></Card>
         )}
         mobileClassName="space-y-3 md:hidden"

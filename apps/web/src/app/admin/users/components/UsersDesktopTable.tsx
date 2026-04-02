@@ -4,6 +4,7 @@ import { UserInfo, UserRole, UserStatus } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 interface UsersDesktopTableProps {
   users: UserInfo[];
@@ -30,20 +31,20 @@ export function UsersDesktopTable({
     <div className="hidden md:block">
       <Card>
         <CardContent className="p-0">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b text-left text-sm text-muted-foreground">
-                <th className="px-6 py-3 font-medium">Email</th>
-                <th className="px-6 py-3 font-medium">Vai trò</th>
-                <th className="px-6 py-3 font-medium">Trạng thái</th>
-                <th className="px-6 py-3 font-medium text-right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Email</TableHead>
+                <TableHead>Vai trò</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className="text-right">Hành động</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map((user) => (
-                <tr key={user.user_id} className="border-b last:border-0 hover:bg-muted">
-                  <td className="px-6 py-4 font-medium">{user.email}</td>
-                  <td className="px-6 py-4">
+                <TableRow key={user.user_id}>
+                  <TableCell className="font-medium">{user.email}</TableCell>
+                  <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {user.roles?.map((role) => (
                         <Badge key={role} variant="secondary">
@@ -51,13 +52,13 @@ export function UsersDesktopTable({
                         </Badge>
                       ))}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
+                  </TableCell>
+                  <TableCell>
                     <Badge variant={statusVariants[user.status] || "secondary"}>
                       {statusLabels[user.status] || user.status}
                     </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     {user.status === "active" ? (
                       <Button
                         variant="ghost"
@@ -88,11 +89,11 @@ export function UsersDesktopTable({
                         <span className="text-success">Mở khóa</span>
                       </Button>
                     ) : null}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
