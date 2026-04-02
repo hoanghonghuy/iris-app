@@ -59,7 +59,7 @@ export default function ParentDashboard() {
         <>
           {/* Quick Actions / Bento Box */}
           <div className="grid gap-2.5 md:gap-3 grid-cols-2 shrink-0">
-            <Link href="/parent/children" className="group h-full">
+            <Link href="/parent/children" className="block group h-full">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-chart-2/10 dark:hover:to-chart-2/20">
                 <CardContent className="p-2.5 md:p-3 flex flex-col items-center justify-center gap-1.5 md:gap-2 h-full text-center">
                   <div className="p-2 md:p-2.5 bg-chart-2/10 text-chart-2 rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">
@@ -70,7 +70,7 @@ export default function ParentDashboard() {
               </Card>
             </Link>
 
-            <Link href="/parent/posts" className="group h-full">
+            <Link href="/parent/posts" className="block group h-full">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-primary/30 relative overflow-hidden bg-gradient-to-br hover:from-card hover:to-primary/10 dark:hover:to-primary/20">
                 <CardContent className="p-2.5 md:p-3 flex flex-col items-center justify-center gap-1.5 md:gap-2 h-full text-center">
                   <div className="p-2 md:p-2.5 bg-primary/10 text-primary rounded-xl md:rounded-2xl transition-transform group-hover:scale-110 duration-300">

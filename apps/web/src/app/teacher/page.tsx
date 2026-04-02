@@ -62,7 +62,7 @@ export default function TeacherDashboard() {
         <>
           {/* Stats Overview - Bento Grid */}
           <div className="grid gap-2.5 md:gap-3 grid-cols-3 shrink-0">
-            <Link href="/teacher/classes" className="group">
+            <Link href="/teacher/classes" className="block group">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-primary/30 relative overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center gap-2 h-full text-center">
                   <div className="p-2.5 bg-primary/10 rounded-2xl text-primary transition-transform group-hover:scale-110 duration-300">
@@ -74,7 +74,7 @@ export default function TeacherDashboard() {
               </Card>
             </Link>
 
-            <Link href="/teacher/classes" className="group">
+            <Link href="/teacher/classes" className="block group">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center gap-2 h-full text-center">
                   <div className="p-2.5 bg-chart-2/10 rounded-2xl text-chart-2 transition-transform group-hover:scale-110 duration-300">
@@ -86,7 +86,7 @@ export default function TeacherDashboard() {
               </Card>
             </Link>
 
-            <Link href="/teacher/posts" className="group">
+            <Link href="/teacher/posts" className="block group">
               <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-3/30 relative overflow-hidden">
                 <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center gap-2 h-full text-center">
                   <div className="p-2.5 bg-chart-3/10 rounded-2xl text-chart-3 transition-transform group-hover:scale-110 duration-300">
