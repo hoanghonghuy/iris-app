@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { extractApiErrorRawMessage } from "@/lib/api-error";
+import { AUTH_PAGE_CONTAINER_CLASS, AUTH_PAGE_CARD_CLASS } from "@/components/auth/auth-layout";
 
 export default function ResetPasswordPage() {
     const router = useRouter();
@@ -62,8 +63,8 @@ export default function ResetPasswordPage() {
 
     if (success) {
         return (
-            <div className="flex w-full max-w-screen-xl justify-center">
-                <Card className="w-full max-w-md">
+            <div className={AUTH_PAGE_CONTAINER_CLASS}>
+                <Card className={AUTH_PAGE_CARD_CLASS}>
                     <CardContent className="flex flex-col items-center gap-4 py-8">
                         <CheckCircle2 className="h-12 w-12 text-success" />
                         <p className="text-center text-sm font-medium">Đặt lại mật khẩu thành công!</p>
@@ -77,8 +78,8 @@ export default function ResetPasswordPage() {
     }
 
     return (
-        <div className="flex w-full max-w-screen-xl justify-center">
-            <Card className="w-full max-w-md">
+        <div className={AUTH_PAGE_CONTAINER_CLASS}>
+            <Card className={AUTH_PAGE_CARD_CLASS}>
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold text-center">Đặt lại mật khẩu</CardTitle>
                     <CardDescription className="text-center">

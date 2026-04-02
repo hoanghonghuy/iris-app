@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { UserRole } from '@/types';
+import { AUTH_PAGE_CONTAINER_CLASS, AUTH_PAGE_CARD_CLASS } from '@/components/auth/auth-layout';
 import { extractApiErrorRawMessage } from '@/lib/api-error';
 
 type LoginResponse = {
@@ -109,8 +110,8 @@ export default function LoginPage() {
   }, [handleGoogleSubmit]);
 
   return (
-    <div className="flex w-full max-w-screen-xl items-center justify-center">
-      <Card className="w-full max-w-md">
+    <div className={AUTH_PAGE_CONTAINER_CLASS}>
+      <Card className={AUTH_PAGE_CARD_CLASS}>
         <CardHeader className="space-y-1">
           <h1 className="text-2xl font-bold text-center">Iris School</h1>
           <CardDescription className="text-center">
