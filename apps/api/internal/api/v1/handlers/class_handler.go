@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+	"github.com/jackc/pgx/v5"
 )
 
 type ClassHandler struct {
@@ -89,4 +90,74 @@ func (h *ClassHandler) ListBySchool(c *gin.Context) {
 		Offset:  params.Offset,
 		HasMore: params.Offset+len(classes) < total,
 	})
+}
+
+// UpdateClassRequest input để cập nhật lớp học
+type UpdateClassRequest struct {
+	Name       string `json:"name" binding:"required,min=1,max=100"`
+	SchoolYear string `json:"school_year" binding:"required,min=4,max=20"`
+}
+
+// Update cập nhật lớp học
+func (h *ClassHandler) Update(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	classID, err := uuid.Parse(c.Param("class_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
+		return
+	}
+
+	var req UpdateClassRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.classService.Update(ctx, adminSchoolID, classID, req.Name, req.SchoolYear); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "class not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to update class")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "class updated successfully", "class_id": classID.String()})
+}
+
+// Delete xóa lớp học
+func (h *ClassHandler) Delete(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	classID, err := uuid.Parse(c.Param("class_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid class_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.classService.Delete(ctx, adminSchoolID, classID); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "class not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to delete class")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "class deleted successfully", "class_id": classID.String()})
 }

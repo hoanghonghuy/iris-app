@@ -16,8 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
-import { GraduationCap, Plus, X, Loader2, Calendar, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { GraduationCap, Plus, X, Loader2, Calendar, AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ActionModal } from "@/components/shared/ActionModal";
 import { useAuth } from "@/providers/AuthProvider";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
@@ -35,6 +38,13 @@ export default function AdminClassesPage() {
   const [formData, setFormData] = useState({ name: "", school_year: "" });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // Edit/Delete state
+  const [editModal, setEditModal] = useState<{ isOpen: boolean; cls: Class | null }>({ isOpen: false, cls: null });
+  const [editData, setEditData] = useState({ name: "", school_year: "" });
+  const [editLoading, setEditLoading] = useState(false);
+  const [deleteAlert, setDeleteAlert] = useState<{ isOpen: boolean; classId: string | null }>({ isOpen: false, classId: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -74,6 +84,36 @@ export default function AdminClassesPage() {
     } catch (error: unknown) {
       setFormError(extractApiErrorMessage(error, "Không thể tạo lớp"));
     } finally { setSubmitting(false); }
+  };
+
+  const handleEdit = async () => {
+    if (!editModal.cls) return;
+    try {
+      setEditLoading(true);
+      await adminApi.updateClass(editModal.cls.class_id, editData);
+      toast.success("Cập nhật lớp thành công");
+      setEditModal({ isOpen: false, cls: null });
+      await fetchClasses();
+    } catch (error: unknown) {
+      toast.error(extractApiErrorMessage(error, "Không thể cập nhật lớp"));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteAlert.classId) return;
+    try {
+      setDeleteLoading(true);
+      await adminApi.deleteClass(deleteAlert.classId);
+      toast.success("Xóa lớp thành công");
+      setDeleteAlert({ isOpen: false, classId: null });
+      await fetchClasses();
+    } catch (error: unknown) {
+      toast.error(extractApiErrorMessage(error, "Không thể xóa lớp"));
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const selectedSchoolName = schools.find((s) => s.school_id === selectedSchoolId)?.name || "";
@@ -156,6 +196,7 @@ export default function AdminClassesPage() {
                 <TableRow>
                   <TableHead>Tên lớp</TableHead>
                   <TableHead>Năm học</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -163,6 +204,14 @@ export default function AdminClassesPage() {
                   <TableRow key={cls.class_id}>
                     <TableCell className="font-medium">{cls.name}</TableCell>
                     <TableCell><Badge variant="secondary">{cls.school_year}</Badge></TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditData({ name: cls.name, school_year: cls.school_year }); setEditModal({ isOpen: true, cls }); }}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, classId: cls.class_id })}>
+                        <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" /> Xóa
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -188,6 +237,38 @@ export default function AdminClassesPage() {
             ))}
           </>
         )}
+      />
+
+      <ActionModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, cls: null })}
+        onConfirm={handleEdit}
+        title="Sửa lớp học"
+        loading={editLoading}
+        confirmText="Lưu"
+        cancelText="Hủy"
+      >
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Tên lớp</Label>
+            <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Năm học</Label>
+            <Input value={editData.school_year} onChange={(e) => setEditData({ ...editData, school_year: e.target.value })} />
+          </div>
+        </div>
+      </ActionModal>
+
+      <ConfirmAlertDialog
+        isOpen={deleteAlert.isOpen}
+        onClose={() => setDeleteAlert({ isOpen: false, classId: null })}
+        onConfirm={handleDelete}
+        title="Xác nhận xóa lớp"
+        description="Bạn có chắc chắn muốn xóa lớp này? Hành động này có thể ảnh hưởng tới học sinh đang thuộc lớp."
+        loading={deleteLoading}
+        confirmText="Xóa"
+        cancelText="Hủy"
       />
     </div>
   );

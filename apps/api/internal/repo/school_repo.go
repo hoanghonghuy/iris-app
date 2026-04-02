@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -87,4 +88,34 @@ func (r *SchoolRepo) CountAll(ctx context.Context) (int, error) {
 	var count int
 	err := r.pool.QueryRow(ctx, q).Scan(&count)
 	return count, err
+}
+
+// Update cập nhật thông tin trường học
+func (r *SchoolRepo) Update(ctx context.Context, schoolID uuid.UUID, name, address string) error {
+	const q = `
+		UPDATE schools
+		SET name = $2, address = $3, updated_at = now()
+		WHERE school_id = $1;
+	`
+	ct, err := r.pool.Exec(ctx, q, schoolID, name, address)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return err
+}
+
+// Delete xóa trường học
+func (r *SchoolRepo) Delete(ctx context.Context, schoolID uuid.UUID) error {
+	const q = `DELETE FROM schools WHERE school_id = $1;`
+	ct, err := r.pool.Exec(ctx, q, schoolID)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return err
 }

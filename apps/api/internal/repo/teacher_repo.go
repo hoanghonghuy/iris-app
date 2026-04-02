@@ -157,3 +157,16 @@ func (r *TeacherRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*model
 	}
 	return teacher, nil
 }
+
+// Delete xóa giáo viên
+func (r *TeacherRepo) Delete(ctx context.Context, teacherID uuid.UUID) error {
+	const q = `DELETE FROM teachers WHERE teacher_id = $1;`
+	ct, err := r.pool.Exec(ctx, q, teacherID)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return err
+}

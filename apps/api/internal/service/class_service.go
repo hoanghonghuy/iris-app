@@ -58,3 +58,28 @@ func (s *ClassService) ListBySchool(ctx context.Context, adminSchoolID *uuid.UUI
 	}
 	return s.classRepo.List(ctx, schoolID, limit, offset)
 }
+
+// Update cập nhật thông tin lớp học
+func (s *ClassService) Update(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID, name, schoolYear string) error {
+	// Kiểm tra class thuộc school nào
+	cls, err := s.classRepo.GetByClassID(ctx, classID)
+	if err != nil {
+		return err
+	}
+	if adminSchoolID != nil && *adminSchoolID != cls.SchoolID {
+		return ErrSchoolAccessDenied
+	}
+	return s.classRepo.Update(ctx, classID, name, schoolYear)
+}
+
+// Delete xóa lớp học
+func (s *ClassService) Delete(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID) error {
+	cls, err := s.classRepo.GetByClassID(ctx, classID)
+	if err != nil {
+		return err
+	}
+	if adminSchoolID != nil && *adminSchoolID != cls.SchoolID {
+		return ErrSchoolAccessDenied
+	}
+	return s.classRepo.Delete(ctx, classID)
+}

@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
+	"github.com/jackc/pgx/v5"
 )
 
 type TeacherService struct {
@@ -153,4 +155,19 @@ func (s *TeacherService) Update(ctx context.Context, adminSchoolID *uuid.UUID, t
 	}
 
 	return s.teacherRepo.Update(ctx, teacherID, fullName, phone, schoolID)
+}
+
+// Delete xóa giáo viên
+func (s *TeacherService) Delete(ctx context.Context, adminSchoolID *uuid.UUID, teacherID uuid.UUID) error {
+	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+		return ErrTeacherNotFound
+	}
+	if adminSchoolID != nil && teacher.SchoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+	return s.teacherRepo.Delete(ctx, teacherID)
 }

@@ -208,12 +208,16 @@ func NewRouter(
 				classes := admin.Group("/classes")
 				classes.POST("", classHandler.Create)
 				classes.GET("/by-school/:school_id", classHandler.ListBySchool)
+				classes.PUT("/:class_id", classHandler.Update)
+				classes.DELETE("/:class_id", classHandler.Delete)
 
 				// Student routes
 				students := admin.Group("/students")
 				students.POST("", studentHandler.Create)
 				students.GET("/by-class/:class_id", studentHandler.ListByClass)
 				students.GET("/:student_id", studentHandler.GetProfile)
+				students.PUT("/:student_id", studentHandler.Update)
+				students.DELETE("/:student_id", studentHandler.Delete)
 
 				// User routes (quản lý users)
 				// AssignRole chỉ SUPER_ADMIN → đăng ký ở superOnly bên dưới
@@ -244,6 +248,9 @@ func NewRouter(
 
 					// hủy gán giáo viên khỏi lớp
 					teachers.DELETE("/:teacher_id/classes/:class_id", teacherHandler.Unassign)
+
+					// xóa giáo viên
+					teachers.DELETE("/:teacher_id", teacherHandler.Delete)
 				}
 
 				// parent routes (quản lý phụ huynh)
@@ -277,6 +284,8 @@ func NewRouter(
 				{
 					// tạo trường mới (chỉ SUPER_ADMIN)
 					superOnly.POST("/schools", schoolHandler.Create)
+					superOnly.PUT("/schools/:school_id", schoolHandler.Update)
+					superOnly.DELETE("/schools/:school_id", schoolHandler.Delete)
 
 					// gán role cho user (chỉ SUPER_ADMIN — tránh SCHOOL_ADMIN tự nâng quyền)
 					superOnly.POST("/users/:user_id/roles", userHandler.AssignRole)

@@ -215,3 +215,32 @@ func (h *TeacherHandler) Update(c *gin.Context) {
 		"teacher_id": teacherID.String(),
 	})
 }
+
+// Delete xóa giáo viên
+func (h *TeacherHandler) Delete(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	teacherID, err := uuid.Parse(c.Param("teacher_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid teacher_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.teacherService.Delete(ctx, adminSchoolID, teacherID); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "teacher not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to delete teacher")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "teacher deleted successfully", "teacher_id": teacherID.String()})
+}

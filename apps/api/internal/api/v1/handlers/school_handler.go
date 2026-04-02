@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+	"github.com/jackc/pgx/v5"
 )
 
 type SchoolHandler struct {
@@ -75,4 +77,62 @@ func (h *SchoolHandler) List(c *gin.Context) {
 		Offset:  params.Offset,
 		HasMore: params.Offset+len(schools) < total,
 	})
+}
+
+// UpdateSchoolRequest input để cập nhật trường học
+type UpdateSchoolRequest struct {
+	Name    string `json:"name" binding:"required,min=2"`
+	Address string `json:"address"`
+}
+
+// Update cập nhật trường học (SUPER_ADMIN only)
+func (h *SchoolHandler) Update(c *gin.Context) {
+	schoolID, err := uuid.Parse(c.Param("school_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid school_id format")
+		return
+	}
+
+	var req UpdateSchoolRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.schoolService.Update(ctx, schoolID, req.Name, req.Address); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "school not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to update school")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "school updated successfully", "school_id": schoolID.String()})
+}
+
+// Delete xóa trường học (SUPER_ADMIN only)
+func (h *SchoolHandler) Delete(c *gin.Context) {
+	schoolID, err := uuid.Parse(c.Param("school_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid school_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.schoolService.Delete(ctx, schoolID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "school not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to delete school")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "school deleted successfully", "school_id": schoolID.String()})
 }

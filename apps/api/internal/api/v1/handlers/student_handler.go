@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
@@ -129,4 +130,79 @@ func (h *StudentHandler) GetProfile(c *gin.Context) {
 	}
 
 	response.OK(c, profile)
+}
+
+// UpdateStudentReq input để cập nhật thông tin học sinh
+type UpdateStudentReq struct {
+	FullName string `json:"full_name" binding:"required,min=1,max=120"`
+	DOB      string `json:"dob" binding:"required"`
+	Gender   string `json:"gender" binding:"required"`
+}
+
+// Update cập nhật thông tin học sinh
+func (h *StudentHandler) Update(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id format")
+		return
+	}
+
+	var req UpdateStudentReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.studentService.Update(ctx, adminSchoolID, studentID, req.FullName, req.DOB, req.Gender); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "student not found")
+			return
+		}
+		if errors.Is(err, service.ErrInvalidValue) {
+			response.Fail(c, http.StatusBadRequest, "invalid dob format (expected YYYY-MM-DD)")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to update student")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "student updated successfully", "student_id": studentID.String()})
+}
+
+// Delete xóa học sinh
+func (h *StudentHandler) Delete(c *gin.Context) {
+	adminSchoolID := extractAdminSchoolID(c)
+
+	studentID, err := uuid.Parse(c.Param("student_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid student_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.studentService.Delete(ctx, adminSchoolID, studentID); err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, pgx.ErrNoRows) {
+			response.Fail(c, http.StatusNotFound, "student not found")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to delete student")
+		return
+	}
+
+	response.OK(c, gin.H{"message": "student deleted successfully", "student_id": studentID.String()})
 }

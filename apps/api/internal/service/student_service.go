@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
+	"github.com/jackc/pgx/v5"
 )
 
 type StudentService struct {
@@ -102,4 +104,40 @@ func (s *StudentService) GetProfile(ctx context.Context, adminSchoolID *uuid.UUI
 	}
 
 	return profile, nil
+}
+
+// Update cập nhật thông tin học sinh
+func (s *StudentService) Update(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID, fullName, dobStr, gender string) error {
+	// Kiểm tra student thuộc school nào
+	student, err := s.studentRepo.GetByStudentID(ctx, studentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+		return ErrFailedToGetStudent
+	}
+	if adminSchoolID != nil && student.SchoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+
+	dob, err := time.Parse("2006-01-02", dobStr)
+	if err != nil {
+		return ErrInvalidValue
+	}
+	return s.studentRepo.Update(ctx, studentID, fullName, dob, gender)
+}
+
+// Delete xóa học sinh
+func (s *StudentService) Delete(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID) error {
+	student, err := s.studentRepo.GetByStudentID(ctx, studentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+		return ErrFailedToGetStudent
+	}
+	if adminSchoolID != nil && student.SchoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+	return s.studentRepo.Delete(ctx, studentID)
 }

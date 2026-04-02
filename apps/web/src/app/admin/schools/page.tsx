@@ -1,7 +1,7 @@
 /**
  * Admin Schools Page
- * Quản lý danh sách trường học: xem, tạo mới.
- * API: GET /admin/schools, POST /admin/schools
+ * Quản lý danh sách trường học: xem, tạo mới, sửa, xóa.
+ * API: GET/POST/PUT/DELETE /admin/schools
  */
 "use client";
 
@@ -17,8 +17,11 @@ import { CardSkeleton } from "@/components/shared/CardSkeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
 import { toast } from "sonner";
-import { School as SchoolIcon, Plus, X, Loader2, MapPin } from "lucide-react";
+import { School as SchoolIcon, Plus, X, Loader2, MapPin, Pencil, Trash2 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Label } from "@/components/ui/label";
+import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ActionModal } from "@/components/shared/ActionModal";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
 export default function AdminSchoolsPage() {
@@ -35,6 +38,15 @@ export default function AdminSchoolsPage() {
   const [formData, setFormData] = useState<CreateSchoolRequest>({ name: "", address: "" });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  // Edit state
+  const [editModal, setEditModal] = useState<{ isOpen: boolean; school: School | null }>({ isOpen: false, school: null });
+  const [editData, setEditData] = useState({ name: "", address: "" });
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Delete state
+  const [deleteAlert, setDeleteAlert] = useState<{ isOpen: boolean; schoolId: string | null }>({ isOpen: false, schoolId: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ─── Data fetching ────────────────────────────────────────────────
 
@@ -79,6 +91,45 @@ export default function AdminSchoolsPage() {
       setFormError(extractApiErrorMessage(error, "Không thể tạo trường học"));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // ─── Edit school ──────────────────────────────────────────────
+
+  const openEditModal = (school: School) => {
+    setEditData({ name: school.name, address: school.address || "" });
+    setEditModal({ isOpen: true, school });
+  };
+
+  const handleEdit = async () => {
+    if (!editModal.school) return;
+    try {
+      setEditLoading(true);
+      await adminApi.updateSchool(editModal.school.school_id, editData);
+      toast.success("Cập nhật trường thành công");
+      setEditModal({ isOpen: false, school: null });
+      fetchSchools();
+    } catch (err: unknown) {
+      toast.error(extractApiErrorMessage(err, "Không thể cập nhật"));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // ─── Delete school ─────────────────────────────────────────────
+
+  const handleDelete = async () => {
+    if (!deleteAlert.schoolId) return;
+    try {
+      setDeleteLoading(true);
+      await adminApi.deleteSchool(deleteAlert.schoolId);
+      toast.success("Xóa trường thành công");
+      setDeleteAlert({ isOpen: false, schoolId: null });
+      fetchSchools();
+    } catch (err: unknown) {
+      toast.error(extractApiErrorMessage(err, "Không thể xóa trường"));
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -180,6 +231,7 @@ export default function AdminSchoolsPage() {
                   <TableRow>
                     <TableHead>Tên trường</TableHead>
                     <TableHead>Địa chỉ</TableHead>
+                    <TableHead className="text-right">Hành động</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -188,6 +240,14 @@ export default function AdminSchoolsPage() {
                       <TableCell className="font-medium">{school.name}</TableCell>
                       <TableCell className="text-muted-foreground">
                         {school.address || "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => openEditModal(school)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, schoolId: school.school_id })}>
+                          <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" /> Xóa
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -223,6 +283,40 @@ export default function AdminSchoolsPage() {
       {!loading && schools.length > 0 && (
         <PaginationBar pagination={pagination} onPageChange={setCurrentOffset} />
       )}
+
+      {/* Edit Modal */}
+      <ActionModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, school: null })}
+        onConfirm={handleEdit}
+        title="Sửa trường học"
+        loading={editLoading}
+        confirmText="Lưu"
+        cancelText="Hủy"
+      >
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Tên trường</Label>
+            <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Địa chỉ</Label>
+            <Input value={editData.address} onChange={(e) => setEditData({ ...editData, address: e.target.value })} />
+          </div>
+        </div>
+      </ActionModal>
+
+      {/* Delete Confirmation */}
+      <ConfirmAlertDialog
+        isOpen={deleteAlert.isOpen}
+        onClose={() => setDeleteAlert({ isOpen: false, schoolId: null })}
+        onConfirm={handleDelete}
+        title="Xác nhận xóa trường"
+        description="Bạn có chắc chắn muốn xóa trường này? Tất cả dữ liệu liên quan (lớp, học sinh...) có thể bị ảnh hưởng."
+        loading={deleteLoading}
+        confirmText="Xóa"
+        cancelText="Hủy"
+      />
     </div>
   );
 }

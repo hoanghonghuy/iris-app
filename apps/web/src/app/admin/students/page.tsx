@@ -15,9 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
+import { ActionModal } from "@/components/shared/ActionModal";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
+import { toast } from "sonner";
 import {
-  Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search,
+  Users, Plus, X, Loader2, Calendar, User, KeyRound, Copy, Check, AlertCircle, Search, Pencil, Trash2
 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useAuth } from "@/providers/AuthProvider";
@@ -46,6 +48,11 @@ export default function AdminStudentsPage() {
     codeError,
     filteredStudents,
     selectedClassName,
+    editModal,
+    editData,
+    editLoading,
+    deleteAlert,
+    deleteLoading,
     setSelectedSchoolId,
     setSelectedClassId,
     setSearchQuery,
@@ -53,12 +60,21 @@ export default function AdminStudentsPage() {
     setFormData,
     setRevokeAlert,
     closeRevokeAlert,
+    setEditModal,
+    setEditData,
+    setDeleteAlert,
     handleCreate,
+    handleEdit,
+    handleDelete,
     handleGenerateCode,
     confirmRevokeCode,
     handleCopy,
     getDaysLeft,
   } = useAdminStudentsPage();
+
+  const toDateInputValue = (dob: string) => {
+    return dob.includes("T") ? dob.split("T")[0] : dob;
+  };
 
   if (loadingSchools) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -197,6 +213,7 @@ export default function AdminStudentsPage() {
                   <TableHead>Ngày sinh</TableHead>
                   <TableHead>Giới tính</TableHead>
                   <TableHead className="text-right">Mã PH</TableHead>
+                  <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -228,6 +245,14 @@ export default function AdminStudentsPage() {
                           {generatingCode === s.student_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="mr-1 h-4 w-4" />} Tạo mã
                         </Button>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => { setEditData({ full_name: s.full_name, dob: toDateInputValue(s.dob), gender: s.gender as "male"|"female"|"other" }); setEditModal({ isOpen: true, student: s }); }}>
+                        <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, studentId: s.student_id })}>
+                        <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -280,15 +305,77 @@ export default function AdminStudentsPage() {
         )}
       />
 
-      {/* Revoke Code Alert */}
+      {/* Confirm Revoke Code Alert */}
       <ConfirmAlertDialog
         isOpen={revokeAlert.isOpen}
         onClose={closeRevokeAlert}
         onConfirm={confirmRevokeCode}
         title="Xác nhận thu hồi mã"
-        description="Bạn có chắc chắn muốn thu hồi mã phụ huynh này không? Mã hiện tại sẽ bị vô hiệu hóa ngay lập tức."
-        loading={!!revokingCode}
-        confirmText="Thu hồi ngay"
+        description="Mã phụ huynh hiện tại sẽ bị vô hiệu hóa. Phụ huynh đang sử dụng mã này sẽ bị đăng xuất. Bạn có chắc chắn muốn tiếp tục?"
+        loading={revokingCode !== null}
+        confirmText="Thu hồi"
+        cancelText="Hủy"
+      />
+
+      {/* Edit Student Modal */}
+      <ActionModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, student: null })}
+        onConfirm={async () => {
+          try {
+            await handleEdit();
+            toast.success("Cập nhật học sinh thành công");
+          } catch {
+            toast.error("Không thể cập nhật học sinh");
+          }
+        }}
+        title="Sửa thông tin học sinh"
+        loading={editLoading}
+        confirmText="Lưu"
+        cancelText="Hủy"
+      >
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>Họ và tên</Label>
+            <Input value={editData.full_name} onChange={(e) => setEditData({ ...editData, full_name: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Ngày sinh</Label>
+              <Input type="date" value={editData.dob} onChange={(e) => setEditData({ ...editData, dob: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Giới tính</Label>
+              <Select value={editData.gender} onValueChange={(value: "male" | "female" | "other") => setEditData({ ...editData, gender: value })}>
+                <SelectTrigger><SelectValue placeholder="Chọn giới tính" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Nam</SelectItem>
+                  <SelectItem value="female">Nữ</SelectItem>
+                  <SelectItem value="other">Khác</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </ActionModal>
+
+      {/* Confirm Delete Student */}
+      <ConfirmAlertDialog
+        isOpen={deleteAlert.isOpen}
+        onClose={() => setDeleteAlert({ isOpen: false, studentId: null })}
+        onConfirm={async () => {
+          try {
+            await handleDelete();
+            toast.success("Xóa học sinh thành công");
+          } catch {
+            toast.error("Không thể xóa học sinh");
+          }
+        }}
+        title="Xác nhận xóa học sinh"
+        description="Bạn có chắc chắn muốn xóa học sinh này? Hành động này không thể hoàn tác."
+        loading={deleteLoading}
+        confirmText="Xóa"
+        cancelText="Hủy"
       />
     </div>
   );

@@ -20,6 +20,16 @@ const INITIAL_REVOKE_ALERT_STATE: RevokeAlertState = {
   studentId: null,
 };
 
+type DeleteAlertState = {
+  isOpen: boolean;
+  studentId: string | null;
+};
+
+type EditModalState = {
+  isOpen: boolean;
+  student: Student | null;
+};
+
 export const genderLabel: Record<string, string> = {
   male: "Nam",
   female: "Nữ",
@@ -48,6 +58,13 @@ export function useAdminStudentsPage() {
   const [revokeAlert, setRevokeAlert] = useState<RevokeAlertState>(INITIAL_REVOKE_ALERT_STATE);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [codeError, setCodeError] = useState("");
+
+  const [editModal, setEditModal] = useState<EditModalState>({ isOpen: false, student: null });
+  const [editData, setEditData] = useState<StudentFormData>({ full_name: "", dob: "", gender: "male" });
+  const [editLoading, setEditLoading] = useState(false);
+
+  const [deleteAlert, setDeleteAlert] = useState<DeleteAlertState>({ isOpen: false, studentId: null });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const closeRevokeAlert = useCallback(() => {
     setRevokeAlert(INITIAL_REVOKE_ALERT_STATE);
@@ -135,6 +152,38 @@ export function useAdminStudentsPage() {
       setSubmitting(false);
     }
   }, [fetchStudents, formData, selectedClassId, selectedSchoolId]);
+
+  const handleEdit = useCallback(async () => {
+    if (!editModal.student) return;
+
+    try {
+      setEditLoading(true);
+      await adminApi.updateStudent(editModal.student.student_id, editData);
+      setEditModal({ isOpen: false, student: null });
+      await fetchStudents();
+      return true; // indicator for success to show toast
+    } catch (errorValue: unknown) {
+      throw errorValue; // let UI handle the error and show toast
+    } finally {
+      setEditLoading(false);
+    }
+  }, [editModal.student, editData, fetchStudents]);
+
+  const handleDelete = useCallback(async () => {
+    if (!deleteAlert.studentId) return;
+
+    try {
+      setDeleteLoading(true);
+      await adminApi.deleteStudent(deleteAlert.studentId);
+      setDeleteAlert({ isOpen: false, studentId: null });
+      await fetchStudents();
+      return true; // indicator for success
+    } catch (errorValue: unknown) {
+      throw errorValue;
+    } finally {
+      setDeleteLoading(false);
+    }
+  }, [deleteAlert.studentId, fetchStudents]);
 
   const handleGenerateCode = useCallback(async (studentId: string) => {
     try {
@@ -225,6 +274,11 @@ export function useAdminStudentsPage() {
     codeError,
     filteredStudents,
     selectedClassName,
+    editModal,
+    editData,
+    editLoading,
+    deleteAlert,
+    deleteLoading,
     setSelectedSchoolId,
     setSelectedClassId,
     setSearchQuery,
@@ -232,7 +286,12 @@ export function useAdminStudentsPage() {
     setFormData,
     setRevokeAlert,
     closeRevokeAlert,
+    setEditModal,
+    setEditData,
+    setDeleteAlert,
     handleCreate,
+    handleEdit,
+    handleDelete,
     handleGenerateCode,
     confirmRevokeCode,
     handleCopy,

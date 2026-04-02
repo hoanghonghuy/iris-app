@@ -25,6 +25,14 @@ export const adminApi = {
     const res = await apiClient.post('/admin/schools', data);
     return res.data;
   },
+  updateSchool: async (schoolId: string, data: { name: string; address: string }) => {
+    const res = await apiClient.put(`/admin/schools/${schoolId}`, data);
+    return res.data;
+  },
+  deleteSchool: async (schoolId: string) => {
+    const res = await apiClient.delete(`/admin/schools/${schoolId}`);
+    return res.data;
+  },
 
   // --- CLASSES ---
   getClassesBySchool: async (schoolId: string, params?: PaginationParams) => {
@@ -33,6 +41,14 @@ export const adminApi = {
   },
   createClass: async (data: CreateClassRequest) => {
     const res = await apiClient.post('/admin/classes', data);
+    return res.data;
+  },
+  updateClass: async (classId: string, data: { name: string; school_year: string }) => {
+    const res = await apiClient.put(`/admin/classes/${classId}`, data);
+    return res.data;
+  },
+  deleteClass: async (classId: string) => {
+    const res = await apiClient.delete(`/admin/classes/${classId}`);
     return res.data;
   },
 
@@ -47,6 +63,14 @@ export const adminApi = {
   },
   createStudent: async (data: CreateStudentRequest) => {
     const res = await apiClient.post('/admin/students', data);
+    return res.data;
+  },
+  updateStudent: async (studentId: string, data: { full_name: string; dob: string; gender: string }) => {
+    const res = await apiClient.put(`/admin/students/${studentId}`, data);
+    return res.data;
+  },
+  deleteStudent: async (studentId: string) => {
+    const res = await apiClient.delete(`/admin/students/${studentId}`);
     return res.data;
   },
   generateParentCode: async (studentId: string) => {
@@ -107,6 +131,10 @@ export const adminApi = {
   },
   unassignTeacherFromClass: async (teacherId: string, classId: string) => {
     const res = await apiClient.delete(`/admin/teachers/${teacherId}/classes/${classId}`);
+    return res.data;
+  },
+  deleteTeacher: async (teacherId: string) => {
+    const res = await apiClient.delete(`/admin/teachers/${teacherId}`);
     return res.data;
   },
 

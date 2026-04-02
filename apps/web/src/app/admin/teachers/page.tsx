@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActionModal } from "@/components/shared/ActionModal";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { toast } from "sonner";
-import { Phone, Mail, Link2, Search, X, BookUser } from "lucide-react";
+import { Phone, Mail, Link2, Search, X, BookUser, Trash2 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -39,6 +39,7 @@ export default function AdminTeachersPage() {
     actionLoading,
     assignModal,
     unassignAlert,
+    deleteAlert,
     filteredTeachers,
     setSearchQuery,
     setCurrentOffset,
@@ -47,10 +48,12 @@ export default function AdminTeachersPage() {
     setActionLoading,
     setAssignModal,
     setUnassignAlert,
+    setDeleteAlert,
     closeAssignModal,
     closeUnassignAlert,
     handleAssign,
     confirmUnassign,
+    handleDelete,
   } = useAdminTeachersPage();
 
   const handleAssignWithFeedback = async () => {
@@ -131,8 +134,8 @@ export default function AdminTeachersPage() {
               <TableRow>
                 <TableHead>Họ tên</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Lớp Phụ Trách</TableHead>
-                <TableHead className="text-right">Gán lớp</TableHead>
+                <TableHead>Môn / Lớp</TableHead>
+                <TableHead className="text-right">Hành động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,7 +170,10 @@ export default function AdminTeachersPage() {
                   </TableCell>
                   <TableCell className="text-right align-middle">
                     <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
-                      <Link2 className="mr-1 h-4 w-4" /> Gán lớp
+                      <Link2 className="mr-1 h-3.5 w-3.5" /> Gán lớp
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, teacherId: t.teacher_id })}>
+                      <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" /> Xóa
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -212,9 +218,12 @@ export default function AdminTeachersPage() {
                     )}
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-border/60 flex items-center justify-start">
-                    <Button variant="secondary" size="sm" className="w-full hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
+                  <div className="mt-4 pt-4 border-t border-border/60 flex items-center gap-2 justify-start">
+                    <Button variant="secondary" size="sm" className="flex-1 hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
+                    </Button>
+                    <Button variant="outline" size="sm" className="hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteAlert({ isOpen: true, teacherId: t.teacher_id })}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </CardContent>
@@ -274,6 +283,28 @@ export default function AdminTeachersPage() {
         description={<>Bạn có chắc chắn muốn hủy gán lớp <strong>{unassignAlert.className}</strong> khỏi giáo viên này? Hành động này sẽ thay đổi quyền truy cập của giáo viên đối với lớp học.</>}
         loading={actionLoading}
         confirmText="Chắc chắn hủy"
+      />
+
+      {/* Delete Alert */}
+      <ConfirmAlertDialog
+        isOpen={deleteAlert.isOpen}
+        onClose={() => setDeleteAlert({ isOpen: false, teacherId: null })}
+        onConfirm={async () => {
+          try {
+            setActionLoading(true);
+            await handleDelete();
+            toast.success("Xóa giáo viên thành công");
+          } catch (err: unknown) {
+            toast.error(extractApiErrorMessage(err, "Không thể xóa giáo viên"));
+          } finally {
+            setActionLoading(false);
+          }
+        }}
+        title="Xác nhận xóa giáo viên"
+        description="Bạn có chắc chắn muốn xóa giáo viên này? Hành động này không thể hoàn tác."
+        loading={actionLoading}
+        confirmText="Xóa"
+        cancelText="Hủy"
       />
     </div>
   );

@@ -59,3 +59,13 @@ func (s *SchoolService) List(ctx context.Context, adminSchoolID *uuid.UUID, limi
 
 	return s.schoolRepo.List(ctx, limit, offset)
 }
+
+// Update cập nhật thông tin trường học (SUPER_ADMIN only)
+func (s *SchoolService) Update(ctx context.Context, schoolID uuid.UUID, name, address string) error {
+	return s.schoolRepo.Update(ctx, schoolID, name, address)
+}
+
+// Delete xóa trường học (SUPER_ADMIN only)
+func (s *SchoolService) Delete(ctx context.Context, schoolID uuid.UUID) error {
+	return s.schoolRepo.Delete(ctx, schoolID)
+}

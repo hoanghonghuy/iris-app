@@ -30,6 +30,16 @@ const INITIAL_UNASSIGN_ALERT_STATE: UnassignAlertState = {
   className: null,
 };
 
+type DeleteAlertState = {
+  isOpen: boolean;
+  teacherId: string | null;
+};
+
+const INITIAL_DELETE_ALERT_STATE: DeleteAlertState = {
+  isOpen: false,
+  teacherId: null,
+};
+
 export function useAdminTeachersPage() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +56,7 @@ export function useAdminTeachersPage() {
 
   const [assignModal, setAssignModal] = useState<AssignModalState>(INITIAL_ASSIGN_MODAL_STATE);
   const [unassignAlert, setUnassignAlert] = useState<UnassignAlertState>(INITIAL_UNASSIGN_ALERT_STATE);
+  const [deleteAlert, setDeleteAlert] = useState<DeleteAlertState>(INITIAL_DELETE_ALERT_STATE);
 
   const closeAssignModal = useCallback(() => {
     setAssignModal(INITIAL_ASSIGN_MODAL_STATE);
@@ -112,6 +123,14 @@ export function useAdminTeachersPage() {
     await fetchTeachers();
   }, [closeUnassignAlert, fetchTeachers, unassignAlert.classId, unassignAlert.teacherId]);
 
+  const handleDelete = useCallback(async () => {
+    if (!deleteAlert.teacherId) return;
+
+    await adminApi.deleteTeacher(deleteAlert.teacherId);
+    setDeleteAlert(INITIAL_DELETE_ALERT_STATE);
+    await fetchTeachers();
+  }, [deleteAlert.teacherId, fetchTeachers]);
+
   const filteredTeachers = useMemo(() => {
     if (!searchQuery.trim()) {
       return teachers;
@@ -139,6 +158,7 @@ export function useAdminTeachersPage() {
     actionLoading,
     assignModal,
     unassignAlert,
+    deleteAlert,
     filteredTeachers,
     setSearchQuery,
     setCurrentOffset,
@@ -147,9 +167,11 @@ export function useAdminTeachersPage() {
     setActionLoading,
     setAssignModal,
     setUnassignAlert,
+    setDeleteAlert,
     closeAssignModal,
     closeUnassignAlert,
     handleAssign,
     confirmUnassign,
+    handleDelete,
   };
 }
