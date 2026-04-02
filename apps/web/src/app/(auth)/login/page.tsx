@@ -26,6 +26,8 @@ type LoginResponse = {
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [error, setError] = useState('');
   const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +49,24 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setErrorCode(undefined);
+    setEmailError('');
+    setPasswordError('');
     setIsSubmitting(true);
+
+    let hasLocalErr = false;
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Vui lòng nhập Email hợp lệ');
+      hasLocalErr = true;
+    }
+    if (!password) {
+      setPasswordError('Vui lòng nhập Mật khẩu');
+      hasLocalErr = true;
+    }
+
+    if (hasLocalErr) {
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       // 1. Gọi API login → backend trả về { data: { access_token, ... } }
@@ -98,7 +117,7 @@ export default function LoginPage() {
             Đăng nhập để quản lý thông tin trường học
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
+        <form noValidate onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
               <div
@@ -117,9 +136,14 @@ export default function LoginPage() {
                 type="email"
                 placeholder="name@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailError) setEmailError('');
+                }}
+                aria-invalid={!!emailError}
                 required
               />
+              {emailError && <p className="text-[0.8rem] font-medium text-destructive mt-1">{emailError}</p>}
             </div>
             <div className="space-y-2 mb-3">
               <div className="flex items-center justify-between">
@@ -135,9 +159,14 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (passwordError) setPasswordError('');
+                }}
+                aria-invalid={!!passwordError}
                 required
               />
+              {passwordError && <p className="text-[0.8rem] font-medium text-destructive mt-1">{passwordError}</p>}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
