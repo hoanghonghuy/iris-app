@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authApi } from "@/lib/api/auth.api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, InputError } from "@/components/ui/input";
 import {
     Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
@@ -24,30 +24,25 @@ export default function ResetPasswordPage() {
     const [token, setToken] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [emailError, setEmailError] = useState("");
+    const [tokenError, setTokenError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [confirmPasswordError, setConfirmPasswordError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
+        setError(""); setEmailError(""); setTokenError(""); setPasswordError(""); setConfirmPasswordError("");
+        let hasLocalErr = false;
 
-        if (!email) {
-            setError("Email không được để trống");
-            return;
-        }
-        if (!token) {
-            setError("Mã đặt lại mật khẩu không được để trống");
-            return;
-        }
-        if (password.length < 6) {
-            setError("Mật khẩu phải có ít nhất 6 ký tự");
-            return;
-        }
-        if (password !== confirmPassword) {
-            setError("Mật khẩu xác nhận không khớp");
-            return;
-        }
+        if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("Vui lòng nhập Email hợp lệ"); hasLocalErr = true; }
+        if (!token.trim()) { setTokenError("Mã đặt lại mật khẩu không được để trống"); hasLocalErr = true; }
+        if (password.length < 6) { setPasswordError("Mật khẩu phải có ít nhất 6 ký tự"); hasLocalErr = true; }
+        if (password !== confirmPassword) { setConfirmPasswordError("Mật khẩu xác nhận không khớp"); hasLocalErr = true; }
+
+        if (hasLocalErr) return;
 
         setIsSubmitting(true);
         try {
@@ -86,7 +81,7 @@ export default function ResetPasswordPage() {
                         Nhập email, mã đặt lại mật khẩu và mật khẩu mới
                     </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleSubmit}>
+                <form noValidate onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">
                         {error && (
                             <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
@@ -100,9 +95,11 @@ export default function ResetPasswordPage() {
                                 type="email"
                                 placeholder="name@example.com"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
+                                aria-invalid={!!emailError}
                                 required
                             />
+                            <InputError message={emailError} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium" htmlFor="token">Mã đặt lại mật khẩu</label>
@@ -111,9 +108,11 @@ export default function ResetPasswordPage() {
                                 type="text"
                                 placeholder="Nhập mã trong email"
                                 value={token}
-                                onChange={(e) => setToken(e.target.value)}
+                                onChange={(e) => { setToken(e.target.value); if (tokenError) setTokenError(""); }}
+                                aria-invalid={!!tokenError}
                                 required
                             />
+                            <InputError message={tokenError} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium" htmlFor="password">Mật khẩu mới</label>
@@ -122,10 +121,12 @@ export default function ResetPasswordPage() {
                                 type="password"
                                 placeholder="Tối thiểu 6 ký tự"
                                 value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
+                                aria-invalid={!!passwordError}
                                 required
                                 minLength={6}
                             />
+                            <InputError message={passwordError} />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium" htmlFor="confirmPassword">Xác nhận mật khẩu</label>
@@ -134,10 +135,12 @@ export default function ResetPasswordPage() {
                                 type="password"
                                 placeholder="Nhập lại mật khẩu"
                                 value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                onChange={(e) => { setConfirmPassword(e.target.value); if (confirmPasswordError) setConfirmPasswordError(""); }}
+                                aria-invalid={!!confirmPasswordError}
                                 required
                                 minLength={6}
                             />
+                            <InputError message={confirmPasswordError} />
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">

@@ -13,7 +13,7 @@ import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { UserRole } from "@/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, InputError } from "@/components/ui/input";
 import { Heart, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { extractApiErrorRawMessage } from "@/lib/api-error";
@@ -24,6 +24,10 @@ export default function RegisterParentPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [parentCode, setParentCode] = useState("");
+  const [parentCodeError, setParentCodeError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
@@ -68,10 +72,15 @@ export default function RegisterParentPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) { setError("Email không được trống"); return; }
-    if (password.length < 6) { setError("Mật khẩu tối thiểu 6 ký tự"); return; }
-    if (password !== confirmPassword) { setError("Mật khẩu xác nhận không khớp"); return; }
-    if (!parentCode.trim()) { setError("Mã phụ huynh không được trống"); return; }
+    setParentCodeError(""); setEmailError(""); setPasswordError(""); setConfirmPasswordError("");
+    let hasLocalErr = false;
+
+    if (!parentCode.trim()) { setParentCodeError("Mã phụ huynh không được để trống"); hasLocalErr = true; }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setEmailError("Vui lòng nhập Email hợp lệ"); hasLocalErr = true; }
+    if (password.length < 6) { setPasswordError("Mật khẩu tối thiểu 6 ký tự"); hasLocalErr = true; }
+    if (password !== confirmPassword) { setConfirmPasswordError("Mật khẩu xác nhận không khớp"); hasLocalErr = true; }
+
+    if (hasLocalErr) return;
 
     try {
       setSubmitting(true); setError(""); setErrorCode(undefined);
@@ -108,23 +117,27 @@ export default function RegisterParentPage() {
           <CardDescription>Sử dụng mã phụ huynh từ nhà trường để đăng ký</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form noValidate onSubmit={handleSubmit} className="space-y-4">
             {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
             <div className="space-y-2">
               <label htmlFor="parentCode" className="text-sm font-medium">Mã phụ huynh <span className="text-destructive">*</span></label>
-              <Input id="parentCode" placeholder="Nhập mã từ nhà trường..." value={parentCode} onChange={(e) => setParentCode(e.target.value)} required />
+              <Input id="parentCode" placeholder="Nhập mã từ nhà trường..." value={parentCode} onChange={(e) => { setParentCode(e.target.value); if (parentCodeError) setParentCodeError(""); }} aria-invalid={!!parentCodeError} required />
+              <InputError message={parentCodeError} />
             </div>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">Email <span className="text-destructive">*</span></label>
-              <Input id="email" type="email" placeholder="parent@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input id="email" type="email" placeholder="parent@example.com" value={email} onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(""); }} aria-invalid={!!emailError} required />
+              <InputError message={emailError} />
             </div>
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">Mật khẩu</label>
-              <Input id="password" type="password" placeholder="Tối thiểu 6 ký tự" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Input id="password" type="password" placeholder="Tối thiểu 6 ký tự" value={password} onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }} aria-invalid={!!passwordError} required />
+              <InputError message={passwordError} />
             </div>
             <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium">Xác nhận mật khẩu</label>
-              <Input id="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              <Input id="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); if (confirmPasswordError) setConfirmPasswordError(""); }} aria-invalid={!!confirmPasswordError} required />
+              <InputError message={confirmPasswordError} />
             </div>
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? (

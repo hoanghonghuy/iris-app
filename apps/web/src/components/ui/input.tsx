@@ -18,4 +18,9 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   )
 }
 
-export { Input }
+function InputError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-[0.8rem] font-medium text-destructive mt-1">{message}</p>;
+}
+
+export { Input, InputError }

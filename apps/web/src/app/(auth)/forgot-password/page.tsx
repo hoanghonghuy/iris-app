@@ -9,7 +9,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { authApi } from "@/lib/api/auth.api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, InputError } from "@/components/ui/input";
 import {
     Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter,
 } from "@/components/ui/card";
@@ -19,15 +19,21 @@ import { AUTH_PAGE_CARD_CLASS, AUTH_PAGE_CONTAINER_CLASS } from "@/components/au
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
+    const [emailError, setEmailError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [sent, setSent] = useState(false);
     const [error, setError] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError("");
-        setIsSubmitting(true);
+        setError(""); setEmailError("");
 
+        if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            setEmailError("Vui lòng nhập Email hợp lệ");
+            return;
+        }
+
+        setIsSubmitting(true);
         try {
             await authApi.forgotPassword(email);
             setSent(true);
@@ -67,7 +73,7 @@ export default function ForgotPasswordPage() {
                         </CardFooter>
                     </>
                 ) : (
-                    <form onSubmit={handleSubmit}>
+                    <form noValidate onSubmit={handleSubmit}>
                         <CardContent className="space-y-4">
                             {error && (
                                 <div className="p-3 text-sm text-destructive-foreground bg-destructive rounded-md">
@@ -84,10 +90,12 @@ export default function ForgotPasswordPage() {
                                         className="pl-10"
                                         placeholder="name@example.com"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(""); }}
+                                        aria-invalid={!!emailError}
                                         required
                                     />
                                 </div>
+                                <InputError message={emailError} />
                             </div>
                         </CardContent>
                         <CardFooter className="flex flex-col gap-4">
