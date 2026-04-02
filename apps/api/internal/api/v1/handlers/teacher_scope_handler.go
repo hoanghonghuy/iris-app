@@ -61,8 +61,8 @@ type CreatePostCommentRequest struct {
 
 // PaginationParams input chung cho phân trang (dùng cho tất cả list endpoints)
 type PaginationParams struct {
-	Limit  int `form:"limit"`
-	Offset int `form:"offset"`
+	Limit  int `form:"limit" binding:"omitempty,min=1,max=100"`
+	Offset int `form:"offset" binding:"omitempty,min=0"`
 }
 
 // UpdateMyProfileRequest input để giáo viên cập nhật thông tin cá nhân (chỉ phone)

@@ -46,7 +46,7 @@ type ActivateUserWithTokenRequest struct {
 
 // UpdateMyPasswordRequest input để user cập nhật mật khẩu (self-service)
 type UpdateMyPasswordRequest struct {
-	Password string `json:"password"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 // AssignRoleRequest input để gán role cho user
