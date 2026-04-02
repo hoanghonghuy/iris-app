@@ -16,6 +16,8 @@ func NewRouter(
 	jwtSecret string,
 	ttlMinutes int,
 	allowedOrigins []string,
+	authLoginRateLimit gin.HandlerFunc,
+	authForgotPasswordRateLimit gin.HandlerFunc,
 	authHandler *v1handlers.AuthHandler,
 	schoolHandler *v1handlers.SchoolHandler,
 	classHandler *v1handlers.ClassHandler,
@@ -76,9 +78,9 @@ func NewRouter(
 		v1.GET("/health", func(c *gin.Context) {
 			response.OK(c, gin.H{"ok": true})
 		})
-		v1.POST("/auth/login", authHandler.Login)
-		v1.POST("/auth/login/google", authHandler.LoginWithGoogle)
-		v1.POST("/auth/forgot-password", authHandler.ForgotPassword)
+		v1.POST("/auth/login", authLoginRateLimit, authHandler.Login)
+		v1.POST("/auth/login/google", authLoginRateLimit, authHandler.LoginWithGoogle)
+		v1.POST("/auth/forgot-password", authForgotPasswordRateLimit, authHandler.ForgotPassword)
 		v1.POST("/auth/reset-password", authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
 		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
