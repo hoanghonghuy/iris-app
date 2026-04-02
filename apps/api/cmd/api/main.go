@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/config"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/db"
 	httpapi "github.com/hoanghonghuy/iris-app/apps/api/internal/http"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
@@ -119,12 +121,28 @@ func main() {
 	go hub.Run()
 
 	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
+	// build các middleware rate limit xác thực từ config.
+	authRateLimitWindow := time.Duration(cfg.AuthRateLimitWindowSeconds) * time.Second
+	authLoginLimiter := middleware.NewIPFixedWindowRateLimitWithConfig(middleware.FixedWindowRateLimitConfig{
+		MaxRequests:  cfg.AuthLoginRateLimit,
+		Window:       authRateLimitWindow,
+		CleanupEvery: cfg.AuthRateLimitCleanupEvery,
+		StaleTTL:     time.Duration(cfg.AuthRateLimitStaleTTLMultiplier) * authRateLimitWindow,
+	})
+	authForgotLimiter := middleware.NewIPFixedWindowRateLimitWithConfig(middleware.FixedWindowRateLimitConfig{
+		MaxRequests:  cfg.AuthForgotRateLimit,
+		Window:       authRateLimitWindow,
+		CleanupEvery: cfg.AuthRateLimitCleanupEvery,
+		StaleTTL:     time.Duration(cfg.AuthRateLimitStaleTTLMultiplier) * authRateLimitWindow,
+	})
 
 	// Router
 	r := httpapi.NewRouter(
 		cfg.JWTSecret,
 		cfg.JWTTTLMinutes,
 		cfg.AllowedOrigins,
+		authLoginLimiter,
+		authForgotLimiter,
 		authHandler,
 		schoolHandler,
 		classHandler,
