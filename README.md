@@ -115,6 +115,14 @@ SMTP_USER=
 SMTP_PASS=
 ```
 
+Auth rate-limit values (defaults):
+
+- `AUTH_LOGIN_RATE_LIMIT=10`: maximum 10 requests per minute for each login `IP + route` (`/auth/login`, `/auth/login/google`).
+- `AUTH_FORGOT_PASSWORD_RATE_LIMIT=5`: maximum 5 requests per minute for each forgot-password `IP + route`.
+- `AUTH_RATE_LIMIT_WINDOW_SECONDS=60`: fixed-window duration in seconds.
+- `AUTH_RATE_LIMIT_CLEANUP_EVERY=256`: number of requests between limiter map cleanup runs to avoid unbounded growth.
+- `AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER=5`: stale-key TTL multiplier; effective TTL = `multiplier * window`.
+
 ### 3) Run migrations
 
 ```bash
