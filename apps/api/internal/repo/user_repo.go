@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -304,6 +305,51 @@ func (r *UserRepo) CreatePending(ctx context.Context, email, passwordHash string
 	var id uuid.UUID
 	err := r.pool.QueryRow(ctx, q, email, passwordHash).Scan(&id)
 	return id, err
+}
+
+// CreateWithRolesTx tạo user + gán role trong một transaction để tránh partial state.
+func (r *UserRepo) CreateWithRolesTx(ctx context.Context, email, passwordHash, status string, roles []string) (uuid.UUID, error) {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return uuid.Nil, err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	const createUserQuery = `
+		INSERT INTO users (email, password_hash, status)
+		VALUES ($1, $2, $3)
+		RETURNING user_id;
+	`
+
+	var userID uuid.UUID
+	if err := tx.QueryRow(ctx, createUserQuery, email, passwordHash, status).Scan(&userID); err != nil {
+		return uuid.Nil, err
+	}
+
+	const assignRoleQuery = `
+		INSERT INTO user_roles (user_id, role_id)
+		SELECT $1, role_id FROM roles WHERE name = $2
+		ON CONFLICT (user_id, role_id) DO NOTHING;
+	`
+
+	for _, role := range roles {
+		result, err := tx.Exec(ctx, assignRoleQuery, userID, role)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("%w: %s", ErrRoleAssignmentFailed, role)
+		}
+
+		if result.RowsAffected() == 0 {
+			return uuid.Nil, fmt.Errorf("%w: %s", ErrRoleAssignmentFailed, role)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return uuid.Nil, err
+	}
+
+	return userID, nil
 }
 
 // SetActivationToken lưu activation token

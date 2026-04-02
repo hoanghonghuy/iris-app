@@ -62,6 +62,18 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchool
 		}
 	}
 
+	// Loại bỏ role trùng lặp để tránh fail khi input có role lặp lại.
+	seenRoles := make(map[string]struct{}, len(roles))
+	uniqueRoles := make([]string, 0, len(roles))
+	for _, role := range roles {
+		if _, exists := seenRoles[role]; exists {
+			continue
+		}
+		seenRoles[role] = struct{}{}
+		uniqueRoles = append(uniqueRoles, role)
+	}
+	roles = uniqueRoles
+
 	// SCHOOL_ADMIN: chỉ được tạo user với role TEACHER hoặc PARENT (không thể tự nâng quyền)
 	if adminSchoolID != nil {
 		allowedForSchoolAdmin := map[string]bool{"TEACHER": true, "PARENT": true}
@@ -90,21 +102,17 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchool
 
 	// Create user với status phù hợp
 	var userID uuid.UUID
+	status := "active"
 	if hasTeacherRole {
-		userID, err = s.userRepo.CreatePending(ctx, email, string(passwordHash))
-	} else {
-		// Admin và Parent tạo trực tiếp với status active
-		userID, err = s.userRepo.CreateActive(ctx, email, string(passwordHash))
-	}
-	if err != nil {
-		return nil, ErrFailedToCreateUser
+		status = "pending"
 	}
 
-	// Assign roles
-	for _, role := range roles {
-		if err := s.userRepo.AssignRole(ctx, userID, role); err != nil {
-			return nil, fmt.Errorf("%w: %s", ErrFailedToAssignRole, role)
+	userID, err = s.userRepo.CreateWithRolesTx(ctx, email, string(passwordHash), status, roles)
+	if err != nil {
+		if errors.Is(err, repo.ErrRoleAssignmentFailed) {
+			return nil, ErrFailedToAssignRole
 		}
+		return nil, ErrFailedToCreateUser
 	}
 
 	return s.FindByID(ctx, nil, userID)
