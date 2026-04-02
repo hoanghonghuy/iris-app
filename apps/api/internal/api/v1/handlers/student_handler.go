@@ -58,6 +58,7 @@ func (h *StudentHandler) Create(c *gin.Context) {
 	}
 
 	response.Created(c, gin.H{"student_id": student.StudentID})
+	// TODO: cân nhắc RFC 7231
 	// Respond with created resource
 	// c.Header("Location", fmt.Sprintf("/api/v1/admin/students/%s", student.StudentID.String()))
 	// response.Created(c, student)
