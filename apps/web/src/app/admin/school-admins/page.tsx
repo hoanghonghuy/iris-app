@@ -5,18 +5,19 @@
  */
 "use client";
 
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import { SchoolAdmin } from "@/types";
 import { PaginationBar } from "@/components/shared/PaginationBar";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ResponsiveSplitView } from "@/components/shared/ResponsiveSplitView";
-import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { ShieldCheck, Loader2, Plus, X, Trash2, Mail, AlertCircle, CheckCircle2, Search } from "lucide-react";
 import { useAdminSchoolAdminsPage } from "./useAdminSchoolAdminsPage";
 
 export default function AdminSchoolAdminsPage() {
@@ -27,9 +28,12 @@ export default function AdminSchoolAdminsPage() {
     pagination,
     showForm,
     schools,
-    users,
     selectedSchoolId,
-    selectedUserId,
+    userSearchQuery,
+    userSearchResults,
+    userSearchLoading,
+    selectedUser,
+    showUserDropdown,
     submitting,
     formError,
     success,
@@ -38,7 +42,9 @@ export default function AdminSchoolAdminsPage() {
     setCurrentOffset,
     setShowForm,
     setSelectedSchoolId,
-    setSelectedUserId,
+    setUserSearchQuery,
+    selectUser,
+    clearSelectedUser,
     setSuccess,
     setDeleteAlert,
     closeDeleteAlert,
@@ -47,6 +53,18 @@ export default function AdminSchoolAdminsPage() {
   } = useAdminSchoolAdminsPage();
 
   const getAdminId = (admin: SchoolAdmin): string => admin.admin_id;
+
+  // Ref để đóng dropdown khi click bên ngoài
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        // Không cần set state trực tiếp — chỉ blur input
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -67,15 +85,63 @@ export default function AdminSchoolAdminsPage() {
             <form onSubmit={handleCreate} className="space-y-4">
               {formError && <Alert variant="destructive"><AlertCircle className="h-4 w-4" /><AlertDescription>{formError}</AlertDescription></Alert>}
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* User Search */}
                 <div className="space-y-2">
                   <Label>User</Label>
-                  <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Chọn user" /></SelectTrigger>
-                    <SelectContent>
-                      {users.map((u) => <SelectItem key={u.user_id} value={u.user_id}>{u.email}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative" ref={dropdownRef}>
+                    {selectedUser ? (
+                      <div className="flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="flex-1 truncate">{selectedUser.email}</span>
+                        <button
+                          type="button"
+                          onClick={clearSelectedUser}
+                          className="shrink-0 rounded-full p-0.5 hover:bg-muted transition-colors"
+                        >
+                          <X className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="text"
+                            placeholder="Tìm theo email..."
+                            className="pl-8"
+                            value={userSearchQuery}
+                            onChange={(e) => setUserSearchQuery(e.target.value)}
+                            autoComplete="off"
+                          />
+                          {userSearchLoading && (
+                            <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                        {showUserDropdown && userSearchResults.length > 0 && (
+                          <div className="absolute z-50 mt-1 w-full rounded-lg border bg-popover shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                            {userSearchResults.map((user) => (
+                              <button
+                                key={user.user_id}
+                                type="button"
+                                className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 border-b last:border-0"
+                                onClick={() => selectUser(user)}
+                              >
+                                <Mail className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                <span className="truncate">{user.email}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {userSearchQuery.trim().length >= 2 && !userSearchLoading && userSearchResults.length === 0 && (
+                          <div className="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
+                            Không tìm thấy user nào
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
+                {/* School Select */}
                 <div className="space-y-2">
                   <Label>Trường</Label>
                   <Select value={selectedSchoolId} onValueChange={setSelectedSchoolId}>
@@ -87,7 +153,7 @@ export default function AdminSchoolAdminsPage() {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting || !selectedUser}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Gán
                 </Button>
               </div>

@@ -22,7 +22,20 @@ func NewSchoolAdminService(schoolAdminRepo *repo.SchoolAdminRepo, userRepo *repo
 
 // Create tạo mới school admin (SUPER_ADMIN only).
 // Gán user vào trường với role SCHOOL_ADMIN, đồng thời gán role trong bảng user_roles.
+// Nếu fullName rỗng, tự động lấy từ thông tin user (email fallback).
 func (s *SchoolAdminService) Create(ctx context.Context, userID, schoolID uuid.UUID, fullName, phone string) (*model.SchoolAdmin, error) {
+	// Nếu không truyền fullName, tự lấy từ user record
+	if fullName == "" {
+		userInfo, err := s.userRepo.FindByID(ctx, userID)
+		if err != nil {
+			return nil, ErrUserNotFound
+		}
+		fullName = userInfo.FullName
+		if fullName == "" {
+			fullName = userInfo.Email // fallback sang email
+		}
+	}
+
 	// Gán role SCHOOL_ADMIN cho user (nếu chưa có)
 	if err := s.userRepo.AssignRole(ctx, userID, "SCHOOL_ADMIN"); err != nil {
 		return nil, ErrFailedToAssignRole

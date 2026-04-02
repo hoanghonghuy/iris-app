@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { adminApi } from "@/lib/api/admin.api";
 import { useAuth } from "@/providers/AuthProvider";
@@ -28,9 +28,16 @@ export function useAdminSchoolAdminsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [schools, setSchools] = useState<School[]>([]);
-  const [users, setUsers] = useState<UserInfo[]>([]);
   const [selectedSchoolId, setSelectedSchoolId] = useState("");
-  const [selectedUserId, setSelectedUserId] = useState("");
+
+  // User search state
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchResults, setUserSearchResults] = useState<UserInfo[]>([]);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserInfo | null>(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
@@ -64,39 +71,85 @@ export function useAdminSchoolAdminsPage() {
     }
   }, [fetchAdmins, role, router]);
 
+  // Load schools khi mở form
   useEffect(() => {
     if (!showForm) {
       return;
     }
 
-    const loadFormData = async () => {
+    const loadSchools = async () => {
       try {
-        const [schoolResponse, userData] = await Promise.all([
-          adminApi.getSchools(),
-          adminApi.getUsers({ limit: 100 }),
-        ]);
+        const schoolResponse = await adminApi.getSchools();
         const schoolData = schoolResponse.data;
         setSchools(schoolData || []);
-
-        const userList = userData.data || [];
-        setUsers(Array.isArray(userList) ? userList : []);
-
         if (schoolData && schoolData.length > 0) {
           setSelectedSchoolId(schoolData[0].school_id);
         }
-        if (userList && userList.length > 0) {
-          setSelectedUserId(userList[0].user_id);
-        }
-      } catch {
-      }
+      } catch {}
     };
 
-    void loadFormData();
+    void loadSchools();
+    // Reset user search khi mở form
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+    setSelectedUser(null);
+    setShowUserDropdown(false);
   }, [showForm]);
+
+  // Debounce search users
+  useEffect(() => {
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    const query = userSearchQuery.trim();
+    if (query.length < 2) {
+      setUserSearchResults([]);
+      setShowUserDropdown(false);
+      return;
+    }
+
+    searchTimerRef.current = setTimeout(async () => {
+      try {
+        setUserSearchLoading(true);
+        const response = await adminApi.getUsers({ limit: 10 });
+        const allUsers = response.data || [];
+        // Lọc phía client theo email (API chưa có search param)
+        const filtered = allUsers.filter(
+          (u) => u.email.toLowerCase().includes(query.toLowerCase())
+        );
+        setUserSearchResults(filtered);
+        setShowUserDropdown(filtered.length > 0);
+      } catch {
+        setUserSearchResults([]);
+      } finally {
+        setUserSearchLoading(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, [userSearchQuery]);
+
+  const selectUser = useCallback((user: UserInfo) => {
+    setSelectedUser(user);
+    setUserSearchQuery(user.email);
+    setShowUserDropdown(false);
+  }, []);
+
+  const clearSelectedUser = useCallback(() => {
+    setSelectedUser(null);
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+    setShowUserDropdown(false);
+  }, []);
 
   const handleCreate = useCallback(async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedUserId || !selectedSchoolId) {
+    if (!selectedUser || !selectedSchoolId) {
       setFormError("Chọn user và trường");
       return;
     }
@@ -105,16 +158,17 @@ export function useAdminSchoolAdminsPage() {
       setSubmitting(true);
       setFormError("");
       setSuccess("");
-      await adminApi.createSchoolAdmin({ user_id: selectedUserId, school_id: selectedSchoolId });
+      await adminApi.createSchoolAdmin({ user_id: selectedUser.user_id, school_id: selectedSchoolId });
       setSuccess("Đã tạo School Admin thành công!");
       setShowForm(false);
+      clearSelectedUser();
       await fetchAdmins();
     } catch (errorValue: unknown) {
       setFormError(extractApiErrorMessage(errorValue, "Không thể tạo"));
     } finally {
       setSubmitting(false);
     }
-  }, [fetchAdmins, selectedSchoolId, selectedUserId]);
+  }, [clearSelectedUser, fetchAdmins, selectedSchoolId, selectedUser]);
 
   const confirmDelete = useCallback(async () => {
     if (!deleteAlert.adminId) {
@@ -141,9 +195,13 @@ export function useAdminSchoolAdminsPage() {
     pagination,
     showForm,
     schools,
-    users,
     selectedSchoolId,
-    selectedUserId,
+    // User search
+    userSearchQuery,
+    userSearchResults,
+    userSearchLoading,
+    selectedUser,
+    showUserDropdown,
     submitting,
     formError,
     success,
@@ -152,7 +210,9 @@ export function useAdminSchoolAdminsPage() {
     setCurrentOffset,
     setShowForm,
     setSelectedSchoolId,
-    setSelectedUserId,
+    setUserSearchQuery,
+    selectUser,
+    clearSelectedUser,
     setSuccess,
     setDeleteAlert,
     closeDeleteAlert,
