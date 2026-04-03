@@ -76,6 +76,9 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		case errors.Is(err, service.ErrCannotAssignRole):
 			response.Fail(c, http.StatusForbidden, "insufficient permissions to assign this role")
 			return
+		case errors.Is(err, service.ErrCannotAssignRoleSuperAdmin):
+			response.Fail(c, http.StatusForbidden, "SUPER_ADMIN role requires dedicated promote flow")
+			return
 		case errors.Is(err, service.ErrFailedToAssignRole):
 			response.Fail(c, http.StatusBadRequest, "failed to assign role")
 			return
@@ -385,6 +388,9 @@ func (h *UserHandler) AssignRole(c *gin.Context) {
 		switch {
 		case errors.Is(err, service.ErrInvalidRoleName):
 			response.Fail(c, http.StatusBadRequest, "invalid role name")
+			return
+		case errors.Is(err, service.ErrCannotAssignRoleSuperAdmin):
+			response.Fail(c, http.StatusForbidden, "SUPER_ADMIN role requires dedicated promote flow")
 			return
 		default:
 			response.Fail(c, http.StatusInternalServerError, "failed to assign role")

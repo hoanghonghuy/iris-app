@@ -49,9 +49,10 @@ var (
 
 // School admin-related errors
 var (
-	ErrSchoolAdminNotFound = errors.New("school admin not found")
-	ErrCannotAssignRole    = errors.New("insufficient permissions to assign this role")
-	ErrSchoolAccessDenied  = errors.New("access denied: resource does not belong to your school")
+	ErrSchoolAdminNotFound        = errors.New("school admin not found")
+	ErrCannotAssignRole           = errors.New("insufficient permissions to assign this role")
+	ErrCannotAssignRoleSuperAdmin = errors.New("SUPER_ADMIN role requires dedicated promote flow with approval")
+	ErrSchoolAccessDenied         = errors.New("access denied: resource does not belong to your school")
 )
 
 // Business logic errors
