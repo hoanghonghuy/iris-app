@@ -88,7 +88,7 @@ export default function AdminStudentsPage() {
       dob: toDateInputValue(student.dob),
       gender: student.gender as "male" | "female" | "other",
     });
-    setEditModal({ isOpen: true, student });
+    setEditModal({ isOpen: true, selectedStudent: student });
   };
 
   const openDeleteAlert = (studentId: string) => {

@@ -27,12 +27,12 @@ type DeleteAlertState = {
 
 type EditModalState = {
   isOpen: boolean;
-  student: Student | null;
+  selectedStudent: Student | null;
 };
 
 const INITIAL_EDIT_MODAL_STATE: EditModalState = {
   isOpen: false,
-  student: null,
+  selectedStudent: null,
 };
 
 const INITIAL_DELETE_ALERT_STATE: DeleteAlertState = {
@@ -172,11 +172,11 @@ export function useAdminStudentsPage() {
   }, [fetchStudents, formData, selectedClassId, selectedSchoolId]);
 
   const handleEdit = useCallback(async () => {
-    if (!editModal.student) return;
+    if (!editModal.selectedStudent) return;
 
     try {
       setEditLoading(true);
-      await adminApi.updateStudent(editModal.student.student_id, editData);
+      await adminApi.updateStudent(editModal.selectedStudent.student_id, editData);
       closeEditModal();
       await fetchStudents();
       return true; // indicator for success to show toast
@@ -185,7 +185,7 @@ export function useAdminStudentsPage() {
     } finally {
       setEditLoading(false);
     }
-  }, [closeEditModal, editModal.student, editData, fetchStudents]);
+  }, [closeEditModal, editModal.selectedStudent, editData, fetchStudents]);
 
   const handleDelete = useCallback(async () => {
     if (!deleteAlert.studentId) return;
