@@ -119,6 +119,7 @@ Auth rate-limit values (defaults):
 
 - `AUTH_LOGIN_RATE_LIMIT=10`: maximum 10 requests per minute for each login `IP + route` (`/auth/login`, `/auth/login/google`).
 - `AUTH_FORGOT_PASSWORD_RATE_LIMIT=5`: maximum 5 requests per minute for each forgot-password `IP + route`.
+- `AUTH_RESET_PASSWORD_RATE_LIMIT=5`: maximum 5 requests per minute for each reset-password `IP + route` (`/auth/reset-password`).
 - `AUTH_RATE_LIMIT_WINDOW_SECONDS=60`: fixed-window duration in seconds.
 - `AUTH_RATE_LIMIT_CLEANUP_EVERY=256`: number of requests between limiter map cleanup runs to avoid unbounded growth.
 - `AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER=5`: stale-key TTL multiplier; effective TTL = `multiplier * window`.
@@ -210,6 +211,9 @@ For detailed endpoint behavior and open issues, see:
 
 ## Development Notes
 
+- The backend keeps unit tests colocated next to the code they cover, using Go's standard `*_test.go` convention.
+- The frontend keeps unit tests colocated in `src`, using `*.test.ts` / `*.test.tsx` naming.
+- Integration and smoke coverage stay separate from unit tests under `scripts/smoke/`.
 - The backend is organized with explicit service/repository boundaries to keep business logic testable.
 - The frontend uses domain-driven route sections (`admin`, `teacher`, `parent`) and shared typed API clients.
 - Migration files are incremental and live in `apps/api/migrations`.
