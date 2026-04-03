@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-
 type ParentCodeRepo struct {
 	pool *pgxpool.Pool
 }

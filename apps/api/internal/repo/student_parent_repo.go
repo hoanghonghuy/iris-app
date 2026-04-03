@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type StudentParentRepo struct{
+type StudentParentRepo struct {
 	pool *pgxpool.Pool
 }
 

@@ -110,6 +110,7 @@ func (h *ParentCodeHandler) RegisterParentWithGoogle(c *gin.Context) {
 
 	response.OK(c, resp)
 }
+
 // RevokeParentCode thu hồi parent code cua hs
 func (h *ParentCodeHandler) RevokeParentCode(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)
