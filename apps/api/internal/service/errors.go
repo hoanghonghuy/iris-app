@@ -72,6 +72,7 @@ var (
 // Chat-related errors
 var (
 	ErrChatCannotMessageSelf = errors.New("cannot create conversation with yourself")
+	ErrChatTargetNotAllowed  = errors.New("target user is not allowed for direct conversation")
 	ErrChatGroupNeedMembers  = errors.New("group conversation needs at least 2 participants")
 	ErrChatNotParticipant    = errors.New("you are not a participant of this conversation")
 	ErrChatEmptyMessage      = errors.New("message content cannot be empty")

@@ -40,6 +40,38 @@ func (s *ChatService) GetOrCreateDirectConversation(ctx context.Context, userA, 
 	return s.chatRepo.CreateConversation(ctx, "direct", nil, []uuid.UUID{userA, userB})
 }
 
+// CanCreateDirectConversation kiểm tra requester có được phép tạo direct conversation với target không.
+// Rule được đồng bộ với visibility logic của SearchUsers theo từng role.
+func (s *ChatService) CanCreateDirectConversation(ctx context.Context, requesterID uuid.UUID, roles []string, targetID uuid.UUID) (bool, error) {
+	if requesterID == targetID {
+		return false, ErrChatCannotMessageSelf
+	}
+
+	hasRole := func(r string) bool {
+		for _, role := range roles {
+			if role == r {
+				return true
+			}
+		}
+		return false
+	}
+
+	if hasRole("SUPER_ADMIN") {
+		return s.chatRepo.CanSuperAdminMessageTarget(ctx, requesterID, targetID)
+	}
+	if hasRole("SCHOOL_ADMIN") {
+		return s.chatRepo.CanSchoolAdminMessageTarget(ctx, requesterID, targetID)
+	}
+	if hasRole("TEACHER") {
+		return s.chatRepo.CanTeacherMessageTarget(ctx, requesterID, targetID)
+	}
+	if hasRole("PARENT") {
+		return s.chatRepo.CanParentMessageTarget(ctx, requesterID, targetID)
+	}
+
+	return false, nil
+}
+
 // CreateGroupConversation tạo cuộc hội thoại nhóm mới
 func (s *ChatService) CreateGroupConversation(ctx context.Context, name string, participantIDs []uuid.UUID) (*model.Conversation, error) {
 	if len(participantIDs) < 2 {

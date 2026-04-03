@@ -72,8 +72,23 @@ func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
 		return
 	}
 
+	if req.TargetUserID == userID {
+		response.Fail(c, http.StatusBadRequest, service.ErrChatCannotMessageSelf.Error())
+		return
+	}
+
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
+
+	allowed, err := h.chatService.CanCreateDirectConversation(ctx, userID, claims.Roles, req.TargetUserID)
+	if err != nil {
+		response.Fail(c, http.StatusInternalServerError, "failed to verify conversation permission")
+		return
+	}
+	if !allowed {
+		response.Fail(c, http.StatusForbidden, service.ErrChatTargetNotAllowed.Error())
+		return
+	}
 
 	conv, err := h.chatService.GetOrCreateDirectConversation(ctx, userID, req.TargetUserID)
 	if err != nil {

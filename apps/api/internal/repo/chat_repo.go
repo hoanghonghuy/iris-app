@@ -145,6 +145,107 @@ func (r *ChatRepo) IsParticipant(ctx context.Context, conversationID, userID uui
 	return exists, err
 }
 
+// CanSuperAdminMessageTarget cho phép SUPER_ADMIN nhắn trực tiếp đến mọi active user (trừ chính mình).
+func (r *ChatRepo) CanSuperAdminMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1
+			FROM users u
+			WHERE u.user_id = $2
+			  AND u.status = 'active'
+			  AND u.user_id <> $1
+		);
+	`
+	var allowed bool
+	err := r.pool.QueryRow(ctx, q, requesterID, targetID).Scan(&allowed)
+	return allowed, err
+}
+
+// CanSchoolAdminMessageTarget cho phép SCHOOL_ADMIN nhắn user active trong cùng school.
+func (r *ChatRepo) CanSchoolAdminMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1
+			FROM users u
+			JOIN school_admins sa_req ON sa_req.user_id = $1
+			LEFT JOIN teachers t ON t.user_id = u.user_id
+			LEFT JOIN parents p ON p.user_id = u.user_id
+			LEFT JOIN school_admins sa2 ON sa2.user_id = u.user_id
+			WHERE u.user_id = $2
+			  AND u.status = 'active'
+			  AND u.user_id <> $1
+			  AND (
+				t.school_id = sa_req.school_id
+				OR p.school_id = sa_req.school_id
+				OR sa2.school_id = sa_req.school_id
+			  )
+		);
+	`
+	var allowed bool
+	err := r.pool.QueryRow(ctx, q, requesterID, targetID).Scan(&allowed)
+	return allowed, err
+}
+
+// CanTeacherMessageTarget cho phép TEACHER nhắn teacher/admin cùng school hoặc parent của học sinh mình dạy.
+func (r *ChatRepo) CanTeacherMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1
+			FROM users u
+			JOIN teachers t_req ON t_req.user_id = $1
+			LEFT JOIN teachers t2 ON t2.user_id = u.user_id
+			LEFT JOIN parents p ON p.user_id = u.user_id
+			LEFT JOIN school_admins sa ON sa.user_id = u.user_id
+			WHERE u.user_id = $2
+			  AND u.status = 'active'
+			  AND u.user_id <> $1
+			  AND (
+				t2.school_id = t_req.school_id
+				OR sa.school_id = t_req.school_id
+				OR p.parent_id IN (
+					SELECT sp.parent_id
+					FROM student_parents sp
+					JOIN students s ON s.student_id = sp.student_id
+					JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+					WHERE tc.teacher_id = t_req.teacher_id
+				)
+			  )
+		);
+	`
+	var allowed bool
+	err := r.pool.QueryRow(ctx, q, requesterID, targetID).Scan(&allowed)
+	return allowed, err
+}
+
+// CanParentMessageTarget cho phép PARENT nhắn teacher của con mình hoặc school admin cùng school.
+func (r *ChatRepo) CanParentMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error) {
+	const q = `
+		SELECT EXISTS(
+			SELECT 1
+			FROM users u
+			JOIN parents p_req ON p_req.user_id = $1
+			LEFT JOIN teachers t ON t.user_id = u.user_id
+			LEFT JOIN school_admins sa ON sa.user_id = u.user_id
+			WHERE u.user_id = $2
+			  AND u.status = 'active'
+			  AND u.user_id <> $1
+			  AND (
+				sa.school_id = p_req.school_id
+				OR t.teacher_id IN (
+					SELECT tc.teacher_id
+					FROM teacher_classes tc
+					JOIN students s ON s.current_class_id = tc.class_id
+					JOIN student_parents sp ON sp.student_id = s.student_id
+					WHERE sp.parent_id = p_req.parent_id
+				)
+			  )
+		);
+	`
+	var allowed bool
+	err := r.pool.QueryRow(ctx, q, requesterID, targetID).Scan(&allowed)
+	return allowed, err
+}
+
 // CreateMessage lưu tin nhắn mới vào database
 func (r *ChatRepo) CreateMessage(ctx context.Context, conversationID, senderID uuid.UUID, content string) (*model.Message, error) {
 	const q = `

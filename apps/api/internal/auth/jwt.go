@@ -89,8 +89,11 @@ func Sign(secret string, ttl time.Duration, userID, email string, roles []string
 // Nếu token không hợp lệ hoặc không giải mã được, trả về lỗi ErrInvalidToken.
 func Parse(secret, tokenStr string) (*Claims, error) {
 	t, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (any, error) {
+		if token.Method == nil || token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, ErrInvalidToken
+		}
 		return []byte(secret), nil
-	})
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 	if err != nil || !t.Valid {
 		return nil, ErrInvalidToken
 	}
