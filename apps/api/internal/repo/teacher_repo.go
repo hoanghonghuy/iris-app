@@ -115,8 +115,14 @@ func (r *TeacherRepo) Update(ctx context.Context, teacherID uuid.UUID, fullName,
 		SET full_name = $2, phone = $3, school_id = $4, updated_at = now()
 		WHERE teacher_id = $1;
 	`
-	_, err := r.pool.Exec(ctx, q, teacherID, fullName, phone, schoolID)
-	return err
+	tag, err := r.pool.Exec(ctx, q, teacherID, fullName, phone, schoolID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 // UpdatePhone chỉ cập nhật phone (teacher chỉ có thể update phone của chính mình)
@@ -126,8 +132,14 @@ func (r *TeacherRepo) UpdatePhone(ctx context.Context, teacherID uuid.UUID, phon
 		SET phone = $2, updated_at = now()
 		WHERE teacher_id = $1;
 	`
-	_, err := r.pool.Exec(ctx, q, teacherID, phone)
-	return err
+	tag, err := r.pool.Exec(ctx, q, teacherID, phone)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 // GetByUserID lấy thông tin teacher theo user_id
@@ -161,12 +173,12 @@ func (r *TeacherRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*model
 // Delete xóa giáo viên
 func (r *TeacherRepo) Delete(ctx context.Context, teacherID uuid.UUID) error {
 	const q = `DELETE FROM teachers WHERE teacher_id = $1;`
-	ct, err := r.pool.Exec(ctx, q, teacherID)
+	tag, err := r.pool.Exec(ctx, q, teacherID)
 	if err != nil {
 		return err
 	}
-	if ct.RowsAffected() == 0 {
+	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return err
+	return nil
 }

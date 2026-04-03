@@ -112,7 +112,7 @@ func (s *StudentService) Update(ctx context.Context, adminSchoolID *uuid.UUID, s
 	student, err := s.studentRepo.GetByStudentID(ctx, studentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return err
+			return ErrStudentNotFound
 		}
 		return ErrFailedToGetStudent
 	}
@@ -124,7 +124,13 @@ func (s *StudentService) Update(ctx context.Context, adminSchoolID *uuid.UUID, s
 	if err != nil {
 		return ErrInvalidValue
 	}
-	return s.studentRepo.Update(ctx, studentID, fullName, dob, gender)
+	if err := s.studentRepo.Update(ctx, studentID, fullName, dob, gender); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrStudentNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 // Delete xóa học sinh
@@ -132,12 +138,18 @@ func (s *StudentService) Delete(ctx context.Context, adminSchoolID *uuid.UUID, s
 	student, err := s.studentRepo.GetByStudentID(ctx, studentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return err
+			return ErrStudentNotFound
 		}
 		return ErrFailedToGetStudent
 	}
 	if adminSchoolID != nil && student.SchoolID != *adminSchoolID {
 		return ErrSchoolAccessDenied
 	}
-	return s.studentRepo.Delete(ctx, studentID)
+	if err := s.studentRepo.Delete(ctx, studentID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrStudentNotFound
+		}
+		return err
+	}
+	return nil
 }

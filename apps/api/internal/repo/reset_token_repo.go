@@ -70,9 +70,9 @@ func (r *ResetTokenRepo) DeleteExpired(ctx context.Context) (int64, error) {
 		DELETE FROM password_reset_tokens
 		WHERE expires_at < now() OR used_at IS NOT NULL;
 	`
-	ct, err := r.pool.Exec(ctx, q)
+	tag, err := r.pool.Exec(ctx, q)
 	if err != nil {
 		return 0, err
 	}
-	return ct.RowsAffected(), nil
+	return tag.RowsAffected(), nil
 }

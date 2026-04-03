@@ -113,8 +113,8 @@ func (r *StudentRepo) GetStudentProfile(ctx context.Context, studentID uuid.UUID
 	var parentsJSON []byte
 
 	err := r.pool.QueryRow(ctx, q, studentID).Scan(
-		&profile.StudentID, &profile.SchoolID, &profile.CurrentClassID, 
-		&profile.CurrentClassName, &profile.FullName, &profile.DOB, &profile.Gender, 
+		&profile.StudentID, &profile.SchoolID, &profile.CurrentClassID,
+		&profile.CurrentClassName, &profile.FullName, &profile.DOB, &profile.Gender,
 		&parentsJSON,
 	)
 	if err != nil {
@@ -165,25 +165,25 @@ func (r *StudentRepo) Update(ctx context.Context, studentID uuid.UUID, fullName 
 		SET full_name = $2, dob = $3, gender = $4, updated_at = now()
 		WHERE student_id = $1;
 	`
-	ct, err := r.pool.Exec(ctx, q, studentID, fullName, dob, gender)
+	tag, err := r.pool.Exec(ctx, q, studentID, fullName, dob, gender)
 	if err != nil {
 		return err
 	}
-	if ct.RowsAffected() == 0 {
+	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return err
+	return nil
 }
 
 // Delete xóa học sinh
 func (r *StudentRepo) Delete(ctx context.Context, studentID uuid.UUID) error {
 	const q = `DELETE FROM students WHERE student_id = $1;`
-	ct, err := r.pool.Exec(ctx, q, studentID)
+	tag, err := r.pool.Exec(ctx, q, studentID)
 	if err != nil {
 		return err
 	}
-	if ct.RowsAffected() == 0 {
+	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return err
+	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
-	"github.com/jackc/pgx/v5"
 )
 
 type ClassHandler struct {
@@ -122,7 +121,7 @@ func (h *ClassHandler) Update(c *gin.Context) {
 			response.Fail(c, http.StatusForbidden, "access denied")
 			return
 		}
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, service.ErrClassNotFound) {
 			response.Fail(c, http.StatusNotFound, "class not found")
 			return
 		}
@@ -151,7 +150,7 @@ func (h *ClassHandler) Delete(c *gin.Context) {
 			response.Fail(c, http.StatusForbidden, "access denied")
 			return
 		}
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, service.ErrClassNotFound) {
 			response.Fail(c, http.StatusNotFound, "class not found")
 			return
 		}

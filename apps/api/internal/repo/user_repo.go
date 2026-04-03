@@ -240,15 +240,27 @@ func (r *UserRepo) Update(ctx context.Context, userID uuid.UUID, email, password
 		SET email = $1, password_hash = $2, updated_at = now()
 		WHERE user_id = $3;
 	`
-	_, err := r.pool.Exec(ctx, q, email, passwordHash, userID)
-	return err
+	tag, err := r.pool.Exec(ctx, q, email, passwordHash, userID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 // Delete xóa user (hard delete)
 func (r *UserRepo) Delete(ctx context.Context, userID uuid.UUID) error {
 	const q = `DELETE FROM users WHERE user_id = $1;`
-	_, err := r.pool.Exec(ctx, q, userID)
-	return err
+	tag, err := r.pool.Exec(ctx, q, userID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 // Lock khóa user
@@ -280,8 +292,14 @@ func (r *UserRepo) UpdateEmail(ctx context.Context, userID uuid.UUID, email stri
 		SET email = $2, updated_at = now()
 		WHERE user_id = $1;
 	`
-	_, err := r.pool.Exec(ctx, q, userID, email)
-	return err
+	tag, err := r.pool.Exec(ctx, q, userID, email)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 // UpdatePassword cập nhật password của user (self-service)
@@ -291,8 +309,14 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, userID uuid.UUID, email, 
 		SET password_hash = $3, updated_at = now()
 		WHERE user_id = $1 AND email = $2;
 	`
-	_, err := r.pool.Exec(ctx, q, userID, email, passwordHash)
-	return err
+	tag, err := r.pool.Exec(ctx, q, userID, email, passwordHash)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }
 
 // CreatePending tạo user với status='pending'

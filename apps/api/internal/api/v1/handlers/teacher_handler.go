@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
@@ -105,7 +104,7 @@ func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
 			response.Fail(c, http.StatusForbidden, "access denied")
 			return
 		}
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, service.ErrTeacherNotFound) {
 			response.Fail(c, http.StatusNotFound, "teacher not found")
 			return
 		}
@@ -234,7 +233,7 @@ func (h *TeacherHandler) Delete(c *gin.Context) {
 			response.Fail(c, http.StatusForbidden, "access denied")
 			return
 		}
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, service.ErrTeacherNotFound) {
 			response.Fail(c, http.StatusNotFound, "teacher not found")
 			return
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -99,6 +100,12 @@ func (r *SchoolAdminRepo) List(ctx context.Context, limit, offset int) ([]model.
 // Delete xóa school admin theo admin_id.
 func (r *SchoolAdminRepo) Delete(ctx context.Context, adminID uuid.UUID) error {
 	const q = `DELETE FROM school_admins WHERE admin_id = $1;`
-	_, err := r.pool.Exec(ctx, q, adminID)
-	return err
+	tag, err := r.pool.Exec(ctx, q, adminID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
 }

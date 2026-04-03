@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
+	"github.com/jackc/pgx/v5"
 )
 
 type ClassService struct {
@@ -64,22 +66,40 @@ func (s *ClassService) Update(ctx context.Context, adminSchoolID *uuid.UUID, cla
 	// Kiểm tra class thuộc school nào
 	cls, err := s.classRepo.GetByClassID(ctx, classID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrClassNotFound
+		}
 		return err
 	}
 	if adminSchoolID != nil && *adminSchoolID != cls.SchoolID {
 		return ErrSchoolAccessDenied
 	}
-	return s.classRepo.Update(ctx, classID, name, schoolYear)
+	if err := s.classRepo.Update(ctx, classID, name, schoolYear); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrClassNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 // Delete xóa lớp học
 func (s *ClassService) Delete(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID) error {
 	cls, err := s.classRepo.GetByClassID(ctx, classID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrClassNotFound
+		}
 		return err
 	}
 	if adminSchoolID != nil && *adminSchoolID != cls.SchoolID {
 		return ErrSchoolAccessDenied
 	}
-	return s.classRepo.Delete(ctx, classID)
+	if err := s.classRepo.Delete(ctx, classID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrClassNotFound
+		}
+		return err
+	}
+	return nil
 }

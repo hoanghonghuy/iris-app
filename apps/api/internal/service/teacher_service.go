@@ -123,6 +123,9 @@ func (s *TeacherService) Unassign(ctx context.Context, adminSchoolID *uuid.UUID,
 func (s *TeacherService) GetByTeacherID(ctx context.Context, adminSchoolID *uuid.UUID, teacherID uuid.UUID) (*model.Teacher, error) {
 	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrTeacherNotFound
+		}
 		return nil, err
 	}
 
@@ -139,6 +142,9 @@ func (s *TeacherService) GetByTeacherID(ctx context.Context, adminSchoolID *uuid
 func (s *TeacherService) Update(ctx context.Context, adminSchoolID *uuid.UUID, teacherID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
 	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrTeacherNotFound
+		}
 		return err
 	}
 
@@ -162,12 +168,18 @@ func (s *TeacherService) Delete(ctx context.Context, adminSchoolID *uuid.UUID, t
 	teacher, err := s.teacherRepo.GetByTeacherID(ctx, teacherID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return err
+			return ErrTeacherNotFound
 		}
 		return ErrTeacherNotFound
 	}
 	if adminSchoolID != nil && teacher.SchoolID != *adminSchoolID {
 		return ErrSchoolAccessDenied
 	}
-	return s.teacherRepo.Delete(ctx, teacherID)
+	if err := s.teacherRepo.Delete(ctx, teacherID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrTeacherNotFound
+		}
+		return err
+	}
+	return nil
 }

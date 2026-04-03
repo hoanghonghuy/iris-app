@@ -57,6 +57,9 @@ var (
 // Business logic errors
 var (
 	ErrInvalidClassID     = errors.New("invalid class ID")
+	ErrClassNotFound      = errors.New("class not found")
+	ErrSchoolNotFound     = errors.New("school not found")
+	ErrStudentNotFound    = errors.New("student not found")
 	ErrInvalidDate        = errors.New("invalid date format, use YYYY-MM-DD")
 	ErrInvalidStatus      = errors.New("invalid attendance status")
 	ErrTeacherNotFound    = errors.New("teacher not found")

@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
+	"github.com/jackc/pgx/v5"
 )
 
 type SchoolService struct {
@@ -62,10 +64,22 @@ func (s *SchoolService) List(ctx context.Context, adminSchoolID *uuid.UUID, limi
 
 // Update cập nhật thông tin trường học (SUPER_ADMIN only)
 func (s *SchoolService) Update(ctx context.Context, schoolID uuid.UUID, name, address string) error {
-	return s.schoolRepo.Update(ctx, schoolID, name, address)
+	if err := s.schoolRepo.Update(ctx, schoolID, name, address); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSchoolNotFound
+		}
+		return err
+	}
+	return nil
 }
 
 // Delete xóa trường học (SUPER_ADMIN only)
 func (s *SchoolService) Delete(ctx context.Context, schoolID uuid.UUID) error {
-	return s.schoolRepo.Delete(ctx, schoolID)
+	if err := s.schoolRepo.Delete(ctx, schoolID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSchoolNotFound
+		}
+		return err
+	}
+	return nil
 }

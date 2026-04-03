@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
-	"github.com/jackc/pgx/v5"
 )
 
 type SchoolHandler struct {
@@ -103,7 +102,7 @@ func (h *SchoolHandler) Update(c *gin.Context) {
 	defer cancel()
 
 	if err := h.schoolService.Update(ctx, schoolID, req.Name, req.Address); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, service.ErrSchoolNotFound) {
 			response.Fail(c, http.StatusNotFound, "school not found")
 			return
 		}
@@ -126,7 +125,7 @@ func (h *SchoolHandler) Delete(c *gin.Context) {
 	defer cancel()
 
 	if err := h.schoolService.Delete(ctx, schoolID); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, service.ErrSchoolNotFound) {
 			response.Fail(c, http.StatusNotFound, "school not found")
 			return
 		}

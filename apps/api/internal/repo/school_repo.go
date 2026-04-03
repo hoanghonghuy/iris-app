@@ -97,25 +97,25 @@ func (r *SchoolRepo) Update(ctx context.Context, schoolID uuid.UUID, name, addre
 		SET name = $2, address = $3, updated_at = now()
 		WHERE school_id = $1;
 	`
-	ct, err := r.pool.Exec(ctx, q, schoolID, name, address)
+	tag, err := r.pool.Exec(ctx, q, schoolID, name, address)
 	if err != nil {
 		return err
 	}
-	if ct.RowsAffected() == 0 {
+	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return err
+	return nil
 }
 
 // Delete xóa trường học
 func (r *SchoolRepo) Delete(ctx context.Context, schoolID uuid.UUID) error {
 	const q = `DELETE FROM schools WHERE school_id = $1;`
-	ct, err := r.pool.Exec(ctx, q, schoolID)
+	tag, err := r.pool.Exec(ctx, q, schoolID)
 	if err != nil {
 		return err
 	}
-	if ct.RowsAffected() == 0 {
+	if tag.RowsAffected() == 0 {
 		return pgx.ErrNoRows
 	}
-	return err
+	return nil
 }
