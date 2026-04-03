@@ -17,11 +17,13 @@ import (
 
 type TeacherScopeHandler struct {
 	teacherScopeService *service.TeacherScopeService
+	appointmentService  *service.AppointmentService
 }
 
-func NewTeacherScopeHandler(teacherScopeService *service.TeacherScopeService) *TeacherScopeHandler {
+func NewTeacherScopeHandler(teacherScopeService *service.TeacherScopeService, appointmentService *service.AppointmentService) *TeacherScopeHandler {
 	return &TeacherScopeHandler{
 		teacherScopeService: teacherScopeService,
+		appointmentService:  appointmentService,
 	}
 }
 

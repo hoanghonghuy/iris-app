@@ -6,7 +6,7 @@ import { apiClient } from './client';
 import {
   School, Class, Student, StudentProfile, UserInfo, Teacher, Parent,
   ApiResponse, PaginationParams, CreateSchoolRequest, CreateClassRequest, CreateStudentRequest, AdminAnalytics,
-  SchoolAdmin, ParentCodeResponse
+  SchoolAdmin, ParentCodeResponse, AuditLog
 } from '@/types';
 
 export const adminApi = {
@@ -14,6 +14,18 @@ export const adminApi = {
   getAnalytics: async () => {
     const res = await apiClient.get<ApiResponse<AdminAnalytics>>('/admin/analytics');
     return res.data.data;
+  },
+
+  getAuditLogs: async (params?: PaginationParams & {
+    action?: string;
+    entity_type?: string;
+    actor_user_id?: string;
+    from?: string;
+    to?: string;
+    q?: string;
+  }) => {
+    const res = await apiClient.get<ApiResponse<AuditLog[]>>('/admin/audit-logs', { params });
+    return res.data;
   },
 
   // --- SCHOOLS ---

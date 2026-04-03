@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from "react";
 import { parentApi } from "@/lib/api/parent.api";
-import { Post } from "@/types";
+import { ParentAnalytics, Post } from "@/types";
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare, Loader2, Baby, CalendarClock } from "lucide-react";
@@ -22,13 +22,18 @@ const postTypeConfig: Record<string, { label: string, colorClass: string }> = {
 export default function ParentDashboard() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [stats, setStats] = useState<ParentAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const feedData = await parentApi.getMyFeed({ limit: 5 });
+        const [feedData, analytics] = await Promise.all([
+          parentApi.getMyFeed({ limit: 5 }),
+          parentApi.getAnalytics(),
+        ]);
         setPosts(feedData?.data || []);
+        setStats(analytics);
       } catch { /* ignore */ }
       finally { setLoading(false); }
     };
@@ -57,6 +62,13 @@ export default function ParentDashboard() {
         </div>
       ) : (
         <>
+          <div className="grid gap-2.5 md:gap-3 grid-cols-2 md:grid-cols-4 shrink-0">
+            <Card><CardContent className="p-3 text-sm"><b>Tổng số con:</b> {stats?.total_children ?? 0}</CardContent></Card>
+            <Card><CardContent className="p-3 text-sm"><b>Lịch sắp tới:</b> {stats?.upcoming_appointments ?? 0}</CardContent></Card>
+            <Card><CardContent className="p-3 text-sm"><b>Bài đăng 7 ngày:</b> {stats?.recent_posts_7d ?? 0}</CardContent></Card>
+            <Card><CardContent className="p-3 text-sm"><b>Cảnh báo sức khỏe:</b> {stats?.recent_health_alerts_7d ?? 0}</CardContent></Card>
+          </div>
+
           {/* Quick Actions / Bento Box */}
           <div className="grid gap-2.5 md:gap-3 grid-cols-2 shrink-0">
             <Link href="/parent/children" className="block group h-full">

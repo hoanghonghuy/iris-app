@@ -551,6 +551,88 @@ export interface TeacherAnalytics {
   total_posts: number;
 }
 
+/**
+ * ParentAnalytics - Thống kê Dashboard Phụ huynh
+ */
+export interface ParentAnalytics {
+  total_children: number;
+  upcoming_appointments: number;
+  recent_posts_7d: number;
+  recent_health_alerts_7d: number;
+}
+
+// ============================================================================
+// APPOINTMENT TYPES
+// ============================================================================
+
+export type AppointmentStatus = "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
+
+export interface AppointmentSlot {
+  slot_id: string;
+  teacher_id: string;
+  teacher_name?: string;
+  class_id: string;
+  class_name?: string;
+  start_time: string;
+  end_time: string;
+  note?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Appointment {
+  appointment_id: string;
+  slot_id: string;
+  parent_id: string;
+  parent_name?: string;
+  student_id: string;
+  student_name?: string;
+  teacher_id?: string;
+  teacher_name?: string;
+  class_id?: string;
+  class_name?: string;
+  status: AppointmentStatus;
+  note?: string;
+  cancel_reason?: string;
+  start_time: string;
+  end_time: string;
+  confirmed_at?: string;
+  completed_at?: string;
+  cancelled_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAppointmentSlotRequest {
+  class_id: string;
+  start_time: string;
+  end_time?: string;
+  duration_minutes?: number;
+  note?: string;
+}
+
+export interface CreateAppointmentRequest {
+  student_id: string;
+  slot_id: string;
+  note?: string;
+}
+
+// ============================================================================
+// AUDIT LOG TYPES
+// ============================================================================
+
+export interface AuditLog {
+  audit_log_id: string;
+  actor_user_id: string;
+  actor_role?: string;
+  action: string;
+  entity_type: string;
+  entity_id?: string;
+  details?: Record<string, unknown>;
+  created_at: string;
+}
+
 // ============================================================================
 // CHAT TYPES
 // ============================================================================

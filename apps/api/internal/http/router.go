@@ -7,6 +7,7 @@ import (
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
 )
@@ -31,6 +32,8 @@ func NewRouter(
 	parentCodeHandler *v1handlers.ParentCodeHandler,
 	schoolAdminHandler *v1handlers.SchoolAdminHandler,
 	analyticsHandler *v1handlers.AnalyticsHandler,
+	auditLogHandler *v1handlers.AuditLogHandler,
+	auditLogService *service.AuditLogService,
 	chatHandler *v1handlers.ChatHandler,
 ) *gin.Engine {
 	r := gin.Default()
@@ -153,6 +156,9 @@ func NewRouter(
 
 				// teacher analytics
 				teacherScope.GET("/analytics", analyticsHandler.TeacherDashboardStats)
+				teacherScope.POST("/appointments/slots", teacherScopeHandler.CreateAppointmentSlot)
+				teacherScope.GET("/appointments", teacherScopeHandler.ListMyAppointments)
+				teacherScope.PATCH("/appointments/:appointment_id/status", teacherScopeHandler.UpdateAppointmentStatus)
 			}
 
 			// parent routes (phụ huynh xem thông tin con mình)
@@ -161,6 +167,11 @@ func NewRouter(
 			{
 				// phụ huynh xem danh sách con của mình
 				parentScope.GET("/children", parentScopeHandler.MyChildren)
+				parentScope.GET("/analytics", parentScopeHandler.GetMyAnalytics)
+				parentScope.GET("/appointments/slots", parentScopeHandler.ListAvailableAppointmentSlots)
+				parentScope.POST("/appointments", parentScopeHandler.CreateAppointment)
+				parentScope.GET("/appointments", parentScopeHandler.ListMyAppointments)
+				parentScope.PATCH("/appointments/:appointment_id/cancel", parentScopeHandler.CancelAppointment)
 
 				// phụ huynh xem feed tổng hợp của tất cả con (aggregated feed)
 				parentScope.GET("/feed", parentScopeHandler.GetMyFeed)
@@ -202,6 +213,7 @@ func NewRouter(
 			admin := protected.Group("/admin")
 			admin.Use(middleware.RequireAnyRole("SUPER_ADMIN", "SCHOOL_ADMIN"))
 			admin.Use(middleware.InjectAdminScope())
+			admin.Use(middleware.AdminAuditLogger(auditLogService))
 			{
 				// Admin ping/health check
 				admin.GET("/ping", func(c *gin.Context) {
@@ -210,6 +222,7 @@ func NewRouter(
 
 				// Admin analytics
 				admin.GET("/analytics", analyticsHandler.AdminDashboardStats)
+				admin.GET("/audit-logs", auditLogHandler.List)
 
 				// School routes (GET: cả 2 roles, POST: chỉ SUPER_ADMIN — đăng ký ở superOnly bên dưới)
 				admin.GET("/schools", schoolHandler.List)

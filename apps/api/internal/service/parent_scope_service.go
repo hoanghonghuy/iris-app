@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -14,12 +15,14 @@ import (
 type ParentScopeService struct {
 	parentScopeRepo  *repo.ParentScopeRepo
 	postInteractRepo *repo.PostInteractionRepo
+	appointmentRepo  *repo.AppointmentRepo
 }
 
-func NewParentScopeService(parentScopeRepo *repo.ParentScopeRepo, postInteractRepo *repo.PostInteractionRepo) *ParentScopeService {
+func NewParentScopeService(parentScopeRepo *repo.ParentScopeRepo, postInteractRepo *repo.PostInteractionRepo, appointmentRepo *repo.AppointmentRepo) *ParentScopeService {
 	return &ParentScopeService{
 		parentScopeRepo:  parentScopeRepo,
 		postInteractRepo: postInteractRepo,
+		appointmentRepo:  appointmentRepo,
 	}
 }
 
@@ -289,4 +292,38 @@ func (s *ParentScopeService) SharePost(ctx context.Context, parentUserID, postID
 	}
 
 	return shareCount, nil
+}
+
+func (s *ParentScopeService) GetMyAnalytics(ctx context.Context, parentUserID uuid.UUID) (*model.ParentAnalytics, error) {
+	if parentUserID == uuid.Nil {
+		return nil, ErrInvalidUserID
+	}
+
+	children, err := s.parentScopeRepo.CountMyChildren(ctx, parentUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count children: %w", err)
+	}
+
+	upcoming, err := s.appointmentRepo.CountParentUpcomingAppointments(ctx, parentUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count upcoming appointments: %w", err)
+	}
+
+	since := time.Now().AddDate(0, 0, -7)
+	recentPosts, err := s.parentScopeRepo.CountMyRecentPosts(ctx, parentUserID, since)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count recent posts: %w", err)
+	}
+
+	healthAlerts, err := s.parentScopeRepo.CountMyRecentHealthAlerts(ctx, parentUserID, since)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count health alerts: %w", err)
+	}
+
+	return &model.ParentAnalytics{
+		TotalChildren:        children,
+		UpcomingAppointments: upcoming,
+		RecentPosts7d:        recentPosts,
+		RecentHealthAlerts7d: healthAlerts,
+	}, nil
 }

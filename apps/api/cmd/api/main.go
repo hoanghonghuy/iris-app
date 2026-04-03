@@ -51,6 +51,8 @@ func main() {
 		HealthLogRepo:       repo.NewHealthLogRepo(pool),
 		ParentScopeRepo:     repo.NewParentScopeRepo(pool),
 		PostInteractionRepo: repo.NewPostInteractionRepo(pool),
+		AppointmentRepo:     repo.NewAppointmentRepo(pool),
+		AuditLogRepo:        repo.NewAuditLogRepo(pool),
 		SchoolAdminRepo:     repo.NewSchoolAdminRepo(pool),
 		ResetTokenRepo:      repo.NewResetTokenRepo(pool),
 		ChatRepo:            repo.NewChatRepo(pool),
@@ -91,8 +93,10 @@ func main() {
 		userService         = service.NewUserService(repos.UserRepo, repos.ResetTokenRepo, jwtAuth, emailSender, frontendURL)
 		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo, repos.ClassRepo)
 		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.HealthLogRepo, repos.TeacherRepo, repos.PostInteractionRepo)
+		appointmentService  = service.NewAppointmentService(repos.AppointmentRepo)
 		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo)
-		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo, repos.PostInteractionRepo)
+		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo, repos.PostInteractionRepo, repos.AppointmentRepo)
+		auditLogService     = service.NewAuditLogService(repos.AuditLogRepo)
 		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth, googleVerifier, cfg.GoogleLoginEnabled, cfg.GoogleHostedDomain)
 		schoolAdminService  = service.NewSchoolAdminService(repos.SchoolAdminRepo, repos.UserRepo)
 		analyticsService    = service.NewAnalyticsService(repos)
@@ -108,9 +112,10 @@ func main() {
 		studentHandler      = v1handlers.NewStudentHandler(studentService)
 		userHandler         = v1handlers.NewUserHandler(userService)
 		teacherHandler      = v1handlers.NewTeacherHandler(teacherService)
-		teacherScopeHandler = v1handlers.NewTeacherScopeHandler(teacherScopeService)
+		teacherScopeHandler = v1handlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
 		parentHandler       = v1handlers.NewParentHandler(parentService)
-		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService)
+		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService, appointmentService)
+		auditLogHandler     = v1handlers.NewAuditLogHandler(auditLogService)
 		parentCodeHandler   = v1handlers.NewParentCodeHandler(parentCodeService)
 		schoolAdminHandler  = v1handlers.NewSchoolAdminHandler(schoolAdminService)
 		analyticsHandler    = v1handlers.NewAnalyticsHandler(analyticsService)
@@ -162,6 +167,8 @@ func main() {
 		parentCodeHandler,
 		schoolAdminHandler,
 		analyticsHandler,
+		auditLogHandler,
+		auditLogService,
 		chatHandler,
 	)
 

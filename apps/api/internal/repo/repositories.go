@@ -14,6 +14,8 @@ type Repositories struct {
 	HealthLogRepo       *HealthLogRepo
 	ParentScopeRepo     *ParentScopeRepo
 	PostInteractionRepo *PostInteractionRepo
+	AppointmentRepo     *AppointmentRepo
+	AuditLogRepo        *AuditLogRepo
 	SchoolAdminRepo     *SchoolAdminRepo
 	ResetTokenRepo      *ResetTokenRepo
 	ChatRepo            *ChatRepo

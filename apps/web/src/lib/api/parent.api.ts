@@ -4,9 +4,18 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/parent_scope_handler.go
  */
 import { apiClient } from './client';
-import { Student, Post, ApiResponse, PaginationParams, PostComment, PostLikeResponse, PostShareResponse, CreatePostCommentRequest, CreatePostCommentResponse } from '@/types';
+import { Student, Post, ApiResponse, PaginationParams, PostComment, PostLikeResponse, PostShareResponse, CreatePostCommentRequest, CreatePostCommentResponse, ParentAnalytics, Appointment, AppointmentSlot, AppointmentStatus, CreateAppointmentRequest } from '@/types';
 
 export const parentApi = {
+  /**
+   * Lấy thống kê dashboard phụ huynh
+   * GET /api/v1/parent/analytics
+   */
+  getAnalytics: async () => {
+    const res = await apiClient.get<ApiResponse<ParentAnalytics>>('/parent/analytics');
+    return res.data.data;
+  },
+
   /**
    * Lấy danh sách con của phụ huynh hiện tại
    * GET /api/v1/parent/children
@@ -23,6 +32,42 @@ export const parentApi = {
   getMyFeed: async (params?: { limit?: number; offset?: number }) => {
     const res = await apiClient.get<ApiResponse<Post[]>>('/parent/feed', { params });
     return res.data;
+  },
+
+  /**
+   * Lấy slot lịch hẹn có thể đặt theo student_id
+   * GET /api/v1/parent/appointments/slots
+   */
+  getAvailableAppointmentSlots: async (params: { student_id: string; from?: string; to?: string; limit?: number; offset?: number }) => {
+    const res = await apiClient.get<ApiResponse<AppointmentSlot[]>>('/parent/appointments/slots', { params });
+    return res.data;
+  },
+
+  /**
+   * Tạo lịch hẹn mới
+   * POST /api/v1/parent/appointments
+   */
+  createAppointment: async (data: CreateAppointmentRequest) => {
+    const res = await apiClient.post<ApiResponse<Appointment>>('/parent/appointments', data);
+    return res.data.data;
+  },
+
+  /**
+   * Lấy danh sách lịch hẹn của phụ huynh
+   * GET /api/v1/parent/appointments
+   */
+  getAppointments: async (params?: PaginationParams & { status?: AppointmentStatus; from?: string; to?: string }) => {
+    const res = await apiClient.get<ApiResponse<Appointment[]>>('/parent/appointments', { params });
+    return res.data;
+  },
+
+  /**
+   * Hủy lịch hẹn của phụ huynh
+   * PATCH /api/v1/parent/appointments/:appointment_id/cancel
+   */
+  cancelAppointment: async (appointmentId: string, cancel_reason?: string) => {
+    const res = await apiClient.patch<ApiResponse<Appointment>>(`/parent/appointments/${appointmentId}/cancel`, { cancel_reason });
+    return res.data.data;
   },
 
   /**

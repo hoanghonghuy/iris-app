@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -12,6 +13,54 @@ import (
 
 type ParentScopeRepo struct {
 	pool *pgxpool.Pool
+}
+
+func (r *ParentScopeRepo) CountMyChildren(ctx context.Context, parentUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM student_parents sp
+		JOIN parents p ON p.parent_id = sp.parent_id
+		WHERE p.user_id = $1;
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, parentUserID).Scan(&count)
+	return count, err
+}
+
+func (r *ParentScopeRepo) CountMyRecentPosts(ctx context.Context, parentUserID uuid.UUID, since time.Time) (int, error) {
+	const q = `
+		SELECT COUNT(DISTINCT p.post_id)
+		FROM posts p
+		JOIN student_parents sp ON (
+			(p.scope_type = 'student' AND p.student_id = sp.student_id)
+			OR (p.scope_type = 'class' AND p.class_id IN (
+				SELECT s.current_class_id
+				FROM students s
+				WHERE s.student_id = sp.student_id
+			))
+		)
+		JOIN parents pa ON pa.parent_id = sp.parent_id
+		WHERE pa.user_id = $1
+		  AND p.created_at >= $2;
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, parentUserID, since).Scan(&count)
+	return count, err
+}
+
+func (r *ParentScopeRepo) CountMyRecentHealthAlerts(ctx context.Context, parentUserID uuid.UUID, since time.Time) (int, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM health_logs h
+		JOIN student_parents sp ON sp.student_id = h.student_id
+		JOIN parents p ON p.parent_id = sp.parent_id
+		WHERE p.user_id = $1
+		  AND h.recorded_at >= $2
+		  AND h.severity IN ('watch', 'urgent');
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, parentUserID, since).Scan(&count)
+	return count, err
 }
 
 func NewParentScopeRepo(pool *pgxpool.Pool) *ParentScopeRepo {

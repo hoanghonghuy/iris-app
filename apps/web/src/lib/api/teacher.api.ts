@@ -4,7 +4,7 @@
  * Tương ứng với: apps/api/internal/api/v1/handlers/teacher_scope_handler.go
  */
 import { apiClient } from './client';
-import { Class, Student, ApiResponse, PaginationParams, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, AttendanceChangeLog, HealthLog, Post, TeacherAnalytics, PostComment, PostLikeResponse, PostShareResponse, CreatePostCommentRequest, CreatePostCommentResponse } from '@/types';
+import { Class, Student, ApiResponse, PaginationParams, MarkAttendanceRequest, CreateHealthLogRequest, CreatePostRequest, AttendanceRecord, AttendanceChangeLog, HealthLog, Post, TeacherAnalytics, PostComment, PostLikeResponse, PostShareResponse, CreatePostCommentRequest, CreatePostCommentResponse, Appointment, AppointmentStatus, CreateAppointmentSlotRequest } from '@/types';
 import { buildDateRangeQuery } from './query';
 
 export const teacherApi = {
@@ -14,6 +14,36 @@ export const teacherApi = {
    */
   getAnalytics: async () => {
     const res = await apiClient.get<ApiResponse<TeacherAnalytics>>('/teacher/analytics');
+    return res.data.data;
+  },
+
+  /**
+   * Tạo slot lịch hẹn mới
+   * POST /api/v1/teacher/appointments/slots
+   */
+  createAppointmentSlot: async (data: CreateAppointmentSlotRequest) => {
+    const res = await apiClient.post<ApiResponse<unknown>>('/teacher/appointments/slots', data);
+    return res.data.data;
+  },
+
+  /**
+   * Danh sách lịch hẹn của giáo viên
+   * GET /api/v1/teacher/appointments
+   */
+  getAppointments: async (params?: PaginationParams & { status?: AppointmentStatus; from?: string; to?: string }) => {
+    const res = await apiClient.get<ApiResponse<Appointment[]>>('/teacher/appointments', { params });
+    return res.data;
+  },
+
+  /**
+   * Cập nhật trạng thái lịch hẹn
+   * PATCH /api/v1/teacher/appointments/:appointment_id/status
+   */
+  updateAppointmentStatus: async (appointmentId: string, status: AppointmentStatus, cancel_reason?: string) => {
+    const res = await apiClient.patch<ApiResponse<Appointment>>(`/teacher/appointments/${appointmentId}/status`, {
+      status,
+      cancel_reason,
+    });
     return res.data.data;
   },
 
