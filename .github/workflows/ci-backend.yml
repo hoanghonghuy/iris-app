@@ -102,6 +102,7 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: latest
+          install-mode: goinstall
           working-directory: ./apps/api
           args: --timeout=5m
 
