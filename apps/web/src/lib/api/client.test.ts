@@ -5,6 +5,7 @@ import { authHelpers } from '@/lib/api/client';
 describe('authHelpers', () => {
   afterEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('sets and gets auth token', () => {

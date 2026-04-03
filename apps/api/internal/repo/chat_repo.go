@@ -132,6 +132,47 @@ func (r *ChatRepo) GetParticipants(ctx context.Context, conversationID uuid.UUID
 	return parts, rows.Err()
 }
 
+// ListParticipantsByConversationIDs lấy participants cho nhiều conversation trong một query.
+func (r *ChatRepo) ListParticipantsByConversationIDs(ctx context.Context, conversationIDs []uuid.UUID) (map[uuid.UUID][]model.ParticipantInfo, error) {
+	result := make(map[uuid.UUID][]model.ParticipantInfo, len(conversationIDs))
+	if len(conversationIDs) == 0 {
+		return result, nil
+	}
+
+	const q = `
+		SELECT cp.conversation_id, cp.user_id, u.email,
+		       COALESCE(t.full_name, p.full_name, sa.full_name, 'Admin/Unknown') AS full_name
+		FROM conversation_participants cp
+		JOIN users u ON cp.user_id = u.user_id
+		LEFT JOIN teachers t ON t.user_id = u.user_id
+		LEFT JOIN parents p ON p.user_id = u.user_id
+		LEFT JOIN school_admins sa ON sa.user_id = u.user_id
+		WHERE cp.conversation_id = ANY($1::uuid[])
+		ORDER BY cp.joined_at;
+	`
+
+	rows, err := r.pool.Query(ctx, q, conversationIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var convID uuid.UUID
+		var p model.ParticipantInfo
+		if err := rows.Scan(&convID, &p.UserID, &p.Email, &p.FullName); err != nil {
+			return nil, err
+		}
+		result[convID] = append(result[convID], p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // IsParticipant kiểm tra user có thuộc cuộc hội thoại không
 func (r *ChatRepo) IsParticipant(ctx context.Context, conversationID, userID uuid.UUID) (bool, error) {
 	const q = `

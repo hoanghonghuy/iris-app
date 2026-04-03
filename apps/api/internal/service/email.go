@@ -26,6 +26,7 @@ func NewLogEmailSender(frontendURL string) *LogEmailSender {
 }
 
 func (s *LogEmailSender) Send(to, subject, htmlBody string) error {
+	_ = htmlBody // body có thể chứa dữ liệu nhạy cảm (reset code/token), không log raw content.
 	log.Printf("\n"+
 		"╔══════════════════════════════════════════════════╗\n"+
 		"║            📧  EMAIL (dev mode)                 ║\n"+
@@ -33,9 +34,9 @@ func (s *LogEmailSender) Send(to, subject, htmlBody string) error {
 		"║ To:      %s\n"+
 		"║ Subject: %s\n"+
 		"╠══════════════════════════════════════════════════╣\n"+
-		"║ Body:\n%s\n"+
+		"║ Body:    [REDACTED]\n"+
 		"╚══════════════════════════════════════════════════╝\n",
-		to, subject, htmlBody,
+		to, subject,
 	)
 	return nil
 }

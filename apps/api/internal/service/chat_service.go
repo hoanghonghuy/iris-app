@@ -87,12 +87,19 @@ func (s *ChatService) ListConversations(ctx context.Context, userID uuid.UUID) (
 		return nil, err
 	}
 
+	conversationIDs := make([]uuid.UUID, 0, len(convs))
+	for _, c := range convs {
+		conversationIDs = append(conversationIDs, c.ConversationID)
+	}
+
+	participantsByConversation, err := s.chatRepo.ListParticipantsByConversationIDs(ctx, conversationIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	var result []model.ConversationWithParticipants
 	for _, c := range convs {
-		parts, err := s.chatRepo.GetParticipants(ctx, c.ConversationID)
-		if err != nil {
-			return nil, err
-		}
+		parts := participantsByConversation[c.ConversationID]
 		result = append(result, model.ConversationWithParticipants{
 			Conversation: c,
 			Participants: parts,

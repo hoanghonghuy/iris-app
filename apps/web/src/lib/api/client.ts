@@ -13,12 +13,12 @@ export const apiClient = axios.create({
   timeout: 30000, // 30 seconds
 });
 
-// Request Interceptor: chạy trước mỗi request, tự động lấy JWT token từ localStorage gắn vào Authorization header
+// Request Interceptor: chạy trước mỗi request, tự động lấy JWT token từ sessionStorage gắn vào Authorization header
 apiClient.interceptors.request.use(
   (config) => {
-    // Lấy token từ localStorage (chỉ chạy client-side)
+    // Lấy token từ sessionStorage (chỉ chạy client-side)
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('auth_token');
+      const token = sessionStorage.getItem('auth_token');
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -47,7 +47,7 @@ apiClient.interceptors.response.use(
         case 401:
           // Unauthorized - Token hết hạn hoặc không hợp lệ
           if (typeof window !== 'undefined') {
-            localStorage.removeItem('auth_token');
+            sessionStorage.removeItem('auth_token');
             localStorage.removeItem('user_role');
             
             // Chỉ redirect nếu không phải trang login
@@ -91,20 +91,20 @@ apiClient.interceptors.response.use(
 export const authHelpers = {
   setToken: (token: string) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token);
+      sessionStorage.setItem('auth_token', token);
     }
   },
   
   getToken: (): string | null => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      return sessionStorage.getItem('auth_token');
     }
     return null;
   },
   
   removeToken: () => {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
       localStorage.removeItem('user_role');
     }
   },
