@@ -63,6 +63,8 @@ export default function AdminStudentsPage() {
     setEditModal,
     setEditData,
     setDeleteAlert,
+    closeEditModal,
+    closeDeleteAlert,
     handleCreate,
     handleEdit,
     handleDelete,
@@ -74,6 +76,41 @@ export default function AdminStudentsPage() {
 
   const toDateInputValue = (dob: string) => {
     return dob.includes("T") ? dob.split("T")[0] : dob;
+  };
+
+  const openRevokeAlert = (studentId: string) => {
+    setRevokeAlert({ isOpen: true, studentId });
+  };
+
+  const openEditModal = (student: (typeof filteredStudents)[number]) => {
+    setEditData({
+      full_name: student.full_name,
+      dob: toDateInputValue(student.dob),
+      gender: student.gender as "male" | "female" | "other",
+    });
+    setEditModal({ isOpen: true, student });
+  };
+
+  const openDeleteAlert = (studentId: string) => {
+    setDeleteAlert({ isOpen: true, studentId });
+  };
+
+  const handleEditWithFeedback = async () => {
+    try {
+      await handleEdit();
+      toast.success("Cập nhật học sinh thành công");
+    } catch {
+      toast.error("Không thể cập nhật học sinh");
+    }
+  };
+
+  const handleDeleteWithFeedback = async () => {
+    try {
+      await handleDelete();
+      toast.success("Xóa học sinh thành công");
+    } catch {
+      toast.error("Không thể xóa học sinh");
+    }
   };
 
   if (loadingSchools) {
@@ -234,7 +271,7 @@ export default function AdminStudentsPage() {
                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
                               {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => openRevokeAlert(s.student_id)} disabled={revokingCode === s.student_id}>
                               {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
                             </Button>
                           </div>
@@ -247,10 +284,10 @@ export default function AdminStudentsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditData({ full_name: s.full_name, dob: toDateInputValue(s.dob), gender: s.gender as "male"|"female"|"other" }); setEditModal({ isOpen: true, student: s }); }}>
+                      <Button variant="ghost" size="sm" onClick={() => openEditModal(s)}>
                         <Pencil className="h-4 w-4 text-muted-foreground hover:text-primary" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, studentId: s.student_id })}>
+                      <Button variant="ghost" size="sm" onClick={() => openDeleteAlert(s.student_id)}>
                         <Trash2 className="h-4 w-4 text-destructive hover:text-destructive/80" />
                       </Button>
                     </TableCell>
@@ -287,7 +324,7 @@ export default function AdminStudentsPage() {
                           <Button variant="secondary" size="sm" className="h-8 shadow-sm" onClick={() => handleCopy(s.active_parent_code as string, s.student_id)}>
                             {copiedId === s.student_id ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
                           </Button>
-                          <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => setRevokeAlert({ isOpen: true, studentId: s.student_id })} disabled={revokingCode === s.student_id}>
+                          <Button variant="outline" size="sm" className="h-8 shadow-sm text-destructive hover:bg-destructive/10" onClick={() => openRevokeAlert(s.student_id)} disabled={revokingCode === s.student_id}>
                             {revokingCode === s.student_id ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
                           </Button>
                         </div>
@@ -320,15 +357,8 @@ export default function AdminStudentsPage() {
       {/* Edit Student Modal */}
       <ActionModal
         isOpen={editModal.isOpen}
-        onClose={() => setEditModal({ isOpen: false, student: null })}
-        onConfirm={async () => {
-          try {
-            await handleEdit();
-            toast.success("Cập nhật học sinh thành công");
-          } catch {
-            toast.error("Không thể cập nhật học sinh");
-          }
-        }}
+        onClose={closeEditModal}
+        onConfirm={handleEditWithFeedback}
         title="Sửa thông tin học sinh"
         loading={editLoading}
         confirmText="Lưu"
@@ -362,15 +392,8 @@ export default function AdminStudentsPage() {
       {/* Confirm Delete Student */}
       <ConfirmAlertDialog
         isOpen={deleteAlert.isOpen}
-        onClose={() => setDeleteAlert({ isOpen: false, studentId: null })}
-        onConfirm={async () => {
-          try {
-            await handleDelete();
-            toast.success("Xóa học sinh thành công");
-          } catch {
-            toast.error("Không thể xóa học sinh");
-          }
-        }}
+        onClose={closeDeleteAlert}
+        onConfirm={handleDeleteWithFeedback}
         title="Xác nhận xóa học sinh"
         description="Bạn có chắc chắn muốn xóa học sinh này? Hành động này không thể hoàn tác."
         loading={deleteLoading}

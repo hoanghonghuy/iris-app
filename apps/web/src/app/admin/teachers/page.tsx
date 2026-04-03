@@ -51,10 +51,23 @@ export default function AdminTeachersPage() {
     setDeleteAlert,
     closeAssignModal,
     closeUnassignAlert,
+    closeDeleteAlert,
     handleAssign,
     confirmUnassign,
     handleDelete,
   } = useAdminTeachersPage();
+
+  const openAssignModal = (teacherId: string, teacherName: string) => {
+    setAssignModal({ isOpen: true, teacherId, teacherName });
+  };
+
+  const openUnassignAlert = (teacherId: string, classId: string, className: string) => {
+    setUnassignAlert({ isOpen: true, teacherId, classId, className });
+  };
+
+  const openDeleteAlert = (teacherId: string) => {
+    setDeleteAlert({ isOpen: true, teacherId });
+  };
 
   const handleAssignWithFeedback = async () => {
     if (!selectedClassId || !assignModal.teacherId) {
@@ -84,6 +97,18 @@ export default function AdminTeachersPage() {
       toast.success(`Đã hủy gán lớp ${unassignAlert.className}`);
     } catch (err: unknown) {
       toast.error(extractApiErrorMessage(err, "Không thể hủy gán lớp"));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteWithFeedback = async () => {
+    try {
+      setActionLoading(true);
+      await handleDelete();
+      toast.success("Xóa giáo viên thành công");
+    } catch (err: unknown) {
+      toast.error(extractApiErrorMessage(err, "Không thể xóa giáo viên"));
     } finally {
       setActionLoading(false);
     }
@@ -155,7 +180,7 @@ export default function AdminTeachersPage() {
                           <Badge key={c.class_id} variant="secondary" className="pr-1.5 flex items-center gap-1">
                             {c.name}
                             <button
-                              onClick={() => setUnassignAlert({ isOpen: true, teacherId: t.teacher_id, classId: c.class_id, className: c.name })}
+                              onClick={() => openUnassignAlert(t.teacher_id, c.class_id, c.name)}
                               className="ml-0.5 rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
                               aria-label="Remove"
                             >
@@ -169,10 +194,10 @@ export default function AdminTeachersPage() {
                     )}
                   </TableCell>
                   <TableCell className="text-right align-middle">
-                    <Button variant="ghost" size="sm" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
+                    <Button variant="ghost" size="sm" onClick={() => openAssignModal(t.teacher_id, t.full_name)}>
                       <Link2 className="mr-1 h-3.5 w-3.5" /> Gán lớp
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, teacherId: t.teacher_id })}>
+                    <Button variant="ghost" size="sm" onClick={() => openDeleteAlert(t.teacher_id)}>
                       <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" /> Xóa
                     </Button>
                   </TableCell>
@@ -202,7 +227,7 @@ export default function AdminTeachersPage() {
                           <Badge key={c.class_id} variant="secondary" className="pl-2 pr-1.5 py-0.5 flex items-center gap-1">
                             {c.name}
                             <button
-                              onClick={(e) => { e.preventDefault(); setUnassignAlert({ isOpen: true, teacherId: t.teacher_id, classId: c.class_id, className: c.name }); }}
+                              onClick={(e) => { e.preventDefault(); openUnassignAlert(t.teacher_id, c.class_id, c.name); }}
                               className="ml-1 rounded-full bg-transparent p-0.5 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors outline-none"
                               aria-label="Remove class"
                             >
@@ -219,10 +244,10 @@ export default function AdminTeachersPage() {
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-border/60 flex items-center gap-2 justify-start">
-                    <Button variant="secondary" size="sm" className="flex-1 hover:bg-primary/20 hover:text-primary" onClick={() => setAssignModal({ isOpen: true, teacherId: t.teacher_id, teacherName: t.full_name })}>
+                    <Button variant="secondary" size="sm" className="flex-1 hover:bg-primary/20 hover:text-primary" onClick={() => openAssignModal(t.teacher_id, t.full_name)}>
                       <Link2 className="mr-1 h-4 w-4" /> Gán phân lớp
                     </Button>
-                    <Button variant="outline" size="sm" className="hover:bg-destructive/10 hover:text-destructive" onClick={() => setDeleteAlert({ isOpen: true, teacherId: t.teacher_id })}>
+                    <Button variant="outline" size="sm" className="hover:bg-destructive/10 hover:text-destructive" onClick={() => openDeleteAlert(t.teacher_id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -288,18 +313,8 @@ export default function AdminTeachersPage() {
       {/* Delete Alert */}
       <ConfirmAlertDialog
         isOpen={deleteAlert.isOpen}
-        onClose={() => setDeleteAlert({ isOpen: false, teacherId: null })}
-        onConfirm={async () => {
-          try {
-            setActionLoading(true);
-            await handleDelete();
-            toast.success("Xóa giáo viên thành công");
-          } catch (err: unknown) {
-            toast.error(extractApiErrorMessage(err, "Không thể xóa giáo viên"));
-          } finally {
-            setActionLoading(false);
-          }
-        }}
+        onClose={closeDeleteAlert}
+        onConfirm={handleDeleteWithFeedback}
         title="Xác nhận xóa giáo viên"
         description="Bạn có chắc chắn muốn xóa giáo viên này? Hành động này không thể hoàn tác."
         loading={actionLoading}

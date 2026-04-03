@@ -66,6 +66,10 @@ export function useAdminTeachersPage() {
     setUnassignAlert(INITIAL_UNASSIGN_ALERT_STATE);
   }, []);
 
+  const closeDeleteAlert = useCallback(() => {
+    setDeleteAlert(INITIAL_DELETE_ALERT_STATE);
+  }, []);
+
   const fetchTeachers = useCallback(async () => {
     await fetchCollectionWithState({
       fetcher: () => adminApi.getTeachers({ limit: 20, offset: currentOffset }),
@@ -127,9 +131,9 @@ export function useAdminTeachersPage() {
     if (!deleteAlert.teacherId) return;
 
     await adminApi.deleteTeacher(deleteAlert.teacherId);
-    setDeleteAlert(INITIAL_DELETE_ALERT_STATE);
+    closeDeleteAlert();
     await fetchTeachers();
-  }, [deleteAlert.teacherId, fetchTeachers]);
+  }, [closeDeleteAlert, deleteAlert.teacherId, fetchTeachers]);
 
   const filteredTeachers = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -170,6 +174,7 @@ export function useAdminTeachersPage() {
     setDeleteAlert,
     closeAssignModal,
     closeUnassignAlert,
+    closeDeleteAlert,
     handleAssign,
     confirmUnassign,
     handleDelete,

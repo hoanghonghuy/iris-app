@@ -30,6 +30,16 @@ type EditModalState = {
   student: Student | null;
 };
 
+const INITIAL_EDIT_MODAL_STATE: EditModalState = {
+  isOpen: false,
+  student: null,
+};
+
+const INITIAL_DELETE_ALERT_STATE: DeleteAlertState = {
+  isOpen: false,
+  studentId: null,
+};
+
 export const genderLabel: Record<string, string> = {
   male: "Nam",
   female: "Nữ",
@@ -59,12 +69,20 @@ export function useAdminStudentsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [codeError, setCodeError] = useState("");
 
-  const [editModal, setEditModal] = useState<EditModalState>({ isOpen: false, student: null });
+  const [editModal, setEditModal] = useState<EditModalState>(INITIAL_EDIT_MODAL_STATE);
   const [editData, setEditData] = useState<StudentFormData>({ full_name: "", dob: "", gender: "male" });
   const [editLoading, setEditLoading] = useState(false);
 
-  const [deleteAlert, setDeleteAlert] = useState<DeleteAlertState>({ isOpen: false, studentId: null });
+  const [deleteAlert, setDeleteAlert] = useState<DeleteAlertState>(INITIAL_DELETE_ALERT_STATE);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const closeEditModal = useCallback(() => {
+    setEditModal(INITIAL_EDIT_MODAL_STATE);
+  }, []);
+
+  const closeDeleteAlert = useCallback(() => {
+    setDeleteAlert(INITIAL_DELETE_ALERT_STATE);
+  }, []);
+
 
   const closeRevokeAlert = useCallback(() => {
     setRevokeAlert(INITIAL_REVOKE_ALERT_STATE);
@@ -159,7 +177,7 @@ export function useAdminStudentsPage() {
     try {
       setEditLoading(true);
       await adminApi.updateStudent(editModal.student.student_id, editData);
-      setEditModal({ isOpen: false, student: null });
+      closeEditModal();
       await fetchStudents();
       return true; // indicator for success to show toast
     } catch (errorValue: unknown) {
@@ -167,7 +185,7 @@ export function useAdminStudentsPage() {
     } finally {
       setEditLoading(false);
     }
-  }, [editModal.student, editData, fetchStudents]);
+  }, [closeEditModal, editModal.student, editData, fetchStudents]);
 
   const handleDelete = useCallback(async () => {
     if (!deleteAlert.studentId) return;
@@ -175,7 +193,7 @@ export function useAdminStudentsPage() {
     try {
       setDeleteLoading(true);
       await adminApi.deleteStudent(deleteAlert.studentId);
-      setDeleteAlert({ isOpen: false, studentId: null });
+      closeDeleteAlert();
       await fetchStudents();
       return true; // indicator for success
     } catch (errorValue: unknown) {
@@ -183,7 +201,7 @@ export function useAdminStudentsPage() {
     } finally {
       setDeleteLoading(false);
     }
-  }, [deleteAlert.studentId, fetchStudents]);
+  }, [closeDeleteAlert, deleteAlert.studentId, fetchStudents]);
 
   const handleGenerateCode = useCallback(async (studentId: string) => {
     try {
@@ -289,6 +307,8 @@ export function useAdminStudentsPage() {
     setEditModal,
     setEditData,
     setDeleteAlert,
+    closeEditModal,
+    closeDeleteAlert,
     handleCreate,
     handleEdit,
     handleDelete,

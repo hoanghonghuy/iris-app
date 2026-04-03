@@ -24,6 +24,26 @@ import { ConfirmAlertDialog } from "@/components/shared/ConfirmAlertDialog";
 import { ActionModal } from "@/components/shared/ActionModal";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
+type SchoolEditModalState = {
+  isOpen: boolean;
+  school: School | null;
+};
+
+type SchoolDeleteAlertState = {
+  isOpen: boolean;
+  schoolId: string | null;
+};
+
+const INITIAL_SCHOOL_EDIT_MODAL_STATE: SchoolEditModalState = {
+  isOpen: false,
+  school: null,
+};
+
+const INITIAL_SCHOOL_DELETE_ALERT_STATE: SchoolDeleteAlertState = {
+  isOpen: false,
+  schoolId: null,
+};
+
 export default function AdminSchoolsPage() {
   // ─── State ────────────────────────────────────────────────────────
 
@@ -40,12 +60,12 @@ export default function AdminSchoolsPage() {
   const [formError, setFormError] = useState("");
 
   // Edit state
-  const [editModal, setEditModal] = useState<{ isOpen: boolean; school: School | null }>({ isOpen: false, school: null });
+  const [editModal, setEditModal] = useState<SchoolEditModalState>(INITIAL_SCHOOL_EDIT_MODAL_STATE);
   const [editData, setEditData] = useState({ name: "", address: "" });
   const [editLoading, setEditLoading] = useState(false);
 
   // Delete state
-  const [deleteAlert, setDeleteAlert] = useState<{ isOpen: boolean; schoolId: string | null }>({ isOpen: false, schoolId: null });
+  const [deleteAlert, setDeleteAlert] = useState<SchoolDeleteAlertState>(INITIAL_SCHOOL_DELETE_ALERT_STATE);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ─── Data fetching ────────────────────────────────────────────────
@@ -101,13 +121,25 @@ export default function AdminSchoolsPage() {
     setEditModal({ isOpen: true, school });
   };
 
+  const closeEditModal = () => {
+    setEditModal(INITIAL_SCHOOL_EDIT_MODAL_STATE);
+  };
+
+  const openDeleteAlert = (schoolId: string) => {
+    setDeleteAlert({ isOpen: true, schoolId });
+  };
+
+  const closeDeleteAlert = () => {
+    setDeleteAlert(INITIAL_SCHOOL_DELETE_ALERT_STATE);
+  };
+
   const handleEdit = async () => {
     if (!editModal.school) return;
     try {
       setEditLoading(true);
       await adminApi.updateSchool(editModal.school.school_id, editData);
       toast.success("Cập nhật trường thành công");
-      setEditModal({ isOpen: false, school: null });
+      closeEditModal();
       fetchSchools();
     } catch (err: unknown) {
       toast.error(extractApiErrorMessage(err, "Không thể cập nhật"));
@@ -124,7 +156,7 @@ export default function AdminSchoolsPage() {
       setDeleteLoading(true);
       await adminApi.deleteSchool(deleteAlert.schoolId);
       toast.success("Xóa trường thành công");
-      setDeleteAlert({ isOpen: false, schoolId: null });
+      closeDeleteAlert();
       fetchSchools();
     } catch (err: unknown) {
       toast.error(extractApiErrorMessage(err, "Không thể xóa trường"));
@@ -245,7 +277,7 @@ export default function AdminSchoolsPage() {
                         <Button variant="ghost" size="sm" onClick={() => openEditModal(school)}>
                           <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, schoolId: school.school_id })}>
+                        <Button variant="ghost" size="sm" onClick={() => openDeleteAlert(school.school_id)}>
                           <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" /> Xóa
                         </Button>
                       </TableCell>
@@ -287,7 +319,7 @@ export default function AdminSchoolsPage() {
       {/* Edit Modal */}
       <ActionModal
         isOpen={editModal.isOpen}
-        onClose={() => setEditModal({ isOpen: false, school: null })}
+        onClose={closeEditModal}
         onConfirm={handleEdit}
         title="Sửa trường học"
         loading={editLoading}
@@ -309,7 +341,7 @@ export default function AdminSchoolsPage() {
       {/* Delete Confirmation */}
       <ConfirmAlertDialog
         isOpen={deleteAlert.isOpen}
-        onClose={() => setDeleteAlert({ isOpen: false, schoolId: null })}
+        onClose={closeDeleteAlert}
         onConfirm={handleDelete}
         title="Xác nhận xóa trường"
         description="Bạn có chắc chắn muốn xóa trường này? Tất cả dữ liệu liên quan (lớp, học sinh...) có thể bị ảnh hưởng."

@@ -24,6 +24,26 @@ import { ActionModal } from "@/components/shared/ActionModal";
 import { useAuth } from "@/providers/AuthProvider";
 import { extractApiErrorMessage } from "@/lib/api-error";
 
+type ClassEditModalState = {
+  isOpen: boolean;
+  classItem: Class | null;
+};
+
+type ClassDeleteAlertState = {
+  isOpen: boolean;
+  classId: string | null;
+};
+
+const INITIAL_CLASS_EDIT_MODAL_STATE: ClassEditModalState = {
+  isOpen: false,
+  classItem: null,
+};
+
+const INITIAL_CLASS_DELETE_ALERT_STATE: ClassDeleteAlertState = {
+  isOpen: false,
+  classId: null,
+};
+
 export default function AdminClassesPage() {
   const { role } = useAuth();
   const [schools, setSchools] = useState<School[]>([]);
@@ -40,10 +60,10 @@ export default function AdminClassesPage() {
   const [formError, setFormError] = useState("");
 
   // Edit/Delete state
-  const [editModal, setEditModal] = useState<{ isOpen: boolean; cls: Class | null }>({ isOpen: false, cls: null });
+  const [editModal, setEditModal] = useState<ClassEditModalState>(INITIAL_CLASS_EDIT_MODAL_STATE);
   const [editData, setEditData] = useState({ name: "", school_year: "" });
   const [editLoading, setEditLoading] = useState(false);
-  const [deleteAlert, setDeleteAlert] = useState<{ isOpen: boolean; classId: string | null }>({ isOpen: false, classId: null });
+  const [deleteAlert, setDeleteAlert] = useState<ClassDeleteAlertState>(INITIAL_CLASS_DELETE_ALERT_STATE);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
@@ -86,13 +106,30 @@ export default function AdminClassesPage() {
     } finally { setSubmitting(false); }
   };
 
+  const openEditModal = (classItem: Class) => {
+    setEditData({ name: classItem.name, school_year: classItem.school_year });
+    setEditModal({ isOpen: true, classItem });
+  };
+
+  const closeEditModal = () => {
+    setEditModal(INITIAL_CLASS_EDIT_MODAL_STATE);
+  };
+
+  const openDeleteAlert = (classId: string) => {
+    setDeleteAlert({ isOpen: true, classId });
+  };
+
+  const closeDeleteAlert = () => {
+    setDeleteAlert(INITIAL_CLASS_DELETE_ALERT_STATE);
+  };
+
   const handleEdit = async () => {
-    if (!editModal.cls) return;
+    if (!editModal.classItem) return;
     try {
       setEditLoading(true);
-      await adminApi.updateClass(editModal.cls.class_id, editData);
+      await adminApi.updateClass(editModal.classItem.class_id, editData);
       toast.success("Cập nhật lớp thành công");
-      setEditModal({ isOpen: false, cls: null });
+      closeEditModal();
       await fetchClasses();
     } catch (error: unknown) {
       toast.error(extractApiErrorMessage(error, "Không thể cập nhật lớp"));
@@ -107,7 +144,7 @@ export default function AdminClassesPage() {
       setDeleteLoading(true);
       await adminApi.deleteClass(deleteAlert.classId);
       toast.success("Xóa lớp thành công");
-      setDeleteAlert({ isOpen: false, classId: null });
+      closeDeleteAlert();
       await fetchClasses();
     } catch (error: unknown) {
       toast.error(extractApiErrorMessage(error, "Không thể xóa lớp"));
@@ -200,15 +237,15 @@ export default function AdminClassesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classes.map((cls) => (
-                  <TableRow key={cls.class_id}>
-                    <TableCell className="font-medium">{cls.name}</TableCell>
-                    <TableCell><Badge variant="secondary">{cls.school_year}</Badge></TableCell>
+                {classes.map((classItem) => (
+                  <TableRow key={classItem.class_id}>
+                    <TableCell className="font-medium">{classItem.name}</TableCell>
+                    <TableCell><Badge variant="secondary">{classItem.school_year}</Badge></TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditData({ name: cls.name, school_year: cls.school_year }); setEditModal({ isOpen: true, cls }); }}>
+                      <Button variant="ghost" size="sm" onClick={() => openEditModal(classItem)}>
                         <Pencil className="mr-1 h-3.5 w-3.5" /> Sửa
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteAlert({ isOpen: true, classId: cls.class_id })}>
+                      <Button variant="ghost" size="sm" onClick={() => openDeleteAlert(classItem.class_id)}>
                         <Trash2 className="mr-1 h-3.5 w-3.5 text-destructive" /> Xóa
                       </Button>
                     </TableCell>
@@ -221,15 +258,15 @@ export default function AdminClassesPage() {
         mobileClassName="space-y-3 md:hidden"
         mobile={(
           <>
-            {classes.map((cls) => (
-              <Card key={cls.class_id}>
+            {classes.map((classItem) => (
+              <Card key={classItem.class_id}>
                 <CardContent className="flex items-start gap-3 py-4">
                   <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium">{cls.name}</p>
+                    <p className="font-medium">{classItem.name}</p>
                     <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                       <Calendar className="h-3 w-3" />
-                      <Badge variant="secondary">{cls.school_year}</Badge>
+                      <Badge variant="secondary">{classItem.school_year}</Badge>
                     </div>
                   </div>
                 </CardContent>
@@ -241,7 +278,7 @@ export default function AdminClassesPage() {
 
       <ActionModal
         isOpen={editModal.isOpen}
-        onClose={() => setEditModal({ isOpen: false, cls: null })}
+        onClose={closeEditModal}
         onConfirm={handleEdit}
         title="Sửa lớp học"
         loading={editLoading}
@@ -262,7 +299,7 @@ export default function AdminClassesPage() {
 
       <ConfirmAlertDialog
         isOpen={deleteAlert.isOpen}
-        onClose={() => setDeleteAlert({ isOpen: false, classId: null })}
+        onClose={closeDeleteAlert}
         onConfirm={handleDelete}
         title="Xác nhận xóa lớp"
         description="Bạn có chắc chắn muốn xóa lớp này? Hành động này có thể ảnh hưởng tới học sinh đang thuộc lớp."
