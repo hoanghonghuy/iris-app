@@ -47,7 +47,7 @@ func (h *TeacherScopeHandler) CreateAppointmentSlot(c *gin.Context) {
 		return
 	}
 
-	endTime := time.Time{}
+	var endTime time.Time
 	if req.EndTime != "" {
 		endTime, err = time.Parse(time.RFC3339, req.EndTime)
 		if err != nil {

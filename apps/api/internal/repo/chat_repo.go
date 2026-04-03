@@ -22,7 +22,9 @@ func (r *ChatRepo) CreateConversation(ctx context.Context, convType string, name
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	const qConv = `
 		INSERT INTO conversations (type, name)

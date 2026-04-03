@@ -71,7 +71,10 @@ func AdminAuditLogger(auditLogService *service.AuditLogService) gin.HandlerFunc 
 			actorRole = claims.Roles[0]
 		}
 
-		_ = auditLogService.Create(contextWithShortTimeout(), model.AuditLogCreate{
+		ctx, cancel := contextWithShortTimeout()
+		defer cancel()
+
+		_ = auditLogService.Create(ctx, model.AuditLogCreate{
 			ActorUserID: actorID,
 			ActorRole:   actorRole,
 			Action:      method + " " + path,
@@ -101,7 +104,6 @@ func extractEntityIDFromPath(values ...string) *uuid.UUID {
 	return nil
 }
 
-func contextWithShortTimeout() context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), 1200*time.Millisecond)
-	return ctx
+func contextWithShortTimeout() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 1200*time.Millisecond)
 }

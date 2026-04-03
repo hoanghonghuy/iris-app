@@ -113,7 +113,9 @@ func (r *ParentCodeRepo) RegisterParentTx(ctx context.Context, p RegisterParentT
 	if err != nil {
 		return uuid.Nil, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	// 1. Tạo User
 	const qUser = `
