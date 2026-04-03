@@ -135,6 +135,12 @@ func main() {
 		CleanupEvery: cfg.AuthRateLimitCleanupEvery,
 		StaleTTL:     time.Duration(cfg.AuthRateLimitStaleTTLMultiplier) * authRateLimitWindow,
 	})
+	authResetLimiter := middleware.NewIPFixedWindowRateLimitWithConfig(middleware.FixedWindowRateLimitConfig{
+		MaxRequests:  cfg.AuthResetRateLimit,
+		Window:       authRateLimitWindow,
+		CleanupEvery: cfg.AuthRateLimitCleanupEvery,
+		StaleTTL:     time.Duration(cfg.AuthRateLimitStaleTTLMultiplier) * authRateLimitWindow,
+	})
 
 	// Router
 	r := httpapi.NewRouter(
@@ -143,6 +149,7 @@ func main() {
 		cfg.AllowedOrigins,
 		authLoginLimiter,
 		authForgotLimiter,
+		authResetLimiter,
 		authHandler,
 		schoolHandler,
 		classHandler,

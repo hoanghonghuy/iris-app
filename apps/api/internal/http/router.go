@@ -18,6 +18,7 @@ func NewRouter(
 	allowedOrigins []string,
 	authLoginRateLimit gin.HandlerFunc,
 	authForgotPasswordRateLimit gin.HandlerFunc,
+	authResetPasswordRateLimit gin.HandlerFunc,
 	authHandler *v1handlers.AuthHandler,
 	schoolHandler *v1handlers.SchoolHandler,
 	classHandler *v1handlers.ClassHandler,
@@ -41,6 +42,15 @@ func NewRouter(
 	for _, o := range allowedOrigins {
 		originSet[o] = struct{}{}
 	}
+
+	// Security headers middleware cho API responses.
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		c.Header("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'")
+		c.Next()
+	})
 
 	// CORS middleware — chỉ cho phép origin trong allowlist
 	r.Use(func(c *gin.Context) {
@@ -81,7 +91,7 @@ func NewRouter(
 		v1.POST("/auth/login", authLoginRateLimit, authHandler.Login)
 		v1.POST("/auth/login/google", authLoginRateLimit, authHandler.LoginWithGoogle)
 		v1.POST("/auth/forgot-password", authForgotPasswordRateLimit, authHandler.ForgotPassword)
-		v1.POST("/auth/reset-password", authHandler.ResetPassword)
+		v1.POST("/auth/reset-password", authResetPasswordRateLimit, authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
 		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
 		v1.POST("/register/parent/google", parentCodeHandler.RegisterParentWithGoogle)

@@ -145,6 +145,9 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 			limit = n
 		}
 	}
+	if limit > 100 {
+		limit = 100
+	}
 
 	// Parse optional cursor: before=<message_uuid>
 	var before *uuid.UUID

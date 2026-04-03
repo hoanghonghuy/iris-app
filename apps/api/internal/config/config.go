@@ -15,6 +15,7 @@ type Config struct {
 	// Cấu hình rate limit dạng fixed-window cho login/forgot-password xác thực.
 	AuthLoginRateLimit              int
 	AuthForgotRateLimit             int
+	AuthResetRateLimit              int
 	AuthRateLimitWindowSeconds      int
 	AuthRateLimitCleanupEvery       int
 	AuthRateLimitStaleTTLMultiplier int
@@ -56,6 +57,7 @@ func Load() (Config, error) {
 	// Parse auth rate limit config (fall back to safe defaults on invalid env values).
 	authLoginRateLimit := parsePositiveIntEnv("AUTH_LOGIN_RATE_LIMIT", 10)
 	authForgotRateLimit := parsePositiveIntEnv("AUTH_FORGOT_PASSWORD_RATE_LIMIT", 5)
+	authResetRateLimit := parsePositiveIntEnv("AUTH_RESET_PASSWORD_RATE_LIMIT", 5)
 	authRateLimitWindowSeconds := parsePositiveIntEnv("AUTH_RATE_LIMIT_WINDOW_SECONDS", 60)
 	authRateLimitCleanupEvery := parsePositiveIntEnv("AUTH_RATE_LIMIT_CLEANUP_EVERY", 256)
 	authRateLimitStaleTTLMultiplier := parsePositiveIntEnv("AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER", 5)
@@ -85,6 +87,7 @@ func Load() (Config, error) {
 		JWTTTLMinutes:                   ttl,
 		AuthLoginRateLimit:              authLoginRateLimit,
 		AuthForgotRateLimit:             authForgotRateLimit,
+		AuthResetRateLimit:              authResetRateLimit,
 		AuthRateLimitWindowSeconds:      authRateLimitWindowSeconds,
 		AuthRateLimitCleanupEvery:       authRateLimitCleanupEvery,
 		AuthRateLimitStaleTTLMultiplier: authRateLimitStaleTTLMultiplier,
