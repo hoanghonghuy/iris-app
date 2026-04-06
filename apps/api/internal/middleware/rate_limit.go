@@ -27,16 +27,6 @@ type FixedWindowRateLimitConfig struct {
 	StaleTTL     time.Duration
 }
 
-// NewIPFixedWindowRateLimit limits requests per route+IP using a fixed time window.
-func NewIPFixedWindowRateLimit(maxRequests int, window time.Duration) gin.HandlerFunc {
-	return NewIPFixedWindowRateLimitWithConfig(FixedWindowRateLimitConfig{
-		MaxRequests:  maxRequests,
-		Window:       window,
-		CleanupEvery: 256,
-		StaleTTL:     5 * window,
-	})
-}
-
 // NewIPFixedWindowRateLimitWithConfig tạo middleware với cấu hình chi tiết.
 func NewIPFixedWindowRateLimitWithConfig(cfg FixedWindowRateLimitConfig) gin.HandlerFunc {
 	if cfg.MaxRequests <= 0 {
