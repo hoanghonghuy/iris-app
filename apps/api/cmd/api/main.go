@@ -18,6 +18,7 @@ import (
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
+	v1teacherhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
 	v1userhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/user"
 	"github.com/joho/godotenv"
@@ -116,7 +117,7 @@ func main() {
 		classHandler        = v1handlers.NewClassHandler(classService)
 		studentHandler      = v1handlers.NewStudentHandler(studentService)
 		userHandler         = v1userhandlers.NewUserHandler(userService)
-		teacherHandler      = v1handlers.NewTeacherHandler(teacherService)
+		teacherHandler      = v1teacherhandlers.NewTeacherHandler(teacherService)
 		teacherScopeHandler = v1teacherscopehandlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
 		parentHandler       = v1handlers.NewParentHandler(parentService)
 		parentScopeHandler  = v1parentscopehandlers.NewParentScopeHandler(parentScopeService, appointmentService)
