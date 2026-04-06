@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -77,17 +75,8 @@ func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -115,17 +104,8 @@ func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 		return
 	}
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -164,17 +144,8 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -242,16 +213,8 @@ func (h *TeacherScopeHandler) CancelAttendance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -287,21 +250,12 @@ func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
-	err = h.teacherScopeService.UpdateMyProfile(ctx, userID, req.Phone)
+	err := h.teacherScopeService.UpdateMyProfile(ctx, userID, req.Phone)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) {
 			response.Fail(c, http.StatusBadRequest, "invalid user ID")
@@ -338,17 +292,8 @@ func (h *TeacherScopeHandler) CreateHealth(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -399,17 +344,8 @@ func (h *TeacherScopeHandler) ListHealth(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -456,16 +392,8 @@ func (h *TeacherScopeHandler) ListAttendance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -511,16 +439,8 @@ func (h *TeacherScopeHandler) ListAttendanceChangeLogs(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -587,16 +507,8 @@ func (h *TeacherScopeHandler) ListClassAttendanceChangeLogs(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -653,16 +565,8 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 	defer cancel()
 
 	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -739,16 +643,8 @@ func (h *TeacherScopeHandler) UpdatePost(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -783,16 +679,8 @@ func (h *TeacherScopeHandler) DeletePost(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -834,16 +722,8 @@ func (h *TeacherScopeHandler) ListClassPosts(c *gin.Context) {
 	defer cancel()
 
 	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -883,16 +763,8 @@ func (h *TeacherScopeHandler) ListStudentPosts(c *gin.Context) {
 	defer cancel()
 
 	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -925,16 +797,8 @@ func (h *TeacherScopeHandler) TogglePostLike(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -976,16 +840,8 @@ func (h *TeacherScopeHandler) ListPostComments(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -1028,16 +884,8 @@ func (h *TeacherScopeHandler) CreatePostComment(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -1073,16 +921,8 @@ func (h *TeacherScopeHandler) SharePost(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 

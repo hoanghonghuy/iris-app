@@ -13,26 +13,45 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 )
 
-// requireCurrentUserID đọc user_id từ JWT claims và tự trả lỗi HTTP nếu token/claims không hợp lệ.
-func requireCurrentUserID(c *gin.Context) (uuid.UUID, bool) {
+// requireCurrentClaims lấy JWT claims từ context và tự trả lỗi HTTP nếu claims không hợp lệ.
+func requireCurrentClaims(c *gin.Context) (*auth.Claims, bool) {
 	claimsAny, exists := c.Get(middleware.CtxClaims)
 	if !exists {
 		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return uuid.Nil, false
+		return nil, false
 	}
 
 	claims, ok := claimsAny.(*auth.Claims)
 	if !ok {
 		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return uuid.Nil, false
+		return nil, false
+	}
+
+	return claims, true
+}
+
+// requireCurrentUser lấy user hiện tại từ JWT claims và tự trả lỗi HTTP nếu dữ liệu không hợp lệ.
+func requireCurrentUser(c *gin.Context) (uuid.UUID, *auth.Claims, bool) {
+	claims, ok := requireCurrentClaims(c)
+	if !ok {
+		return uuid.Nil, nil, false
 	}
 
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid user ID")
-		return uuid.Nil, false
+		return uuid.Nil, nil, false
 	}
 
+	return userID, claims, true
+}
+
+// requireCurrentUserID đọc user_id từ JWT claims và tự trả lỗi HTTP nếu token/claims không hợp lệ.
+func requireCurrentUserID(c *gin.Context) (uuid.UUID, bool) {
+	userID, _, ok := requireCurrentUser(c)
+	if !ok {
+		return uuid.Nil, false
+	}
 	return userID, true
 }
 

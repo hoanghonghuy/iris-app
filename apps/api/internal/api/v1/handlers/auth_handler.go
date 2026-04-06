@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -113,13 +112,10 @@ func (h *AuthHandler) LoginWithGoogle(c *gin.Context) {
 
 // Me trả về thông tin user đã đăng nhập
 func (h *AuthHandler) Me(c *gin.Context) {
-	// Lấy claims từ context (được middleware AuthJWT set)
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
+	claims, ok := requireCurrentClaims(c)
+	if !ok {
 		return
 	}
-	claims := claimsAny.(*auth.Claims)
 
 	// Trả về thông tin từ JWT claims (đã validate và xác thực)
 	result := gin.H{

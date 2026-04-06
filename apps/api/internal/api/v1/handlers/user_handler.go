@@ -10,8 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -174,17 +172,8 @@ func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Lấy userID từ middleware AuthJWT
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -219,17 +208,8 @@ func (h *UserHandler) Delete(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Lấy userID từ middleware AuthJWT
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 

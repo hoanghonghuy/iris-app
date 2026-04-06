@@ -4,10 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -37,15 +34,8 @@ func (h *AnalyticsHandler) AdminDashboardStats(c *gin.Context) {
 
 // TeacherDashboardStats lấy thống kê cho Giáo viên.
 func (h *AnalyticsHandler) TeacherDashboardStats(c *gin.Context) {
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "Không tìm thấy thông tin xác thực")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusUnauthorized, "Token không hợp lệ")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
