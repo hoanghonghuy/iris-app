@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -32,17 +30,8 @@ func (h *ParentScopeHandler) MyChildren(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -76,17 +65,8 @@ func (h *ParentScopeHandler) ListMyChildClassPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -129,17 +109,8 @@ func (h *ParentScopeHandler) ListMyChildStudentPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -182,17 +153,8 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -228,17 +190,8 @@ func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	// Get userID from JWT claims
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -271,16 +224,8 @@ func (h *ParentScopeHandler) TogglePostLike(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -322,16 +267,8 @@ func (h *ParentScopeHandler) ListPostComments(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -374,16 +311,8 @@ func (h *ParentScopeHandler) CreatePostComment(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -419,16 +348,8 @@ func (h *ParentScopeHandler) SharePost(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-
-	userID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	userID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 

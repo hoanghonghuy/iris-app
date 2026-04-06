@@ -3,14 +3,11 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -62,15 +59,8 @@ func (h *TeacherScopeHandler) CreateAppointmentSlot(c *gin.Context) {
 		endTime = startTime.Add(time.Duration(d) * time.Minute)
 	}
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	teacherUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	teacherUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -92,20 +82,13 @@ func (h *TeacherScopeHandler) CreateAppointmentSlot(c *gin.Context) {
 }
 
 func (h *TeacherScopeHandler) ListMyAppointments(c *gin.Context) {
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	teacherUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	teacherUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
 	status := c.Query("status")
-	from, to, err := h.parseTimeRange(c.Query("from"), c.Query("to"))
+	from, to, err := parseTimeRange(c.Query("from"), c.Query("to"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
@@ -143,15 +126,8 @@ func (h *TeacherScopeHandler) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	teacherUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	teacherUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -170,40 +146,4 @@ func (h *TeacherScopeHandler) UpdateAppointmentStatus(c *gin.Context) {
 	}
 
 	response.OK(c, updated)
-}
-
-func (h *TeacherScopeHandler) parseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error) {
-	var from *time.Time
-	var to *time.Time
-	if fromRaw != "" {
-		v, err := time.Parse(time.RFC3339, fromRaw)
-		if err != nil {
-			return nil, nil, err
-		}
-		from = &v
-	}
-	if toRaw != "" {
-		v, err := time.Parse(time.RFC3339, toRaw)
-		if err != nil {
-			return nil, nil, err
-		}
-		to = &v
-	}
-	return from, to, nil
-}
-
-func parsePagination(limitRaw, offsetRaw string) (int, int) {
-	limit := 20
-	if limitRaw != "" {
-		if n, err := strconv.Atoi(limitRaw); err == nil {
-			limit = n
-		}
-	}
-	offset := 0
-	if offsetRaw != "" {
-		if n, err := strconv.Atoi(offsetRaw); err == nil {
-			offset = n
-		}
-	}
-	return limit, offset
 }

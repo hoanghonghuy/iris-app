@@ -3,13 +3,10 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -31,15 +28,8 @@ func (h *ParentScopeHandler) ListAvailableAppointmentSlots(c *gin.Context) {
 		return
 	}
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	parentUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	parentUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -60,7 +50,12 @@ func (h *ParentScopeHandler) ListAvailableAppointmentSlots(c *gin.Context) {
 		return
 	}
 
-	response.OKPaginated(c, items, response.Pagination{Total: total, Limit: limit, Offset: offset, HasMore: offset+len(items) < total})
+	response.OKPaginated(c, items, response.Pagination{
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
+		HasMore: offset+len(items) < total,
+	})
 }
 
 func (h *ParentScopeHandler) CreateAppointment(c *gin.Context) {
@@ -81,15 +76,8 @@ func (h *ParentScopeHandler) CreateAppointment(c *gin.Context) {
 		return
 	}
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	parentUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	parentUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -107,15 +95,8 @@ func (h *ParentScopeHandler) CreateAppointment(c *gin.Context) {
 }
 
 func (h *ParentScopeHandler) ListMyAppointments(c *gin.Context) {
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	parentUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	parentUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -137,7 +118,12 @@ func (h *ParentScopeHandler) ListMyAppointments(c *gin.Context) {
 		return
 	}
 
-	response.OKPaginated(c, items, response.Pagination{Total: total, Limit: limit, Offset: offset, HasMore: offset+len(items) < total})
+	response.OKPaginated(c, items, response.Pagination{
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
+		HasMore: offset+len(items) < total,
+	})
 }
 
 func (h *ParentScopeHandler) CancelAppointment(c *gin.Context) {
@@ -150,15 +136,8 @@ func (h *ParentScopeHandler) CancelAppointment(c *gin.Context) {
 	var req CancelAppointmentRequest
 	_ = c.ShouldBindJSON(&req)
 
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	parentUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	parentUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -176,15 +155,8 @@ func (h *ParentScopeHandler) CancelAppointment(c *gin.Context) {
 }
 
 func (h *ParentScopeHandler) GetMyAnalytics(c *gin.Context) {
-	claimsAny, exists := c.Get(middleware.CtxClaims)
-	if !exists {
-		response.Fail(c, http.StatusUnauthorized, "unauthorized")
-		return
-	}
-	claims := claimsAny.(*auth.Claims)
-	parentUserID, err := uuid.Parse(claims.UserID)
-	if err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid user ID")
+	parentUserID, ok := requireCurrentUserID(c)
+	if !ok {
 		return
 	}
 
@@ -198,24 +170,4 @@ func (h *ParentScopeHandler) GetMyAnalytics(c *gin.Context) {
 		return
 	}
 	response.OK(c, stats)
-}
-
-func parseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error) {
-	var from *time.Time
-	var to *time.Time
-	if fromRaw != "" {
-		v, err := time.Parse(time.RFC3339, fromRaw)
-		if err != nil {
-			return nil, nil, err
-		}
-		from = &v
-	}
-	if toRaw != "" {
-		v, err := time.Parse(time.RFC3339, toRaw)
-		if err != nil {
-			return nil, nil, err
-		}
-		to = &v
-	}
-	return from, to, nil
 }
