@@ -25,6 +25,12 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useAuth } from "@/providers/AuthProvider";
 import { genderLabel, useAdminStudentsPage } from "./useAdminStudentsPage";
 
+type StudentFormState = {
+  full_name: string;
+  dob: string;
+  gender: "male" | "female" | "other";
+};
+
 export default function AdminStudentsPage() {
   const { role } = useAuth();
   const {
@@ -76,6 +82,32 @@ export default function AdminStudentsPage() {
 
   const toDateInputValue = (dob: string) => {
     return dob.includes("T") ? dob.split("T")[0] : dob;
+  };
+
+  const toggleCreateForm = () => {
+    setShowForm((prev) => !prev);
+  };
+
+  const openCreateForm = () => {
+    setShowForm(true);
+  };
+
+  const handleFormFieldChange = (field: keyof StudentFormState, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFormGenderChange = (value: string) => {
+    if (value === "male" || value === "female" || value === "other") {
+      setFormData((prev) => ({ ...prev, gender: value }));
+    }
+  };
+
+  const handleEditFieldChange = (field: keyof StudentFormState, value: string) => {
+    setEditData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditGenderChange = (value: "male" | "female" | "other") => {
+    setEditData((prev) => ({ ...prev, gender: value }));
   };
 
   const openRevokeAlert = (studentId: string) => {
@@ -139,7 +171,7 @@ export default function AdminStudentsPage() {
             </Select>
           )}
           {selectedClassId && (
-            <Button size="sm" onClick={() => setShowForm(!showForm)}>
+            <Button size="sm" onClick={toggleCreateForm}>
               {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
               {showForm ? "Hủy" : "Thêm HS"}
             </Button>
@@ -174,22 +206,18 @@ export default function AdminStudentsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Họ tên <span className="text-destructive">*</span></Label>
                   <Input id="fullName" placeholder="VD: Bé An" value={formData.full_name}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} required />
+                    onChange={(e) => handleFormFieldChange("full_name", e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dob">Ngày sinh <span className="text-destructive">*</span></Label>
                   <Input id="dob" type="date" value={formData.dob}
-                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })} required />
+                    onChange={(e) => handleFormFieldChange("dob", e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label>Giới tính</Label>
                   <Select
                     value={formData.gender}
-                    onValueChange={(value) => {
-                      if (value === "male" || value === "female" || value === "other") {
-                        setFormData({ ...formData, gender: value });
-                      }
-                    }}
+                    onValueChange={handleFormGenderChange}
                   >
                     <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -225,7 +253,7 @@ export default function AdminStudentsPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground/50" />
             <p className="mt-4 text-sm text-muted-foreground">Chưa có học sinh nào trong {selectedClassName}</p>
-            <Button variant="outline" className="mt-4" onClick={() => setShowForm(true)}>
+            <Button variant="outline" className="mt-4" onClick={openCreateForm}>
               <Plus className="mr-2 h-4 w-4" /> Thêm học sinh đầu tiên
             </Button>
           </CardContent>
@@ -367,16 +395,16 @@ export default function AdminStudentsPage() {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Họ và tên</Label>
-            <Input value={editData.full_name} onChange={(e) => setEditData({ ...editData, full_name: e.target.value })} />
+            <Input value={editData.full_name} onChange={(e) => handleEditFieldChange("full_name", e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Ngày sinh</Label>
-              <Input type="date" value={editData.dob} onChange={(e) => setEditData({ ...editData, dob: e.target.value })} />
+              <Input type="date" value={editData.dob} onChange={(e) => handleEditFieldChange("dob", e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label>Giới tính</Label>
-              <Select value={editData.gender} onValueChange={(value: "male" | "female" | "other") => setEditData({ ...editData, gender: value })}>
+              <Select value={editData.gender} onValueChange={handleEditGenderChange}>
                 <SelectTrigger><SelectValue placeholder="Chọn giới tính" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="male">Nam</SelectItem>

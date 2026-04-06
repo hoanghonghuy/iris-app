@@ -61,7 +61,7 @@ export default function AdminSchoolsPage() {
 
   // Edit state
   const [editModal, setEditModal] = useState<SchoolEditModalState>(INITIAL_SCHOOL_EDIT_MODAL_STATE);
-  const [editData, setEditData] = useState({ name: "", address: "" });
+  const [editData, setEditData] = useState<CreateSchoolRequest>({ name: "", address: "" });
   const [editLoading, setEditLoading] = useState(false);
 
   // Delete state
@@ -89,6 +89,22 @@ export default function AdminSchoolsPage() {
   useEffect(() => {
     fetchSchools();
   }, [fetchSchools]);
+
+  const toggleCreateForm = () => {
+    setShowForm((prev) => !prev);
+  };
+
+  const openCreateForm = () => {
+    setShowForm(true);
+  };
+
+  const handleFormFieldChange = (field: keyof CreateSchoolRequest, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditFieldChange = (field: keyof CreateSchoolRequest, value: string) => {
+    setEditData((prev) => ({ ...prev, [field]: value }));
+  };
 
   // ─── Create school ────────────────────────────────────────────────
 
@@ -171,7 +187,7 @@ export default function AdminSchoolsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={toggleCreateForm}>
           {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
           {showForm ? "Hủy" : "Thêm trường"}
         </Button>
@@ -199,7 +215,7 @@ export default function AdminSchoolsPage() {
                     id="name"
                     placeholder="VD: Trường Mầm Non Hoa Sen"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => handleFormFieldChange("name", e.target.value)}
                     required
                   />
                 </div>
@@ -211,7 +227,7 @@ export default function AdminSchoolsPage() {
                     id="address"
                     placeholder="VD: 123 Nguyễn Văn A, Q.1, TP.HCM"
                     value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    onChange={(e) => handleFormFieldChange("address", e.target.value)}
                   />
                 </div>
               </div>
@@ -245,7 +261,7 @@ export default function AdminSchoolsPage() {
           icon={SchoolIcon}
           title="Chưa có trường học nào"
           action={
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={openCreateForm}>
               <Plus className="mr-2 h-4 w-4" />
               Thêm trường đầu tiên
             </Button>
@@ -329,11 +345,11 @@ export default function AdminSchoolsPage() {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Tên trường</Label>
-            <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
+            <Input value={editData.name} onChange={(e) => handleEditFieldChange("name", e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>Địa chỉ</Label>
-            <Input value={editData.address} onChange={(e) => setEditData({ ...editData, address: e.target.value })} />
+            <Input value={editData.address} onChange={(e) => handleEditFieldChange("address", e.target.value)} />
           </div>
         </div>
       </ActionModal>

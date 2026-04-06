@@ -34,6 +34,11 @@ type ClassDeleteAlertState = {
   classId: string | null;
 };
 
+type ClassFormState = {
+  name: string;
+  school_year: string;
+};
+
 const INITIAL_CLASS_EDIT_MODAL_STATE: ClassEditModalState = {
   isOpen: false,
   classItem: null,
@@ -55,13 +60,13 @@ export default function AdminClassesPage() {
   const [error, setError] = useState("");
 
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", school_year: "" });
+  const [formData, setFormData] = useState<ClassFormState>({ name: "", school_year: "" });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
   // Edit/Delete state
   const [editModal, setEditModal] = useState<ClassEditModalState>(INITIAL_CLASS_EDIT_MODAL_STATE);
-  const [editData, setEditData] = useState({ name: "", school_year: "" });
+  const [editData, setEditData] = useState<ClassFormState>({ name: "", school_year: "" });
   const [editLoading, setEditLoading] = useState(false);
   const [deleteAlert, setDeleteAlert] = useState<ClassDeleteAlertState>(INITIAL_CLASS_DELETE_ALERT_STATE);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -92,6 +97,22 @@ export default function AdminClassesPage() {
   }, [selectedSchoolId]);
 
   useEffect(() => { fetchClasses(); }, [fetchClasses]);
+
+  const toggleCreateForm = () => {
+    setShowForm((prev) => !prev);
+  };
+
+  const openCreateForm = () => {
+    setShowForm(true);
+  };
+
+  const handleFormFieldChange = (field: keyof ClassFormState, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditFieldChange = (field: keyof ClassFormState, value: string) => {
+    setEditData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,7 +194,7 @@ export default function AdminClassesPage() {
             </Select>
           )}
           {selectedSchoolId && (
-            <Button size="sm" onClick={() => setShowForm(!showForm)}>
+            <Button size="sm" onClick={toggleCreateForm}>
               {showForm ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
               {showForm ? "Hủy" : "Thêm lớp"}
             </Button>
@@ -192,12 +213,12 @@ export default function AdminClassesPage() {
                 <div className="space-y-2">
                   <Label htmlFor="className">Tên lớp <span className="text-destructive">*</span></Label>
                   <Input id="className" placeholder="VD: Lá Non" value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    onChange={(e) => handleFormFieldChange("name", e.target.value)} required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="schoolYear">Năm học <span className="text-destructive">*</span></Label>
                   <Input id="schoolYear" placeholder="VD: 2025-2026" value={formData.school_year}
-                    onChange={(e) => setFormData({ ...formData, school_year: e.target.value })} required />
+                    onChange={(e) => handleFormFieldChange("school_year", e.target.value)} required />
                 </div>
               </div>
               <div className="flex justify-end">
@@ -218,7 +239,7 @@ export default function AdminClassesPage() {
         <Card><CardContent className="flex flex-col items-center justify-center py-12">
           <GraduationCap className="h-12 w-12 text-muted-foreground/50" />
           <p className="mt-4 text-sm text-muted-foreground">Chưa có lớp nào trong {selectedSchoolName}</p>
-          <Button variant="outline" className="mt-4" onClick={() => setShowForm(true)}>
+          <Button variant="outline" className="mt-4" onClick={openCreateForm}>
             <Plus className="mr-2 h-4 w-4" /> Thêm lớp đầu tiên
           </Button>
         </CardContent></Card>
@@ -288,11 +309,11 @@ export default function AdminClassesPage() {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <Label>Tên lớp</Label>
-            <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
+            <Input value={editData.name} onChange={(e) => handleEditFieldChange("name", e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>Năm học</Label>
-            <Input value={editData.school_year} onChange={(e) => setEditData({ ...editData, school_year: e.target.value })} />
+            <Input value={editData.school_year} onChange={(e) => handleEditFieldChange("school_year", e.target.value)} />
           </div>
         </div>
       </ActionModal>
