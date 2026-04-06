@@ -41,11 +41,6 @@ func (a *Authenticator) SignToken(userID, email string, roles []string, schoolID
 	return Sign(a.Secret, time.Duration(a.TTLSeconds)*time.Second, userID, email, roles, schoolID)
 }
 
-// ParseToken giải mã JWT token bằng Authenticator
-func (a *Authenticator) ParseToken(tokenStr string) (*Claims, error) {
-	return Parse(a.Secret, tokenStr)
-}
-
 func VerifyPassword(hash, plain string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(plain)) == nil
 }
