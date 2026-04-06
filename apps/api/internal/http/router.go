@@ -10,6 +10,7 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
 )
 
@@ -29,7 +30,7 @@ func NewRouter(
 	teacherScopeHandler *v1teacherscopehandlers.TeacherScopeHandler,
 	teacherHandler *v1handlers.TeacherHandler,
 	parentHandler *v1handlers.ParentHandler,
-	parentScopeHandler *v1handlers.ParentScopeHandler,
+	parentScopeHandler *v1parentscopehandlers.ParentScopeHandler,
 	parentCodeHandler *v1handlers.ParentCodeHandler,
 	schoolAdminHandler *v1handlers.SchoolAdminHandler,
 	analyticsHandler *v1handlers.AnalyticsHandler,

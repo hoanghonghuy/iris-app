@@ -1,4 +1,4 @@
-package handlers
+package parentscope
 
 import (
 	"context"
@@ -12,18 +12,6 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
-
-type ParentScopeHandler struct {
-	parentScopeService *service.ParentScopeService
-	appointmentService *service.AppointmentService
-}
-
-func NewParentScopeHandler(parentScopeService *service.ParentScopeService, appointmentService *service.AppointmentService) *ParentScopeHandler {
-	return &ParentScopeHandler{
-		parentScopeService: parentScopeService,
-		appointmentService: appointmentService,
-	}
-}
 
 // MyChildren trả về danh sách các học sinh (con) của phụ huynh
 func (h *ParentScopeHandler) MyChildren(c *gin.Context) {
