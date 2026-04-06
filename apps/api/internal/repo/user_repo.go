@@ -233,23 +233,6 @@ func (r *UserRepo) AssignRole(ctx context.Context, userID uuid.UUID, roleName st
 	return err
 }
 
-// Update cập nhật thông tin user
-func (r *UserRepo) Update(ctx context.Context, userID uuid.UUID, email, passwordHash string) error {
-	const q = `
-		UPDATE users
-		SET email = $1, password_hash = $2, updated_at = now()
-		WHERE user_id = $3;
-	`
-	tag, err := r.pool.Exec(ctx, q, email, passwordHash, userID)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return pgx.ErrNoRows
-	}
-	return nil
-}
-
 // Delete xóa user (hard delete)
 func (r *UserRepo) Delete(ctx context.Context, userID uuid.UUID) error {
 	const q = `DELETE FROM users WHERE user_id = $1;`

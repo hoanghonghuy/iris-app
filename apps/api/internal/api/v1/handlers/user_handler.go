@@ -32,12 +32,6 @@ type CreateUserRequest struct {
 	Roles []string `json:"roles" binding:"required,min=1"`
 }
 
-// ActivateUserRequest input để user kích hoạt tài khoản
-type ActivateUserRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-}
-
 // ActivateUserWithTokenRequest input để user kích hoạt tài khoản bằng token
 type ActivateUserWithTokenRequest struct {
 	Token    string `json:"token" binding:"required"`
@@ -93,43 +87,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		"user":    resp,
 		"message": "user created successfully. User needs to activate account.",
 	})
-}
-
-// ActivateUser kích hoạt tài khoản (public)
-func (h *UserHandler) ActivateUser(c *gin.Context) {
-	var req ActivateUserRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
-	defer cancel()
-
-	if err := h.userService.ActivateUser(ctx, req.Email, req.Password); err != nil {
-		switch {
-		case errors.Is(err, service.ErrEmailCannotBeEmpty):
-			response.Fail(c, http.StatusBadRequest, "email cannot be empty")
-			return
-		case errors.Is(err, service.ErrPasswordCannotBeEmpty):
-			response.Fail(c, http.StatusBadRequest, "password cannot be empty")
-			return
-		case errors.Is(err, service.ErrUserNotFound):
-			response.Fail(c, http.StatusNotFound, "user not found")
-			return
-		case errors.Is(err, service.ErrFailedToHashPassword):
-			response.Fail(c, http.StatusInternalServerError, "failed to hash password")
-			return
-		case errors.Is(err, service.ErrFailedToActivateUser):
-			response.Fail(c, http.StatusInternalServerError, "failed to activate user")
-			return
-		default:
-			response.Fail(c, http.StatusInternalServerError, "failed to activate user")
-			return
-		}
-	}
-
-	response.OK(c, gin.H{"message": "account activated successfully"})
 }
 
 // ActivateUserWithToken kích hoạt tài khoản bằng token (public)

@@ -124,37 +124,6 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchool
 	return s.FindByID(ctx, nil, userID)
 }
 
-// ActivateUser kích hoạt tài khoản user (set password)
-func (s *UserService) ActivateUser(ctx context.Context, email, password string) error {
-	// Validate input
-	if email == "" {
-		return ErrEmailCannotBeEmpty
-	}
-	if password == "" {
-		return ErrPasswordCannotBeEmpty
-	}
-
-	// Check user exists
-	user, err := s.userRepo.FindByEmail(ctx, email)
-	if err != nil {
-		return ErrUserNotFound
-	}
-
-	// Hash password
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return ErrFailedToHashPassword
-	}
-
-	// Update password and status
-	err = s.userRepo.Update(ctx, user.UserID, user.Email, string(passwordHash))
-	if err != nil {
-		return ErrFailedToActivateUser
-	}
-
-	return nil
-}
-
 // ActivateUserWithToken kích hoạt tài khoản bằng token (cho teacher activation flow)
 func (s *UserService) ActivateUserWithToken(ctx context.Context, token, password string) error {
 	// Validate input
