@@ -13,6 +13,7 @@ import (
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
+	v1userhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/user"
 )
 
 // NewRouter tạo và cấu hình router HTTP sử dụng Gin
@@ -27,7 +28,7 @@ func NewRouter(
 	schoolHandler *v1handlers.SchoolHandler,
 	classHandler *v1handlers.ClassHandler,
 	studentHandler *v1handlers.StudentHandler,
-	userHandler *v1handlers.UserHandler,
+	userHandler *v1userhandlers.UserHandler,
 	teacherScopeHandler *v1teacherscopehandlers.TeacherScopeHandler,
 	teacherHandler *v1handlers.TeacherHandler,
 	parentHandler *v1handlers.ParentHandler,

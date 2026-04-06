@@ -1,4 +1,4 @@
-package handlers
+package userhandlers
 
 import (
 	"context"
@@ -13,38 +13,6 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
-
-type UserHandler struct {
-	userService *service.UserService
-}
-
-func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{
-		userService: userService,
-	}
-}
-
-// CreateUserRequest input để admin tạo user mới (không cần password)
-type CreateUserRequest struct {
-	Email string   `json:"email" binding:"required,email"`
-	Roles []string `json:"roles" binding:"required,min=1"`
-}
-
-// ActivateUserWithTokenRequest input để user kích hoạt tài khoản bằng token
-type ActivateUserWithTokenRequest struct {
-	Token    string `json:"token" binding:"required"`
-	Password string `json:"password" binding:"required,min=6"`
-}
-
-// UpdateMyPasswordRequest input để user cập nhật mật khẩu (self-service)
-type UpdateMyPasswordRequest struct {
-	Password string `json:"password" binding:"required,min=6"`
-}
-
-// AssignRoleRequest input để gán role cho user
-type AssignRoleRequest struct {
-	RoleName string `json:"role_name" binding:"required"`
-}
 
 // CreateUser tạo user mới (admin only)
 func (h *UserHandler) CreateUser(c *gin.Context) {
@@ -87,49 +55,6 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	})
 }
 
-// ActivateUserWithToken kích hoạt tài khoản bằng token (public)
-func (h *UserHandler) ActivateUserWithToken(c *gin.Context) {
-	var req ActivateUserWithTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
-	defer cancel()
-
-	if err := h.userService.ActivateUserWithToken(ctx, req.Token, req.Password); err != nil {
-		switch {
-		case errors.Is(err, service.ErrActivationTokenRequired):
-			response.Fail(c, http.StatusBadRequest, "activation token is required")
-			return
-		case errors.Is(err, service.ErrInvalidActivationToken):
-			response.Fail(c, http.StatusBadRequest, "invalid activation token")
-			return
-		case errors.Is(err, service.ErrActivationTokenExpired):
-			response.Fail(c, http.StatusBadRequest, "activation token has expired")
-			return
-		case errors.Is(err, service.ErrPasswordCannotBeEmpty):
-			response.Fail(c, http.StatusBadRequest, "password cannot be empty")
-			return
-		case errors.Is(err, service.ErrFailedToHashPassword):
-			response.Fail(c, http.StatusInternalServerError, "failed to hash password")
-			return
-		case errors.Is(err, service.ErrFailedToActivateUser):
-			response.Fail(c, http.StatusInternalServerError, "failed to activate user")
-			return
-		default:
-			response.Fail(c, http.StatusInternalServerError, "failed to activate user")
-			return
-		}
-	}
-
-	response.OK(c, gin.H{
-		"message": "account activated successfully",
-		"status":  "active",
-	})
-}
-
 // GetByID lấy thông tin user theo ID (admin only - lấy từ URL param)
 func (h *UserHandler) GetByID(c *gin.Context) {
 	adminSchoolID := extractAdminSchoolID(c)
@@ -159,66 +84,6 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 	}
 
 	response.OK(c, userInfo)
-}
-
-// UpdateMyPassword cập nhật mật khẩu của người dùng (self-service only)
-func (h *UserHandler) UpdateMyPassword(c *gin.Context) {
-	var req UpdateMyPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Fail(c, http.StatusBadRequest, "invalid request body")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
-	defer cancel()
-
-	userID, ok := requireCurrentUserID(c)
-	if !ok {
-		return
-	}
-
-	if err := h.userService.UpdateMyPassword(ctx, userID, req.Password); err != nil {
-		switch {
-		case errors.Is(err, service.ErrInvalidUserID):
-			response.Fail(c, http.StatusBadRequest, "invalid user ID")
-			return
-		case errors.Is(err, service.ErrUserNotFound):
-			response.Fail(c, http.StatusNotFound, "user not found")
-			return
-		case errors.Is(err, service.ErrPasswordCannotBeEmpty):
-			response.Fail(c, http.StatusBadRequest, "password cannot be empty")
-			return
-		case errors.Is(err, service.ErrFailedToHashPassword):
-			response.Fail(c, http.StatusInternalServerError, "failed to hash password")
-			return
-		case errors.Is(err, service.ErrFailedToUpdatePassword):
-			response.Fail(c, http.StatusInternalServerError, "failed to update password")
-			return
-		default:
-			response.Fail(c, http.StatusInternalServerError, "failed to update password")
-			return
-		}
-	}
-
-	response.OK(c, gin.H{"message": "password updated successfully"})
-}
-
-// Delete xóa user
-func (h *UserHandler) Delete(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
-	defer cancel()
-
-	userID, ok := requireCurrentUserID(c)
-	if !ok {
-		return
-	}
-
-	if err := h.userService.Delete(ctx, userID); err != nil {
-		response.Fail(c, http.StatusInternalServerError, "failed to delete user")
-		return
-	}
-
-	response.OK(c, gin.H{"message": "user deleted successfully"})
 }
 
 // List lấy danh sách users (admin only)
