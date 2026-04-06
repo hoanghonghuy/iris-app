@@ -95,8 +95,9 @@ func (r *HealthLogRepo) ListByStudentAndTeacher(ctx context.Context, teacherUser
 	return out, rows.Err()
 }
 
-// ListByStudent liệt kê tất cả bản ghi sức khỏe cho học sinh (admin, teacher)
-func (r *HealthLogRepo) ListByStudent(ctx context.Context, studentID uuid.UUID,
+// ListByStudentForAdminReport liệt kê tất cả bản ghi sức khỏe của 1 học sinh.
+// Reserved use-case: API báo cáo/tổng hợp cho admin trong giai đoạn tiếp theo.
+func (r *HealthLogRepo) ListByStudentForAdminReport(ctx context.Context, studentID uuid.UUID,
 	from, to time.Time) ([]model.HealthLog, error) {
 	const q = `
 		SELECT health_log_id, student_id, recorded_at, temperature,
@@ -126,8 +127,9 @@ func (r *HealthLogRepo) ListByStudent(ctx context.Context, studentID uuid.UUID,
 	return out, rows.Err()
 }
 
-// ListByTeacher liệt kê bản ghi sức khỏe cho các học sinh trong lớp của giáo viên
-func (r *HealthLogRepo) ListByTeacher(ctx context.Context, teacherUserID uuid.UUID,
+// ListByTeacherForAdminReport liệt kê bản ghi sức khỏe theo giáo viên.
+// Reserved use-case: báo cáo tổng hợp theo giáo viên/lớp cho admin.
+func (r *HealthLogRepo) ListByTeacherForAdminReport(ctx context.Context, teacherUserID uuid.UUID,
 	from, to time.Time) ([]model.HealthLog, error) {
 	const q = `
 		SELECT hl.health_log_id, hl.student_id, hl.recorded_at, hl.temperature,
