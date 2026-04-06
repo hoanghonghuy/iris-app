@@ -10,6 +10,7 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
 )
@@ -36,7 +37,7 @@ func NewRouter(
 	analyticsHandler *v1handlers.AnalyticsHandler,
 	auditLogHandler *v1handlers.AuditLogHandler,
 	auditLogService *service.AuditLogService,
-	chatHandler *v1handlers.ChatHandler,
+	chatHandler *v1chathandlers.ChatHandler,
 ) *gin.Engine {
 	r := gin.Default()
 	// Trust no proxy headers by default (safer for direct internet deployment).

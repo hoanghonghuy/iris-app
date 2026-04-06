@@ -15,6 +15,7 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
 	"github.com/joho/godotenv"
@@ -127,7 +128,7 @@ func main() {
 	hub := ws.NewHub()
 	go hub.Run()
 
-	chatHandler := v1handlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
+	chatHandler := v1chathandlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
 	// build các middleware rate limit xác thực từ config.
 	authRateLimitWindow := time.Duration(cfg.AuthRateLimitWindowSeconds) * time.Second
 	authLoginLimiter := middleware.NewIPFixedWindowRateLimitWithConfig(middleware.FixedWindowRateLimitConfig{
