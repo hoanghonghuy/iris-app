@@ -12,6 +12,13 @@ type ChatRepo struct {
 	pool *pgxpool.Pool
 }
 
+// rowScanner chuẩn hóa contract cho các helper duyệt rows từ truy vấn.
+type rowScanner interface {
+	Next() bool
+	Scan(...any) error
+	Err() error
+}
+
 func NewChatRepo(pool *pgxpool.Pool) *ChatRepo {
 	return &ChatRepo{pool: pool}
 }
@@ -123,15 +130,7 @@ func (r *ChatRepo) GetParticipants(ctx context.Context, conversationID uuid.UUID
 	}
 	defer rows.Close()
 
-	var parts []model.ParticipantInfo
-	for rows.Next() {
-		var p model.ParticipantInfo
-		if err := rows.Scan(&p.UserID, &p.Email, &p.FullName); err != nil {
-			return nil, err
-		}
-		parts = append(parts, p)
-	}
-	return parts, rows.Err()
+	return scanParticipants(rows)
 }
 
 // ListParticipantsByConversationIDs lấy participants cho nhiều conversation trong một query.
@@ -355,11 +354,7 @@ func (r *ChatRepo) listMessagesBefore(ctx context.Context, conversationID, befor
 }
 
 // scanMessages đọc rows từ truy vấn messages
-func scanMessages(rows interface {
-	Next() bool
-	Scan(...any) error
-	Err() error
-}) ([]model.MessageWithSender, error) {
+func scanMessages(rows rowScanner) ([]model.MessageWithSender, error) {
 	var msgs []model.MessageWithSender
 	for rows.Next() {
 		var m model.MessageWithSender
@@ -369,6 +364,23 @@ func scanMessages(rows interface {
 		msgs = append(msgs, m)
 	}
 	return msgs, rows.Err()
+}
+
+// scanParticipants dùng chung cho các query participant/search để tránh lặp vòng Scan.
+func scanParticipants(rows rowScanner) ([]model.ParticipantInfo, error) {
+	parts := make([]model.ParticipantInfo, 0)
+	// Duyệt tuần tự từng row và ánh xạ vào ParticipantInfo.
+	for rows.Next() {
+		var p model.ParticipantInfo
+		// Thất bại ở Scan là lỗi dữ liệu/truy vấn, trả về ngay để caller xử lý.
+		if err := rows.Scan(&p.UserID, &p.Email, &p.FullName); err != nil {
+			return nil, err
+		}
+		parts = append(parts, p)
+	}
+
+	// Trả lỗi iteration nếu có (ví dụ lỗi phát sinh sau khi đọc rows).
+	return parts, rows.Err()
 }
 
 // SearchUsersGlobal tìm kiếm toàn bộ hệ thống (dành cho SUPER_ADMIN)
@@ -395,15 +407,7 @@ func (r *ChatRepo) SearchUsersGlobal(ctx context.Context, keyword string, limit 
 	}
 	defer rows.Close()
 
-	var parts []model.ParticipantInfo
-	for rows.Next() {
-		var p model.ParticipantInfo
-		if err := rows.Scan(&p.UserID, &p.Email, &p.FullName); err != nil {
-			return nil, err
-		}
-		parts = append(parts, p)
-	}
-	return parts, rows.Err()
+	return scanParticipants(rows)
 }
 
 // SearchUsersForSchoolAdmin tìm kiếm giáo viên và phụ huynh trong cùng trường
@@ -437,15 +441,7 @@ func (r *ChatRepo) SearchUsersForSchoolAdmin(ctx context.Context, adminID uuid.U
 	}
 	defer rows.Close()
 
-	var parts []model.ParticipantInfo
-	for rows.Next() {
-		var p model.ParticipantInfo
-		if err := rows.Scan(&p.UserID, &p.Email, &p.FullName); err != nil {
-			return nil, err
-		}
-		parts = append(parts, p)
-	}
-	return parts, rows.Err()
+	return scanParticipants(rows)
 }
 
 // SearchUsersForTeacher tìm kiếm phụ huynh (của hs mà gv hiện tại dạy), giáo viên & admin cùng trường
@@ -490,15 +486,7 @@ func (r *ChatRepo) SearchUsersForTeacher(ctx context.Context, teacherID uuid.UUI
 	}
 	defer rows.Close()
 
-	var parts []model.ParticipantInfo
-	for rows.Next() {
-		var p model.ParticipantInfo
-		if err := rows.Scan(&p.UserID, &p.Email, &p.FullName); err != nil {
-			return nil, err
-		}
-		parts = append(parts, p)
-	}
-	return parts, rows.Err()
+	return scanParticipants(rows)
 }
 
 // SearchUsersForParent tìm kiếm giáo viên (dạy con của parent hiện tại) & admin cùng trường
@@ -544,13 +532,5 @@ func (r *ChatRepo) SearchUsersForParent(ctx context.Context, parentID uuid.UUID,
 	}
 	defer rows.Close()
 
-	var parts []model.ParticipantInfo
-	for rows.Next() {
-		var p model.ParticipantInfo
-		if err := rows.Scan(&p.UserID, &p.Email, &p.FullName); err != nil {
-			return nil, err
-		}
-		parts = append(parts, p)
-	}
-	return parts, rows.Err()
+	return scanParticipants(rows)
 }

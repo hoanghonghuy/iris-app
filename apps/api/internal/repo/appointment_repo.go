@@ -16,8 +16,104 @@ type AppointmentRepo struct {
 	pool *pgxpool.Pool
 }
 
+type scanableRow interface {
+	Scan(...any) error
+}
+
 func NewAppointmentRepo(pool *pgxpool.Pool) *AppointmentRepo {
 	return &AppointmentRepo{pool: pool}
+}
+
+// scanAppointment gom logic Scan cho các mutation trả về cùng cấu trúc appointments.
+func scanAppointment(row scanableRow) (model.Appointment, error) {
+	var a model.Appointment
+	err := row.Scan(
+		&a.AppointmentID,
+		&a.SlotID,
+		&a.ParentID,
+		&a.StudentID,
+		&a.Status,
+		&a.Note,
+		&a.CancelReason,
+		&a.ConfirmedAt,
+		&a.CompletedAt,
+		&a.CancelledAt,
+		&a.CreatedAt,
+		&a.UpdatedAt,
+	)
+	if err != nil {
+		return model.Appointment{}, err
+	}
+
+	return a, nil
+}
+
+// listAppointmentsByUser dùng chung phần query/filter/paging cho teacher và parent,
+// chỉ khác điều kiện WHERE theo user.
+func (r *AppointmentRepo) listAppointmentsByUser(
+	ctx context.Context,
+	userWhereSQL string,
+	userID uuid.UUID,
+	status string,
+	from, to *time.Time,
+	limit, offset int,
+) ([]model.Appointment, int, error) {
+	q := `
+		SELECT a.appointment_id, a.slot_id, a.parent_id, p.full_name, a.student_id, st.full_name,
+		       s.teacher_id, t.full_name, s.class_id, c.name,
+		       a.status, COALESCE(a.note, ''), COALESCE(a.cancel_reason, ''), s.start_time, s.end_time,
+		       a.confirmed_at, a.completed_at, a.cancelled_at, a.created_at, a.updated_at,
+		       COUNT(*) OVER() AS total_count
+		FROM appointments a
+		JOIN appointment_slots s ON s.slot_id = a.slot_id
+		JOIN teachers t ON t.teacher_id = s.teacher_id
+		JOIN classes c ON c.class_id = s.class_id
+		JOIN parents p ON p.parent_id = a.parent_id
+		JOIN students st ON st.student_id = a.student_id
+		WHERE ` + userWhereSQL
+
+	args := []any{userID}
+	argPos := 2
+	if status != "" {
+		q += fmt.Sprintf(" AND a.status = $%d", argPos)
+		args = append(args, status)
+		argPos++
+	}
+	if from != nil {
+		q += fmt.Sprintf(" AND s.start_time >= $%d", argPos)
+		args = append(args, *from)
+		argPos++
+	}
+	if to != nil {
+		q += fmt.Sprintf(" AND s.start_time <= $%d", argPos)
+		args = append(args, *to)
+		argPos++
+	}
+	q += fmt.Sprintf(" ORDER BY s.start_time ASC LIMIT $%d OFFSET $%d", argPos, argPos+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.pool.Query(ctx, q, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	items := make([]model.Appointment, 0)
+	total := 0
+	for rows.Next() {
+		var a model.Appointment
+		if err := rows.Scan(
+			&a.AppointmentID, &a.SlotID, &a.ParentID, &a.ParentName, &a.StudentID, &a.StudentName,
+			&a.TeacherID, &a.TeacherName, &a.ClassID, &a.ClassName,
+			&a.Status, &a.Note, &a.CancelReason, &a.StartTime, &a.EndTime,
+			&a.ConfirmedAt, &a.CompletedAt, &a.CancelledAt, &a.CreatedAt, &a.UpdatedAt, &total,
+		); err != nil {
+			return nil, 0, err
+		}
+		items = append(items, a)
+	}
+
+	return items, total, rows.Err()
 }
 
 func (r *AppointmentRepo) CreateSlot(ctx context.Context, teacherUserID, classID uuid.UUID, startTime, endTime time.Time, note string) (model.AppointmentSlot, error) {
@@ -69,21 +165,7 @@ func (r *AppointmentRepo) CreateAppointment(ctx context.Context, parentUserID, s
 		          confirmed_at, completed_at, cancelled_at, created_at, updated_at;
 	`
 
-	var a model.Appointment
-	err := r.pool.QueryRow(ctx, q, parentUserID, studentID, slotID, note).Scan(
-		&a.AppointmentID,
-		&a.SlotID,
-		&a.ParentID,
-		&a.StudentID,
-		&a.Status,
-		&a.Note,
-		&a.CancelReason,
-		&a.ConfirmedAt,
-		&a.CompletedAt,
-		&a.CancelledAt,
-		&a.CreatedAt,
-		&a.UpdatedAt,
-	)
+	a, err := scanAppointment(r.pool.QueryRow(ctx, q, parentUserID, studentID, slotID, note))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.Appointment{}, ErrNoRowsUpdated
@@ -112,21 +194,7 @@ func (r *AppointmentRepo) UpdateAppointmentStatusByTeacher(ctx context.Context, 
 		          a.confirmed_at, a.completed_at, a.cancelled_at, a.created_at, a.updated_at;
 	`
 
-	var a model.Appointment
-	err := r.pool.QueryRow(ctx, q, teacherUserID, appointmentID, status, cancelReason).Scan(
-		&a.AppointmentID,
-		&a.SlotID,
-		&a.ParentID,
-		&a.StudentID,
-		&a.Status,
-		&a.Note,
-		&a.CancelReason,
-		&a.ConfirmedAt,
-		&a.CompletedAt,
-		&a.CancelledAt,
-		&a.CreatedAt,
-		&a.UpdatedAt,
-	)
+	a, err := scanAppointment(r.pool.QueryRow(ctx, q, teacherUserID, appointmentID, status, cancelReason))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.Appointment{}, ErrNoRowsUpdated
@@ -153,21 +221,7 @@ func (r *AppointmentRepo) CancelAppointmentByParent(ctx context.Context, parentU
 		          a.confirmed_at, a.completed_at, a.cancelled_at, a.created_at, a.updated_at;
 	`
 
-	var a model.Appointment
-	err := r.pool.QueryRow(ctx, q, parentUserID, appointmentID, cancelReason).Scan(
-		&a.AppointmentID,
-		&a.SlotID,
-		&a.ParentID,
-		&a.StudentID,
-		&a.Status,
-		&a.Note,
-		&a.CancelReason,
-		&a.ConfirmedAt,
-		&a.CompletedAt,
-		&a.CancelledAt,
-		&a.CreatedAt,
-		&a.UpdatedAt,
-	)
+	a, err := scanAppointment(r.pool.QueryRow(ctx, q, parentUserID, appointmentID, cancelReason))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.Appointment{}, ErrNoRowsUpdated
@@ -179,121 +233,11 @@ func (r *AppointmentRepo) CancelAppointmentByParent(ctx context.Context, parentU
 }
 
 func (r *AppointmentRepo) ListTeacherAppointments(ctx context.Context, teacherUserID uuid.UUID, status string, from, to *time.Time, limit, offset int) ([]model.Appointment, int, error) {
-	q := `
-		SELECT a.appointment_id, a.slot_id, a.parent_id, p.full_name, a.student_id, st.full_name,
-		       s.teacher_id, t.full_name, s.class_id, c.name,
-		       a.status, COALESCE(a.note, ''), COALESCE(a.cancel_reason, ''), s.start_time, s.end_time,
-		       a.confirmed_at, a.completed_at, a.cancelled_at, a.created_at, a.updated_at,
-		       COUNT(*) OVER() AS total_count
-		FROM appointments a
-		JOIN appointment_slots s ON s.slot_id = a.slot_id
-		JOIN teachers t ON t.teacher_id = s.teacher_id
-		JOIN classes c ON c.class_id = s.class_id
-		JOIN parents p ON p.parent_id = a.parent_id
-		JOIN students st ON st.student_id = a.student_id
-		WHERE t.user_id = $1
-	`
-
-	args := []any{teacherUserID}
-	argPos := 2
-	if status != "" {
-		q += fmt.Sprintf(" AND a.status = $%d", argPos)
-		args = append(args, status)
-		argPos++
-	}
-	if from != nil {
-		q += fmt.Sprintf(" AND s.start_time >= $%d", argPos)
-		args = append(args, *from)
-		argPos++
-	}
-	if to != nil {
-		q += fmt.Sprintf(" AND s.start_time <= $%d", argPos)
-		args = append(args, *to)
-		argPos++
-	}
-	q += fmt.Sprintf(" ORDER BY s.start_time ASC LIMIT $%d OFFSET $%d", argPos, argPos+1)
-	args = append(args, limit, offset)
-
-	rows, err := r.pool.Query(ctx, q, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	items := make([]model.Appointment, 0)
-	total := 0
-	for rows.Next() {
-		var a model.Appointment
-		if err := rows.Scan(
-			&a.AppointmentID, &a.SlotID, &a.ParentID, &a.ParentName, &a.StudentID, &a.StudentName,
-			&a.TeacherID, &a.TeacherName, &a.ClassID, &a.ClassName,
-			&a.Status, &a.Note, &a.CancelReason, &a.StartTime, &a.EndTime,
-			&a.ConfirmedAt, &a.CompletedAt, &a.CancelledAt, &a.CreatedAt, &a.UpdatedAt, &total,
-		); err != nil {
-			return nil, 0, err
-		}
-		items = append(items, a)
-	}
-	return items, total, rows.Err()
+	return r.listAppointmentsByUser(ctx, "t.user_id = $1", teacherUserID, status, from, to, limit, offset)
 }
 
 func (r *AppointmentRepo) ListParentAppointments(ctx context.Context, parentUserID uuid.UUID, status string, from, to *time.Time, limit, offset int) ([]model.Appointment, int, error) {
-	q := `
-		SELECT a.appointment_id, a.slot_id, a.parent_id, p.full_name, a.student_id, st.full_name,
-		       s.teacher_id, t.full_name, s.class_id, c.name,
-		       a.status, COALESCE(a.note, ''), COALESCE(a.cancel_reason, ''), s.start_time, s.end_time,
-		       a.confirmed_at, a.completed_at, a.cancelled_at, a.created_at, a.updated_at,
-		       COUNT(*) OVER() AS total_count
-		FROM appointments a
-		JOIN appointment_slots s ON s.slot_id = a.slot_id
-		JOIN teachers t ON t.teacher_id = s.teacher_id
-		JOIN classes c ON c.class_id = s.class_id
-		JOIN parents p ON p.parent_id = a.parent_id
-		JOIN students st ON st.student_id = a.student_id
-		WHERE p.user_id = $1
-	`
-
-	args := []any{parentUserID}
-	argPos := 2
-	if status != "" {
-		q += fmt.Sprintf(" AND a.status = $%d", argPos)
-		args = append(args, status)
-		argPos++
-	}
-	if from != nil {
-		q += fmt.Sprintf(" AND s.start_time >= $%d", argPos)
-		args = append(args, *from)
-		argPos++
-	}
-	if to != nil {
-		q += fmt.Sprintf(" AND s.start_time <= $%d", argPos)
-		args = append(args, *to)
-		argPos++
-	}
-	q += fmt.Sprintf(" ORDER BY s.start_time ASC LIMIT $%d OFFSET $%d", argPos, argPos+1)
-	args = append(args, limit, offset)
-
-	rows, err := r.pool.Query(ctx, q, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	items := make([]model.Appointment, 0)
-	total := 0
-	for rows.Next() {
-		var a model.Appointment
-		if err := rows.Scan(
-			&a.AppointmentID, &a.SlotID, &a.ParentID, &a.ParentName, &a.StudentID, &a.StudentName,
-			&a.TeacherID, &a.TeacherName, &a.ClassID, &a.ClassName,
-			&a.Status, &a.Note, &a.CancelReason, &a.StartTime, &a.EndTime,
-			&a.ConfirmedAt, &a.CompletedAt, &a.CancelledAt, &a.CreatedAt, &a.UpdatedAt, &total,
-		); err != nil {
-			return nil, 0, err
-		}
-		items = append(items, a)
-	}
-	return items, total, rows.Err()
+	return r.listAppointmentsByUser(ctx, "p.user_id = $1", parentUserID, status, from, to, limit, offset)
 }
 
 func (r *AppointmentRepo) ListAvailableSlotsForParent(ctx context.Context, parentUserID, studentID uuid.UUID, from, to *time.Time, limit, offset int) ([]model.AppointmentSlot, int, error) {

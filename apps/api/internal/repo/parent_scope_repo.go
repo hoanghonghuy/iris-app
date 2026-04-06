@@ -15,6 +15,13 @@ type ParentScopeRepo struct {
 	pool *pgxpool.Pool
 }
 
+// scannableRows trừu tượng hóa kiểu rows để helper scan dùng lại cho nhiều query feed/post.
+type scannableRows interface {
+	Next() bool
+	Scan(...any) error
+	Err() error
+}
+
 func (r *ParentScopeRepo) CountMyChildren(ctx context.Context, parentUserID uuid.UUID) (int, error) {
 	const q = `
 		SELECT COUNT(*)
@@ -148,21 +155,7 @@ func (r *ParentScopeRepo) ListMyChildClassPosts(ctx context.Context, parentUserI
 	}
 	defer rows.Close()
 
-	var posts []model.Post
-	var total int
-	for rows.Next() {
-		var p model.Post
-		if err := rows.Scan(
-			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content,
-			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
-			&p.CreatedAt, &p.UpdatedAt, &total,
-		); err != nil {
-			return nil, 0, err
-		}
-		posts = append(posts, p)
-	}
-	return posts, total, rows.Err()
+	return scanPostsWithTotal(rows)
 }
 
 // ListMyChildStudentPosts liệt kê bài đăng riêng của con phụ huynh (student scope)
@@ -214,21 +207,7 @@ func (r *ParentScopeRepo) ListMyChildStudentPosts(ctx context.Context, parentUse
 	}
 	defer rows.Close()
 
-	var posts []model.Post
-	var total int
-	for rows.Next() {
-		var p model.Post
-		if err := rows.Scan(
-			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content,
-			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
-			&p.CreatedAt, &p.UpdatedAt, &total,
-		); err != nil {
-			return nil, 0, err
-		}
-		posts = append(posts, p)
-	}
-	return posts, total, rows.Err()
+	return scanPostsWithTotal(rows)
 }
 
 // ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con phụ huynh (cả class và student scope)
@@ -283,21 +262,7 @@ func (r *ParentScopeRepo) ListAllMyChildPosts(ctx context.Context, parentUserID,
 	}
 	defer rows.Close()
 
-	var posts []model.Post
-	var total int
-	for rows.Next() {
-		var p model.Post
-		if err := rows.Scan(
-			&p.PostID, &p.AuthorUserID, &p.ScopeType, &p.SchoolID, &p.ClassID, &p.StudentID,
-			&p.Type, &p.Content,
-			&p.LikeCount, &p.CommentCount, &p.ShareCount, &p.LikedByMe,
-			&p.CreatedAt, &p.UpdatedAt, &total,
-		); err != nil {
-			return nil, 0, err
-		}
-		posts = append(posts, p)
-	}
-	return posts, total, rows.Err()
+	return scanPostsWithTotal(rows)
 }
 
 // GetMyFeed lấy tất cả bài đăng liên quan đến con phụ huynh, sắp xếp theo thời gian, có phân trang.
@@ -354,8 +319,13 @@ func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 	}
 	defer rows.Close()
 
-	var posts []model.Post
-	var total int
+	return scanPostsWithTotal(rows)
+}
+
+// scanPostsWithTotal gom logic Scan post + total_count cho các endpoint feed/list của parent.
+func scanPostsWithTotal(rows scannableRows) ([]model.Post, int, error) {
+	posts := make([]model.Post, 0)
+	total := 0
 	for rows.Next() {
 		var p model.Post
 		if err := rows.Scan(
@@ -368,6 +338,7 @@ func (r *ParentScopeRepo) GetMyFeed(ctx context.Context, parentUserID uuid.UUID,
 		}
 		posts = append(posts, p)
 	}
+
 	return posts, total, rows.Err()
 }
 

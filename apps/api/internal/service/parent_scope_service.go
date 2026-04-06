@@ -18,6 +18,39 @@ type ParentScopeService struct {
 	appointmentRepo  *repo.AppointmentRepo
 }
 
+// normalizeParentScopeLimit chuẩn hóa limit mặc định và giới hạn max cho các API listing.
+func normalizeParentScopeLimit(limit int) int {
+	if limit <= 0 {
+		return 20
+	}
+	if limit > 100 {
+		return 100
+	}
+	return limit
+}
+
+// ensureParentStudentAccess xác thực parent-user có quan hệ hợp lệ với student trước khi truy cập dữ liệu theo student.
+func (s *ParentScopeService) ensureParentStudentAccess(ctx context.Context, parentUserID, studentID uuid.UUID) error {
+	if parentUserID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	if studentID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	// Kiểm tra xem user có phải là parent của student không
+	isParent, err := s.parentScopeRepo.IsParentOfStudent(ctx, parentUserID, studentID)
+	if err != nil {
+		return fmt.Errorf("failed to verify parent-child relationship: %w", err)
+	}
+	if !isParent {
+		return ErrForbidden
+	}
+
+	return nil
+}
+
 func NewParentScopeService(parentScopeRepo *repo.ParentScopeRepo, postInteractRepo *repo.PostInteractionRepo, appointmentRepo *repo.AppointmentRepo) *ParentScopeService {
 	return &ParentScopeService{
 		parentScopeRepo:  parentScopeRepo,
@@ -44,32 +77,11 @@ func (s *ParentScopeService) ListMyChildren(ctx context.Context, parentUserID uu
 // ListMyChildClassPosts liệt kê bài đăng của lớp con của phụ huynh đang học
 func (s *ParentScopeService) ListMyChildClassPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
-	// Validate parentUserID
-	if parentUserID == uuid.Nil {
-		return nil, 0, ErrInvalidUserID
+	if err := s.ensureParentStudentAccess(ctx, parentUserID, studentID); err != nil {
+		return nil, 0, err
 	}
 
-	// Validate studentID
-	if studentID == uuid.Nil {
-		return nil, 0, ErrInvalidUserID
-	}
-
-	// Kiểm tra xem user có phải là parent của student không
-	isParent, err := s.parentScopeRepo.IsParentOfStudent(ctx, parentUserID, studentID)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to verify parent-child relationship: %w", err)
-	}
-	if !isParent {
-		return nil, 0, ErrForbidden
-	}
-
-	// Default limit
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
+	limit = normalizeParentScopeLimit(limit)
 
 	posts, total, err := s.parentScopeRepo.ListMyChildClassPosts(ctx, parentUserID, studentID, limit, offset)
 	if err != nil {
@@ -82,32 +94,11 @@ func (s *ParentScopeService) ListMyChildClassPosts(ctx context.Context, parentUs
 // ListMyChildStudentPosts liệt kê bài đăng riêng của con phụ huynh (student scope)
 func (s *ParentScopeService) ListMyChildStudentPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
-	// Validate parentUserID
-	if parentUserID == uuid.Nil {
-		return nil, 0, ErrInvalidUserID
+	if err := s.ensureParentStudentAccess(ctx, parentUserID, studentID); err != nil {
+		return nil, 0, err
 	}
 
-	// Validate studentID
-	if studentID == uuid.Nil {
-		return nil, 0, ErrInvalidUserID
-	}
-
-	// Kiểm tra xem user có phải là parent của student không
-	isParent, err := s.parentScopeRepo.IsParentOfStudent(ctx, parentUserID, studentID)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to verify parent-child relationship: %w", err)
-	}
-	if !isParent {
-		return nil, 0, ErrForbidden
-	}
-
-	// Default limit
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
+	limit = normalizeParentScopeLimit(limit)
 
 	posts, total, err := s.parentScopeRepo.ListMyChildStudentPosts(ctx, parentUserID, studentID, limit, offset)
 	if err != nil {
@@ -120,32 +111,11 @@ func (s *ParentScopeService) ListMyChildStudentPosts(ctx context.Context, parent
 // ListAllMyChildPosts liệt kê tất cả bài đăng liên quan đến con của phụ huynh (cả class và student scope)
 func (s *ParentScopeService) ListAllMyChildPosts(ctx context.Context, parentUserID, studentID uuid.UUID,
 	limit, offset int) ([]model.Post, int, error) {
-	// Validate parentUserID
-	if parentUserID == uuid.Nil {
-		return nil, 0, ErrInvalidUserID
+	if err := s.ensureParentStudentAccess(ctx, parentUserID, studentID); err != nil {
+		return nil, 0, err
 	}
 
-	// Validate studentID
-	if studentID == uuid.Nil {
-		return nil, 0, ErrInvalidUserID
-	}
-
-	// Kiểm tra xem user có phải là parent của student không
-	isParent, err := s.parentScopeRepo.IsParentOfStudent(ctx, parentUserID, studentID)
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to verify parent-child relationship: %w", err)
-	}
-	if !isParent {
-		return nil, 0, ErrForbidden
-	}
-
-	// Default limit
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
+	limit = normalizeParentScopeLimit(limit)
 
 	posts, total, err := s.parentScopeRepo.ListAllMyChildPosts(ctx, parentUserID, studentID, limit, offset)
 	if err != nil {
@@ -163,13 +133,7 @@ func (s *ParentScopeService) GetMyFeed(ctx context.Context, parentUserID uuid.UU
 		return nil, 0, ErrInvalidUserID
 	}
 
-	// default limit
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
+	limit = normalizeParentScopeLimit(limit)
 
 	posts, total, err := s.parentScopeRepo.GetMyFeed(ctx, parentUserID, limit, offset)
 	if err != nil {
@@ -246,12 +210,7 @@ func (s *ParentScopeService) ListPostComments(ctx context.Context, parentUserID,
 	if postID == uuid.Nil {
 		return nil, 0, ErrInvalidValue
 	}
-	if limit <= 0 {
-		limit = 20
-	}
-	if limit > 100 {
-		limit = 100
-	}
+	limit = normalizeParentScopeLimit(limit)
 
 	allowed, err := s.postInteractRepo.ParentCanAccessPost(ctx, parentUserID, postID)
 	if err != nil {
