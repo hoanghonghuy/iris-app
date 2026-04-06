@@ -96,6 +96,7 @@ func NewRouter(
 		v1.POST("/auth/forgot-password", authForgotPasswordRateLimit, authHandler.ForgotPassword)
 		v1.POST("/auth/reset-password", authResetPasswordRateLimit, authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)
+		v1.GET("/register/parent/verify", parentCodeHandler.VerifyCode)
 		v1.POST("/register/parent", parentCodeHandler.RegisterParent)
 		v1.POST("/register/parent/google", parentCodeHandler.RegisterParentWithGoogle)
 
