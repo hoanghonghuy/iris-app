@@ -15,6 +15,7 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
 	"github.com/joho/godotenv"
 )
 
@@ -112,7 +113,7 @@ func main() {
 		studentHandler      = v1handlers.NewStudentHandler(studentService)
 		userHandler         = v1handlers.NewUserHandler(userService)
 		teacherHandler      = v1handlers.NewTeacherHandler(teacherService)
-		teacherScopeHandler = v1handlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
+		teacherScopeHandler = v1teacherscopehandlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
 		parentHandler       = v1handlers.NewParentHandler(parentService)
 		parentScopeHandler  = v1handlers.NewParentScopeHandler(parentScopeService, appointmentService)
 		auditLogHandler     = v1handlers.NewAuditLogHandler(auditLogService)
