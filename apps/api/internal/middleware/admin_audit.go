@@ -11,10 +11,13 @@ import (
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
-func AdminAuditLogger(auditLogService *service.AuditLogService) gin.HandlerFunc {
+type auditLogCreator interface {
+	Create(ctx context.Context, in model.AuditLogCreate) error
+}
+
+func AdminAuditLogger(auditLogService auditLogCreator) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
 		if method != http.MethodPost && method != http.MethodPut && method != http.MethodPatch && method != http.MethodDelete {
