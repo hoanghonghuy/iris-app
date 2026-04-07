@@ -49,6 +49,21 @@ DECLARE
   v_s9 uuid; -- Bé Bảo
   v_s10 uuid; -- Bé Vy
 
+  -- Appointment slots
+  v_slot1 uuid;
+  v_slot2 uuid;
+  v_slot3 uuid;
+  v_slot4 uuid;
+  v_slot5 uuid;
+  v_slot6 uuid;
+
+  -- Appointments
+  v_appt1 uuid;
+  v_appt2 uuid;
+  v_appt3 uuid;
+  v_appt4 uuid;
+  v_appt5 uuid;
+
 BEGIN
   -- ======================
   -- 1) SCHOOLS
@@ -943,6 +958,303 @@ BEGIN
       'Hạ Vy tích cực tham gia hoạt động âm nhạc, phát âm rõ khi hát tập thể và phối hợp tốt với nhóm trong giờ thủ công.'
     )
     ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ======================
+  -- 15) APPOINTMENT SLOTS + APPOINTMENTS
+  -- ======================
+  IF to_regclass('public.appointment_slots') IS NOT NULL THEN
+    INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
+    SELECT v_teacher1, v_class1,
+           date_trunc('day', NOW()) + INTERVAL '1 day 09 hours',
+           date_trunc('day', NOW()) + INTERVAL '1 day 09 hours 20 minutes',
+           'Tư vấn kỹ năng tự phục vụ cho Gia An', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM appointment_slots s
+      WHERE s.teacher_id = v_teacher1
+        AND s.class_id = v_class1
+        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours'
+        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours 20 minutes'
+    );
+
+    INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
+    SELECT v_teacher1, v_class1,
+           date_trunc('day', NOW()) + INTERVAL '1 day 10 hours',
+           date_trunc('day', NOW()) + INTERVAL '1 day 10 hours 20 minutes',
+           'Trao đổi về nếp ngủ trưa của Ngô Phương My', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM appointment_slots s
+      WHERE s.teacher_id = v_teacher1
+        AND s.class_id = v_class1
+        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours'
+        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours 20 minutes'
+    );
+
+    INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
+    SELECT v_teacher2, v_class2,
+           date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 30 minutes',
+           date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 50 minutes',
+           'Theo dõi sức khỏe bé Minh Khang sau đợt ho nhẹ', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM appointment_slots s
+      WHERE s.teacher_id = v_teacher2
+        AND s.class_id = v_class2
+        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 30 minutes'
+        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 50 minutes'
+    );
+
+    INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
+    SELECT v_teacher3, v_class4,
+           date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours',
+           date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours 20 minutes',
+           'Tổng kết tiến bộ vận động của Lý Minh Bảo', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM appointment_slots s
+      WHERE s.teacher_id = v_teacher3
+        AND s.class_id = v_class4
+        AND s.start_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours'
+        AND s.end_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours 20 minutes'
+    );
+
+    INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
+    SELECT v_teacher3, v_class5,
+           date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours',
+           date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours 20 minutes',
+           'Hẹn đánh giá tương tác nhóm của Trương Hạ Vy', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM appointment_slots s
+      WHERE s.teacher_id = v_teacher3
+        AND s.class_id = v_class5
+        AND s.start_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours'
+        AND s.end_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours 20 minutes'
+    );
+
+    INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
+    SELECT v_teacher2, v_class2,
+           date_trunc('day', NOW()) + INTERVAL '3 days 10 hours',
+           date_trunc('day', NOW()) + INTERVAL '3 days 10 hours 20 minutes',
+           'Slot trống để phụ huynh đặt mới', true
+    WHERE NOT EXISTS (
+      SELECT 1 FROM appointment_slots s
+      WHERE s.teacher_id = v_teacher2
+        AND s.class_id = v_class2
+        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours'
+        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours 20 minutes'
+    );
+
+    SELECT slot_id INTO v_slot1
+    FROM appointment_slots
+    WHERE teacher_id = v_teacher1
+      AND class_id = v_class1
+      AND start_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours'
+      AND end_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours 20 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT slot_id INTO v_slot2
+    FROM appointment_slots
+    WHERE teacher_id = v_teacher1
+      AND class_id = v_class1
+      AND start_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours'
+      AND end_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours 20 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT slot_id INTO v_slot3
+    FROM appointment_slots
+    WHERE teacher_id = v_teacher2
+      AND class_id = v_class2
+      AND start_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 30 minutes'
+      AND end_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 50 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT slot_id INTO v_slot4
+    FROM appointment_slots
+    WHERE teacher_id = v_teacher3
+      AND class_id = v_class4
+      AND start_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours'
+      AND end_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours 20 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT slot_id INTO v_slot5
+    FROM appointment_slots
+    WHERE teacher_id = v_teacher3
+      AND class_id = v_class5
+      AND start_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours'
+      AND end_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours 20 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT slot_id INTO v_slot6
+    FROM appointment_slots
+    WHERE teacher_id = v_teacher2
+      AND class_id = v_class2
+      AND start_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours'
+      AND end_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours 20 minutes'
+    ORDER BY created_at DESC
+    LIMIT 1;
+  END IF;
+
+  IF to_regclass('public.appointments') IS NOT NULL THEN
+    INSERT INTO appointments (slot_id, parent_id, student_id, status, note)
+    SELECT v_slot1, v_parent1, v_s1, 'pending', 'Phụ huynh muốn trao đổi thêm về kỹ năng giao tiếp của bé'
+    WHERE v_slot1 IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot1);
+
+    INSERT INTO appointments (slot_id, parent_id, student_id, status, note, confirmed_at)
+    SELECT v_slot2, v_parent2, v_s6, 'confirmed', 'Hỏi thêm về nếp ngủ trưa ở nhà', NOW() - INTERVAL '2 hours'
+    WHERE v_slot2 IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot2);
+
+    INSERT INTO appointments (slot_id, parent_id, student_id, status, note, cancel_reason, cancelled_at)
+    SELECT v_slot3, v_parent1, v_s5, 'cancelled', 'Muốn cập nhật kế hoạch theo dõi sức khỏe',
+           'Phụ huynh bận công tác đột xuất, xin dời lịch', NOW() - INTERVAL '1 hour'
+    WHERE v_slot3 IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot3);
+
+    INSERT INTO appointments (slot_id, parent_id, student_id, status, note, confirmed_at, completed_at)
+    SELECT v_slot4, v_parent3, v_s9, 'completed', 'Đã trao đổi về vận động tinh và thói quen ăn uống',
+           NOW() - INTERVAL '2 days 3 hours', NOW() - INTERVAL '2 days 2 hours 30 minutes'
+    WHERE v_slot4 IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot4);
+
+    INSERT INTO appointments (slot_id, parent_id, student_id, status, note, confirmed_at)
+    SELECT v_slot5, v_parent3, v_s10, 'no_show', 'Lịch trao đổi định kỳ cuối tuần', NOW() - INTERVAL '1 day 5 hours'
+    WHERE v_slot5 IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot5);
+
+    SELECT appointment_id INTO v_appt1
+    FROM appointments
+    WHERE slot_id = v_slot1
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT appointment_id INTO v_appt2
+    FROM appointments
+    WHERE slot_id = v_slot2
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT appointment_id INTO v_appt3
+    FROM appointments
+    WHERE slot_id = v_slot3
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT appointment_id INTO v_appt4
+    FROM appointments
+    WHERE slot_id = v_slot4
+    ORDER BY created_at DESC
+    LIMIT 1;
+
+    SELECT appointment_id INTO v_appt5
+    FROM appointments
+    WHERE slot_id = v_slot5
+    ORDER BY created_at DESC
+    LIMIT 1;
+  END IF;
+
+  -- ======================
+  -- 16) AUDIT LOGS (có scope school cho SCHOOL_ADMIN)
+  -- ======================
+  IF to_regclass('public.audit_logs') IS NOT NULL THEN
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_super_admin_user, 'SUPER_ADMIN', NULL,
+           'audit_logs.list', 'audit_logs', NULL,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_001',
+             'source', 'seed_demo',
+             'query', jsonb_build_object('scope', 'global', 'limit', 20)
+           ),
+           NOW() - INTERVAL '3 hours'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_001'
+    );
+
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_school_admin_user, 'SCHOOL_ADMIN', v_school1,
+           'appointments.slot.create', 'appointment_slots', v_slot6,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_002',
+             'source', 'seed_demo',
+             'request', jsonb_build_object('class_id', v_class2, 'teacher_id', v_teacher2)
+           ),
+           NOW() - INTERVAL '2 hours 45 minutes'
+    WHERE v_slot6 IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_002'
+      );
+
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_parent1_user, 'PARENT', v_school1,
+           'appointments.book', 'appointments', v_appt1,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_003',
+             'source', 'seed_demo',
+             'status', 'pending'
+           ),
+           NOW() - INTERVAL '2 hours 30 minutes'
+    WHERE v_appt1 IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_003'
+      );
+
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_teacher1_user, 'TEACHER', v_school1,
+           'appointments.confirm', 'appointments', v_appt2,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_004',
+             'source', 'seed_demo',
+             'status', 'confirmed'
+           ),
+           NOW() - INTERVAL '2 hours'
+    WHERE v_appt2 IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_004'
+      );
+
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_parent1_user, 'PARENT', v_school1,
+           'appointments.cancel', 'appointments', v_appt3,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_005',
+             'source', 'seed_demo',
+             'status', 'cancelled'
+           ),
+           NOW() - INTERVAL '90 minutes'
+    WHERE v_appt3 IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_005'
+      );
+
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_school_admin2_user, 'SCHOOL_ADMIN', v_school3,
+           'posts.create', 'posts', NULL,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_006',
+             'source', 'seed_demo',
+             'scope', 'school'
+           ),
+           NOW() - INTERVAL '1 hour'
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_006'
+    );
+
+    INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
+    SELECT v_teacher3_user, 'TEACHER', v_school3,
+           'appointments.complete', 'appointments', v_appt4,
+           jsonb_build_object(
+             'seed_key', 'seed_audit_007',
+             'source', 'seed_demo',
+             'status', 'completed'
+           ),
+           NOW() - INTERVAL '45 minutes'
+    WHERE v_appt4 IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_007'
+      );
   END IF;
 
 END $$;
