@@ -149,9 +149,16 @@ func (r *AppointmentRepo) CreateSlot(ctx context.Context, teacherUserID, classID
 }
 
 func (r *AppointmentRepo) CreateAppointment(ctx context.Context, parentUserID, studentID, slotID uuid.UUID, note string) (model.Appointment, error) {
-	const q = `
-		INSERT INTO appointments (slot_id, parent_id, student_id, status, note)
-		SELECT $3, p.parent_id, $2, 'pending', $4
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return model.Appointment{}, err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	const lockEligibleSlotQ = `
+		SELECT p.parent_id
 		FROM parents p
 		JOIN student_parents sp ON sp.parent_id = p.parent_id
 		JOIN students st ON st.student_id = sp.student_id
@@ -161,15 +168,48 @@ func (r *AppointmentRepo) CreateAppointment(ctx context.Context, parentUserID, s
 		  AND st.current_class_id = s.class_id
 		  AND s.is_active = true
 		  AND s.start_time >= now()
-		RETURNING appointment_id, slot_id, parent_id, student_id, status, COALESCE(note, ''), COALESCE(cancel_reason, ''),
-		          confirmed_at, completed_at, cancelled_at, created_at, updated_at;
+		FOR UPDATE OF s;
 	`
 
-	a, err := scanAppointment(r.pool.QueryRow(ctx, q, parentUserID, studentID, slotID, note))
+	var parentID uuid.UUID
+	err = tx.QueryRow(ctx, lockEligibleSlotQ, parentUserID, studentID, slotID).Scan(&parentID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.Appointment{}, ErrNoRowsUpdated
 		}
+		return model.Appointment{}, err
+	}
+
+	const activeAppointmentConflictQ = `
+		SELECT 1
+		FROM appointments
+		WHERE slot_id = $1
+		  AND status IN ('pending', 'confirmed', 'completed', 'no_show')
+		LIMIT 1;
+	`
+
+	var activeConflict int
+	err = tx.QueryRow(ctx, activeAppointmentConflictQ, slotID).Scan(&activeConflict)
+	if err == nil {
+		return model.Appointment{}, ErrAppointmentSlotUnavailable
+	}
+	if err != pgx.ErrNoRows {
+		return model.Appointment{}, err
+	}
+
+	const createAppointmentQ = `
+		INSERT INTO appointments (slot_id, parent_id, student_id, status, note)
+		VALUES ($1, $2, $3, 'pending', $4)
+		RETURNING appointment_id, slot_id, parent_id, student_id, status, COALESCE(note, ''), COALESCE(cancel_reason, ''),
+		          confirmed_at, completed_at, cancelled_at, created_at, updated_at;
+	`
+
+	a, err := scanAppointment(tx.QueryRow(ctx, createAppointmentQ, slotID, parentID, studentID, note))
+	if err != nil {
+		return model.Appointment{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return model.Appointment{}, err
 	}
 

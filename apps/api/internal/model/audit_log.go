@@ -10,6 +10,7 @@ type AuditLog struct {
 	AuditLogID  uuid.UUID  `json:"audit_log_id"`
 	ActorUserID uuid.UUID  `json:"actor_user_id"`
 	ActorRole   string     `json:"actor_role,omitempty"`
+	SchoolID    *uuid.UUID `json:"school_id,omitempty"`
 	Action      string     `json:"action"`
 	EntityType  string     `json:"entity_type"`
 	EntityID    *uuid.UUID `json:"entity_id,omitempty"`
@@ -21,6 +22,7 @@ type AuditLogFilter struct {
 	Action      string
 	EntityType  string
 	ActorUserID *uuid.UUID
+	SchoolID    *uuid.UUID
 	From        *time.Time
 	To          *time.Time
 	Search      string
@@ -31,6 +33,7 @@ type AuditLogFilter struct {
 type AuditLogCreate struct {
 	ActorUserID uuid.UUID
 	ActorRole   string
+	SchoolID    *uuid.UUID
 	Action      string
 	EntityType  string
 	EntityID    *uuid.UUID

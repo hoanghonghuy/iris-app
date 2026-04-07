@@ -95,6 +95,7 @@ func (h *TeacherScopeHandler) ListMyAppointments(c *gin.Context) {
 		return
 	}
 	limit, offset := shared.ParsePagination(c.Query("limit"), c.Query("offset"))
+	limit, offset = shared.NormalizePagination(limit, offset)
 
 	items, total, err := h.appointmentService.ListTeacherAppointments(c.Request.Context(), teacherUserID, status, from, to, limit, offset)
 	if err != nil {

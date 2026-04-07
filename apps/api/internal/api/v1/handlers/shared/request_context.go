@@ -92,3 +92,17 @@ func ParsePagination(limitRaw, offsetRaw string) (int, int) {
 	}
 	return limit, offset
 }
+
+// NormalizePagination keeps pagination values aligned with service constraints.
+func NormalizePagination(limit, offset int) (int, int) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	return limit, offset
+}

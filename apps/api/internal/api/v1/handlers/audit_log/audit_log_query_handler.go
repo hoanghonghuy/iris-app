@@ -8,12 +8,24 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 func (h *AuditLogHandler) List(c *gin.Context) {
+	claims, ok := shared.RequireCurrentClaims(c)
+	if !ok {
+		return
+	}
+
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
+	if hasRole(claims.Roles, "SCHOOL_ADMIN") && adminSchoolID == nil {
+		response.Fail(c, http.StatusForbidden, "access denied")
+		return
+	}
+
 	from, to, err := h.auditLogService.ParseTimeRange(c.Query("from"), c.Query("to"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, err.Error())
@@ -42,11 +54,13 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 			offset = n
 		}
 	}
+	limit, offset = shared.NormalizePagination(limit, offset)
 
 	items, total, err := h.auditLogService.List(c.Request.Context(), model.AuditLogFilter{
 		Action:      c.Query("action"),
 		EntityType:  c.Query("entity_type"),
 		ActorUserID: actorUserID,
+		SchoolID:    adminSchoolID,
 		From:        from,
 		To:          to,
 		Search:      c.Query("q"),
@@ -68,4 +82,13 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 		Offset:  offset,
 		HasMore: offset+len(items) < total,
 	})
+}
+
+func hasRole(roles []string, role string) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }

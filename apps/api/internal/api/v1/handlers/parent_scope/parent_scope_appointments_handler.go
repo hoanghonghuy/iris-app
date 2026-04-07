@@ -2,6 +2,7 @@ package parentscope
 
 import (
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -40,10 +41,15 @@ func (h *ParentScopeHandler) ListAvailableAppointmentSlots(c *gin.Context) {
 		return
 	}
 	limit, offset := shared.ParsePagination(c.Query("limit"), c.Query("offset"))
+	limit, offset = shared.NormalizePagination(limit, offset)
 
 	items, total, err := h.appointmentService.ListAvailableSlotsForParent(c.Request.Context(), parentUserID, studentID, from, to, limit, offset)
 	if err != nil {
-		if errors.Is(err, service.ErrForbidden) || errors.Is(err, service.ErrInvalidValue) {
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrInvalidValue) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -84,7 +90,15 @@ func (h *ParentScopeHandler) CreateAppointment(c *gin.Context) {
 
 	appointment, err := h.appointmentService.CreateAppointment(c.Request.Context(), parentUserID, studentID, slotID, req.Note)
 	if err != nil {
-		if errors.Is(err, service.ErrForbidden) || errors.Is(err, service.ErrInvalidValue) {
+		if errors.Is(err, service.ErrAppointmentSlotUnavailable) {
+			response.Fail(c, http.StatusConflict, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrInvalidValue) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -108,6 +122,7 @@ func (h *ParentScopeHandler) ListMyAppointments(c *gin.Context) {
 		return
 	}
 	limit, offset := shared.ParsePagination(c.Query("limit"), c.Query("offset"))
+	limit, offset = shared.NormalizePagination(limit, offset)
 
 	items, total, err := h.appointmentService.ListParentAppointments(c.Request.Context(), parentUserID, status, from, to, limit, offset)
 	if err != nil {
@@ -135,7 +150,10 @@ func (h *ParentScopeHandler) CancelAppointment(c *gin.Context) {
 	}
 
 	var req CancelAppointmentRequest
-	_ = c.ShouldBindJSON(&req)
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
 
 	parentUserID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
@@ -144,7 +162,11 @@ func (h *ParentScopeHandler) CancelAppointment(c *gin.Context) {
 
 	updated, err := h.appointmentService.CancelAppointmentByParent(c.Request.Context(), parentUserID, appointmentID, req.CancelReason)
 	if err != nil {
-		if errors.Is(err, service.ErrForbidden) || errors.Is(err, service.ErrInvalidValue) {
+		if errors.Is(err, service.ErrForbidden) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrInvalidValue) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
 			return
 		}

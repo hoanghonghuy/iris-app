@@ -27,16 +27,16 @@ func (r *AuditLogRepo) Create(ctx context.Context, in model.AuditLogCreate) erro
 	}
 
 	const q = `
-		INSERT INTO audit_logs (actor_user_id, actor_role, action, entity_type, entity_id, details)
-		VALUES ($1, $2, $3, $4, $5, $6::jsonb);
+		INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details)
+		VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb);
 	`
-	_, err = r.pool.Exec(ctx, q, in.ActorUserID, in.ActorRole, in.Action, in.EntityType, in.EntityID, detailsJSON)
+	_, err = r.pool.Exec(ctx, q, in.ActorUserID, in.ActorRole, in.SchoolID, in.Action, in.EntityType, in.EntityID, detailsJSON)
 	return err
 }
 
 func (r *AuditLogRepo) List(ctx context.Context, filter model.AuditLogFilter) ([]model.AuditLog, int, error) {
 	q := `
-		SELECT audit_log_id, actor_user_id, actor_role, action, entity_type, entity_id, details, created_at,
+		SELECT audit_log_id, actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at,
 		       COUNT(*) OVER() AS total_count
 		FROM audit_logs
 		WHERE 1=1
@@ -57,6 +57,11 @@ func (r *AuditLogRepo) List(ctx context.Context, filter model.AuditLogFilter) ([
 	if filter.ActorUserID != nil {
 		q += fmt.Sprintf(" AND actor_user_id = $%d", argPos)
 		args = append(args, *filter.ActorUserID)
+		argPos++
+	}
+	if filter.SchoolID != nil {
+		q += fmt.Sprintf(" AND school_id = $%d", argPos)
+		args = append(args, *filter.SchoolID)
 		argPos++
 	}
 	if filter.From != nil {
@@ -88,6 +93,7 @@ func (r *AuditLogRepo) List(ctx context.Context, filter model.AuditLogFilter) ([
 	total := 0
 	for rows.Next() {
 		var item model.AuditLog
+		var schoolID *uuid.UUID
 		var entityID *uuid.UUID
 		var createdAt time.Time
 		var detailsRaw []byte
@@ -95,6 +101,7 @@ func (r *AuditLogRepo) List(ctx context.Context, filter model.AuditLogFilter) ([
 			&item.AuditLogID,
 			&item.ActorUserID,
 			&item.ActorRole,
+			&schoolID,
 			&item.Action,
 			&item.EntityType,
 			&entityID,
@@ -104,6 +111,7 @@ func (r *AuditLogRepo) List(ctx context.Context, filter model.AuditLogFilter) ([
 		); err != nil {
 			return nil, 0, err
 		}
+		item.SchoolID = schoolID
 		item.EntityID = entityID
 		item.CreatedAt = createdAt
 		if len(detailsRaw) > 0 {

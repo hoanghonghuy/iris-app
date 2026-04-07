@@ -1,9 +1,7 @@
 package middleware
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -22,17 +20,6 @@ func AdminAuditLogger(auditLogService *service.AuditLogService) gin.HandlerFunc 
 		if method != http.MethodPost && method != http.MethodPut && method != http.MethodPatch && method != http.MethodDelete {
 			c.Next()
 			return
-		}
-
-		var bodyPreview string
-		if c.Request.Body != nil {
-			rawBody, _ := io.ReadAll(c.Request.Body)
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(rawBody))
-			if len(rawBody) > 2048 {
-				bodyPreview = string(rawBody[:2048])
-			} else {
-				bodyPreview = string(rawBody)
-			}
 		}
 
 		path := c.FullPath()
@@ -71,22 +58,40 @@ func AdminAuditLogger(auditLogService *service.AuditLogService) gin.HandlerFunc 
 			actorRole = claims.Roles[0]
 		}
 
+		var schoolID *uuid.UUID
+		if schoolIDAny, exists := c.Get(CtxAdminSchoolID); exists {
+			if schoolIDStr, ok := schoolIDAny.(string); ok && schoolIDStr != "" {
+				if parsedSchoolID, parseErr := uuid.Parse(schoolIDStr); parseErr == nil {
+					schoolID = &parsedSchoolID
+				}
+			}
+		}
+
+		details := map[string]any{
+			"status":         status,
+			"method":         method,
+			"route":          path,
+			"request_path":   c.Request.URL.Path,
+			"query":          c.Request.URL.RawQuery,
+			"content_type":   c.ContentType(),
+			"content_length": c.Request.ContentLength,
+			"at":             time.Now().UTC().Format(time.RFC3339),
+		}
+		if schoolID != nil {
+			details["school_id"] = schoolID.String()
+		}
+
 		ctx, cancel := contextWithShortTimeout()
 		defer cancel()
 
 		_ = auditLogService.Create(ctx, model.AuditLogCreate{
 			ActorUserID: actorID,
 			ActorRole:   actorRole,
+			SchoolID:    schoolID,
 			Action:      method + " " + path,
 			EntityType:  entityType,
 			EntityID:    entityID,
-			Details: map[string]any{
-				"status":       status,
-				"request_path": c.Request.URL.Path,
-				"query":        c.Request.URL.RawQuery,
-				"body":         bodyPreview,
-				"at":           time.Now().UTC().Format(time.RFC3339),
-			},
+			Details:     details,
 		})
 	}
 }

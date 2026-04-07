@@ -14,3 +14,6 @@ var ErrGoogleAlreadyLinkedDifferent = errors.New("user already linked with a dif
 
 // ErrRoleAssignmentFailed trả về khi gán role thất bại trong flow tạo user.
 var ErrRoleAssignmentFailed = errors.New("failed to assign role")
+
+// ErrAppointmentSlotUnavailable trả về khi slot đã có lịch hẹn active.
+var ErrAppointmentSlotUnavailable = errors.New("appointment slot is unavailable")

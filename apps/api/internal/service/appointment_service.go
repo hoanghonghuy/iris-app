@@ -96,6 +96,9 @@ func (s *AppointmentService) CreateAppointment(ctx context.Context, parentUserID
 
 	a, err := s.appointmentRepo.CreateAppointment(ctx, parentUserID, studentID, slotID, strings.TrimSpace(note))
 	if err != nil {
+		if err == repo.ErrAppointmentSlotUnavailable {
+			return model.Appointment{}, ErrAppointmentSlotUnavailable
+		}
 		if err == repo.ErrNoRowsUpdated {
 			return model.Appointment{}, ErrForbidden
 		}
