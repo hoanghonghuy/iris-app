@@ -1,4 +1,4 @@
-package handlers
+package auditloghandlers
 
 import (
 	"errors"
@@ -12,14 +12,6 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
-
-type AuditLogHandler struct {
-	auditLogService *service.AuditLogService
-}
-
-func NewAuditLogHandler(auditLogService *service.AuditLogService) *AuditLogHandler {
-	return &AuditLogHandler{auditLogService: auditLogService}
-}
 
 func (h *AuditLogHandler) List(c *gin.Context) {
 	from, to, err := h.auditLogService.ParseTimeRange(c.Query("from"), c.Query("to"))

@@ -9,7 +9,8 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 
-	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1analyticshandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/analytics"
+	v1auditloghandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/audit_log"
 	v1authhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/auth"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1classhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/class"
@@ -43,8 +44,8 @@ func NewRouter(
 	parentScopeHandler *v1parentscopehandlers.ParentScopeHandler,
 	parentCodeHandler *v1parentcodehandlers.ParentCodeHandler,
 	schoolAdminHandler *v1schooladminhandlers.SchoolAdminHandler,
-	analyticsHandler *v1handlers.AnalyticsHandler,
-	auditLogHandler *v1handlers.AuditLogHandler,
+	analyticsHandler *v1analyticshandlers.AnalyticsHandler,
+	auditLogHandler *v1auditloghandlers.AuditLogHandler,
 	auditLogService *service.AuditLogService,
 	chatHandler *v1chathandlers.ChatHandler,
 ) *gin.Engine {

@@ -14,7 +14,8 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
 
-	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1analyticshandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/analytics"
+	v1auditloghandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/audit_log"
 	v1authhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/auth"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1classhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/class"
@@ -127,10 +128,10 @@ func main() {
 		teacherScopeHandler = v1teacherscopehandlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
 		parentHandler       = v1parenthandlers.NewParentHandler(parentService)
 		parentScopeHandler  = v1parentscopehandlers.NewParentScopeHandler(parentScopeService, appointmentService)
-		auditLogHandler     = v1handlers.NewAuditLogHandler(auditLogService)
+		auditLogHandler     = v1auditloghandlers.NewAuditLogHandler(auditLogService)
 		parentCodeHandler   = v1parentcodehandlers.NewParentCodeHandler(parentCodeService)
 		schoolAdminHandler  = v1schooladminhandlers.NewSchoolAdminHandler(schoolAdminService)
-		analyticsHandler    = v1handlers.NewAnalyticsHandler(analyticsService)
+		analyticsHandler    = v1analyticshandlers.NewAnalyticsHandler(analyticsService)
 	)
 
 	// WebSocket Hub (chạy goroutine background)
