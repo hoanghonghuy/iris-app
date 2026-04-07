@@ -16,6 +16,7 @@ import (
 	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1schoolhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/school"
+	v1schooladminhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/school_admin"
 	v1studenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/student"
 	v1teacherhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
@@ -40,7 +41,7 @@ func NewRouter(
 	parentHandler *v1parenthandlers.ParentHandler,
 	parentScopeHandler *v1parentscopehandlers.ParentScopeHandler,
 	parentCodeHandler *v1parentcodehandlers.ParentCodeHandler,
-	schoolAdminHandler *v1handlers.SchoolAdminHandler,
+	schoolAdminHandler *v1schooladminhandlers.SchoolAdminHandler,
 	analyticsHandler *v1handlers.AnalyticsHandler,
 	auditLogHandler *v1handlers.AuditLogHandler,
 	auditLogService *service.AuditLogService,
