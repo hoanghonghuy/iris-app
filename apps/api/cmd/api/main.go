@@ -20,6 +20,7 @@ import (
 	v1parenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent"
 	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
+	v1schoolhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/school"
 	v1studenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/student"
 	v1teacherhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher"
 	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
@@ -116,7 +117,7 @@ func main() {
 	// TODO: tách ra hàm helper initHandlers(services) *Handlers
 	var (
 		authHandler         = v1handlers.NewAuthHandler(authService, userService)
-		schoolHandler       = v1handlers.NewSchoolHandler(schoolService)
+		schoolHandler       = v1schoolhandlers.NewSchoolHandler(schoolService)
 		classHandler        = v1classhandlers.NewClassHandler(classService)
 		studentHandler      = v1studenthandlers.NewStudentHandler(studentService)
 		userHandler         = v1userhandlers.NewUserHandler(userService)
