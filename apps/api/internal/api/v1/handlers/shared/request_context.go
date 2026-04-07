@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -72,6 +73,9 @@ func ParseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error) {
 			return nil, nil, err
 		}
 		to = &v
+	}
+	if from != nil && to != nil && to.Before(*from) {
+		return nil, nil, errors.New("from must be less than or equal to to")
 	}
 	return from, to, nil
 }

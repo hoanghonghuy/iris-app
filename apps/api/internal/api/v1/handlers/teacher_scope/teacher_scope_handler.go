@@ -1,13 +1,27 @@
 package teacherscope
 
-import "github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+import (
+	"context"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+)
+
+type teacherScopeAppointmentService interface {
+	CreateSlot(ctx context.Context, teacherUserID, classID uuid.UUID, startTime, endTime time.Time, note string) (model.AppointmentSlot, error)
+	ListTeacherAppointments(ctx context.Context, teacherUserID uuid.UUID, status string, from, to *time.Time, limit, offset int) ([]model.Appointment, int, error)
+	UpdateAppointmentStatusByTeacher(ctx context.Context, teacherUserID, appointmentID uuid.UUID, status, cancelReason string) (model.Appointment, error)
+}
 
 type TeacherScopeHandler struct {
 	teacherScopeService *service.TeacherScopeService
-	appointmentService  *service.AppointmentService
+	appointmentService  teacherScopeAppointmentService
 }
 
-func NewTeacherScopeHandler(teacherScopeService *service.TeacherScopeService, appointmentService *service.AppointmentService) *TeacherScopeHandler {
+func NewTeacherScopeHandler(teacherScopeService *service.TeacherScopeService, appointmentService teacherScopeAppointmentService) *TeacherScopeHandler {
 	return &TeacherScopeHandler{
 		teacherScopeService: teacherScopeService,
 		appointmentService:  appointmentService,

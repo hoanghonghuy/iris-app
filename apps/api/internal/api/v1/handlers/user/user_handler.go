@@ -1,9 +1,28 @@
 package userhandlers
 
-import "github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+)
+
+type userService interface {
+	CreateUserWithoutPassword(ctx context.Context, adminSchoolID *uuid.UUID, email string, roles []string) (*model.UserInfo, error)
+	FindByID(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) (*model.UserInfo, error)
+	List(ctx context.Context, adminSchoolID *uuid.UUID, roleFilter string, limit, offset int) ([]model.UserInfo, int, error)
+	Lock(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) error
+	Unlock(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) error
+	AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error
+	ActivateUserWithToken(ctx context.Context, token, password string) error
+	UpdateMyPassword(ctx context.Context, userID uuid.UUID, password string) error
+	Delete(ctx context.Context, userID uuid.UUID) error
+}
 
 type UserHandler struct {
-	userService *service.UserService
+	userService userService
 }
 
 func NewUserHandler(userService *service.UserService) *UserHandler {

@@ -30,6 +30,9 @@ func (s *AuditLogService) Create(ctx context.Context, in model.AuditLogCreate) e
 }
 
 func (s *AuditLogService) List(ctx context.Context, filter model.AuditLogFilter) ([]model.AuditLog, int, error) {
+	if err := validateTimeRange(filter.From, filter.To); err != nil {
+		return nil, 0, err
+	}
 	if filter.Limit <= 0 {
 		filter.Limit = 20
 	}
@@ -58,6 +61,9 @@ func (s *AuditLogService) ParseTimeRange(fromRaw, toRaw string) (*time.Time, *ti
 			return nil, nil, fmt.Errorf("%w: invalid to time", ErrInvalidDate)
 		}
 		toPtr = &to
+	}
+	if err := validateTimeRange(fromPtr, toPtr); err != nil {
+		return nil, nil, fmt.Errorf("%w: from time must be less than or equal to to time", ErrInvalidDate)
 	}
 	return fromPtr, toPtr, nil
 }

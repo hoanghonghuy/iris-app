@@ -1,13 +1,23 @@
 package classhandlers
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
+type classService interface {
+	Create(ctx context.Context, adminSchoolID *uuid.UUID, schoolID uuid.UUID, name, schoolYear string) (*model.Class, error)
+	ListBySchool(ctx context.Context, adminSchoolID *uuid.UUID, schoolID uuid.UUID, limit, offset int) ([]model.Class, int, error)
+	Update(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID, name, schoolYear string) error
+	Delete(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID) error
+}
+
 type ClassHandler struct {
-	classService *service.ClassService
+	classService classService
 }
 
 func NewClassHandler(classService *service.ClassService) *ClassHandler {

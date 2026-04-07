@@ -1,13 +1,24 @@
 package studenthandlers
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
+type studentService interface {
+	Create(ctx context.Context, adminSchoolID *uuid.UUID, schoolID, classID uuid.UUID, fullName string, dobStr string, gender string) (*model.Student, error)
+	ListByClass(ctx context.Context, adminSchoolID *uuid.UUID, classID uuid.UUID, limit, offset int) ([]model.Student, int, error)
+	GetProfile(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID) (*model.StudentProfile, error)
+	Update(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID, fullName, dobStr, gender string) error
+	Delete(ctx context.Context, adminSchoolID *uuid.UUID, studentID uuid.UUID) error
+}
+
 type StudentHandler struct {
-	studentService *service.StudentService
+	studentService studentService
 }
 
 func NewStudentHandler(studentService *service.StudentService) *StudentHandler {

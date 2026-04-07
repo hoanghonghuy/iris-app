@@ -1,15 +1,31 @@
 package authhandlers
 
 import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
-type AuthHandler struct {
-	authService *service.AuthService
-	userService *service.UserService
+type authService interface {
+	Login(ctx context.Context, email, password string) (*service.LoginResponse, error)
+	LoginWithGoogleToken(ctx context.Context, googleIDToken, password string) (*service.LoginResponse, error)
 }
 
-func NewAuthHandler(authService *service.AuthService, userService *service.UserService) *AuthHandler {
+type userService interface {
+	RequestPasswordReset(ctx context.Context, email string) error
+	ResetPasswordWithToken(ctx context.Context, email, plainToken, newPassword string) error
+	FindByID(ctx context.Context, adminSchoolID *uuid.UUID, userID uuid.UUID) (*model.UserInfo, error)
+}
+
+type AuthHandler struct {
+	authService authService
+	userService userService
+}
+
+func NewAuthHandler(authService authService, userService userService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		userService: userService,

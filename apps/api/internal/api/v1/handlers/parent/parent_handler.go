@@ -1,9 +1,23 @@
 package parenthandlers
 
-import "github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+)
+
+type parentService interface {
+	List(ctx context.Context, adminSchoolID *uuid.UUID, limit, offset int) ([]model.Parent, int, error)
+	GetByParentID(ctx context.Context, adminSchoolID *uuid.UUID, parentID uuid.UUID) (*model.Parent, error)
+	AssignStudent(ctx context.Context, adminSchoolID *uuid.UUID, parentID, studentID uuid.UUID, relationship string) error
+	UnassignStudent(ctx context.Context, adminSchoolID *uuid.UUID, parentID, studentID uuid.UUID) error
+}
 
 type ParentHandler struct {
-	parentService *service.ParentService
+	parentService parentService
 }
 
 func NewParentHandler(parentService *service.ParentService) *ParentHandler {

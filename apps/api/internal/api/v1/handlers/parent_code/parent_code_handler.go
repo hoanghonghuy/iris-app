@@ -1,9 +1,25 @@
 package parentcodehandlers
 
-import "github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+import (
+	"context"
+
+	"github.com/google/uuid"
+
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+)
+
+type parentCodeService interface {
+	GenerateCodeForStudent(context.Context, *uuid.UUID, uuid.UUID) (string, error)
+	RevokeCode(context.Context, *uuid.UUID, uuid.UUID) error
+	RegisterParentWithGoogle(context.Context, string, string) (*service.LoginResponse, error)
+	RegisterParent(context.Context, string, string, string) (*service.LoginResponse, error)
+	VerifyCode(context.Context, string) (*model.StudentParentCode, error)
+	GetStudentInfo(context.Context, uuid.UUID) (*model.Student, error)
+}
 
 type ParentCodeHandler struct {
-	parentCodeService *service.ParentCodeService
+	parentCodeService parentCodeService
 }
 
 func NewParentCodeHandler(parentCodeService *service.ParentCodeService) *ParentCodeHandler {

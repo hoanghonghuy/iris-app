@@ -1,11 +1,21 @@
 package auditloghandlers
 
-import "github.com/hoanghonghuy/iris-app/apps/api/internal/service"
+import (
+	"context"
+	"time"
 
-type AuditLogHandler struct {
-	auditLogService *service.AuditLogService
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+)
+
+type auditLogQueryService interface {
+	ParseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error)
+	List(ctx context.Context, filter model.AuditLogFilter) ([]model.AuditLog, int, error)
 }
 
-func NewAuditLogHandler(auditLogService *service.AuditLogService) *AuditLogHandler {
+type AuditLogHandler struct {
+	auditLogService auditLogQueryService
+}
+
+func NewAuditLogHandler(auditLogService auditLogQueryService) *AuditLogHandler {
 	return &AuditLogHandler{auditLogService: auditLogService}
 }

@@ -13,10 +13,21 @@ import (
 )
 
 type AppointmentService struct {
-	appointmentRepo *repo.AppointmentRepo
+	appointmentRepo appointmentRepository
 }
 
-func NewAppointmentService(appointmentRepo *repo.AppointmentRepo) *AppointmentService {
+type appointmentRepository interface {
+	CreateSlot(ctx context.Context, teacherUserID, classID uuid.UUID, startTime, endTime time.Time, note string) (model.AppointmentSlot, error)
+	ListTeacherAppointments(ctx context.Context, teacherUserID uuid.UUID, status string, from, to *time.Time, limit, offset int) ([]model.Appointment, int, error)
+	ListParentAppointments(ctx context.Context, parentUserID uuid.UUID, status string, from, to *time.Time, limit, offset int) ([]model.Appointment, int, error)
+	ListAvailableSlotsForParent(ctx context.Context, parentUserID, studentID uuid.UUID, from, to *time.Time, limit, offset int) ([]model.AppointmentSlot, int, error)
+	CreateAppointment(ctx context.Context, parentUserID, studentID, slotID uuid.UUID, note string) (model.Appointment, error)
+	UpdateAppointmentStatusByTeacher(ctx context.Context, teacherUserID, appointmentID uuid.UUID, status, cancelReason string) (model.Appointment, error)
+	CancelAppointmentByParent(ctx context.Context, parentUserID, appointmentID uuid.UUID, cancelReason string) (model.Appointment, error)
+	CountParentUpcomingAppointments(ctx context.Context, parentUserID uuid.UUID) (int, error)
+}
+
+func NewAppointmentService(appointmentRepo appointmentRepository) *AppointmentService {
 	return &AppointmentService{appointmentRepo: appointmentRepo}
 }
 
@@ -51,6 +62,9 @@ func (s *AppointmentService) ListTeacherAppointments(ctx context.Context, teache
 	if status != "" && !isValidAppointmentStatus(status) {
 		return nil, 0, fmt.Errorf("%w: invalid appointment status", ErrInvalidValue)
 	}
+	if err := validateTimeRange(from, to); err != nil {
+		return nil, 0, err
+	}
 	limit = normalizeListLimit(limit)
 	if offset < 0 {
 		offset = 0
@@ -65,6 +79,9 @@ func (s *AppointmentService) ListParentAppointments(ctx context.Context, parentU
 	if status != "" && !isValidAppointmentStatus(status) {
 		return nil, 0, fmt.Errorf("%w: invalid appointment status", ErrInvalidValue)
 	}
+	if err := validateTimeRange(from, to); err != nil {
+		return nil, 0, err
+	}
 	limit = normalizeListLimit(limit)
 	if offset < 0 {
 		offset = 0
@@ -78,6 +95,9 @@ func (s *AppointmentService) ListAvailableSlotsForParent(ctx context.Context, pa
 	}
 	if studentID == uuid.Nil {
 		return nil, 0, ErrInvalidValue
+	}
+	if err := validateTimeRange(from, to); err != nil {
+		return nil, 0, err
 	}
 	limit = normalizeListLimit(limit)
 	if offset < 0 {
@@ -174,4 +194,11 @@ func isValidAppointmentStatus(status string) bool {
 	default:
 		return false
 	}
+}
+
+func validateTimeRange(from, to *time.Time) error {
+	if from != nil && to != nil && to.Before(*from) {
+		return fmt.Errorf("%w: from must be less than or equal to to", ErrInvalidValue)
+	}
+	return nil
 }
