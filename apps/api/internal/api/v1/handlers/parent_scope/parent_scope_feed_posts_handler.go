@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -18,7 +19,7 @@ func (h *ParentScopeHandler) MyChildren(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -44,7 +45,7 @@ func (h *ParentScopeHandler) ListMyChildClassPosts(c *gin.Context) {
 		return
 	}
 
-	var req PaginationParams
+	var req shared.PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -53,7 +54,7 @@ func (h *ParentScopeHandler) ListMyChildClassPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -88,7 +89,7 @@ func (h *ParentScopeHandler) ListMyChildStudentPosts(c *gin.Context) {
 		return
 	}
 
-	var req PaginationParams
+	var req shared.PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -97,7 +98,7 @@ func (h *ParentScopeHandler) ListMyChildStudentPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -132,7 +133,7 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 		return
 	}
 
-	var req PaginationParams
+	var req shared.PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -141,7 +142,7 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -169,7 +170,7 @@ func (h *ParentScopeHandler) ListAllMyChildPosts(c *gin.Context) {
 }
 
 func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
-	var req PaginationParams
+	var req shared.PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -178,7 +179,7 @@ func (h *ParentScopeHandler) GetMyFeed(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -212,7 +213,7 @@ func (h *ParentScopeHandler) TogglePostLike(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -246,7 +247,7 @@ func (h *ParentScopeHandler) ListPostComments(c *gin.Context) {
 		return
 	}
 
-	var req PaginationParams
+	var req shared.PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -255,7 +256,7 @@ func (h *ParentScopeHandler) ListPostComments(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -290,7 +291,7 @@ func (h *ParentScopeHandler) CreatePostComment(c *gin.Context) {
 		return
 	}
 
-	var req CreatePostCommentRequest
+	var req shared.CreatePostCommentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid request body")
 		return
@@ -299,7 +300,7 @@ func (h *ParentScopeHandler) CreatePostComment(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -336,7 +337,7 @@ func (h *ParentScopeHandler) SharePost(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}

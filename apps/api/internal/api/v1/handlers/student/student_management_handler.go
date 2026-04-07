@@ -9,12 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 func (h *StudentHandler) Create(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	var req CreateStudentReq
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -44,7 +45,7 @@ func (h *StudentHandler) Create(c *gin.Context) {
 
 // Update cập nhật thông tin học sinh
 func (h *StudentHandler) Update(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	studentID, err := uuid.Parse(c.Param("student_id"))
 	if err != nil {
@@ -83,7 +84,7 @@ func (h *StudentHandler) Update(c *gin.Context) {
 
 // Delete xóa học sinh
 func (h *StudentHandler) Delete(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	studentID, err := uuid.Parse(c.Param("student_id"))
 	if err != nil {

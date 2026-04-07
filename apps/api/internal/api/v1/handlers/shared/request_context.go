@@ -1,4 +1,4 @@
-package parentscope
+package shared
 
 import (
 	"net/http"
@@ -13,7 +13,8 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 )
 
-func requireCurrentClaims(c *gin.Context) (*auth.Claims, bool) {
+// RequireCurrentClaims extracts JWT claims from context and writes auth error response on failure.
+func RequireCurrentClaims(c *gin.Context) (*auth.Claims, bool) {
 	claimsAny, exists := c.Get(middleware.CtxClaims)
 	if !exists {
 		response.Fail(c, http.StatusUnauthorized, "unauthorized")
@@ -29,8 +30,9 @@ func requireCurrentClaims(c *gin.Context) (*auth.Claims, bool) {
 	return claims, true
 }
 
-func requireCurrentUser(c *gin.Context) (uuid.UUID, *auth.Claims, bool) {
-	claims, ok := requireCurrentClaims(c)
+// RequireCurrentUser extracts current user UUID from claims and writes error response on failure.
+func RequireCurrentUser(c *gin.Context) (uuid.UUID, *auth.Claims, bool) {
+	claims, ok := RequireCurrentClaims(c)
 	if !ok {
 		return uuid.Nil, nil, false
 	}
@@ -44,15 +46,17 @@ func requireCurrentUser(c *gin.Context) (uuid.UUID, *auth.Claims, bool) {
 	return userID, claims, true
 }
 
-func requireCurrentUserID(c *gin.Context) (uuid.UUID, bool) {
-	userID, _, ok := requireCurrentUser(c)
+// RequireCurrentUserID extracts only current user UUID and writes error response on failure.
+func RequireCurrentUserID(c *gin.Context) (uuid.UUID, bool) {
+	userID, _, ok := RequireCurrentUser(c)
 	if !ok {
 		return uuid.Nil, false
 	}
 	return userID, true
 }
 
-func parseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error) {
+// ParseTimeRange parses optional RFC3339 range query params.
+func ParseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error) {
 	var from *time.Time
 	var to *time.Time
 	if fromRaw != "" {
@@ -72,7 +76,8 @@ func parseTimeRange(fromRaw, toRaw string) (*time.Time, *time.Time, error) {
 	return from, to, nil
 }
 
-func parsePagination(limitRaw, offsetRaw string) (int, int) {
+// ParsePagination parses limit/offset with default values.
+func ParsePagination(limitRaw, offsetRaw string) (int, int) {
 	limit := 20
 	if limitRaw != "" {
 		if n, err := strconv.Atoi(limitRaw); err == nil {

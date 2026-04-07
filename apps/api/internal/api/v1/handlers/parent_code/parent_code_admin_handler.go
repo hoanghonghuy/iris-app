@@ -9,13 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 // GenerateCodeForStudent tạo parent code cho student (admin only)
 func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	studentID, err := uuid.Parse(c.Param("student_id"))
 	if err != nil {
@@ -47,7 +48,7 @@ func (h *ParentCodeHandler) GenerateCodeForStudent(c *gin.Context) {
 
 // RevokeParentCode thu hồi parent code cua hs
 func (h *ParentCodeHandler) RevokeParentCode(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	studentID, err := uuid.Parse(c.Param("student_id"))
 	if err != nil {

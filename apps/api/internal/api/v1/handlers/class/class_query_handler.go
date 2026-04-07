@@ -8,13 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 // ListBySchool lấy danh sách lớp theo trường
 func (h *ClassHandler) ListBySchool(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	schoolID, err := uuid.Parse(c.Param("school_id"))
 	if err != nil {
@@ -22,7 +23,7 @@ func (h *ClassHandler) ListBySchool(c *gin.Context) {
 		return
 	}
 
-	var params PaginationParams
+	var params shared.PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
 		return

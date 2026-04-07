@@ -9,13 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 // AssignStudent gán phụ huynh cho học sinh (admin only)
 func (h *ParentHandler) AssignStudent(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	parentID, err := uuid.Parse(c.Param("parent_id"))
 	if err != nil {
@@ -57,7 +58,7 @@ func (h *ParentHandler) AssignStudent(c *gin.Context) {
 
 // UnassignStudent hủy gán phụ huynh khỏi học sinh (admin only)
 func (h *ParentHandler) UnassignStudent(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	parentID, err := uuid.Parse(c.Param("parent_id"))
 	if err != nil {

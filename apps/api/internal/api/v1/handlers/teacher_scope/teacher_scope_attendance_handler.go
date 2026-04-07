@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -31,7 +32,7 @@ func (h *TeacherScopeHandler) MarkAttendance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -100,7 +101,7 @@ func (h *TeacherScopeHandler) CancelAttendance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -136,7 +137,7 @@ func (h *TeacherScopeHandler) ListAttendance(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -183,7 +184,7 @@ func (h *TeacherScopeHandler) ListAttendanceChangeLogs(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -226,7 +227,7 @@ func (h *TeacherScopeHandler) ListClassAttendanceChangeLogs(c *gin.Context) {
 		return
 	}
 
-	var req PaginationParams
+	var req shared.PaginationParams
 	if err := c.ShouldBindQuery(&req); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid query parameters")
 		return
@@ -251,7 +252,7 @@ func (h *TeacherScopeHandler) ListClassAttendanceChangeLogs(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}

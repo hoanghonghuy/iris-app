@@ -10,13 +10,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 // CreateUser tạo user mới (admin only)
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	var req CreateUserRequest
 
@@ -57,7 +58,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 
 // GetByID lấy thông tin user theo ID (admin only - lấy từ URL param)
 func (h *UserHandler) GetByID(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
@@ -88,9 +89,9 @@ func (h *UserHandler) GetByID(c *gin.Context) {
 
 // List lấy danh sách users (admin only)
 func (h *UserHandler) List(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
-	var params PaginationParams
+	var params shared.PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
 		return
@@ -120,7 +121,7 @@ func (h *UserHandler) List(c *gin.Context) {
 
 // Lock khóa tài khoản user
 func (h *UserHandler) Lock(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
@@ -145,7 +146,7 @@ func (h *UserHandler) Lock(c *gin.Context) {
 
 // Unlock mở khóa tài khoản user
 func (h *UserHandler) Unlock(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()

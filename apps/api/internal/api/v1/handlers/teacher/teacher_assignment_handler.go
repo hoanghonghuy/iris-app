@@ -9,12 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 func (h *TeacherHandler) Assign(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {
@@ -47,7 +48,7 @@ func (h *TeacherHandler) Assign(c *gin.Context) {
 }
 
 func (h *TeacherHandler) Unassign(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {

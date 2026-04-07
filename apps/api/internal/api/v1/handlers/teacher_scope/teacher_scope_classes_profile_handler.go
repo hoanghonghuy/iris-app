@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -18,7 +19,7 @@ func (h *TeacherScopeHandler) MyClasses(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -47,7 +48,7 @@ func (h *TeacherScopeHandler) MyStudentsInClass(c *gin.Context) {
 		return
 	}
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -80,7 +81,7 @@ func (h *TeacherScopeHandler) UpdateMyProfile(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}

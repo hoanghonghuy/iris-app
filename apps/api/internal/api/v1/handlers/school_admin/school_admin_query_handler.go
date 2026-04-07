@@ -7,12 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 )
 
 // List lấy danh sách tất cả school admins (SUPER_ADMIN only).
 func (h *SchoolAdminHandler) List(c *gin.Context) {
-	var params PaginationParams
+	var params shared.PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
 		return

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
@@ -59,7 +60,7 @@ func (h *TeacherScopeHandler) CreateAppointmentSlot(c *gin.Context) {
 		endTime = startTime.Add(time.Duration(d) * time.Minute)
 	}
 
-	teacherUserID, ok := requireCurrentUserID(c)
+	teacherUserID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -82,18 +83,18 @@ func (h *TeacherScopeHandler) CreateAppointmentSlot(c *gin.Context) {
 }
 
 func (h *TeacherScopeHandler) ListMyAppointments(c *gin.Context) {
-	teacherUserID, ok := requireCurrentUserID(c)
+	teacherUserID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
 
 	status := c.Query("status")
-	from, to, err := parseTimeRange(c.Query("from"), c.Query("to"))
+	from, to, err := shared.ParseTimeRange(c.Query("from"), c.Query("to"))
 	if err != nil {
 		response.Fail(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	limit, offset := parsePagination(c.Query("limit"), c.Query("offset"))
+	limit, offset := shared.ParsePagination(c.Query("limit"), c.Query("offset"))
 
 	items, total, err := h.appointmentService.ListTeacherAppointments(c.Request.Context(), teacherUserID, status, from, to, limit, offset)
 	if err != nil {
@@ -126,7 +127,7 @@ func (h *TeacherScopeHandler) UpdateAppointmentStatus(c *gin.Context) {
 		return
 	}
 
-	teacherUserID, ok := requireCurrentUserID(c)
+	teacherUserID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}

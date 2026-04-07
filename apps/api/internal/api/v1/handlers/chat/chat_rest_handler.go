@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
@@ -22,7 +23,7 @@ type CreateDirectConversationRequest struct {
 
 // CreateDirectConversation tạo hoặc tìm cuộc hội thoại direct giữa 2 user.
 func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
-	userID, claims, ok := requireCurrentUser(c)
+	userID, claims, ok := shared.RequireCurrentUser(c)
 	if !ok {
 		return
 	}
@@ -66,7 +67,7 @@ func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
 
 // ListConversations lấy danh sách cuộc hội thoại của user hiện tại.
 func (h *ChatHandler) ListConversations(c *gin.Context) {
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -87,7 +88,7 @@ func (h *ChatHandler) ListConversations(c *gin.Context) {
 // Query params: ?before=<message_uuid>&limit=<int>
 // Response: { data, has_more, next_cursor }
 func (h *ChatHandler) ListMessages(c *gin.Context) {
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}
@@ -155,7 +156,7 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 
 // SearchUsers tìm kiếm user qua query param "q".
 func (h *ChatHandler) SearchUsers(c *gin.Context) {
-	userID, claims, ok := requireCurrentUser(c)
+	userID, claims, ok := shared.RequireCurrentUser(c)
 	if !ok {
 		return
 	}

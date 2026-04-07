@@ -5,12 +5,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 )
 
 // TeacherDashboardStats lấy thống kê cho Giáo viên.
 func (h *AnalyticsHandler) TeacherDashboardStats(c *gin.Context) {
-	userID, ok := requireCurrentUserID(c)
+	userID, ok := shared.RequireCurrentUserID(c)
 	if !ok {
 		return
 	}

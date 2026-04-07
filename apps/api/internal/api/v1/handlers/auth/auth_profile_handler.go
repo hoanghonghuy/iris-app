@@ -4,12 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 )
 
 // Me trả về thông tin user đã đăng nhập.
 func (h *AuthHandler) Me(c *gin.Context) {
-	claims, ok := requireCurrentClaims(c)
+	claims, ok := shared.RequireCurrentClaims(c)
 	if !ok {
 		return
 	}

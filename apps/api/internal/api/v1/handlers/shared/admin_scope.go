@@ -1,4 +1,4 @@
-package parentcodehandlers
+package shared
 
 import (
 	"github.com/gin-gonic/gin"
@@ -7,10 +7,9 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 )
 
-// extractAdminSchoolID đọc school_id từ context (InjectAdminScope đã set).
-//   - SUPER_ADMIN -> nil (không giới hạn trường)
-//   - SCHOOL_ADMIN -> *uuid.UUID (chỉ trường mình)
-func extractAdminSchoolID(c *gin.Context) *uuid.UUID {
+// ExtractAdminSchoolID reads admin school scope from context.
+// SUPER_ADMIN returns nil, SCHOOL_ADMIN returns scoped school UUID.
+func ExtractAdminSchoolID(c *gin.Context) *uuid.UUID {
 	value, exists := c.Get(middleware.CtxAdminSchoolID)
 	if !exists {
 		return nil

@@ -9,12 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 func (h *StudentHandler) ListByClass(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	classID, err := uuid.Parse(c.Param("class_id"))
 	if err != nil {
@@ -22,7 +23,7 @@ func (h *StudentHandler) ListByClass(c *gin.Context) {
 		return
 	}
 
-	var params PaginationParams
+	var params shared.PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
 		return
@@ -51,7 +52,7 @@ func (h *StudentHandler) ListByClass(c *gin.Context) {
 
 // GetProfile lấy thông tin chi tiết của một học sinh
 func (h *StudentHandler) GetProfile(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	studentID, err := uuid.Parse(c.Param("student_id"))
 	if err != nil {

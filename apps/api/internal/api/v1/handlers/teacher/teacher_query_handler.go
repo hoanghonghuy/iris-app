@@ -9,14 +9,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/shared"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/response"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
 func (h *TeacherHandler) List(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
-	var params PaginationParams
+	var params shared.PaginationParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		response.Fail(c, http.StatusBadRequest, "invalid pagination params")
 		return
@@ -44,7 +45,7 @@ func (h *TeacherHandler) List(c *gin.Context) {
 }
 
 func (h *TeacherHandler) ListTeachersOfClass(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	classID, err := uuid.Parse(c.Param("class_id"))
 	if err != nil {
@@ -68,7 +69,7 @@ func (h *TeacherHandler) ListTeachersOfClass(c *gin.Context) {
 }
 
 func (h *TeacherHandler) GetByTeacherID(c *gin.Context) {
-	adminSchoolID := extractAdminSchoolID(c)
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	teacherID, err := uuid.Parse(c.Param("teacher_id"))
 	if err != nil {
