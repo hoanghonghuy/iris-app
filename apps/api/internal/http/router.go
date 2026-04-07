@@ -10,6 +10,7 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
+	v1authhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/auth"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	v1classhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/class"
 	v1parenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent"
@@ -31,7 +32,7 @@ func NewRouter(
 	authLoginRateLimit gin.HandlerFunc,
 	authForgotPasswordRateLimit gin.HandlerFunc,
 	authResetPasswordRateLimit gin.HandlerFunc,
-	authHandler *v1handlers.AuthHandler,
+	authHandler *v1authhandlers.AuthHandler,
 	schoolHandler *v1schoolhandlers.SchoolHandler,
 	classHandler *v1classhandlers.ClassHandler,
 	studentHandler *v1studenthandlers.StudentHandler,
