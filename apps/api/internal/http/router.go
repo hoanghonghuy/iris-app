@@ -11,6 +11,7 @@ import (
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
+	v1classhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/class"
 	v1parenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent"
 	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
@@ -30,7 +31,7 @@ func NewRouter(
 	authResetPasswordRateLimit gin.HandlerFunc,
 	authHandler *v1handlers.AuthHandler,
 	schoolHandler *v1handlers.SchoolHandler,
-	classHandler *v1handlers.ClassHandler,
+	classHandler *v1classhandlers.ClassHandler,
 	studentHandler *v1studenthandlers.StudentHandler,
 	userHandler *v1userhandlers.UserHandler,
 	teacherScopeHandler *v1teacherscopehandlers.TeacherScopeHandler,
