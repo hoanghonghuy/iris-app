@@ -16,6 +16,7 @@ import (
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
+	v1parenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent"
 	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1studenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/student"
@@ -120,7 +121,7 @@ func main() {
 		userHandler         = v1userhandlers.NewUserHandler(userService)
 		teacherHandler      = v1teacherhandlers.NewTeacherHandler(teacherService)
 		teacherScopeHandler = v1teacherscopehandlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
-		parentHandler       = v1handlers.NewParentHandler(parentService)
+		parentHandler       = v1parenthandlers.NewParentHandler(parentService)
 		parentScopeHandler  = v1parentscopehandlers.NewParentScopeHandler(parentScopeService, appointmentService)
 		auditLogHandler     = v1handlers.NewAuditLogHandler(auditLogService)
 		parentCodeHandler   = v1parentcodehandlers.NewParentCodeHandler(parentCodeService)

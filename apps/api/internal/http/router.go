@@ -11,6 +11,7 @@ import (
 
 	v1handlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
+	v1parenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent"
 	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
 	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
 	v1studenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/student"
@@ -34,7 +35,7 @@ func NewRouter(
 	userHandler *v1userhandlers.UserHandler,
 	teacherScopeHandler *v1teacherscopehandlers.TeacherScopeHandler,
 	teacherHandler *v1teacherhandlers.TeacherHandler,
-	parentHandler *v1handlers.ParentHandler,
+	parentHandler *v1parenthandlers.ParentHandler,
 	parentScopeHandler *v1parentscopehandlers.ParentScopeHandler,
 	parentCodeHandler *v1parentcodehandlers.ParentCodeHandler,
 	schoolAdminHandler *v1handlers.SchoolAdminHandler,
