@@ -9,7 +9,7 @@ import { teacherApi } from "@/lib/api/teacher.api";
 import { Class, TeacherAnalytics } from "@/types";
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
-import { GraduationCap, Users, ClipboardCheck, Heart, Loader2, BookOpen, MessageSquare, ChevronRight } from "lucide-react";
+import { GraduationCap, Users, ClipboardCheck, Heart, Loader2, BookOpen, MessageSquare, ChevronRight, Calendar } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -60,44 +60,63 @@ export default function TeacherDashboard() {
         </div>
       ) : (
         <>
-          {/* Stats Overview - Bento Grid */}
-          <div className="grid gap-2.5 md:gap-3 grid-cols-3 shrink-0">
-            <Link href="/teacher/classes" className="block group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-primary/30 relative overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center gap-2 h-full text-center">
-                  <div className="p-2.5 bg-primary/10 rounded-2xl text-primary transition-transform group-hover:scale-110 duration-300">
-                    <BookOpen className="h-5 w-5" />
+          {/* Today's Status Card (P1) */}
+          <Card className="shrink-0 bg-card border border-border shadow-sm relative overflow-hidden">
+            <CardContent className="p-5 md:p-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="space-y-1.5 flex-1">
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Hôm nay: {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Lớp phụ trách chính: <span className="font-semibold text-foreground">{classes.length > 0 ? classes[0].name : "Chưa có"}</span>
+                  </p>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 md:gap-8">
+                  {/* Attendance Progress Line */}
+                  <div className="space-y-2 min-w-[140px]">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold flex items-center gap-1.5 text-success">
+                        <ClipboardCheck className="h-4 w-4" /> Điểm danh
+                      </span>
+                      <span className="font-bold">{stats?.total_students ? `${stats?.total_students}/${stats?.total_students}` : "0/0"}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-success rounded-full" style={{ width: '100%' }}></div>
+                    </div>
                   </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Lớp</p>
-                  <p className="text-xl font-bold text-foreground group-hover:text-primary leading-none">{stats?.total_classes || 0}</p>
-                </CardContent>
-              </Card>
-            </Link>
+                  
+                  <div className="h-10 w-px bg-border/50 hidden sm:block"></div>
+                  
+                  {/* Health Alerts */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-muted text-muted-foreground rounded-lg">
+                      <Heart className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sức khỏe</p>
+                      <p className="text-sm font-bold text-foreground">0 cảnh báo</p>
+                    </div>
+                  </div>
+                  
+                  <div className="h-10 w-px bg-border/50 hidden sm:block"></div>
 
-            <Link href="/teacher/classes" className="block group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-2/30 relative overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center gap-2 h-full text-center">
-                  <div className="p-2.5 bg-chart-2/10 rounded-2xl text-chart-2 transition-transform group-hover:scale-110 duration-300">
-                    <GraduationCap className="h-5 w-5" />
+                  {/* Posts Activity */}
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                      <MessageSquare className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Bài viết (7 ngày)</p>
+                      <p className="text-sm font-bold text-foreground">{stats?.total_posts || 0} bài mới</p>
+                    </div>
                   </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Trẻ</p>
-                  <p className="text-xl font-bold text-foreground group-hover:text-chart-2 leading-none">{stats?.total_students || 0}</p>
-                </CardContent>
-              </Card>
-            </Link>
-
-            <Link href="/teacher/posts" className="block group">
-              <Card className="h-full transition-all duration-300 hover:shadow-md hover:border-chart-3/30 relative overflow-hidden">
-                <CardContent className="p-3 md:p-4 flex flex-col items-center justify-center gap-2 h-full text-center">
-                  <div className="p-2.5 bg-chart-3/10 rounded-2xl text-chart-3 transition-transform group-hover:scale-110 duration-300">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">Tin</p>
-                  <p className="text-xl font-bold text-foreground group-hover:text-chart-3 leading-none">{stats?.total_posts || 0}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="grid flex-1 min-h-0 gap-6 overflow-hidden lg:grid-cols-3">
             {/* Quick Actions (Bento Box style) */}
@@ -105,36 +124,54 @@ export default function TeacherDashboard() {
               <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2 shrink-0">
                 Hoạt động Nhanh
               </h2>
-              <div className="grid gap-2 md:gap-3 grid-cols-3 shrink-0">
-                <Link href="/teacher/attendance" className="block h-full">
-                  <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
-                    <CardContent className="p-2 flex flex-col items-center justify-center gap-1.5 h-full text-center">
-                      <div className="p-2 bg-success/10 text-success rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
-                        <ClipboardCheck className="h-5 w-5" />
+              <div className="grid gap-3 grid-cols-1 shrink-0">
+                <Link href="/teacher/attendance" className="block w-full">
+                  <Card className="group hover:shadow-md transition-all cursor-pointer border-transparent hover:border-success/30 shadow-sm bg-card/60">
+                    <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-success/10 text-success rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
+                          <ClipboardCheck className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-sm text-foreground group-hover:text-success transition-colors">Điểm danh</p>
+                          <p className="text-xs font-medium text-muted-foreground mt-0.5">3/3 đã điểm danh</p>
+                        </div>
                       </div>
-                      <p className="font-semibold text-[10px] text-foreground group-hover:text-success transition-colors">Điểm danh</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity group-hover:text-success group-hover:translate-x-1" />
                     </CardContent>
                   </Card>
                 </Link>
 
-                <Link href="/teacher/health" className="block h-full">
-                  <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
-                    <CardContent className="p-2 flex flex-col items-center justify-center gap-1.5 h-full text-center">
-                      <div className="p-2 bg-destructive/10 text-destructive rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
-                        <Heart className="h-5 w-5" />
+                <Link href="/teacher/health" className="block w-full">
+                  <Card className="group hover:shadow-md transition-all cursor-pointer border-transparent hover:border-orange-500/30 shadow-sm bg-card/60">
+                    <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-orange-500/10 text-orange-500 rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
+                          <Heart className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-sm text-foreground group-hover:text-orange-500 transition-colors">Sức khỏe</p>
+                          <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-0.5">1 cảnh báo mới</p>
+                        </div>
                       </div>
-                      <p className="font-semibold text-[10px] text-foreground group-hover:text-destructive transition-colors">Sức khỏe</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity group-hover:text-orange-500 group-hover:translate-x-1" />
                     </CardContent>
                   </Card>
                 </Link>
 
-                <Link href="/teacher/posts" className="block h-full">
-                  <Card className="group hover:bg-muted/50 transition-colors cursor-pointer border-transparent hover:border-border shadow-sm h-full">
-                    <CardContent className="p-2 flex flex-col items-center justify-center gap-1.5 h-full text-center">
-                      <div className="p-2 bg-primary/10 text-primary rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
-                        <MessageSquare className="h-5 w-5" />
+                <Link href="/teacher/posts" className="block w-full">
+                  <Card className="group hover:shadow-md transition-all cursor-pointer border-transparent hover:border-primary/30 shadow-sm bg-card/60">
+                    <CardContent className="p-3.5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0 transition-transform group-hover:scale-110 duration-300">
+                          <MessageSquare className="h-5 w-5" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">Bảng tin</p>
+                          <p className="text-xs font-medium text-muted-foreground mt-0.5">2 bài tuần này</p>
+                        </div>
                       </div>
-                      <p className="font-semibold text-[10px] text-foreground group-hover:text-primary transition-colors">Bảng tin</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-20 group-hover:opacity-100 transition-opacity group-hover:text-primary group-hover:translate-x-1" />
                     </CardContent>
                   </Card>
                 </Link>

@@ -112,7 +112,76 @@ export default function TeacherAttendancePage() {
       )}
 
       {!loadingStudents && students.length > 0 && viewMode === "take" && (
-        <div className="space-y-2.5">
+        <div className="space-y-4">
+          {/* Summary Ring (P1) */}
+          <Card className="bg-card/60 backdrop-blur-sm border-transparent shadow-sm">
+            <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-6">
+              {(() => {
+                const total = students.length;
+                const presentCount = students.filter(s => hasSavedToday[s.student_id] && attendance[s.student_id]?.status === "present").length;
+                const absentCount = students.filter(s => hasSavedToday[s.student_id] && attendance[s.student_id]?.status === "absent").length;
+                const lateCount = students.filter(s => hasSavedToday[s.student_id] && attendance[s.student_id]?.status === "late").length;
+                const completedCount = presentCount + absentCount + lateCount;
+                const pendingCount = total - completedCount;
+                
+                const presentPct = total ? (presentCount / total) * 100 : 0;
+                const absentPct = total ? (absentCount / total) * 100 : 0;
+                const latePct = total ? (lateCount / total) * 100 : 0;
+
+                return (
+                  <>
+                    <div 
+                      className="w-20 h-20 rounded-full flex items-center justify-center shrink-0 shadow-inner"
+                      style={{
+                        background: `conic-gradient(
+                          #22c55e 0% ${presentPct}%, 
+                          #ef4444 ${presentPct}% ${presentPct + absentPct}%, 
+                          #f59e0b ${presentPct + absentPct}% ${presentPct + absentPct + latePct}%, 
+                          hsl(var(--muted)) ${presentPct + absentPct + latePct}% 100%
+                        )`
+                      }}
+                    >
+                      <div className="w-[60px] h-[60px] bg-card/95 rounded-full flex flex-col items-center justify-center">
+                        <span className="text-sm font-bold leading-none text-foreground">{completedCount}</span>
+                        <span className="text-[10px] font-medium text-muted-foreground mt-0.5">/ {total}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase opacity-80">
+                          <div className="w-2 h-2 rounded-full bg-success"></div> Có mặt
+                        </span>
+                        <span className="text-xl font-bold mt-1 text-foreground">{presentCount}</span>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase opacity-80">
+                          <div className="w-2 h-2 rounded-full bg-destructive"></div> Vắng
+                        </span>
+                        <span className="text-xl font-bold mt-1 text-foreground">{absentCount}</span>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase opacity-80">
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div> Muộn
+                        </span>
+                        <span className="text-xl font-bold mt-1 text-foreground">{lateCount}</span>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase opacity-80">
+                          <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div> Chưa lưu
+                        </span>
+                        <span className="text-xl font-bold mt-1 text-foreground">{pendingCount}</span>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
           <TakeControlsCard
             showMobileTakeControls={showMobileTakeControls}
             studentSearch={studentSearch}
