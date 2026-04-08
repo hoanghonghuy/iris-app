@@ -17,15 +17,42 @@ import (
 )
 
 type ParentCodeService struct {
-	parentCodeRepo    *repo.ParentCodeRepo
-	userRepo          *repo.UserRepo
-	parentRepo        *repo.ParentRepo
-	studentParentRepo *repo.StudentParentRepo
-	studentRepo       *repo.StudentRepo
+	parentCodeRepo    parentCodeServiceParentCodeRepo
+	userRepo          parentCodeServiceUserRepo
+	parentRepo        parentCodeServiceParentRepo
+	studentParentRepo parentCodeServiceStudentParentRepo
+	studentRepo       parentCodeServiceStudentRepo
 	jwtAuth           *auth.Authenticator
 	googleVerifier    auth.GoogleTokenVerifier
 	googleEnabled     bool
 	googleHD          string
+}
+
+type parentCodeServiceParentCodeRepo interface {
+	Create(ctx context.Context, studentID uuid.UUID, code string, maxUsage int, expiresAt time.Time) error
+	DeleteByStudentID(ctx context.Context, studentID uuid.UUID) error
+	FindByCode(ctx context.Context, code string) (*model.StudentParentCode, error)
+	IncrementUsageIfNotMaxed(ctx context.Context, code string) error
+	RegisterParentTx(ctx context.Context, p repo.RegisterParentTxParams) (uuid.UUID, error)
+}
+
+type parentCodeServiceUserRepo interface {
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	CreateActive(ctx context.Context, email, passwordHash string) (uuid.UUID, error)
+	AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error
+}
+
+type parentCodeServiceParentRepo interface {
+	Create(ctx context.Context, userID, schoolID uuid.UUID, fullName, phone string) (uuid.UUID, error)
+}
+
+type parentCodeServiceStudentParentRepo interface {
+	Assign(ctx context.Context, studentID, parentID uuid.UUID, relationship string) error
+}
+
+type parentCodeServiceStudentRepo interface {
+	GetByStudentID(ctx context.Context, studentID uuid.UUID) (*model.Student, error)
+	GetSchoolIDByStudentID(ctx context.Context, studentID uuid.UUID) (uuid.UUID, error)
 }
 
 func NewParentCodeService(parentCodeRepo *repo.ParentCodeRepo, userRepo *repo.UserRepo, parentRepo *repo.ParentRepo,

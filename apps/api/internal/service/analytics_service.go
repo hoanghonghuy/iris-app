@@ -9,12 +9,36 @@ import (
 )
 
 type AnalyticsService struct {
-	repos *repo.Repositories
+	schoolRepo       analyticsServiceSchoolRepo
+	classRepo        analyticsServiceClassRepo
+	userRepo         analyticsServiceUserRepo
+	studentRepo      analyticsServiceStudentRepo
+	teacherScopeRepo teacherScopeStatsRepo
+}
+
+type analyticsServiceSchoolRepo interface {
+	CountAll(ctx context.Context) (int, error)
+}
+
+type analyticsServiceClassRepo interface {
+	CountBySchool(ctx context.Context, schoolID *uuid.UUID) (int, error)
+}
+
+type analyticsServiceUserRepo interface {
+	CountUsersByRoleAndSchool(ctx context.Context, role string, schoolID *uuid.UUID) (int, error)
+}
+
+type analyticsServiceStudentRepo interface {
+	CountStudentsBySchool(ctx context.Context, schoolID *uuid.UUID) (int, error)
 }
 
 func NewAnalyticsService(repos *repo.Repositories) *AnalyticsService {
 	return &AnalyticsService{
-		repos: repos,
+		schoolRepo:       repos.SchoolRepo,
+		classRepo:        repos.ClassRepo,
+		userRepo:         repos.UserRepo,
+		studentRepo:      repos.StudentRepo,
+		teacherScopeRepo: repos.TeacherScopeRepo,
 	}
 }
 
@@ -26,7 +50,7 @@ func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid
 
 	// Thống kê trường học
 	if schoolID == nil {
-		totalSchools, err = s.repos.SchoolRepo.CountAll(ctx)
+		totalSchools, err = s.schoolRepo.CountAll(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -36,25 +60,25 @@ func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid
 	}
 
 	// Thống kê lớp học
-	totalClasses, err = s.repos.ClassRepo.CountBySchool(ctx, schoolID)
+	totalClasses, err = s.classRepo.CountBySchool(ctx, schoolID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Thống kê Giáo viên
-	totalTeachers, err = s.repos.UserRepo.CountUsersByRoleAndSchool(ctx, "TEACHER", schoolID)
+	totalTeachers, err = s.userRepo.CountUsersByRoleAndSchool(ctx, "TEACHER", schoolID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Thống kê Phụ huynh
-	totalParents, err = s.repos.UserRepo.CountUsersByRoleAndSchool(ctx, "PARENT", schoolID)
+	totalParents, err = s.userRepo.CountUsersByRoleAndSchool(ctx, "PARENT", schoolID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Thống kê Học sinh
-	totalStudents, err = s.repos.StudentRepo.CountStudentsBySchool(ctx, schoolID)
+	totalStudents, err = s.studentRepo.CountStudentsBySchool(ctx, schoolID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,18 +97,18 @@ func (s *AnalyticsService) GetTeacherAnalytics(ctx context.Context, teacherUserI
 	var err error
 	var totalClasses, totalStudents, totalPosts int
 
-	classes, err := s.repos.TeacherScopeRepo.ListMyClasses(ctx, teacherUserID)
+	classes, err := s.teacherScopeRepo.ListMyClasses(ctx, teacherUserID)
 	if err != nil {
 		return nil, err
 	}
 	totalClasses = len(classes)
 
-	totalStudents, err = s.repos.TeacherScopeRepo.CountMyStudents(ctx, teacherUserID)
+	totalStudents, err = s.teacherScopeRepo.CountMyStudents(ctx, teacherUserID)
 	if err != nil {
 		return nil, err
 	}
 
-	totalPosts, err = s.repos.TeacherScopeRepo.CountMyPosts(ctx, teacherUserID)
+	totalPosts, err = s.teacherScopeRepo.CountMyPosts(ctx, teacherUserID)
 	if err != nil {
 		return nil, err
 	}

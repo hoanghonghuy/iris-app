@@ -19,11 +19,34 @@ import (
 )
 
 type UserService struct {
-	userRepo       *repo.UserRepo
-	resetTokenRepo *repo.ResetTokenRepo
+	userRepo       userServiceUserRepo
+	resetTokenRepo userServiceResetTokenRepo
 	jwtAuth        *auth.Authenticator
 	emailSender    EmailSender
 	frontendURL    string
+}
+
+type userServiceUserRepo interface {
+	CreateWithRolesTx(ctx context.Context, email, passwordHash, status string, roles []string) (uuid.UUID, error)
+	FindByActivationToken(ctx context.Context, token string) (*model.UserWithToken, error)
+	ActivateWithPassword(ctx context.Context, userID uuid.UUID, passwordHash string) error
+	AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	RolesOfUser(ctx context.Context, userID uuid.UUID) ([]string, error)
+	FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error)
+	IsUserInSchool(ctx context.Context, userID, schoolID uuid.UUID) (bool, error)
+	List(ctx context.Context, schoolID *uuid.UUID, roleFilter string, limit, offset int) ([]model.UserInfo, int, error)
+	UpdateEmail(ctx context.Context, userID uuid.UUID, email string) error
+	UpdatePassword(ctx context.Context, userID uuid.UUID, email, passwordHash string) error
+	Delete(ctx context.Context, userID uuid.UUID) error
+	Lock(ctx context.Context, userID uuid.UUID) error
+	Unlock(ctx context.Context, userID uuid.UUID) error
+}
+
+type userServiceResetTokenRepo interface {
+	Create(ctx context.Context, userID uuid.UUID, tokenHash string, expiresAt time.Time) error
+	FindByTokenHash(ctx context.Context, tokenHash string) (*model.ResetToken, error)
+	MarkUsed(ctx context.Context, tokenID uuid.UUID) error
 }
 
 func NewUserService(

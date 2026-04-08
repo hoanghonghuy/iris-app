@@ -13,9 +13,34 @@ import (
 )
 
 type ParentScopeService struct {
-	parentScopeRepo  *repo.ParentScopeRepo
-	postInteractRepo *repo.PostInteractionRepo
-	appointmentRepo  *repo.AppointmentRepo
+	parentScopeRepo  parentScopeRepo
+	postInteractRepo postInteractionRepo
+	appointmentRepo  appointmentRepo
+}
+
+type parentScopeRepo interface {
+	IsParentOfStudent(ctx context.Context, parentUserID, studentID uuid.UUID) (bool, error)
+	ListMyChildren(ctx context.Context, parentUserID uuid.UUID) ([]model.Student, error)
+	ListMyChildClassPosts(ctx context.Context, parentUserID, studentID uuid.UUID, limit, offset int) ([]model.Post, int, error)
+	ListMyChildStudentPosts(ctx context.Context, parentUserID, studentID uuid.UUID, limit, offset int) ([]model.Post, int, error)
+	ListAllMyChildPosts(ctx context.Context, parentUserID, studentID uuid.UUID, limit, offset int) ([]model.Post, int, error)
+	GetMyFeed(ctx context.Context, parentUserID uuid.UUID, limit, offset int) ([]model.Post, int, error)
+	CountMyChildren(ctx context.Context, parentUserID uuid.UUID) (int, error)
+	CountMyRecentPosts(ctx context.Context, parentUserID uuid.UUID, since time.Time) (int, error)
+	CountMyRecentHealthAlerts(ctx context.Context, parentUserID uuid.UUID, since time.Time) (int, error)
+}
+
+type postInteractionRepo interface {
+	ParentCanAccessPost(ctx context.Context, parentUserID, postID uuid.UUID) (bool, error)
+	ToggleLike(ctx context.Context, userID, postID uuid.UUID) (bool, int, error)
+	AddComment(ctx context.Context, userID, postID uuid.UUID, content string) (model.PostComment, error)
+	CountComments(ctx context.Context, postID uuid.UUID) (int, error)
+	ListComments(ctx context.Context, postID uuid.UUID, limit, offset int) ([]model.PostComment, int, error)
+	AddShare(ctx context.Context, userID, postID uuid.UUID) (int, error)
+}
+
+type appointmentRepo interface {
+	CountParentUpcomingAppointments(ctx context.Context, parentUserID uuid.UUID) (int, error)
 }
 
 // normalizeParentScopeLimit chuẩn hóa limit mặc định và giới hạn max cho các API listing.

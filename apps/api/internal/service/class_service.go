@@ -11,7 +11,15 @@ import (
 )
 
 type ClassService struct {
-	classRepo *repo.ClassRepo
+	classRepo classRepo
+}
+
+type classRepo interface {
+	Create(ctx context.Context, schoolID uuid.UUID, name, schoolYear string) (uuid.UUID, error)
+	List(ctx context.Context, schoolID uuid.UUID, limit, offset int) ([]model.Class, int, error)
+	GetByClassID(ctx context.Context, classID uuid.UUID) (*model.Class, error)
+	Update(ctx context.Context, classID uuid.UUID, name, schoolYear string) error
+	Delete(ctx context.Context, classID uuid.UUID) error
 }
 
 func NewClassService(classRepo *repo.ClassRepo) *ClassService {

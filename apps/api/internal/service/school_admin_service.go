@@ -9,8 +9,20 @@ import (
 )
 
 type SchoolAdminService struct {
-	schoolAdminRepo *repo.SchoolAdminRepo
-	userRepo        *repo.UserRepo
+	schoolAdminRepo schoolAdminRepo
+	userRepo        schoolAdminUserRepo
+}
+
+type schoolAdminRepo interface {
+	Create(ctx context.Context, userID, schoolID uuid.UUID, fullName, phone string) (uuid.UUID, error)
+	GetByAdminID(ctx context.Context, adminID uuid.UUID) (*model.SchoolAdmin, error)
+	List(ctx context.Context, limit, offset int) ([]model.SchoolAdmin, int, error)
+	Delete(ctx context.Context, adminID uuid.UUID) error
+}
+
+type schoolAdminUserRepo interface {
+	FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error)
+	AssignRole(ctx context.Context, userID uuid.UUID, roleName string) error
 }
 
 func NewSchoolAdminService(schoolAdminRepo *repo.SchoolAdminRepo, userRepo *repo.UserRepo) *SchoolAdminService {

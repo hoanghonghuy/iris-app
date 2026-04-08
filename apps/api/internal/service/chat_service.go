@@ -12,7 +12,26 @@ import (
 
 // ChatService xử lý business logic cho hệ thống chat
 type ChatService struct {
-	chatRepo *repo.ChatRepo
+	chatRepo chatRepo
+}
+
+type chatRepo interface {
+	FindDirectConversation(ctx context.Context, userA, userB uuid.UUID) (*model.Conversation, error)
+	CreateConversation(ctx context.Context, convType string, name *string, participantIDs []uuid.UUID) (*model.Conversation, error)
+	CanSuperAdminMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error)
+	CanSchoolAdminMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error)
+	CanTeacherMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error)
+	CanParentMessageTarget(ctx context.Context, requesterID, targetID uuid.UUID) (bool, error)
+	ListConversationsByUser(ctx context.Context, userID uuid.UUID) ([]model.Conversation, error)
+	ListParticipantsByConversationIDs(ctx context.Context, conversationIDs []uuid.UUID) (map[uuid.UUID][]model.ParticipantInfo, error)
+	IsParticipant(ctx context.Context, conversationID, userID uuid.UUID) (bool, error)
+	CreateMessage(ctx context.Context, conversationID, senderID uuid.UUID, content string) (*model.Message, error)
+	ListMessages(ctx context.Context, conversationID uuid.UUID, before *uuid.UUID, limit int) ([]model.MessageWithSender, error)
+	GetParticipants(ctx context.Context, conversationID uuid.UUID) ([]model.ParticipantInfo, error)
+	SearchUsersGlobal(ctx context.Context, keyword string, limit int) ([]model.ParticipantInfo, error)
+	SearchUsersForSchoolAdmin(ctx context.Context, adminID uuid.UUID, keyword string, limit int) ([]model.ParticipantInfo, error)
+	SearchUsersForTeacher(ctx context.Context, teacherUserID uuid.UUID, keyword string, limit int) ([]model.ParticipantInfo, error)
+	SearchUsersForParent(ctx context.Context, parentUserID uuid.UUID, keyword string, limit int) ([]model.ParticipantInfo, error)
 }
 
 // NewChatService tạo mới ChatService

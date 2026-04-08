@@ -14,11 +14,29 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
 )
 
+type teacherScopeServiceTeacherScopeRepo interface {
+	teacherScopeStatsRepo
+	teacherScopeAttendanceRepo
+	teacherScopePostRepo
+}
+
+type teacherScopeServiceHealthLogRepo interface {
+	teacherScopeHealthLogRepo
+}
+
+type teacherScopeServiceTeacherRepo interface {
+	teacherScopeProfileRepo
+}
+
+type teacherScopeServicePostInteractionRepo interface {
+	teacherScopeInteractionRepo
+}
+
 type TeacherScopeService struct {
-	teacherScopeRepo *repo.TeacherScopeRepo
-	healthLogRepo    *repo.HealthLogRepo
-	teacherRepo      *repo.TeacherRepo
-	postInteractRepo *repo.PostInteractionRepo
+	teacherScopeRepo teacherScopeServiceTeacherScopeRepo
+	healthLogRepo    teacherScopeServiceHealthLogRepo
+	teacherRepo      teacherScopeServiceTeacherRepo
+	postInteractRepo teacherScopeServicePostInteractionRepo
 }
 
 func NewTeacherScopeService(teacherScopeRepo *repo.TeacherScopeRepo, healthLogRepo *repo.HealthLogRepo, teacherRepo *repo.TeacherRepo, postInteractRepo *repo.PostInteractionRepo) *TeacherScopeService {

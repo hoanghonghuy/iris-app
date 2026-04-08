@@ -11,7 +11,15 @@ import (
 )
 
 type SchoolService struct {
-	schoolRepo *repo.SchoolRepo
+	schoolRepo schoolRepo
+}
+
+type schoolRepo interface {
+	Create(ctx context.Context, name, address string) (uuid.UUID, error)
+	List(ctx context.Context, limit, offset int) ([]model.School, int, error)
+	GetByID(ctx context.Context, schoolID uuid.UUID) (*model.School, error)
+	Update(ctx context.Context, schoolID uuid.UUID, name, address string) error
+	Delete(ctx context.Context, schoolID uuid.UUID) error
 }
 
 func NewSchoolService(schoolRepo *repo.SchoolRepo) *SchoolService {

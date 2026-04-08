@@ -11,9 +11,27 @@ import (
 )
 
 type TeacherService struct {
-	teacherRepo      *repo.TeacherRepo
-	teacherClassRepo *repo.TeacherClassRepo
-	classRepo        *repo.ClassRepo
+	teacherRepo      teacherRepo
+	teacherClassRepo teacherClassRepo
+	classRepo        teacherClassRepoClassRepo
+}
+
+type teacherRepo interface {
+	List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.Teacher, int, error)
+	GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (*model.Teacher, error)
+	Update(ctx context.Context, teacherID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error
+	Delete(ctx context.Context, teacherID uuid.UUID) error
+}
+
+type teacherClassRepo interface {
+	Assign(ctx context.Context, teacherID, classID uuid.UUID) error
+	ListTeacherDetailsOfClass(ctx context.Context, classID uuid.UUID) ([]model.Teacher, error)
+	IsTeacherAssignedToClass(ctx context.Context, teacherID, classID uuid.UUID) (bool, error)
+	Unassign(ctx context.Context, teacherID, classID uuid.UUID) error
+}
+
+type teacherClassRepoClassRepo interface {
+	GetByClassID(ctx context.Context, classID uuid.UUID) (*model.Class, error)
 }
 
 func NewTeacherService(teacherRepo *repo.TeacherRepo, teacherClassRepo *repo.TeacherClassRepo, classRepo *repo.ClassRepo) *TeacherService {

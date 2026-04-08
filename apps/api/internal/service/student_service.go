@@ -12,8 +12,21 @@ import (
 )
 
 type StudentService struct {
-	studentRepo *repo.StudentRepo
-	classRepo   *repo.ClassRepo
+	studentRepo studentServiceRepo
+	classRepo   studentServiceClassRepo
+}
+
+type studentServiceRepo interface {
+	Create(ctx context.Context, schoolID, classID uuid.UUID, fullName string, dob time.Time, gender string) (uuid.UUID, error)
+	ListByClass(ctx context.Context, classID uuid.UUID, limit, offset int) ([]model.Student, int, error)
+	GetStudentProfile(ctx context.Context, studentID uuid.UUID) (*model.StudentProfile, error)
+	GetByStudentID(ctx context.Context, studentID uuid.UUID) (*model.Student, error)
+	Update(ctx context.Context, studentID uuid.UUID, fullName string, dob time.Time, gender string) error
+	Delete(ctx context.Context, studentID uuid.UUID) error
+}
+
+type studentServiceClassRepo interface {
+	GetByClassID(ctx context.Context, classID uuid.UUID) (*model.Class, error)
 }
 
 func NewStudentService(studentRepo *repo.StudentRepo, classRepo *repo.ClassRepo) *StudentService {

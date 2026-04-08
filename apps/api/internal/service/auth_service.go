@@ -19,12 +19,24 @@ var (
 )
 
 type AuthService struct {
-	userRepo        *repo.UserRepo
-	schoolAdminRepo *repo.SchoolAdminRepo
+	userRepo        authServiceUserRepo
+	schoolAdminRepo authServiceSchoolAdminRepo
 	jwtAuth         *auth.Authenticator
 	googleVerifier  auth.GoogleTokenVerifier
 	googleEnabled   bool
 	googleHD        string
+}
+
+type authServiceUserRepo interface {
+	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByGoogleSub(ctx context.Context, googleSub string) (*model.User, error)
+	LinkGoogleSub(ctx context.Context, userID uuid.UUID, googleSub string) error
+	RolesOfUser(ctx context.Context, userID uuid.UUID) ([]string, error)
+	FindByID(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error)
+}
+
+type authServiceSchoolAdminRepo interface {
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*model.SchoolAdmin, error)
 }
 
 func NewAuthService(

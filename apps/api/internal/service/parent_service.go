@@ -9,9 +9,24 @@ import (
 )
 
 type ParentService struct {
-	parentRepo        *repo.ParentRepo
-	studentParentRepo *repo.StudentParentRepo
-	studentRepo       *repo.StudentRepo
+	parentRepo        parentRepo
+	studentParentRepo studentParentRepo
+	studentRepo       studentRepo
+}
+
+type parentRepo interface {
+	List(ctx context.Context, schoolID *uuid.UUID, limit, offset int) ([]model.Parent, int, error)
+	Create(ctx context.Context, userID, schoolID uuid.UUID, fullName, phone string) (uuid.UUID, error)
+	GetByParentID(ctx context.Context, parentID uuid.UUID) (*model.Parent, error)
+}
+
+type studentParentRepo interface {
+	Assign(ctx context.Context, studentID, parentID uuid.UUID, relationship string) error
+	Unassign(ctx context.Context, studentID, parentID uuid.UUID) error
+}
+
+type studentRepo interface {
+	GetByStudentID(ctx context.Context, studentID uuid.UUID) (*model.Student, error)
 }
 
 func NewParentService(parentRepo *repo.ParentRepo,
