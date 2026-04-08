@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM golang:1.25 AS builder
+FROM golang:1.25.9 AS builder
 
 # Cài đặt git để download dependencies nếu cần
 RUN apt-get update && apt-get install -y --no-install-recommends git \
