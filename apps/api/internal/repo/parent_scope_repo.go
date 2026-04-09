@@ -70,6 +70,35 @@ func (r *ParentScopeRepo) CountMyRecentHealthAlerts(ctx context.Context, parentU
 	return count, err
 }
 
+func (r *ParentScopeRepo) CountTodayAttendancePresent(ctx context.Context, parentUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(DISTINCT ar.student_id)
+		FROM attendance_records ar
+		JOIN student_parents sp ON sp.student_id = ar.student_id
+		JOIN parents p ON p.parent_id = sp.parent_id
+		WHERE p.user_id = $1
+		  AND ar.date = CURRENT_DATE
+		  AND ar.status = 'present';
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, parentUserID).Scan(&count)
+	return count, err
+}
+
+func (r *ParentScopeRepo) CountTodayAttendanceMarked(ctx context.Context, parentUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(DISTINCT ar.student_id)
+		FROM attendance_records ar
+		JOIN student_parents sp ON sp.student_id = ar.student_id
+		JOIN parents p ON p.parent_id = sp.parent_id
+		WHERE p.user_id = $1
+		  AND ar.date = CURRENT_DATE;
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, parentUserID).Scan(&count)
+	return count, err
+}
+
 func NewParentScopeRepo(pool *pgxpool.Pool) *ParentScopeRepo {
 	return &ParentScopeRepo{
 		pool: pool,

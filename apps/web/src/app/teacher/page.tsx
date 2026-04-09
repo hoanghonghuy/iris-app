@@ -99,6 +99,21 @@ export default function TeacherDashboard() {
             </Link>
           </div>
 
+          <div className="grid gap-2.5 md:gap-3 grid-cols-2 md:grid-cols-4 shrink-0">
+            <Card>
+              <CardContent className="p-3 text-sm"><b>Diem danh hom nay:</b> {stats?.today_attendance_marked_count ?? 0}</CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-sm"><b>Chua diem danh:</b> {stats?.today_attendance_pending_count ?? 0}</CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-sm"><b>Lich hen cho duyet:</b> {stats?.pending_appointments ?? 0}</CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 text-sm"><b>Canh bao suc khoe 24h:</b> {stats?.recent_health_alerts_24h ?? 0}</CardContent>
+            </Card>
+          </div>
+
           <div className="grid flex-1 min-h-0 gap-6 overflow-hidden lg:grid-cols-3">
             {/* Quick Actions (Bento Box style) */}
             <div className="flex min-h-0 flex-col gap-4 lg:col-span-1">

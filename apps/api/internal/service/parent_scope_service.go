@@ -279,10 +279,33 @@ func (s *ParentScopeService) GetMyAnalytics(ctx context.Context, parentUserID uu
 		return nil, fmt.Errorf("failed to count health alerts: %w", err)
 	}
 
+	recentHealthAlerts24h, err := s.parentScopeRepo.CountMyRecentHealthAlerts(ctx, parentUserID, time.Now().Add(-24*time.Hour))
+	if err != nil {
+		return nil, fmt.Errorf("failed to count recent health alerts 24h: %w", err)
+	}
+
+	todayPresent, err := s.parentScopeRepo.CountTodayAttendancePresent(ctx, parentUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count today present attendance: %w", err)
+	}
+
+	todayMarked, err := s.parentScopeRepo.CountTodayAttendanceMarked(ctx, parentUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count today marked attendance: %w", err)
+	}
+
+	todayPending := children - todayMarked
+	if todayPending < 0 {
+		todayPending = 0
+	}
+
 	return &model.ParentAnalytics{
-		TotalChildren:        children,
-		UpcomingAppointments: upcoming,
-		RecentPosts7d:        recentPosts,
-		RecentHealthAlerts7d: healthAlerts,
+		TotalChildren:               children,
+		UpcomingAppointments:        upcoming,
+		RecentPosts7d:               recentPosts,
+		RecentHealthAlerts7d:        healthAlerts,
+		TodayAttendancePresentCount: todayPresent,
+		TodayAttendancePendingCount: todayPending,
+		RecentHealthAlerts24h:       recentHealthAlerts24h,
 	}, nil
 }

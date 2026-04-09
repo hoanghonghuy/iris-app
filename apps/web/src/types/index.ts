@@ -540,6 +540,11 @@ export interface AdminAnalytics {
   total_teachers: number;
   total_students: number;
   total_parents: number;
+  is_super_admin: boolean;
+  school_name: string;
+  today_attendance_rate: number;
+  today_pending_appointments: number;
+  recent_health_alerts_24h: number;
 }
 
 /**
@@ -549,6 +554,10 @@ export interface TeacherAnalytics {
   total_classes: number;
   total_students: number;
   total_posts: number;
+  today_attendance_marked_count: number;
+  today_attendance_pending_count: number;
+  pending_appointments: number;
+  recent_health_alerts_24h: number;
 }
 
 /**
@@ -559,6 +568,9 @@ export interface ParentAnalytics {
   upcoming_appointments: number;
   recent_posts_7d: number;
   recent_health_alerts_7d: number;
+  today_attendance_present_count: number;
+  today_attendance_pending_count: number;
+  recent_health_alerts_24h: number;
 }
 
 // ============================================================================

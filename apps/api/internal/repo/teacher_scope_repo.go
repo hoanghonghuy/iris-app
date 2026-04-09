@@ -621,3 +621,50 @@ func (r *TeacherScopeRepo) CountMyPosts(ctx context.Context, teacherUserID uuid.
 	err := r.pool.QueryRow(ctx, q, teacherUserID).Scan(&count)
 	return count, err
 }
+
+func (r *TeacherScopeRepo) CountTodayAttendancePresent(ctx context.Context, teacherUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(DISTINCT ar.student_id)
+		FROM attendance_records ar
+		JOIN students s ON s.student_id = ar.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+		  AND ar.date = CURRENT_DATE
+		  AND ar.status = 'present';
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, teacherUserID).Scan(&count)
+	return count, err
+}
+
+func (r *TeacherScopeRepo) CountTodayAttendanceMarked(ctx context.Context, teacherUserID uuid.UUID) (int, error) {
+	const q = `
+		SELECT COUNT(DISTINCT ar.student_id)
+		FROM attendance_records ar
+		JOIN students s ON s.student_id = ar.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+		  AND ar.date = CURRENT_DATE;
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, teacherUserID).Scan(&count)
+	return count, err
+}
+
+func (r *TeacherScopeRepo) CountRecentHealthAlerts(ctx context.Context, teacherUserID uuid.UUID, since time.Time) (int, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM health_logs h
+		JOIN students s ON s.student_id = h.student_id
+		JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+		JOIN teachers t ON t.teacher_id = tc.teacher_id
+		WHERE t.user_id = $1
+		  AND h.recorded_at >= $2
+		  AND h.severity IN ('watch', 'urgent');
+	`
+	var count int
+	err := r.pool.QueryRow(ctx, q, teacherUserID, since).Scan(&count)
+	return count, err
+}

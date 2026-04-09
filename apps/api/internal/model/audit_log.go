@@ -39,10 +39,3 @@ type AuditLogCreate struct {
 	EntityID    *uuid.UUID
 	Details     any
 }
-
-type ParentAnalytics struct {
-	TotalChildren        int `json:"total_children"`
-	UpcomingAppointments int `json:"upcoming_appointments"`
-	RecentPosts7d        int `json:"recent_posts_7d"`
-	RecentHealthAlerts7d int `json:"recent_health_alerts_7d"`
-}

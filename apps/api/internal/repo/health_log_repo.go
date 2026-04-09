@@ -161,3 +161,34 @@ func (r *HealthLogRepo) ListByTeacherForAdminReport(ctx context.Context, teacher
 	}
 	return out, rows.Err()
 }
+
+func (r *HealthLogRepo) CountRecentAlertsBySchool(ctx context.Context, schoolID *uuid.UUID, since time.Time) (int, error) {
+	var (
+		q     string
+		args  []any
+		count int
+	)
+
+	if schoolID != nil {
+		q = `
+			SELECT COUNT(*)
+			FROM health_logs h
+			JOIN students s ON s.student_id = h.student_id
+			WHERE h.recorded_at >= $1
+			  AND h.severity IN ('watch', 'urgent')
+			  AND s.school_id = $2;
+		`
+		args = append(args, since, *schoolID)
+	} else {
+		q = `
+			SELECT COUNT(*)
+			FROM health_logs h
+			WHERE h.recorded_at >= $1
+			  AND h.severity IN ('watch', 'urgent');
+		`
+		args = append(args, since)
+	}
+
+	err := r.pool.QueryRow(ctx, q, args...).Scan(&count)
+	return count, err
+}

@@ -49,6 +49,11 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground text-base max-w-2xl mt-1 hidden md:block">
           Trung tâm điều khiển hệ thống. Hiện tại có {stats?.total_schools || 0} trường và {stats?.total_students || 0} học sinh đang hoạt động.
         </p>
+        {stats?.is_super_admin && stats.school_name && (
+          <p className="text-xs md:text-sm text-muted-foreground font-medium">
+            Pham vi: {stats.school_name}
+          </p>
+        )}
       </div>
 
       {loading ? (
@@ -143,6 +148,27 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </Link>
+          </div>
+
+          <div className="grid gap-2.5 md:gap-3 grid-cols-1 md:grid-cols-3">
+            <Card>
+              <CardContent className="p-3.5 md:p-5">
+                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Ty le diem danh hom nay</p>
+                <p className="text-2xl md:text-3xl font-bold text-foreground">{(stats.today_attendance_rate || 0).toFixed(1)}%</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3.5 md:p-5">
+                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Lich hen cho duyet hom nay</p>
+                <p className="text-2xl md:text-3xl font-bold text-foreground">{stats.today_pending_appointments || 0}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3.5 md:p-5">
+                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Canh bao suc khoe 24h</p>
+                <p className="text-2xl md:text-3xl font-bold text-foreground">{stats.recent_health_alerts_24h || 0}</p>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

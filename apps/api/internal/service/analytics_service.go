@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -23,6 +24,8 @@ func NewAnalyticsService(repos *repo.Repositories) *AnalyticsService {
 func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid.UUID) (*model.AdminAnalytics, error) {
 	var err error
 	var totalSchools, totalClasses, totalTeachers, totalStudents, totalParents int
+	var schoolName string
+	isSuperAdmin := schoolID == nil
 
 	// Thống kê trường học
 	if schoolID == nil {
@@ -30,9 +33,15 @@ func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid
 		if err != nil {
 			return nil, err
 		}
+		schoolName = "Toan he thong"
 	} else {
 		// SCHOOL_ADMIN chỉ quản lý 1 trường của mình
 		totalSchools = 1
+		school, schoolErr := s.repos.SchoolRepo.GetByID(ctx, *schoolID)
+		if schoolErr != nil {
+			return nil, schoolErr
+		}
+		schoolName = school.Name
 	}
 
 	// Thống kê lớp học
@@ -59,12 +68,37 @@ func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid
 		return nil, err
 	}
 
+	todayPresent, err := s.repos.StudentRepo.CountTodayAttendancePresentBySchool(ctx, schoolID)
+	if err != nil {
+		return nil, err
+	}
+
+	todayPendingAppointments, err := s.repos.AppointmentRepo.CountTodayPendingAppointmentsBySchool(ctx, schoolID)
+	if err != nil {
+		return nil, err
+	}
+
+	recentHealthAlerts24h, err := s.repos.HealthLogRepo.CountRecentAlertsBySchool(ctx, schoolID, time.Now().Add(-24*time.Hour))
+	if err != nil {
+		return nil, err
+	}
+
+	todayAttendanceRate := 0.0
+	if totalStudents > 0 {
+		todayAttendanceRate = float64(todayPresent) * 100 / float64(totalStudents)
+	}
+
 	return &model.AdminAnalytics{
-		TotalSchools:  totalSchools,
-		TotalClasses:  totalClasses,
-		TotalTeachers: totalTeachers,
-		TotalStudents: totalStudents,
-		TotalParents:  totalParents,
+		TotalSchools:             totalSchools,
+		TotalClasses:             totalClasses,
+		TotalTeachers:            totalTeachers,
+		TotalStudents:            totalStudents,
+		TotalParents:             totalParents,
+		IsSuperAdmin:             isSuperAdmin,
+		SchoolName:               schoolName,
+		TodayAttendanceRate:      todayAttendanceRate,
+		TodayPendingAppointments: todayPendingAppointments,
+		RecentHealthAlerts24h:    recentHealthAlerts24h,
 	}, nil
 }
 
@@ -89,9 +123,33 @@ func (s *AnalyticsService) GetTeacherAnalytics(ctx context.Context, teacherUserI
 		return nil, err
 	}
 
+	todayMarked, err := s.repos.TeacherScopeRepo.CountTodayAttendanceMarked(ctx, teacherUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	pendingAppointments, err := s.repos.AppointmentRepo.CountTeacherPendingAppointments(ctx, teacherUserID)
+	if err != nil {
+		return nil, err
+	}
+
+	recentHealthAlerts24h, err := s.repos.TeacherScopeRepo.CountRecentHealthAlerts(ctx, teacherUserID, time.Now().Add(-24*time.Hour))
+	if err != nil {
+		return nil, err
+	}
+
+	todayPending := totalStudents - todayMarked
+	if todayPending < 0 {
+		todayPending = 0
+	}
+
 	return &model.TeacherAnalytics{
-		TotalClasses:  totalClasses,
-		TotalStudents: totalStudents,
-		TotalPosts:    totalPosts,
+		TotalClasses:                totalClasses,
+		TotalStudents:               totalStudents,
+		TotalPosts:                  totalPosts,
+		TodayAttendanceMarkedCount:  todayMarked,
+		TodayAttendancePendingCount: todayPending,
+		PendingAppointments:         pendingAppointments,
+		RecentHealthAlerts24h:       recentHealthAlerts24h,
 	}, nil
 }

@@ -158,6 +158,36 @@ func (r *StudentRepo) CountStudentsBySchool(ctx context.Context, schoolID *uuid.
 	return count, err
 }
 
+func (r *StudentRepo) CountTodayAttendancePresentBySchool(ctx context.Context, schoolID *uuid.UUID) (int, error) {
+	var (
+		q     string
+		args  []any
+		count int
+	)
+
+	if schoolID != nil {
+		q = `
+			SELECT COUNT(DISTINCT ar.student_id)
+			FROM attendance_records ar
+			JOIN students s ON s.student_id = ar.student_id
+			WHERE ar.date = CURRENT_DATE
+			  AND ar.status = 'present'
+			  AND s.school_id = $1;
+		`
+		args = append(args, *schoolID)
+	} else {
+		q = `
+			SELECT COUNT(DISTINCT ar.student_id)
+			FROM attendance_records ar
+			WHERE ar.date = CURRENT_DATE
+			  AND ar.status = 'present';
+		`
+	}
+
+	err := r.pool.QueryRow(ctx, q, args...).Scan(&count)
+	return count, err
+}
+
 // Update cập nhật thông tin học sinh
 func (r *StudentRepo) Update(ctx context.Context, studentID uuid.UUID, fullName string, dob time.Time, gender string) error {
 	const q = `
