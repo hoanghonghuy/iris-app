@@ -236,7 +236,7 @@ func NewRouter(
 
 				// Admin analytics
 				admin.GET("/analytics", analyticsHandler.AdminDashboardStats)
-				admin.GET("/audit-logs", auditLogHandler.List)
+				admin.GET("/audit-logs", middleware.RequireRole("SUPER_ADMIN"), auditLogHandler.List)
 
 				// School routes (GET: cả 2 roles, POST: chỉ SUPER_ADMIN — đăng ký ở superOnly bên dưới)
 				admin.GET("/schools", schoolHandler.List)

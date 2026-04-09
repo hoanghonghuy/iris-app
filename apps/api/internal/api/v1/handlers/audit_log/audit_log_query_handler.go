@@ -19,12 +19,12 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 	if !ok {
 		return
 	}
-
-	adminSchoolID := shared.ExtractAdminSchoolID(c)
-	if hasRole(claims.Roles, "SCHOOL_ADMIN") && adminSchoolID == nil {
+	if !hasRole(claims.Roles, "SUPER_ADMIN") {
 		response.Fail(c, http.StatusForbidden, "access denied")
 		return
 	}
+
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
 
 	from, to, err := h.auditLogService.ParseTimeRange(c.Query("from"), c.Query("to"))
 	if err != nil {

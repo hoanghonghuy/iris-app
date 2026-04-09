@@ -48,7 +48,7 @@ export const adminMenuItems: SidebarItem[] = [
   { label: "Giáo viên", href: "/admin/teachers", icon: <BookUser className="h-5 w-5" /> },
   { label: "Phụ huynh", href: "/admin/parents", icon: <Heart className="h-5 w-5" /> },
   { label: "School Admin", href: "/admin/school-admins", icon: <ShieldCheck className="h-5 w-5" />, roles: ["SUPER_ADMIN"] },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: <ListChecks className="h-5 w-5" /> },
+  { label: "Audit Logs", href: "/admin/audit-logs", icon: <ListChecks className="h-5 w-5" />, roles: ["SUPER_ADMIN"] },
   { label: "Tin nhắn", href: "/admin/chat", icon: <MessageSquare className="h-5 w-5" /> },
 ];
 
