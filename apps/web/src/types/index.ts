@@ -543,7 +543,6 @@ export interface AdminAnalytics {
   is_super_admin: boolean;
   school_name: string;
   today_attendance_rate: number;
-  today_pending_appointments: number;
   recent_health_alerts_24h: number;
 }
 

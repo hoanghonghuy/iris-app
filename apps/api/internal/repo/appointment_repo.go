@@ -444,38 +444,6 @@ func (r *AppointmentRepo) CountParentUpcomingAppointments(ctx context.Context, p
 	return count, err
 }
 
-func (r *AppointmentRepo) CountTodayPendingAppointmentsBySchool(ctx context.Context, schoolID *uuid.UUID) (int, error) {
-	var (
-		q     string
-		args  []any
-		count int
-	)
-
-	if schoolID != nil {
-		q = `
-			SELECT COUNT(*)
-			FROM appointments a
-			JOIN appointment_slots s ON s.slot_id = a.slot_id
-			JOIN classes c ON c.class_id = s.class_id
-			WHERE a.status = 'pending'
-			  AND s.start_time::date = CURRENT_DATE
-			  AND c.school_id = $1;
-		`
-		args = append(args, *schoolID)
-	} else {
-		q = `
-			SELECT COUNT(*)
-			FROM appointments a
-			JOIN appointment_slots s ON s.slot_id = a.slot_id
-			WHERE a.status = 'pending'
-			  AND s.start_time::date = CURRENT_DATE;
-		`
-	}
-
-	err := r.pool.QueryRow(ctx, q, args...).Scan(&count)
-	return count, err
-}
-
 func (r *AppointmentRepo) CountTeacherPendingAppointments(ctx context.Context, teacherUserID uuid.UUID) (int, error) {
 	const q = `
 		SELECT COUNT(*)

@@ -142,17 +142,11 @@ export default function AdminDashboard() {
             </Link>
           </div>
 
-          <div className="grid gap-2.5 md:gap-3 grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-2.5 md:gap-3 grid-cols-1 md:grid-cols-2">
             <Card>
               <CardContent className="p-3.5 md:p-5">
                 <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Tỷ lệ điểm danh hôm nay</p>
                 <p className="text-2xl md:text-3xl font-bold text-foreground">{(stats.today_attendance_rate || 0).toFixed(1)}%</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3.5 md:p-5">
-                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Lịch hẹn chờ duyệt hôm nay</p>
-                <p className="text-2xl md:text-3xl font-bold text-foreground">{stats.today_pending_appointments || 0}</p>
               </CardContent>
             </Card>
             <Card>

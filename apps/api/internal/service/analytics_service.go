@@ -73,11 +73,6 @@ func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid
 		return nil, err
 	}
 
-	todayPendingAppointments, err := s.repos.AppointmentRepo.CountTodayPendingAppointmentsBySchool(ctx, schoolID)
-	if err != nil {
-		return nil, err
-	}
-
 	recentHealthAlerts24h, err := s.repos.HealthLogRepo.CountRecentAlertsBySchool(ctx, schoolID, time.Now().Add(-24*time.Hour))
 	if err != nil {
 		return nil, err
@@ -89,16 +84,15 @@ func (s *AnalyticsService) GetAdminAnalytics(ctx context.Context, schoolID *uuid
 	}
 
 	return &model.AdminAnalytics{
-		TotalSchools:             totalSchools,
-		TotalClasses:             totalClasses,
-		TotalTeachers:            totalTeachers,
-		TotalStudents:            totalStudents,
-		TotalParents:             totalParents,
-		IsSuperAdmin:             isSuperAdmin,
-		SchoolName:               schoolName,
-		TodayAttendanceRate:      todayAttendanceRate,
-		TodayPendingAppointments: todayPendingAppointments,
-		RecentHealthAlerts24h:    recentHealthAlerts24h,
+		TotalSchools:          totalSchools,
+		TotalClasses:          totalClasses,
+		TotalTeachers:         totalTeachers,
+		TotalStudents:         totalStudents,
+		TotalParents:          totalParents,
+		IsSuperAdmin:          isSuperAdmin,
+		SchoolName:            schoolName,
+		TodayAttendanceRate:   todayAttendanceRate,
+		RecentHealthAlerts24h: recentHealthAlerts24h,
 	}, nil
 }
 

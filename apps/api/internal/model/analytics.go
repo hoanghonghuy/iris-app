@@ -2,16 +2,15 @@ package model
 
 // AdminAnalytics chứa các chỉ số thống kê tổng quan cho Admin Dashboard
 type AdminAnalytics struct {
-	TotalSchools             int     `json:"total_schools"`
-	TotalClasses             int     `json:"total_classes"`
-	TotalTeachers            int     `json:"total_teachers"`
-	TotalStudents            int     `json:"total_students"`
-	TotalParents             int     `json:"total_parents"`
-	IsSuperAdmin             bool    `json:"is_super_admin"`
-	SchoolName               string  `json:"school_name"`
-	TodayAttendanceRate      float64 `json:"today_attendance_rate"`
-	TodayPendingAppointments int     `json:"today_pending_appointments"`
-	RecentHealthAlerts24h    int     `json:"recent_health_alerts_24h"`
+	TotalSchools          int     `json:"total_schools"`
+	TotalClasses          int     `json:"total_classes"`
+	TotalTeachers         int     `json:"total_teachers"`
+	TotalStudents         int     `json:"total_students"`
+	TotalParents          int     `json:"total_parents"`
+	IsSuperAdmin          bool    `json:"is_super_admin"`
+	SchoolName            string  `json:"school_name"`
+	TodayAttendanceRate   float64 `json:"today_attendance_rate"`
+	RecentHealthAlerts24h int     `json:"recent_health_alerts_24h"`
 }
 
 // TeacherAnalytics chứa các chỉ số thống kê cho Teacher Dashboard
