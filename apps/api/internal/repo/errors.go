@@ -17,3 +17,6 @@ var ErrRoleAssignmentFailed = errors.New("failed to assign role")
 
 // ErrAppointmentSlotUnavailable trả về khi slot đã có lịch hẹn active.
 var ErrAppointmentSlotUnavailable = errors.New("appointment slot is unavailable")
+
+// ErrAppointmentCancellationWindowPassed trả về khi đã quá thời gian cho phép hủy lịch.
+var ErrAppointmentCancellationWindowPassed = errors.New("appointment cancellation window has passed")

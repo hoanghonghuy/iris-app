@@ -16,11 +16,28 @@ type AppointmentService struct {
 	appointmentRepo *repo.AppointmentRepo
 }
 
+const (
+	defaultSlotBufferMinutes     = 10
+	defaultSlotMaxBookingsPerDay = 12
+	parentCancelCutoff           = 2 * time.Hour
+	maxSlotBufferMinutes         = 180
+	maxSlotBookingsPerDayHardCap = 100
+)
+
 func NewAppointmentService(appointmentRepo *repo.AppointmentRepo) *AppointmentService {
 	return &AppointmentService{appointmentRepo: appointmentRepo}
 }
 
-func (s *AppointmentService) CreateSlot(ctx context.Context, teacherUserID, classID uuid.UUID, startTime, endTime time.Time, note string) (model.AppointmentSlot, error) {
+func (s *AppointmentService) CreateSlot(
+	ctx context.Context,
+	teacherUserID,
+	classID uuid.UUID,
+	startTime,
+	endTime time.Time,
+	note string,
+	bufferMinutes,
+	maxBookingsPerDay int,
+) (model.AppointmentSlot, error) {
 	if teacherUserID == uuid.Nil {
 		return model.AppointmentSlot{}, ErrInvalidUserID
 	}
@@ -32,6 +49,34 @@ func (s *AppointmentService) CreateSlot(ctx context.Context, teacherUserID, clas
 	}
 	if startTime.Before(time.Now().Add(-5 * time.Minute)) {
 		return model.AppointmentSlot{}, fmt.Errorf("%w: start_time cannot be in the past", ErrInvalidValue)
+	}
+
+	bufferMinutes = normalizeSlotBufferMinutes(bufferMinutes)
+	maxBookingsPerDay = normalizeSlotMaxBookingsPerDay(maxBookingsPerDay)
+
+	dayStart := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, startTime.Location())
+	dayEnd := dayStart.Add(24*time.Hour - time.Nanosecond)
+
+	dailyCount, err := s.appointmentRepo.CountTeacherActiveSlotsForDay(ctx, teacherUserID, dayStart, dayEnd)
+	if err != nil {
+		return model.AppointmentSlot{}, fmt.Errorf("failed to check daily slot count: %w", err)
+	}
+	if dailyCount >= maxBookingsPerDay {
+		return model.AppointmentSlot{}, fmt.Errorf("%w: maximum %d slots/day reached", ErrInvalidValue, maxBookingsPerDay)
+	}
+
+	conflict, err := s.appointmentRepo.FindTeacherSlotConflict(ctx, teacherUserID, startTime, endTime, bufferMinutes)
+	if err != nil {
+		return model.AppointmentSlot{}, fmt.Errorf("failed to validate slot overlap: %w", err)
+	}
+	if conflict != nil {
+		return model.AppointmentSlot{}, fmt.Errorf(
+			"%w: slot conflicts with existing slot %s - %s (buffer %d minutes)",
+			ErrInvalidValue,
+			conflict.StartTime.Format(time.RFC3339),
+			conflict.EndTime.Format(time.RFC3339),
+			bufferMinutes,
+		)
 	}
 
 	slot, err := s.appointmentRepo.CreateSlot(ctx, teacherUserID, classID, startTime, endTime, strings.TrimSpace(note))
@@ -140,8 +185,11 @@ func (s *AppointmentService) CancelAppointmentByParent(ctx context.Context, pare
 	if strings.TrimSpace(cancelReason) == "" {
 		cancelReason = "parent_cancelled"
 	}
-	a, err := s.appointmentRepo.CancelAppointmentByParent(ctx, parentUserID, appointmentID, cancelReason)
+	a, err := s.appointmentRepo.CancelAppointmentByParent(ctx, parentUserID, appointmentID, cancelReason, parentCancelCutoff)
 	if err != nil {
+		if err == repo.ErrAppointmentCancellationWindowPassed {
+			return model.Appointment{}, ErrAppointmentCancellationWindowPassed
+		}
 		if err == repo.ErrNoRowsUpdated {
 			return model.Appointment{}, ErrForbidden
 		}
@@ -174,4 +222,27 @@ func isValidAppointmentStatus(status string) bool {
 	default:
 		return false
 	}
+}
+
+func normalizeSlotBufferMinutes(bufferMinutes int) int {
+	if bufferMinutes < 0 {
+		return 0
+	}
+	if bufferMinutes == 0 {
+		return defaultSlotBufferMinutes
+	}
+	if bufferMinutes > maxSlotBufferMinutes {
+		return maxSlotBufferMinutes
+	}
+	return bufferMinutes
+}
+
+func normalizeSlotMaxBookingsPerDay(maxBookingsPerDay int) int {
+	if maxBookingsPerDay <= 0 {
+		return defaultSlotMaxBookingsPerDay
+	}
+	if maxBookingsPerDay > maxSlotBookingsPerDayHardCap {
+		return maxSlotBookingsPerDayHardCap
+	}
+	return maxBookingsPerDay
 }

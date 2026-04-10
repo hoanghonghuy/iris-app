@@ -621,6 +621,8 @@ export interface CreateAppointmentSlotRequest {
   start_time: string;
   end_time?: string;
   duration_minutes?: number;
+  buffer_minutes?: number;
+  max_bookings_per_day?: number;
   note?: string;
 }
 

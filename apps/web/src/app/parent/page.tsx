@@ -62,17 +62,14 @@ export default function ParentDashboard() {
         </div>
       ) : (
         <>
-          <div className="grid gap-2.5 md:gap-3 grid-cols-2 md:grid-cols-4 shrink-0">
+          <div className="grid gap-2.5 md:gap-3 grid-cols-2 md:grid-cols-2 shrink-0">
             <Card><CardContent className="p-3 text-sm"><b>Tổng số con:</b> {stats?.total_children ?? 0}</CardContent></Card>
-            <Card><CardContent className="p-3 text-sm"><b>Lịch sắp tới:</b> {stats?.upcoming_appointments ?? 0}</CardContent></Card>
-            <Card><CardContent className="p-3 text-sm"><b>Bài đăng 7 ngày:</b> {stats?.recent_posts_7d ?? 0}</CardContent></Card>
-            <Card><CardContent className="p-3 text-sm"><b>Cảnh báo sức khỏe:</b> {stats?.recent_health_alerts_7d ?? 0}</CardContent></Card>
+            <Card><CardContent className="p-3 text-sm"><b>Cảnh báo sức khỏe 24h:</b> {stats?.recent_health_alerts_24h ?? 0}</CardContent></Card>
           </div>
 
-          <div className="grid gap-2.5 md:gap-3 grid-cols-1 md:grid-cols-3 shrink-0">
-            <Card><CardContent className="p-3 text-sm"><b>Con co mat hom nay:</b> {stats?.today_attendance_present_count ?? 0}</CardContent></Card>
-            <Card><CardContent className="p-3 text-sm"><b>Con chua diem danh:</b> {stats?.today_attendance_pending_count ?? 0}</CardContent></Card>
-            <Card><CardContent className="p-3 text-sm"><b>Canh bao suc khoe 24h:</b> {stats?.recent_health_alerts_24h ?? 0}</CardContent></Card>
+          <div className="grid gap-2.5 md:gap-3 grid-cols-1 md:grid-cols-2 shrink-0">
+            <Card><CardContent className="p-3 text-sm"><b>Con có mặt hôm nay:</b> {stats?.today_attendance_present_count ?? 0}</CardContent></Card>
+            <Card><CardContent className="p-3 text-sm"><b>Con chưa điểm danh:</b> {stats?.today_attendance_pending_count ?? 0}</CardContent></Card>
           </div>
 
           {/* Quick Actions / Bento Box */}

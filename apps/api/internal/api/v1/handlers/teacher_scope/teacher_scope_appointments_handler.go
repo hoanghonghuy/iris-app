@@ -14,11 +14,13 @@ import (
 )
 
 type CreateAppointmentSlotRequest struct {
-	ClassID        string `json:"class_id" binding:"required"`
-	StartTime      string `json:"start_time" binding:"required"`
-	EndTime        string `json:"end_time"`
-	DurationMinute int    `json:"duration_minutes"`
-	Note           string `json:"note"`
+	ClassID           string `json:"class_id" binding:"required"`
+	StartTime         string `json:"start_time" binding:"required"`
+	EndTime           string `json:"end_time"`
+	DurationMinute    int    `json:"duration_minutes"`
+	BufferMinutes     int    `json:"buffer_minutes"`
+	MaxBookingsPerDay int    `json:"max_bookings_per_day"`
+	Note              string `json:"note"`
 }
 
 type UpdateAppointmentStatusRequest struct {
@@ -65,7 +67,16 @@ func (h *TeacherScopeHandler) CreateAppointmentSlot(c *gin.Context) {
 		return
 	}
 
-	slot, err := h.appointmentService.CreateSlot(c.Request.Context(), teacherUserID, classID, startTime, endTime, req.Note)
+	slot, err := h.appointmentService.CreateSlot(
+		c.Request.Context(),
+		teacherUserID,
+		classID,
+		startTime,
+		endTime,
+		req.Note,
+		req.BufferMinutes,
+		req.MaxBookingsPerDay,
+	)
 	if err != nil {
 		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, "forbidden")

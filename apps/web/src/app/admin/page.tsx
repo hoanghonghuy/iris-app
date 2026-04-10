@@ -46,14 +46,6 @@ export default function AdminDashboard() {
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">
           Xin chào, {user?.full_name || user?.email?.split('@')[0]}
         </h1>
-        <p className="text-muted-foreground text-base max-w-2xl mt-1 hidden md:block">
-          Trung tâm điều khiển hệ thống. Hiện tại có {stats?.total_schools || 0} trường và {stats?.total_students || 0} học sinh đang hoạt động.
-        </p>
-        {stats?.is_super_admin && stats.school_name && (
-          <p className="text-xs md:text-sm text-muted-foreground font-medium">
-            Pham vi: {stats.school_name}
-          </p>
-        )}
       </div>
 
       {loading ? (
@@ -153,19 +145,19 @@ export default function AdminDashboard() {
           <div className="grid gap-2.5 md:gap-3 grid-cols-1 md:grid-cols-3">
             <Card>
               <CardContent className="p-3.5 md:p-5">
-                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Ty le diem danh hom nay</p>
+                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Tỷ lệ điểm danh hôm nay</p>
                 <p className="text-2xl md:text-3xl font-bold text-foreground">{(stats.today_attendance_rate || 0).toFixed(1)}%</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3.5 md:p-5">
-                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Lich hen cho duyet hom nay</p>
+                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Lịch hẹn chờ duyệt hôm nay</p>
                 <p className="text-2xl md:text-3xl font-bold text-foreground">{stats.today_pending_appointments || 0}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-3.5 md:p-5">
-                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Canh bao suc khoe 24h</p>
+                <p className="text-[11px] md:text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Cảnh báo sức khỏe 24h</p>
                 <p className="text-2xl md:text-3xl font-bold text-foreground">{stats.recent_health_alerts_24h || 0}</p>
               </CardContent>
             </Card>
@@ -174,7 +166,7 @@ export default function AdminDashboard() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <div className="lg:col-span-3 space-y-4">
               <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2 mt-2">
-                Quản lý Nhanh
+                Quản lý nhanh
               </h2>
               <div className="grid gap-2 md:gap-3 grid-cols-3">
                 
@@ -184,7 +176,7 @@ export default function AdminDashboard() {
                       <div className="p-2.5 md:p-3 bg-primary/10 text-primary rounded-xl md:rounded-2xl shrink-0 transition-transform group-hover:scale-110 duration-300">
                         <Settings className="h-5 w-5 md:h-6 md:w-6" />
                       </div>
-                      <p className="font-medium md:font-semibold text-[11px] md:text-xs text-foreground group-hover:text-primary transition-colors">QL Trường</p>
+                      <p className="font-medium md:font-semibold text-[11px] md:text-xs text-foreground group-hover:text-primary transition-colors">Quản lý trường</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -195,7 +187,7 @@ export default function AdminDashboard() {
                       <div className="p-2.5 md:p-3 bg-chart-3/10 text-chart-3 rounded-xl md:rounded-2xl shrink-0 transition-transform group-hover:scale-110 duration-300">
                         <Users className="h-5 w-5 md:h-6 md:w-6" />
                       </div>
-                      <p className="font-medium md:font-semibold text-[11px] md:text-xs text-foreground group-hover:text-chart-3 transition-colors">QL Users</p>
+                      <p className="font-medium md:font-semibold text-[11px] md:text-xs text-foreground group-hover:text-chart-3 transition-colors">Quản lý người dùng</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -206,7 +198,7 @@ export default function AdminDashboard() {
                       <div className="p-2.5 md:p-3 bg-chart-2/10 text-chart-2 rounded-xl md:rounded-2xl shrink-0 transition-transform group-hover:scale-110 duration-300">
                         <BookOpen className="h-5 w-5 md:h-6 md:w-6" />
                       </div>
-                      <p className="font-medium md:font-semibold text-[11px] md:text-xs text-foreground group-hover:text-chart-2 transition-colors">QL Lớp</p>
+                      <p className="font-medium md:font-semibold text-[11px] md:text-xs text-foreground group-hover:text-chart-2 transition-colors">Quản lý lớp</p>
                     </CardContent>
                   </Card>
                 </Link>

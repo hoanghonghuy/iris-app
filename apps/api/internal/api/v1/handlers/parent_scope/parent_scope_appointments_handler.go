@@ -162,6 +162,10 @@ func (h *ParentScopeHandler) CancelAppointment(c *gin.Context) {
 
 	updated, err := h.appointmentService.CancelAppointmentByParent(c.Request.Context(), parentUserID, appointmentID, req.CancelReason)
 	if err != nil {
+		if errors.Is(err, service.ErrAppointmentCancellationWindowPassed) {
+			response.Fail(c, http.StatusConflict, err.Error())
+			return
+		}
 		if errors.Is(err, service.ErrForbidden) {
 			response.Fail(c, http.StatusForbidden, err.Error())
 			return

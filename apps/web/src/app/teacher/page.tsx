@@ -101,16 +101,16 @@ export default function TeacherDashboard() {
 
           <div className="grid gap-2.5 md:gap-3 grid-cols-2 md:grid-cols-4 shrink-0">
             <Card>
-              <CardContent className="p-3 text-sm"><b>Diem danh hom nay:</b> {stats?.today_attendance_marked_count ?? 0}</CardContent>
+              <CardContent className="p-3 text-sm"><b>Điểm danh hôm nay:</b> {stats?.today_attendance_marked_count ?? 0}</CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 text-sm"><b>Chua diem danh:</b> {stats?.today_attendance_pending_count ?? 0}</CardContent>
+              <CardContent className="p-3 text-sm"><b>Chưa điểm danh:</b> {stats?.today_attendance_pending_count ?? 0}</CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 text-sm"><b>Lich hen cho duyet:</b> {stats?.pending_appointments ?? 0}</CardContent>
+              <CardContent className="p-3 text-sm"><b>Lịch hẹn chờ duyệt:</b> {stats?.pending_appointments ?? 0}</CardContent>
             </Card>
             <Card>
-              <CardContent className="p-3 text-sm"><b>Canh bao suc khoe 24h:</b> {stats?.recent_health_alerts_24h ?? 0}</CardContent>
+              <CardContent className="p-3 text-sm"><b>Cảnh báo sức khỏe 24h:</b> {stats?.recent_health_alerts_24h ?? 0}</CardContent>
             </Card>
           </div>
 
@@ -118,7 +118,7 @@ export default function TeacherDashboard() {
             {/* Quick Actions (Bento Box style) */}
             <div className="flex min-h-0 flex-col gap-4 lg:col-span-1">
               <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2 shrink-0">
-                Hoạt động Nhanh
+                Hoạt động nhanh
               </h2>
               <div className="grid gap-2 md:gap-3 grid-cols-3 shrink-0">
                 <Link href="/teacher/attendance" className="block h-full">
@@ -163,7 +163,7 @@ export default function TeacherDashboard() {
             <div className="flex min-h-0 flex-col gap-4 lg:col-span-2">
               <div className="flex items-center justify-between shrink-0">
                 <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-                  Lớp Được Phân Công
+                  Lớp được phân công
                 </h2>
                 <Link href="/teacher/classes" className="text-xs font-semibold text-primary hover:underline transition-all hover:translate-x-0.5">
                   Xem tất cả

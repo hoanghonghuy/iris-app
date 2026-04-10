@@ -148,6 +148,59 @@ func (r *AppointmentRepo) CreateSlot(ctx context.Context, teacherUserID, classID
 	return slot, nil
 }
 
+func (r *AppointmentRepo) CountTeacherActiveSlotsForDay(ctx context.Context, teacherUserID uuid.UUID, dayStart, dayEnd time.Time) (int, error) {
+	const q = `
+		SELECT COUNT(*)
+		FROM appointment_slots s
+		JOIN teachers t ON t.teacher_id = s.teacher_id
+		WHERE t.user_id = $1
+		  AND s.is_active = true
+		  AND s.start_time >= $2
+		  AND s.start_time <= $3;
+	`
+
+	var count int
+	err := r.pool.QueryRow(ctx, q, teacherUserID, dayStart, dayEnd).Scan(&count)
+	return count, err
+}
+
+func (r *AppointmentRepo) FindTeacherSlotConflict(ctx context.Context, teacherUserID uuid.UUID, startTime, endTime time.Time, bufferMinutes int) (*model.AppointmentSlot, error) {
+	const q = `
+		SELECT s.slot_id, s.teacher_id, s.class_id, s.start_time, s.end_time,
+		       COALESCE(s.note, ''), s.is_active, s.created_at, s.updated_at
+		FROM appointment_slots s
+		JOIN teachers t ON t.teacher_id = s.teacher_id
+		WHERE t.user_id = $1
+		  AND s.is_active = true
+		  AND NOT (
+			$2 >= s.end_time + ($4 * interval '1 minute')
+			OR $3 <= s.start_time - ($4 * interval '1 minute')
+		  )
+		LIMIT 1;
+	`
+
+	var slot model.AppointmentSlot
+	err := r.pool.QueryRow(ctx, q, teacherUserID, startTime, endTime, bufferMinutes).Scan(
+		&slot.SlotID,
+		&slot.TeacherID,
+		&slot.ClassID,
+		&slot.StartTime,
+		&slot.EndTime,
+		&slot.Note,
+		&slot.IsActive,
+		&slot.CreatedAt,
+		&slot.UpdatedAt,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &slot, nil
+}
+
 func (r *AppointmentRepo) CreateAppointment(ctx context.Context, parentUserID, studentID, slotID uuid.UUID, note string) (model.Appointment, error) {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -245,27 +298,67 @@ func (r *AppointmentRepo) UpdateAppointmentStatusByTeacher(ctx context.Context, 
 	return a, nil
 }
 
-func (r *AppointmentRepo) CancelAppointmentByParent(ctx context.Context, parentUserID, appointmentID uuid.UUID, cancelReason string) (model.Appointment, error) {
-	const q = `
-		UPDATE appointments a
-		SET status = 'cancelled',
-		    cancel_reason = $3,
-		    cancelled_at = now(),
-		    updated_at = now()
-		FROM parents p
-		WHERE a.parent_id = p.parent_id
-		  AND p.user_id = $1
+func (r *AppointmentRepo) CancelAppointmentByParent(ctx context.Context, parentUserID, appointmentID uuid.UUID, cancelReason string, minCancelLead time.Duration) (model.Appointment, error) {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return model.Appointment{}, err
+	}
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
+
+	const checkQ = `
+		SELECT a.status, s.start_time
+		FROM appointments a
+		JOIN parents p ON p.parent_id = a.parent_id
+		JOIN appointment_slots s ON s.slot_id = a.slot_id
+		WHERE p.user_id = $1
 		  AND a.appointment_id = $2
-		  AND a.status IN ('pending', 'confirmed')
-		RETURNING a.appointment_id, a.slot_id, a.parent_id, a.student_id, a.status, COALESCE(a.note, ''), COALESCE(a.cancel_reason, ''),
-		          a.confirmed_at, a.completed_at, a.cancelled_at, a.created_at, a.updated_at;
+		FOR UPDATE OF a;
 	`
 
-	a, err := scanAppointment(r.pool.QueryRow(ctx, q, parentUserID, appointmentID, cancelReason))
+	var (
+		status    string
+		startTime time.Time
+	)
+
+	err = tx.QueryRow(ctx, checkQ, parentUserID, appointmentID).Scan(&status, &startTime)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return model.Appointment{}, ErrNoRowsUpdated
 		}
+		return model.Appointment{}, err
+	}
+
+	if status != "pending" && status != "confirmed" {
+		return model.Appointment{}, ErrNoRowsUpdated
+	}
+
+	if minCancelLead > 0 && startTime.Before(time.Now().Add(minCancelLead)) {
+		return model.Appointment{}, ErrAppointmentCancellationWindowPassed
+	}
+
+	const updateQ = `
+		UPDATE appointments
+		SET status = 'cancelled',
+		    cancel_reason = $2,
+		    cancelled_at = now(),
+		    updated_at = now()
+		WHERE appointment_id = $1
+		  AND status IN ('pending', 'confirmed')
+		RETURNING appointment_id, slot_id, parent_id, student_id, status, COALESCE(note, ''), COALESCE(cancel_reason, ''),
+		          confirmed_at, completed_at, cancelled_at, created_at, updated_at;
+	`
+
+	a, err := scanAppointment(tx.QueryRow(ctx, updateQ, appointmentID, cancelReason))
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return model.Appointment{}, ErrNoRowsUpdated
+		}
+		return model.Appointment{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
 		return model.Appointment{}, err
 	}
 
