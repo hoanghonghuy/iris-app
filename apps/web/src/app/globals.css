@@ -169,9 +169,20 @@
 }
 
 @layer base {
-  * {
+  *:not(iframe) {
     @apply border-border outline-ring/50;
   }
+
+  /* Google Sign-In renders cross-origin iframes; keep them free of global borders. */
+  #google-signin-render-root iframe,
+  #credential_picker_container,
+  #credential_picker_container iframe,
+  iframe[src*="accounts.google.com/gsi"] {
+    border: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
