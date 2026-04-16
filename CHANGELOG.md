@@ -5,6 +5,24 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 - No changes yet.
 
+## [v0.3.0] - 2026-04-16
+
+### Features
+- Added comprehensive dashboard analytics for admin, teacher, and parent roles with real-time metrics.
+- Expanded appointments with stronger slot handling and cancellation-window behavior.
+- Introduced and enhanced audit logging capabilities, including school-scoped coverage and super-admin-only access policy.
+- Added pagination and filtering controls for admin audit logs.
+- Added verification route support for parent registration flow.
+- Improved chat permission checks and participant retrieval by conversation IDs.
+- Added CI workflows for Docker build, backend testing, frontend testing, and security scanning.
+
+### Fixes
+- Fixed Google Sign-In iframe visual artifacts by excluding iframes from global border styling.
+- Fixed CI configuration issues around Go version handling, lint tool installation, and vulnerability scan paths.
+
+### Breaking Changes
+- None identified from v0.2.0..HEAD.
+
 ## [v0.2.0] - 2026-04-03
 
 ### Features
@@ -35,6 +53,7 @@ Initial release.
 - Next.js web app for admin/teacher/parent workflows.
 
 ## Link References
-[Unreleased]: https://github.com/hoanghonghuy/iris-app/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/hoanghonghuy/iris-app/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/hoanghonghuy/iris-app/releases/tag/v0.1.0
