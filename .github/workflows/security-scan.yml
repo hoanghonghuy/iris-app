@@ -89,10 +89,45 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve commit range
+        id: commit-range
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${{ github.event_name }}" == "push" ]]; then
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          else
+            BASE="$(git rev-list --max-parents=0 HEAD)"
+            HEAD="${{ github.sha }}"
+          fi
+
+          if [[ -z "$BASE" || "$BASE" == "0000000000000000000000000000000000000000" ]]; then
+            BASE="$(git rev-list --max-parents=0 HEAD)"
+          fi
+
+          if [[ "$BASE" == "$HEAD" ]]; then
+            echo "should_scan=false" >> "$GITHUB_OUTPUT"
+            echo "base=$BASE" >> "$GITHUB_OUTPUT"
+            echo "head=$HEAD" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_scan=true" >> "$GITHUB_OUTPUT"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "head=$HEAD" >> "$GITHUB_OUTPUT"
+
       - name: TruffleHog Scanning
+        if: steps.commit-range.outputs.should_scan == 'true'
         uses: trufflesecurity/trufflehog@v3.90.5
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
+          base: ${{ steps.commit-range.outputs.base }}
+          head: ${{ steps.commit-range.outputs.head }}
           extra_args: --debug
+
+      - name: Skip message when no commit diff exists
+        if: steps.commit-range.outputs.should_scan != 'true'
+        run: echo "Skipping TruffleHog: BASE and HEAD are identical for this event."
