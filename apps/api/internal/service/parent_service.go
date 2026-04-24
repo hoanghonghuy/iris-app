@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
+	"github.com/jackc/pgx/v5"
 )
 
 type ParentService struct {
@@ -68,6 +70,31 @@ func (s *ParentService) GetByParentID(ctx context.Context, adminSchoolID *uuid.U
 	}
 
 	return parent, nil
+}
+
+// Update cập nhật thông tin phụ huynh (admin only).
+func (s *ParentService) Update(ctx context.Context, adminSchoolID *uuid.UUID, parentID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
+	parent, err := s.parentRepo.GetByParentID(ctx, parentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrParentNotFound
+		}
+		return err
+	}
+
+	// SCHOOL_ADMIN: validate parent thuộc cùng school với admin
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && parent.SchoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+
+	// SCHOOL_ADMIN: không được đổi school_id sang school khác
+	// adminSchoolID == nil => SUPER_ADMIN: không cần validate
+	if adminSchoolID != nil && schoolID != *adminSchoolID {
+		return ErrSchoolAccessDenied
+	}
+
+	return s.parentRepo.Update(ctx, parentID, fullName, phone, schoolID)
 }
 
 // AssignStudent gán phụ huynh cho học sinh.

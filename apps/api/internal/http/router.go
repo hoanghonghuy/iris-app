@@ -299,6 +299,9 @@ func NewRouter(
 					// lấy thông tin phụ huynh theo ID
 					parents.GET("/:parent_id", parentHandler.GetByID)
 
+					// cập nhật thông tin phụ huynh
+					parents.PUT("/:parent_id", parentHandler.Update)
+
 					// gán phụ huynh cho học sinh
 					parents.POST("/:parent_id/students/:student_id", parentHandler.AssignStudent)
 

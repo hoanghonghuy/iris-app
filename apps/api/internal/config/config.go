@@ -63,7 +63,7 @@ func Load() (Config, error) {
 	authRateLimitStaleTTLMultiplier := parsePositiveIntEnv("AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER", 5)
 
 	// Parse ALLOWED_ORIGINS (comma-separated, e.g. "https://app.example.com,http://localhost:3000")
-	allowedOrigins := []string{"http://localhost:3000"} // default: dev
+	allowedOrigins := []string{"http://localhost:3000", "http://localhost:5173"} // default: dev
 	if raw := os.Getenv("ALLOWED_ORIGINS"); raw != "" {
 		allowedOrigins = strings.Split(raw, ",")
 		for i, o := range allowedOrigins {

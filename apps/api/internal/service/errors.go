@@ -42,6 +42,7 @@ var (
 	ErrInvalidParentCode           = errors.New("invalid parent code")
 	ErrParentCodeExpired           = errors.New("parent code has expired")
 	ErrParentCodeMaxUsageReached   = errors.New("parent code has reached maximum usage")
+	ErrParentNotFound              = errors.New("parent not found")
 	ErrFailedToCreateParent        = errors.New("failed to create parent")
 	ErrFailedToLinkParentToStudent = errors.New("failed to link parent to student")
 	ErrFailedToGetStudent          = errors.New("failed to get student")

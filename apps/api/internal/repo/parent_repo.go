@@ -120,3 +120,20 @@ func (r *ParentRepo) GetByParentID(ctx context.Context, parentID uuid.UUID) (*mo
 	}
 	return parent, nil
 }
+
+// Update cập nhật thông tin phụ huynh (admin có thể update tất cả fields).
+func (r *ParentRepo) Update(ctx context.Context, parentID uuid.UUID, fullName, phone string, schoolID uuid.UUID) error {
+	const q = `
+		UPDATE parents
+		SET full_name = $2, phone = $3, school_id = $4, updated_at = now()
+		WHERE parent_id = $1;
+	`
+	tag, err := r.pool.Exec(ctx, q, parentID, fullName, phone, schoolID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
