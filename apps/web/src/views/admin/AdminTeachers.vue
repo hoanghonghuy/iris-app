@@ -1,9 +1,9 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import { Link2, Pencil, Trash2, X } from 'lucide-vue-next'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import { normalizeListResponse } from '../../helpers/collectionUtils'
+import { createAdminPersonEditFormConfig } from '../../helpers/adminPeopleFormConfig'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
@@ -15,12 +15,13 @@ import {
   ADMIN_LOAD_ERROR_TITLE,
   ADMIN_LOADING_MESSAGE,
   ADMIN_RETRY_BUTTON_TEXT,
-  ADMIN_SELECTOR_FETCH_LIMIT,
 } from '../../helpers/adminConfig'
 
 const PAGE_SIZE = 20
 const USER_SEARCH_MIN_LENGTH = 2
 const USER_SEARCH_RESULT_LIMIT = 6
+
+const teacherEditFormConfig = createAdminPersonEditFormConfig({ idField: 'teacher_id' })
 
 const {
   searchQuery: userSearchQuery,
@@ -61,6 +62,10 @@ const {
   selectedSchoolId,
   selectedClassId,
   filteredItems: filteredTeachers,
+  updateSearchQuery,
+  updateSelectedSchoolId,
+  updateSelectedClassId,
+  updateEditForm,
   fetchItems: fetchTeachers,
   openAssignModal,
   closeAssignModal,
@@ -75,25 +80,7 @@ const {
   pageSize: PAGE_SIZE,
   searchFields: ['full_name', 'email', 'phone'],
   fetchList: adminService.getTeachers,
-  createInitialEditForm: () => ({
-    teacher_id: '',
-    full_name: '',
-    phone: '',
-    school_id: '',
-  }),
-  toEditForm: (teacher, context) => ({
-    teacher_id: teacher.teacher_id,
-    full_name: teacher.full_name || '',
-    phone: teacher.phone || '',
-    school_id: teacher.school_id || context.selectedSchoolId || '',
-  }),
-  validateEditForm: (form) => {
-    if (!form.teacher_id || !form.full_name.trim() || !form.school_id) {
-      return 'Vui lòng nhập đầy đủ thông tin bắt buộc'
-    }
-
-    return ''
-  },
+  ...teacherEditFormConfig,
   updateItem: (form) =>
     adminService.updateTeacher(form.teacher_id, {
       full_name: form.full_name.trim(),
@@ -120,22 +107,6 @@ const isCreateModalOpen = ref(false)
 const createLoading = ref(false)
 const createError = ref('')
 const createForm = ref({ school_id: '' })
-
-function updateSearchQuery(value) {
-  searchQuery.value = value
-}
-
-function updateSelectedSchoolId(value) {
-  selectedSchoolId.value = value
-}
-
-function updateSelectedClassId(value) {
-  selectedClassId.value = value
-}
-
-function updateEditForm(value) {
-  editForm.value = value
-}
 
 function openDeleteDialog(teacher) {
   deleteTarget.value = teacher
@@ -210,21 +181,8 @@ async function handleCreateTeacher() {
   }
 }
 
-async function fetchSchools() {
-  try {
-    const response = await adminService.getSchools({ limit: ADMIN_SELECTOR_FETCH_LIMIT, offset: 0 })
-    schools.value = normalizeListResponse(response)
-  } catch (error) {
-    console.error('Failed to fetch schools:', error)
-  }
-}
-
 onBeforeUnmount(() => {
   cleanupUserSearch()
-})
-
-onMounted(() => {
-  fetchSchools()
 })
 </script>
 

@@ -6,7 +6,8 @@ import AdminPeopleList from '../../components/admin/AdminPeopleList.vue'
 import AdminPeopleEditModal from '../../components/admin/AdminPeopleEditModal.vue'
 import AdminPeopleAssignModal from '../../components/admin/AdminPeopleAssignModal.vue'
 import { adminService } from '../../services/adminService'
-import { useAdminPeopleManagement } from '../../composables/admin/useAdminPeopleManagement'
+import { createAdminPersonEditFormConfig } from '../../helpers/adminPeopleFormConfig'
+import { useAdminPeopleManagement } from '../../composables/admin'
 import {
   ADMIN_LOAD_ERROR_TITLE,
   ADMIN_LOADING_MESSAGE,
@@ -14,26 +15,7 @@ import {
 } from '../../helpers/adminConfig'
 
 const PAGE_SIZE = 20
-
-function updateSearchQuery(value) {
-  searchQuery.value = value
-}
-
-function updateSelectedSchoolId(value) {
-  selectedSchoolId.value = value
-}
-
-function updateSelectedClassId(value) {
-  selectedClassId.value = value
-}
-
-function updateSelectedStudentId(value) {
-  selectedStudentId.value = value
-}
-
-function updateEditForm(value) {
-  editForm.value = value
-}
+const parentEditFormConfig = createAdminPersonEditFormConfig({ idField: 'parent_id' })
 
 const {
   items: parents,
@@ -62,6 +44,11 @@ const {
   selectedClassId,
   selectedStudentId,
   filteredItems: filteredParents,
+  updateSearchQuery,
+  updateSelectedSchoolId,
+  updateSelectedClassId,
+  updateSelectedStudentId,
+  updateEditForm,
   fetchItems: fetchParents,
   openAssignModal,
   closeAssignModal,
@@ -76,25 +63,7 @@ const {
   pageSize: PAGE_SIZE,
   searchFields: ['full_name', 'email', 'phone'],
   fetchList: adminService.getParents,
-  createInitialEditForm: () => ({
-    parent_id: '',
-    full_name: '',
-    phone: '',
-    school_id: '',
-  }),
-  toEditForm: (parent, context) => ({
-    parent_id: parent.parent_id,
-    full_name: parent.full_name || '',
-    phone: parent.phone || '',
-    school_id: parent.school_id || context.selectedSchoolId || '',
-  }),
-  validateEditForm: (form) => {
-    if (!form.parent_id || !form.full_name.trim() || !form.school_id) {
-      return 'Vui lòng nhập đầy đủ thông tin bắt buộc'
-    }
-
-    return ''
-  },
+  ...parentEditFormConfig,
   updateItem: (form) =>
     adminService.updateParent(form.parent_id, {
       full_name: form.full_name.trim(),
@@ -238,21 +207,10 @@ const {
 </template>
 
 <style scoped>
-.admin-parents,
-.modal-form {
+.admin-parents {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-2);
-}
-
-.mt-1 {
-  margin-top: var(--spacing-1);
 }
 
 .mt-2 {

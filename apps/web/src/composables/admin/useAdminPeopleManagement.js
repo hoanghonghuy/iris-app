@@ -277,6 +277,26 @@ export function useAdminPeopleManagement(options) {
     cancelActiveSelectorRequests()
   })
 
+  function updateSearchQuery(value) {
+    searchQuery.value = value
+  }
+
+  function updateSelectedSchoolId(value) {
+    selectedSchoolId.value = value
+  }
+
+  function updateSelectedClassId(value) {
+    selectedClassId.value = value
+  }
+
+  function updateSelectedStudentId(value) {
+    selectedStudentId.value = value
+  }
+
+  function updateEditForm(value) {
+    editForm.value = value
+  }
+
   function openAssignModal(item) {
     assignTarget.value = item
     assignError.value = ''
@@ -400,6 +420,11 @@ export function useAdminPeopleManagement(options) {
     selectedClassId,
     selectedStudentId,
     filteredItems,
+    updateSearchQuery,
+    updateSelectedSchoolId,
+    updateSelectedClassId,
+    updateSelectedStudentId,
+    updateEditForm,
     fetchItems,
     openAssignModal,
     closeAssignModal,
