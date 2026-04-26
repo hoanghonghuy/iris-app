@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 
-const BASE = process.env.UI_BASE_URL || "http://localhost:3000";
+const BASE = process.env.UI_BASE_URL || "http://localhost:5173";
 
 const CREDENTIALS = {
   SUPER_ADMIN: { email: "admin@iris.local", password: "123456", expectedPath: "/admin" },
@@ -32,25 +32,19 @@ async function loginAndAssertRedirect(page, roleKey) {
 }
 
 async function testRoleRedirects(browser) {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
   for (const roleKey of ["SUPER_ADMIN", "TEACHER", "PARENT"]) {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
     try {
       const url = await loginAndAssertRedirect(page, roleKey);
       logResult(`Role redirect ${roleKey}`, true, url);
-
-      await page.evaluate(() => {
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("user_role");
-      });
-      await page.reload({ waitUntil: "networkidle" });
     } catch (err) {
-      logResult(`Role checks ${roleKey}`, false, err?.message || String(err));
+      logResult(`Role redirect ${roleKey}`, false, err?.message || String(err));
+    } finally {
+      await context.close();
     }
   }
-
-  await context.close();
 }
 
 async function testAdminUsers(browser) {
