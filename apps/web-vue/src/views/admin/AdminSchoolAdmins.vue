@@ -1,41 +1,107 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { adminService } from '../../services/adminService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
-import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import { normalizeListResponse } from '../../helpers/collectionUtils'
+import {
+  ADMIN_LOAD_ERROR_TITLE,
+  ADMIN_LOADING_MESSAGE,
+  ADMIN_RETRY_BUTTON_TEXT,
+  ADMIN_SELECTOR_FETCH_LIMIT,
+} from '../../helpers/adminConfig'
+import { useAdminCrudList, useAdminUserSearch } from '../../composables/admin'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
 
 const PAGE_SIZE = 10
-const USER_SEARCH_LIMIT = 100
 const USER_SEARCH_MIN_LENGTH = 2
 const USER_SEARCH_RESULT_LIMIT = 6
 
-const schoolAdmins = ref([])
 const schools = ref([])
-const totalPages = ref(0)
-const currentPage = ref(1)
-const totalItems = ref(0)
-const isLoading = ref(true)
-const errorMessage = ref('')
 
-const isModalOpen = ref(false)
-const isSubmitting = ref(false)
-const modalError = ref('')
-const formData = ref({ school_id: '' })
+const {
+  searchQuery: userSearchQuery,
+  searchResults: userSearchResults,
+  searchLoading: userSearchLoading,
+  selectedUser,
+  searchUsers,
+  selectUser,
+  clearSelectedUser,
+  cleanup: cleanupUserSearch,
+} = useAdminUserSearch({
+  minLength: USER_SEARCH_MIN_LENGTH,
+  resultLimit: USER_SEARCH_RESULT_LIMIT,
+})
 
-const userSearchQuery = ref('')
-const userSearchResults = ref([])
-const userSearchLoading = ref(false)
-const selectedUser = ref(null)
+const {
+  items: schoolAdmins,
+  totalPages,
+  currentPage,
+  totalItems,
+  isLoading,
+  errorMessage,
+  isModalOpen,
+  isSubmitting,
+  modalError,
+  formData,
+  isConfirmOpen,
+  itemToDelete,
+  fetchItems: fetchSchoolAdmins,
+  openAddModal: openCrudAddModal,
+  closeDeleteConfirm,
+  confirmDelete,
+  handleSave: handleCrudSave,
+  handleDelete,
+} = useAdminCrudList({
+  pageSize: PAGE_SIZE,
+  fetchPage: ({ page, pageSize }) =>
+    adminService.getSchoolAdmins({
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    }),
+  createEmptyForm: () => ({ school_id: '' }),
+  toEditForm: (admin) => ({ school_id: admin.school_id || '' }),
+  validateForm: (form) => {
+    if (!selectedUser.value || !form.school_id) {
+      return 'Vui lòng chọn user và trường học'
+    }
 
-const isConfirmOpen = ref(false)
-const itemToDelete = ref(null)
+    return ''
+  },
+  createItem: async (form) => {
+    const userId = selectedUser.value?.user_id
+    if (!userId) {
+      return
+    }
 
-let userSearchTimerId = null
-let userSearchRequestId = 0
+    const roles = Array.isArray(selectedUser.value.roles) ? selectedUser.value.roles : []
+    if (!roles.includes('SCHOOL_ADMIN')) {
+      await adminService.assignRole(userId, 'SCHOOL_ADMIN')
+    }
+
+    await adminService.createSchoolAdmin({
+      user_id: userId,
+      school_id: form.school_id,
+    })
+  },
+  deleteItem: (admin) => adminService.deleteSchoolAdmin(admin.admin_id),
+  saveErrorMessage: 'Không thể gán school admin',
+  deleteErrorPrefix: 'Không thể gỡ school admin',
+  onAfterSave: async ({ fetchItems }) => {
+    await fetchItems(1)
+    return true
+  },
+  onAfterDelete: async ({ currentPage, currentItemsCount, fetchItems }) => {
+    const nextPage = currentItemsCount === 1 && currentPage > 1
+      ? currentPage - 1
+      : currentPage
+
+    await fetchItems(nextPage)
+    return true
+  },
+})
 
 const schoolNameById = computed(() => {
   const entries = schools.value
@@ -74,14 +140,12 @@ function resetForm() {
   formData.value = { school_id: '' }
   modalError.value = ''
   userSearchQuery.value = ''
-  userSearchResults.value = []
-  userSearchLoading.value = false
-  selectedUser.value = null
+  clearSelectedUser()
 }
 
 function openAddModal() {
   resetForm()
-  isModalOpen.value = true
+  openCrudAddModal()
 }
 
 function closeModal() {
@@ -91,193 +155,29 @@ function closeModal() {
 
 async function fetchSchools() {
   try {
-    const data = await adminService.getSchools({ limit: 100, offset: 0 })
-    schools.value = Array.isArray(data?.data) ? data.data : []
+    const data = await adminService.getSchools({ limit: ADMIN_SELECTOR_FETCH_LIMIT, offset: 0 })
+    schools.value = normalizeListResponse(data)
   } catch (error) {
     console.error('Không thể lấy danh sách trường:', error)
   }
 }
 
-async function fetchSchoolAdmins(page = 1) {
-  isLoading.value = true
-  errorMessage.value = ''
-  currentPage.value = page
-
-  try {
-    const data = await adminService.getSchoolAdmins({
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    })
-
-    schoolAdmins.value = Array.isArray(data?.data) ? data.data : []
-
-    if (data?.pagination) {
-      const limit = data.pagination.limit || PAGE_SIZE
-      totalItems.value = data.pagination.total || 0
-      totalPages.value = Math.ceil(totalItems.value / limit) || 1
-    } else {
-      totalItems.value = schoolAdmins.value.length
-      totalPages.value = schoolAdmins.value.length > 0 ? 1 : 0
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách school admin'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function searchUsers(query) {
-  const normalizedQuery = query.trim().toLowerCase()
-  const requestId = ++userSearchRequestId
-
-  if (normalizedQuery.length < USER_SEARCH_MIN_LENGTH) {
-    userSearchResults.value = []
-    userSearchLoading.value = false
-    return
-  }
-
-  userSearchLoading.value = true
-
-  try {
-    const matches = []
-    let offset = 0
-    let hasMore = true
-
-    while (hasMore && matches.length < USER_SEARCH_RESULT_LIMIT) {
-      const response = await adminService.getUsers({
-        limit: USER_SEARCH_LIMIT,
-        offset,
-      })
-      const items = Array.isArray(response?.data) ? response.data : []
-
-      items.forEach((user) => {
-        if (
-          user?.email?.toLowerCase().includes(normalizedQuery) &&
-          !matches.some((item) => item.user_id === user.user_id)
-        ) {
-          matches.push(user)
-        }
-      })
-
-      const pagination = response?.pagination
-      hasMore = Boolean(pagination?.has_more) && items.length > 0
-      offset += pagination?.limit || USER_SEARCH_LIMIT
-    }
-
-    if (requestId !== userSearchRequestId) {
-      return
-    }
-
-    userSearchResults.value = matches.slice(0, USER_SEARCH_RESULT_LIMIT)
-  } catch (error) {
-    if (requestId !== userSearchRequestId) {
-      return
-    }
-
-    modalError.value = extractErrorMessage(error) || 'Không thể tìm user'
-    userSearchResults.value = []
-  } finally {
-    if (requestId === userSearchRequestId) {
-      userSearchLoading.value = false
-    }
-  }
-}
-
-function selectUser(user) {
-  selectedUser.value = user
-  userSearchQuery.value = user.email || ''
-  userSearchResults.value = []
-}
-
-function clearSelectedUser() {
-  selectedUser.value = null
-  userSearchQuery.value = ''
-  userSearchResults.value = []
-  modalError.value = ''
-}
-
 watch(userSearchQuery, (value) => {
-  if (selectedUser.value && value === selectedUser.value.email) {
-    userSearchResults.value = []
-    userSearchLoading.value = false
+  if (selectedUser.value && value === (selectedUser.value.email || selectedUser.value.full_name || selectedUser.value.user_id)) {
     return
-  }
-
-  selectedUser.value = null
-  modalError.value = ''
-
-  if (userSearchTimerId) {
-    clearTimeout(userSearchTimerId)
   }
 
   const query = value.trim()
-  if (query.length < USER_SEARCH_MIN_LENGTH) {
-    userSearchResults.value = []
-    userSearchLoading.value = false
-    return
-  }
-
-  userSearchTimerId = setTimeout(() => {
+  if (query.length >= USER_SEARCH_MIN_LENGTH) {
     searchUsers(query)
-  }, 250)
+  }
 })
 
 async function handleSave() {
-  if (!selectedUser.value || !formData.value.school_id) {
-    modalError.value = 'Vui lòng chọn user và trường học'
-    return
-  }
+  await handleCrudSave()
 
-  isSubmitting.value = true
-  modalError.value = ''
-
-  try {
-    const roles = Array.isArray(selectedUser.value.roles) ? selectedUser.value.roles : []
-    if (!roles.includes('SCHOOL_ADMIN')) {
-      await adminService.assignRole(selectedUser.value.user_id, 'SCHOOL_ADMIN')
-    }
-
-    await adminService.createSchoolAdmin({
-      user_id: selectedUser.value.user_id,
-      school_id: formData.value.school_id,
-    })
-
-    closeModal()
-    fetchSchoolAdmins(1)
-  } catch (error) {
-    modalError.value = extractErrorMessage(error) || 'Không thể gán school admin'
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-function confirmDelete(admin) {
-  itemToDelete.value = admin
-  isConfirmOpen.value = true
-}
-
-async function handleDelete() {
-  if (!itemToDelete.value) {
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    await adminService.deleteSchoolAdmin(itemToDelete.value.admin_id)
-    isConfirmOpen.value = false
-    itemToDelete.value = null
-
-    const nextPage = schoolAdmins.value.length === 1 && currentPage.value > 1
-      ? currentPage.value - 1
-      : currentPage.value
-
-    fetchSchoolAdmins(nextPage)
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể gỡ school admin'
-    isConfirmOpen.value = false
-  } finally {
-    isSubmitting.value = false
+  if (!isModalOpen.value) {
+    resetForm()
   }
 }
 
@@ -287,9 +187,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (userSearchTimerId) {
-    clearTimeout(userSearchTimerId)
-  }
+  cleanupUserSearch()
 })
 </script>
 
@@ -302,14 +200,14 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-if="errorMessage" class="alert alert--error">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
       <button class="btn btn--outline mt-2" type="button" @click="fetchSchoolAdmins(currentPage)">
-        Thử lại
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
       </button>
     </div>
 
-    <LoadingSpinner v-else-if="isLoading" message="Đang tải dữ liệu..." />
+    <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
 
     <div v-else-if="schoolAdmins.length === 0" class="card">
       <EmptyState
@@ -485,7 +383,7 @@ onBeforeUnmount(() => {
       is-danger
       :is-loading="isSubmitting"
       @confirm="handleDelete"
-      @cancel="isConfirmOpen = false"
+      @cancel="closeDeleteConfirm"
     />
   </div>
 </template>

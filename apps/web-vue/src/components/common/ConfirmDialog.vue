@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { watchEffect } from 'vue'
 
 const props = defineProps({
   isOpen: {
@@ -34,18 +34,27 @@ const props = defineProps({
 
 const emit = defineEmits(['confirm', 'cancel'])
 
-const handleEscape = (e) => {
-  if (e.key === 'Escape' && props.isOpen && !props.isLoading) {
+function handleCancel() {
+  if (!props.isLoading) {
     emit('cancel')
   }
 }
 
-onMounted(() => {
-  document.addEventListener('keydown', handleEscape)
-})
+const handleEscape = (e) => {
+  if (e.key === 'Escape' && props.isOpen && !props.isLoading) {
+    handleCancel()
+  }
+}
 
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
+watchEffect((onCleanup) => {
+  if (!props.isOpen) {
+    return
+  }
+
+  document.addEventListener('keydown', handleEscape)
+  onCleanup(() => {
+    document.removeEventListener('keydown', handleEscape)
+  })
 })
 </script>
 
@@ -56,7 +65,9 @@ onUnmounted(() => {
         <h3 class="font-bold text-lg m-0">{{ title }}</h3>
         <button 
           class="modal-close" 
-          @click="!isLoading && emit('cancel')"
+          type="button"
+          aria-label="Đóng"
+          @click="handleCancel"
           :disabled="isLoading"
         >
           ✕
@@ -70,13 +81,15 @@ onUnmounted(() => {
       <div class="modal-footer">
         <button 
           class="btn btn--outline" 
-          @click="emit('cancel')"
+          type="button"
+          @click="handleCancel"
           :disabled="isLoading"
         >
           {{ cancelText }}
         </button>
         <button 
           class="btn" 
+          type="button"
           :class="isDanger ? 'btn--danger' : 'btn--primary'"
           @click="emit('confirm')"
           :disabled="isLoading"

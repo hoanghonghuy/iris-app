@@ -1,523 +1,108 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { AlertCircle, Check, History, LoaderCircle } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
-import { teacherService } from '../../services/teacherService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
 import { formatDateTimeVN, formatDateVN } from '../../helpers/dateFormatter'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
+import { ATTENDANCE_STATUS_OPTIONS, getStatusLabel } from '../../helpers/attendanceConfig'
+import { useAttendanceClasses, useAttendanceTaking, useAttendanceHistory } from '../../composables/teacher'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
 
 const route = useRoute()
-
-const ATTENDANCE_STATUS_OPTIONS = [
-  { value: 'present', label: 'Có mặt', badge: 'badge badge--primary' },
-  { value: 'absent', label: 'Vắng', badge: 'badge badge--danger' },
-  { value: 'late', label: 'Muộn', badge: 'badge badge--warning' },
-  { value: 'excused', label: 'Có phép', badge: 'badge badge--outline' },
-]
-
-const today = getDateInputValue(new Date())
-
-const classes = ref([])
-const selectedClassId = ref('')
-const students = ref([])
-
-const attendanceData = ref({})
-const savedAttendance = ref({})
-const hasSavedForDate = ref({})
-
-const isLoadingClasses = ref(true)
-const isLoadingStudents = ref(false)
-const savingRowId = ref('')
-const cancelingRowId = ref('')
-const isSavingAll = ref(false)
-const isSavingDisplayed = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
-
 const viewMode = ref('take')
-const studentSearch = ref('')
-const takeListFilter = ref('all')
-const listOrderMode = ref('prioritize')
-const showMobileTakeControls = ref(false)
 
-const historyOpen = ref(new Set())
-const historyLoading = ref(new Set())
-const historyByStudent = ref({})
-
-const historyFrom = ref(getDateInputValue(daysAgo(7)))
-const historyTo = ref(today)
-const historyStudentId = ref('all')
-const historyStatus = ref('all')
-const historyListLoading = ref(false)
-const historyList = ref([])
-const historyOffset = ref(0)
-const historyLimit = ref(20)
-const historyTotal = ref(0)
-const historyHasMore = ref(false)
-
-function daysAgo(count) {
-  const date = new Date()
-  date.setDate(date.getDate() - count)
-  return date
-}
-
-function getDateInputValue(date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-}
-
-function unwrapList(value) {
-  const data = value?.data ?? value
-  return Array.isArray(data) ? data.filter(Boolean) : []
-}
-
-function getStatusOption(status) {
-  return ATTENDANCE_STATUS_OPTIONS.find((option) => option.value === status)
-}
-
-function getStatusLabel(status) {
-  return getStatusOption(status)?.label || status || '-'
-}
-
-function getDefaultAttendanceValue() {
-  return { status: 'present', note: '' }
-}
-
-function isSameAttendance(left, right) {
-  return left?.status === right?.status && (left?.note || '') === (right?.note || '')
-}
-
-function isRowDirty(studentId) {
-  const currentValue = attendanceData.value[studentId]
-  const savedValue = savedAttendance.value[studentId]
-
-  if (!currentValue || !savedValue) {
-    return !hasSavedForDate.value[studentId]
-  }
-
-  if (!hasSavedForDate.value[studentId]) {
-    return true
-  }
-
-  return !isSameAttendance(currentValue, savedValue)
-}
-
-function resetStudentHistoryState() {
-  historyOpen.value = new Set()
-  historyLoading.value = new Set()
-  historyByStudent.value = {}
-}
-
-const displayedStudents = computed(() => {
-  const normalizedSearch = studentSearch.value.trim().toLowerCase()
-  const searchedStudents = normalizedSearch
-    ? students.value.filter((student) => student.full_name?.toLowerCase().includes(normalizedSearch))
-    : students.value
-
-  let filtered = searchedStudents
-  if (takeListFilter.value === 'pending') {
-    filtered = searchedStudents.filter((student) => isRowDirty(student.student_id))
-  } else if (takeListFilter.value === 'saved') {
-    filtered = searchedStudents.filter((student) => !isRowDirty(student.student_id))
-  }
-
-  if (listOrderMode.value === 'original') {
-    return filtered
-  }
-
-  const unsavedStudents = filtered.filter((student) => isRowDirty(student.student_id))
-  const savedStudents = filtered.filter((student) => !isRowDirty(student.student_id))
-  return [...unsavedStudents, ...savedStudents]
-})
-
-const dirtyCount = computed(() => students.value.filter((student) => isRowDirty(student.student_id)).length)
-const displayedDirtyCount = computed(() => displayedStudents.value.filter((student) => isRowDirty(student.student_id)).length)
-const displayedSavedCount = computed(() => displayedStudents.value.length - displayedDirtyCount.value)
-const globalPendingCount = computed(() => students.value.filter((student) => isRowDirty(student.student_id)).length)
-
-async function fetchClasses() {
-  isLoadingClasses.value = true
-  errorMessage.value = ''
-
-  try {
-    classes.value = unwrapList(await teacherService.getMyClasses())
-
-    const requestedClassId = typeof route.query.classId === 'string' ? route.query.classId : ''
-    const nextClassId = classes.value.some((item) => item.class_id === requestedClassId)
-      ? requestedClassId
-      : classes.value[0]?.class_id || ''
-
-    if (!classes.value.some((item) => item.class_id === selectedClassId.value)) {
-      selectedClassId.value = nextClassId
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải lớp'
-  } finally {
-    isLoadingClasses.value = false
-  }
-}
-
-async function fetchStudentsAndAttendance() {
-  if (!selectedClassId.value) {
-    students.value = []
-    attendanceData.value = {}
-    savedAttendance.value = {}
-    hasSavedForDate.value = {}
-    resetStudentHistoryState()
-    return
-  }
-
-  isLoadingStudents.value = true
-  errorMessage.value = ''
-  successMessage.value = ''
-  resetStudentHistoryState()
-
-  try {
-    const studentList = unwrapList(await teacherService.getStudentsInClass(selectedClassId.value))
-    students.value = studentList
-
-    const initialAttendance = {}
-    const initialSavedAttendance = {}
-    const initialHasSaved = {}
-
-    await Promise.all(
-      studentList.map(async (student) => {
-        const fallback = getDefaultAttendanceValue()
-
-        try {
-          const records = unwrapList(
-            await teacherService.getStudentAttendance(student.student_id, today, today),
-          )
-
-          const existingRecord = records.find((record) => String(record.date || '').slice(0, 10) === today)
-          if (existingRecord) {
-            const savedValue = {
-              status: existingRecord.status || fallback.status,
-              note: existingRecord.note || '',
-            }
-            initialAttendance[student.student_id] = savedValue
-            initialSavedAttendance[student.student_id] = savedValue
-            initialHasSaved[student.student_id] = true
-            return
-          }
-        } catch {
-          initialAttendance[student.student_id] = { ...fallback }
-          initialSavedAttendance[student.student_id] = { ...fallback }
-          initialHasSaved[student.student_id] = false
-          return
-        }
-
-        initialAttendance[student.student_id] = { ...fallback }
-        initialSavedAttendance[student.student_id] = { ...fallback }
-        initialHasSaved[student.student_id] = false
-      }),
-    )
-
-    attendanceData.value = initialAttendance
-    savedAttendance.value = initialSavedAttendance
-    hasSavedForDate.value = initialHasSaved
-    historyStudentId.value = 'all'
-  } catch (error) {
-    students.value = []
-    attendanceData.value = {}
-    savedAttendance.value = {}
-    hasSavedForDate.value = {}
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách học sinh'
-  } finally {
-    isLoadingStudents.value = false
-  }
-}
-
-function handleAttendanceStatusChange(studentId, status) {
-  const currentValue = attendanceData.value[studentId] || getDefaultAttendanceValue()
-  attendanceData.value = {
-    ...attendanceData.value,
-    [studentId]: {
-      ...currentValue,
-      status,
-    },
-  }
-}
-
-function handleAttendanceNoteChange(studentId, note) {
-  const currentValue = attendanceData.value[studentId] || getDefaultAttendanceValue()
-  attendanceData.value = {
-    ...attendanceData.value,
-    [studentId]: {
-      ...currentValue,
-      note,
-    },
-  }
-}
-
-async function loadClassHistory(offset = 0) {
-  if (!selectedClassId.value || students.value.length === 0) {
-    historyList.value = []
-    historyTotal.value = 0
-    historyHasMore.value = false
-    return
-  }
-
-  historyListLoading.value = true
-  errorMessage.value = ''
-
-  try {
-    const response = await teacherService.getClassAttendanceChanges(selectedClassId.value, {
-      from: historyFrom.value || undefined,
-      to: historyTo.value || undefined,
-      student_id: historyStudentId.value === 'all' ? undefined : historyStudentId.value,
-      status: historyStatus.value === 'all' ? undefined : historyStatus.value,
-      limit: historyLimit.value,
-      offset,
-    })
-
-    const items = unwrapList(response).map((item) => ({
-      ...item,
-      student_name:
-        item.student_name
-        || students.value.find((student) => student.student_id === item.student_id)?.full_name
-        || 'Không rõ',
-    }))
-
-    historyList.value = items
-    historyTotal.value = response?.pagination?.total || items.length
-    historyHasMore.value = Boolean(response?.pagination?.has_more)
-    historyOffset.value = offset
-  } catch (error) {
-    historyList.value = []
-    historyTotal.value = 0
-    historyHasMore.value = false
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải lịch sử điểm danh'
-  } finally {
-    historyListLoading.value = false
-  }
-}
-
-async function toggleHistory(studentId) {
-  const nextOpen = new Set(historyOpen.value)
-  const shouldOpen = !nextOpen.has(studentId)
-
-  if (shouldOpen) {
-    nextOpen.add(studentId)
-  } else {
-    nextOpen.delete(studentId)
-  }
-  historyOpen.value = nextOpen
-
-  if (!shouldOpen || historyByStudent.value[studentId]) {
-    return
-  }
-
-  const nextLoading = new Set(historyLoading.value)
-  nextLoading.add(studentId)
-  historyLoading.value = nextLoading
-
-  try {
-    const formattedFromDate = getDateInputValue(daysAgo(30))
-    const records = unwrapList(
-      await teacherService.getStudentAttendanceChanges(studentId, formattedFromDate, today),
-    )
-    historyByStudent.value = {
-      ...historyByStudent.value,
-      [studentId]: records,
-    }
-  } catch {
-    historyByStudent.value = {
-      ...historyByStudent.value,
-      [studentId]: [],
-    }
-  } finally {
-    const finishedLoading = new Set(historyLoading.value)
-    finishedLoading.delete(studentId)
-    historyLoading.value = finishedLoading
-  }
-}
-
-async function handleMark(studentId) {
-  const currentAttendance = attendanceData.value[studentId]
-  if (!currentAttendance) return
-
-  savingRowId.value = studentId
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    await teacherService.markAttendance({
-      student_id: studentId,
-      date: today,
-      status: currentAttendance.status,
-      note: currentAttendance.note || '',
-    })
-
-    savedAttendance.value = {
-      ...savedAttendance.value,
-      [studentId]: { ...currentAttendance },
-    }
-    hasSavedForDate.value = {
-      ...hasSavedForDate.value,
-      [studentId]: true,
-    }
-    successMessage.value = 'Đã lưu điểm danh thành công.'
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể lưu điểm danh'
-  } finally {
-    savingRowId.value = ''
-  }
-}
-
-function handleRevert(studentId) {
-  const savedValue = savedAttendance.value[studentId]
-  if (!savedValue) return
-
-  attendanceData.value = {
-    ...attendanceData.value,
-    [studentId]: { ...savedValue },
-  }
-}
-
-async function handleCancelSaved(studentId) {
-  if (!hasSavedForDate.value[studentId]) return
-
-  cancelingRowId.value = studentId
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    await teacherService.cancelAttendance(studentId, today)
-    const fallback = getDefaultAttendanceValue()
-
-    attendanceData.value = {
-      ...attendanceData.value,
-      [studentId]: { ...fallback },
-    }
-    savedAttendance.value = {
-      ...savedAttendance.value,
-      [studentId]: { ...fallback },
-    }
-    hasSavedForDate.value = {
-      ...hasSavedForDate.value,
-      [studentId]: false,
-    }
-
-    const nextHistory = { ...historyByStudent.value }
-    delete nextHistory[studentId]
-    historyByStudent.value = nextHistory
-
-    successMessage.value = 'Đã hủy điểm danh đã lưu.'
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể hủy điểm danh đã lưu'
-  } finally {
-    cancelingRowId.value = ''
-  }
-}
-
-async function saveStudents(studentList, savingMode) {
-  if (studentList.length === 0) return
-
-  if (savingMode === 'displayed') {
-    isSavingDisplayed.value = true
-  } else {
-    isSavingAll.value = true
-  }
-
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    await Promise.all(
-      studentList.map((student) => {
-        const currentAttendance = attendanceData.value[student.student_id]
-        if (!currentAttendance) {
-          return Promise.resolve()
-        }
-
-        return teacherService.markAttendance({
-          student_id: student.student_id,
-          date: today,
-          status: currentAttendance.status,
-          note: currentAttendance.note || '',
-        })
-      }),
-    )
-
-    const nextSavedAttendance = { ...savedAttendance.value }
-    const nextHasSaved = { ...hasSavedForDate.value }
-
-    studentList.forEach((student) => {
-      nextSavedAttendance[student.student_id] = { ...attendanceData.value[student.student_id] }
-      nextHasSaved[student.student_id] = true
-    })
-
-    savedAttendance.value = nextSavedAttendance
-    hasSavedForDate.value = nextHasSaved
-    successMessage.value = savingMode === 'displayed'
-      ? 'Đã lưu danh sách đang hiển thị.'
-      : 'Đã lưu điểm danh cho toàn lớp.'
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể lưu điểm danh hàng loạt'
-  } finally {
-    isSavingDisplayed.value = false
-    isSavingAll.value = false
-  }
-}
-
-async function handleSaveDisplayed() {
-  const dirtyStudents = displayedStudents.value.filter((student) => isRowDirty(student.student_id))
-  await saveStudents(dirtyStudents, 'displayed')
-}
-
-async function handleSaveAll() {
-  const dirtyStudents = students.value.filter((student) => isRowDirty(student.student_id))
-  await saveStudents(dirtyStudents, 'all')
-}
-
-function applyStatusToDisplayed(status) {
-  if (displayedStudents.value.length === 0) return
-
-  const nextAttendance = { ...attendanceData.value }
-  displayedStudents.value.forEach((student) => {
-    const currentValue = nextAttendance[student.student_id] || getDefaultAttendanceValue()
-    nextAttendance[student.student_id] = {
-      ...currentValue,
-      status,
-    }
-  })
-  attendanceData.value = nextAttendance
-}
+const {
+  classes,
+  selectedClassId,
+  isLoadingClasses,
+  errorMessage: classesError,
+  fetchClasses,
+} = useAttendanceClasses(route.query)
+
+const {
+  students,
+  attendanceData,
+  savedAttendance,
+  hasSavedForDate,
+  isLoadingStudents,
+  savingRowId,
+  cancelingRowId,
+  isSavingAll,
+  isSavingDisplayed,
+  errorMessage,
+  successMessage,
+  studentSearch,
+  takeListFilter,
+  listOrderMode,
+  showMobileTakeControls,
+  displayedStudents,
+  dirtyCount,
+  displayedDirtyCount,
+  displayedSavedCount,
+  globalPendingCount,
+  isRowDirty,
+  fetchStudentsAndAttendance,
+  handleAttendanceStatusChange,
+  handleAttendanceNoteChange,
+  handleMark,
+  handleRevert,
+  handleCancelSaved,
+  handleSaveDisplayed,
+  handleSaveAll,
+  applyStatusToDisplayed,
+} = useAttendanceTaking()
+
+const {
+  historyOpen,
+  historyLoading,
+  historyByStudent,
+  historyFrom,
+  historyTo,
+  historyStudentId,
+  historyStatus,
+  historyListLoading,
+  historyList,
+  historyOffset,
+  historyTotal,
+  historyHasMore,
+  resetStudentHistoryState,
+  toggleHistory,
+  loadClassHistory,
+  handleHistoryPrev,
+  handleHistoryNext,
+} = useAttendanceHistory()
 
 function handleHistorySearch() {
-  loadClassHistory(0)
+  loadClassHistory(selectedClassId.value, students.value, 0)
 }
 
-function handleHistoryPrev() {
-  if (historyOffset.value <= 0) return
-  loadClassHistory(Math.max(0, historyOffset.value - historyLimit.value))
+function handleHistoryPrevPage() {
+  handleHistoryPrev(selectedClassId.value, students.value)
 }
 
-function handleHistoryNext() {
-  if (!historyHasMore.value) return
-  loadClassHistory(historyOffset.value + historyLimit.value)
+function handleHistoryNextPage() {
+  handleHistoryNext(selectedClassId.value, students.value)
 }
 
 watch(selectedClassId, async () => {
   showMobileTakeControls.value = false
-  await fetchStudentsAndAttendance()
+  resetStudentHistoryState()
+  await fetchStudentsAndAttendance(selectedClassId.value)
 })
 
 watch(viewMode, (mode) => {
   if (mode === 'history') {
-    loadClassHistory(0)
+    loadClassHistory(selectedClassId.value, students.value, 0)
   }
 })
 
 onMounted(async () => {
   await fetchClasses()
   if (selectedClassId.value) {
-    await fetchStudentsAndAttendance()
+    await fetchStudentsAndAttendance(selectedClassId.value)
   }
 })
+
 </script>
 
 <template>
@@ -555,9 +140,9 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="errorMessage" class="alert alert--error alert-row">
+    <div v-if="errorMessage || classesError" class="alert alert--error alert-row">
       <AlertCircle :size="16" />
-      {{ errorMessage }}
+      {{ errorMessage || classesError }}
     </div>
 
     <div v-if="successMessage" class="alert alert--success alert-row">
@@ -934,13 +519,13 @@ onMounted(async () => {
       </div>
 
       <div class="history-pagination">
-        <button class="btn btn--outline btn--sm" type="button" :disabled="historyOffset === 0" @click="handleHistoryPrev">
+        <button class="btn btn--outline btn--sm" type="button" :disabled="historyOffset === 0" @click="handleHistoryPrevPage">
           Trang trước
         </button>
         <p class="history-total">
-          {{ historyTotal === 0 ? '0-0' : `${historyOffset + 1}-${Math.min(historyOffset + historyLimit, historyTotal)}` }} / {{ historyTotal }}
+          {{ historyTotal === 0 ? '0-0' : `${historyOffset + 1}-${Math.min(historyOffset + 20, historyTotal)}` }} / {{ historyTotal }}
         </p>
-        <button class="btn btn--outline btn--sm" type="button" :disabled="!historyHasMore" @click="handleHistoryNext">
+        <button class="btn btn--outline btn--sm" type="button" :disabled="!historyHasMore" @click="handleHistoryNextPage">
           Trang sau
         </button>
       </div>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import {
   AlertTriangle,
   CalendarDays,
@@ -9,316 +9,62 @@ import {
   RefreshCcw,
   UserRound,
 } from 'lucide-vue-next'
-import { teacherService } from '../../services/teacherService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
-
-const FETCH_LIMIT = 100
-
-const statusConfig = {
-  pending: { label: 'Chờ xác nhận', badge: 'badge--outline' },
-  confirmed: { label: 'Đã xác nhận', badge: 'badge--primary' },
-  cancelled: { label: 'Đã hủy', badge: 'badge--danger' },
-  completed: { label: 'Hoàn tất', badge: 'badge--outline' },
-  no_show: { label: 'Vắng mặt', badge: 'badge--outline' },
-}
-
-const statusOptions = [
-  { value: 'pending', label: 'Chờ xác nhận' },
-  { value: 'confirmed', label: 'Đã xác nhận' },
-  { value: 'cancelled', label: 'Đã hủy' },
-  { value: 'completed', label: 'Hoàn tất' },
-  { value: 'no_show', label: 'Vắng mặt' },
-]
-
-const classes = ref([])
-const appointments = ref([])
-const loading = ref(true)
-const errorMessage = ref('')
-const submitting = ref(false)
-const updatingAppointmentId = ref(null)
-const showCreateForm = ref(false)
-
-const classId = ref('')
-const startTime = ref('')
-const durationMinutes = ref(30)
-const bufferMinutes = ref(10)
-const maxBookingsPerDay = ref(12)
-const note = ref('')
-
-const statusFilter = ref('')
-const filterFromDate = ref(toDateInputValue(offsetDate(-6)))
-const filterToDate = ref(toDateInputValue(new Date()))
+import { downloadCsv } from '../../helpers/csvExport'
+import { toDateInputValue } from '../../helpers/dateHelpers'
+import {
+  APPOINTMENT_STATUS_CONFIG,
+  APPOINTMENT_STATUS_OPTIONS,
+  getCancelReasonText,
+  getUtcOffsetLabel,
+  formatDayHeading,
+  formatDateTime,
+  getLocalDateKey,
+} from '../../helpers/appointmentConfig'
+import { useAppointmentsList, useAppointmentSlotCreation } from '../../composables/teacher'
 
 const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Local'
 const utcOffsetLabel = getUtcOffsetLabel()
 const timezoneDisplay = `${timeZone} (${utcOffsetLabel})`
 
-const minStartTime = computed(() => {
-  const local = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 16)
-})
+const {
+  classes,
+  appointments,
+  loading,
+  errorMessage: listErrorMessage,
+  updatingAppointmentId,
+  statusFilter,
+  filterFromDate,
+  filterToDate,
+  stats,
+  groupedAppointments,
+  loadData,
+  updateStatus,
+  resetLastSevenDays,
+  fetchAllAppointments,
+} = useAppointmentsList()
 
-const stats = computed(() => ({
-  totalClasses: classes.value.length,
-  totalAppointments: appointments.value.length,
-  pendingCount: appointments.value.filter((item) => item.status === 'pending').length,
-  confirmedCount: appointments.value.filter((item) => item.status === 'confirmed').length,
-}))
+const {
+  showCreateForm,
+  submitting,
+  errorMessage: createErrorMessage,
+  classId,
+  startTime,
+  durationMinutes,
+  bufferMinutes,
+  maxBookingsPerDay,
+  note,
+  minStartTime,
+  createSlot,
+  initializeClassId,
+} = useAppointmentSlotCreation(classes, fetchAllAppointments)
 
-const groupedAppointments = computed(() => {
-  const groups = new Map()
-  const sorted = [...appointments.value].sort(
-    (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
-  )
+const errorMessage = listErrorMessage
 
-  for (const appointment of sorted) {
-    const key = getLocalDateKey(appointment.start_time)
-    if (!groups.has(key)) groups.set(key, [])
-    groups.get(key).push(appointment)
-  }
-
-  return Array.from(groups.entries()).map(([dateKey, items]) => ({ dateKey, items }))
-})
-
-function offsetDate(days) {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  return date
-}
-
-function toDateInputValue(date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-}
-
-function getUtcOffsetLabel() {
-  const totalMinutes = -new Date().getTimezoneOffset()
-  const sign = totalMinutes >= 0 ? '+' : '-'
-  const abs = Math.abs(totalMinutes)
-  const hours = String(Math.floor(abs / 60)).padStart(2, '0')
-  const mins = String(abs % 60).padStart(2, '0')
-  return `UTC${sign}${hours}:${mins}`
-}
-
-function getLocalDateKey(value) {
-  const date = new Date(value)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function formatDayHeading(dateKey) {
-  return new Date(`${dateKey}T00:00:00`).toLocaleDateString('vi-VN', {
-    weekday: 'long',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  })
-}
-
-function formatDateTime(value) {
-  return new Date(value).toLocaleString('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    timeZoneName: 'short',
-  })
-}
-
-function csvEscape(value) {
-  const text = String(value ?? '')
-  if (/[",\n]/.test(text)) {
-    return `"${text.replace(/"/g, '""')}"`
-  }
-  return text
-}
-
-function downloadCsv(filename, headers, rows) {
-  const lines = [headers.map(csvEscape).join(','), ...rows.map((row) => row.map(csvEscape).join(','))]
-  const blob = new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-}
-
-function normalizeListResponse(value) {
-  if (Array.isArray(value?.data)) return value.data.filter(Boolean)
-  if (Array.isArray(value)) return value.filter(Boolean)
-  return []
-}
-
-function normalizePaginatedResponse(value) {
-  return {
-    items: normalizeListResponse(value),
-    pagination: value?.pagination ?? {
-      total: normalizeListResponse(value).length,
-      limit: FETCH_LIMIT,
-      offset: 0,
-      has_more: false,
-    },
-  }
-}
-
-async function fetchAllAppointments(params = {}) {
-  let offset = 0
-  let hasMore = true
-  let combined = []
-
-  while (hasMore) {
-    const response = await teacherService.getAppointments({
-      ...params,
-      limit: FETCH_LIMIT,
-      offset,
-    })
-
-    const { items, pagination } = normalizePaginatedResponse(response)
-    combined = combined.concat(items)
-    hasMore = Boolean(pagination.has_more) && items.length > 0
-
-    const nextOffset = offset + (pagination.limit || FETCH_LIMIT)
-    if (!hasMore || nextOffset >= (pagination.total ?? combined.length)) {
-      break
-    }
-
-    offset = nextOffset
-  }
-
-  return combined
-}
-
-function getCancelReasonText(reason) {
-  const map = {
-    parent_cancelled: 'Phụ huynh đã hủy lịch',
-    teacher_cancelled: 'Giáo viên đã hủy lịch',
-    system_cancelled: 'Hệ thống đã hủy lịch',
-  }
-
-  return map[reason] || reason || ''
-}
-
-async function loadData() {
-  loading.value = true
-  errorMessage.value = ''
-
-  try {
-    const from = filterFromDate.value ? new Date(`${filterFromDate.value}T00:00:00`).toISOString() : undefined
-    const to = filterToDate.value ? new Date(`${filterToDate.value}T23:59:59.999`).toISOString() : undefined
-
-    if (from && to && new Date(from).getTime() > new Date(to).getTime()) {
-      errorMessage.value = 'Khoảng ngày lọc không hợp lệ: Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.'
-      appointments.value = []
-      return
-    }
-
-    const [classResponse, appointmentResponse] = await Promise.all([
-      teacherService.getMyClasses(),
-      fetchAllAppointments({
-        status: statusFilter.value || undefined,
-        from,
-        to,
-      }),
-    ])
-
-    classes.value = normalizeListResponse(classResponse)
-    appointments.value = appointmentResponse
-    if (!classId.value && classes.value.length) {
-      classId.value = classes.value[0].class_id
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải dữ liệu lịch hẹn.'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function createSlot() {
-  if (!classId.value || !startTime.value) return
-
-  submitting.value = true
-  try {
-    const startDate = new Date(startTime.value)
-    if (Number.isNaN(startDate.getTime())) {
-      errorMessage.value = 'Thời gian bắt đầu không hợp lệ.'
-      return
-    }
-
-    const dayStart = new Date(startDate)
-    dayStart.setHours(0, 0, 0, 0)
-    const dayEnd = new Date(startDate)
-    dayEnd.setHours(23, 59, 59, 999)
-
-    const activeAppointments = (await fetchAllAppointments({
-      from: dayStart.toISOString(),
-      to: dayEnd.toISOString(),
-    })).filter((item) => item.status !== 'cancelled')
-
-    if (activeAppointments.length >= maxBookingsPerDay.value) {
-      errorMessage.value = `Đã đạt giới hạn ${maxBookingsPerDay.value} lịch trong ngày này.`
-      return
-    }
-
-    const proposedStartMs = startDate.getTime()
-    const proposedEndMs = proposedStartMs + Number(durationMinutes.value) * 60000
-    const bufferMs = Math.max(0, Number(bufferMinutes.value)) * 60000
-    const conflicting = activeAppointments.find((appointment) => {
-      const existingStart = new Date(appointment.start_time).getTime()
-      const existingEnd = new Date(appointment.end_time).getTime()
-      return !(proposedEndMs + bufferMs <= existingStart || proposedStartMs >= existingEnd + bufferMs)
-    })
-
-    if (conflicting) {
-      errorMessage.value = `Khung giờ mới chưa đảm bảo khoảng nghỉ ${bufferMinutes.value} phút với lịch ${formatDateTime(conflicting.start_time)}.`
-      return
-    }
-
-    await teacherService.createAppointmentSlot({
-      class_id: classId.value,
-      start_time: startDate.toISOString(),
-      duration_minutes: Number(durationMinutes.value),
-      buffer_minutes: Number(bufferMinutes.value),
-      max_bookings_per_day: Number(maxBookingsPerDay.value),
-      note: note.value.trim() || undefined,
-    })
-
-    startTime.value = ''
-    note.value = ''
-    showCreateForm.value = false
+async function handleCreateSlot() {
+  await createSlot(async () => {
     await loadData()
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tạo khung giờ.'
-  } finally {
-    submitting.value = false
-  }
-}
-
-async function updateStatus(appointmentId, status) {
-  updatingAppointmentId.value = appointmentId
-  try {
-    await teacherService.updateAppointmentStatus(
-      appointmentId,
-      status,
-      status === 'cancelled' ? 'teacher_cancelled' : undefined,
-    )
-    await loadData()
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể cập nhật trạng thái lịch hẹn.'
-  } finally {
-    updatingAppointmentId.value = null
-  }
-}
-
-async function resetLastSevenDays() {
-  filterFromDate.value = toDateInputValue(offsetDate(-6))
-  filterToDate.value = toDateInputValue(new Date())
-  await loadData()
+    initializeClassId()
+  })
 }
 
 function exportAppointmentsCsv() {
@@ -334,7 +80,7 @@ function exportAppointmentsCsv() {
       appointment.student_name || appointment.student_id,
       appointment.class_name || appointment.class_id,
       appointment.parent_name || appointment.parent_id,
-      statusConfig[appointment.status]?.label || appointment.status,
+      APPOINTMENT_STATUS_CONFIG[appointment.status]?.label || appointment.status,
       formatDateTime(appointment.start_time),
       formatDateTime(appointment.end_time),
       timezoneDisplay,
@@ -349,7 +95,11 @@ function exportAppointmentsCsv() {
   )
 }
 
-onMounted(loadData)
+onMounted(async () => {
+  await loadData()
+  initializeClassId()
+})
+
 </script>
 
 <template>
@@ -364,7 +114,7 @@ onMounted(loadData)
         <strong>Tải dữ liệu thất bại</strong>
         <p>{{ errorMessage }}</p>
       </div>
-      <button class="btn btn--outline btn--sm" @click="loadData">Thử lại</button>
+      <button type="button" class="btn btn--outline btn--sm" @click="loadData">Thử lại</button>
     </div>
 
     <section class="card stats-grid">
@@ -380,10 +130,10 @@ onMounted(loadData)
         <p>Mở biểu mẫu để thêm khung giờ và kiểm tra khoảng nghỉ trước khi tạo.</p>
       </div>
       <div class="action-row">
-        <button class="btn btn--primary" @click="showCreateForm = !showCreateForm">
+        <button type="button" class="btn btn--primary" @click="showCreateForm = !showCreateForm">
           {{ showCreateForm ? 'Đóng biểu mẫu' : 'Tạo khung giờ mới' }}
         </button>
-        <button class="btn btn--outline" :disabled="loading" @click="loadData">
+        <button type="button" class="btn btn--outline" :disabled="loading" @click="loadData">
           <RefreshCcw :size="16" />
           Làm mới
         </button>
@@ -449,9 +199,14 @@ onMounted(loadData)
           <p class="hint">Tối đa 500 ký tự.</p>
         </div>
 
+        <div v-if="createErrorMessage" class="alert alert--error alert-row">
+          <AlertTriangle :size="16" />
+          {{ createErrorMessage }}
+        </div>
+
         <div class="form-actions">
-          <button class="btn btn--outline" @click="showCreateForm = false">Đóng</button>
-          <button class="btn btn--primary" :disabled="submitting || !classId || !startTime" @click="createSlot">
+          <button type="button" class="btn btn--outline" @click="showCreateForm = false">Đóng</button>
+          <button type="button" class="btn btn--primary" :disabled="submitting || !classId || !startTime" @click="handleCreateSlot">
             {{ submitting ? 'Đang tạo...' : 'Tạo khung giờ' }}
           </button>
         </div>
@@ -464,7 +219,7 @@ onMounted(loadData)
         <div class="filters">
           <select v-model="statusFilter" class="form-input" @change="loadData">
             <option value="">Tất cả trạng thái</option>
-            <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+            <option v-for="option in APPOINTMENT_STATUS_OPTIONS" :key="option.value" :value="option.value">
               {{ option.label }}
             </option>
           </select>
@@ -475,8 +230,8 @@ onMounted(loadData)
             <input v-model="filterToDate" class="form-input" type="date" @change="loadData" />
           </div>
 
-          <button class="btn btn--outline btn--sm" @click="resetLastSevenDays">7 ngày gần nhất</button>
-          <button class="btn btn--outline btn--sm" @click="exportAppointmentsCsv">
+          <button type="button" class="btn btn--outline btn--sm" @click="resetLastSevenDays">7 ngày gần nhất</button>
+          <button type="button" class="btn btn--outline btn--sm" @click="exportAppointmentsCsv">
             <Download :size="14" />
             Xuất CSV
           </button>
@@ -514,16 +269,16 @@ onMounted(loadData)
             </div>
 
             <div class="status-actions">
-              <button class="btn btn--sm btn--primary" :disabled="appointment.status !== 'pending' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'confirmed')">
+              <button type="button" class="btn btn--sm btn--primary" :disabled="appointment.status !== 'pending' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'confirmed')">
                 Xác nhận
               </button>
-              <button class="btn btn--sm btn--outline" :disabled="appointment.status !== 'confirmed' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'completed')">
+              <button type="button" class="btn btn--sm btn--outline" :disabled="appointment.status !== 'confirmed' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'completed')">
                 Hoàn tất
               </button>
-              <button class="btn btn--sm btn--outline" :disabled="appointment.status !== 'confirmed' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'no_show')">
+              <button type="button" class="btn btn--sm btn--outline" :disabled="appointment.status !== 'confirmed' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'no_show')">
                 Vắng mặt
               </button>
-              <button class="btn btn--sm btn--danger" :disabled="['cancelled', 'completed'].includes(appointment.status) || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'cancelled')">
+              <button type="button" class="btn btn--sm btn--danger" :disabled="['cancelled', 'completed'].includes(appointment.status) || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'cancelled')">
                 {{ updatingAppointmentId === appointment.appointment_id ? 'Đang xử lý...' : 'Hủy' }}
               </button>
             </div>

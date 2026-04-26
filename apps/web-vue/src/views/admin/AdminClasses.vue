@@ -2,45 +2,120 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { adminService } from '../../services/adminService'
+import { normalizeListResponse } from '../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
-import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import {
+  ADMIN_LOAD_ERROR_TITLE,
+  ADMIN_LOADING_MESSAGE,
+  ADMIN_RETRY_BUTTON_TEXT,
+  ADMIN_SELECTOR_FETCH_LIMIT,
+} from '../../helpers/adminConfig'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
+import { useAdminCrudList } from '../../composables/admin/useAdminCrudList'
 
 const authStore = useAuthStore()
-
 const PAGE_SIZE = 10
 
 const schools = ref([])
 const selectedSchoolId = ref('')
-
-const classesList = ref([])
-const totalPages = ref(0)
-const currentPage = ref(1)
-const totalItems = ref(0)
-const isLoading = ref(true)
-const errorMessage = ref('')
-
-const isModalOpen = ref(false)
-const isSubmitting = ref(false)
-const modalError = ref('')
-const formMode = ref('add')
-const formData = ref({ id: '', name: '', school_year: '', school_id: '' })
-
-const isConfirmOpen = ref(false)
-const itemToDelete = ref(null)
 
 const isSuperAdmin = computed(() => authStore.currentUserRole === 'SUPER_ADMIN')
 const selectedSchoolName = computed(() => {
   return schools.value.find((school) => school.school_id === selectedSchoolId.value)?.name || ''
 })
 
+const {
+  items: classesList,
+  totalPages,
+  currentPage,
+  totalItems,
+  isLoading,
+  errorMessage,
+  isModalOpen,
+  isSubmitting,
+  modalError,
+  formMode,
+  formData,
+  isConfirmOpen,
+  itemToDelete,
+  fetchItems: fetchClasses,
+  openAddModal: openCrudAddModal,
+  closeModal,
+  openEditModal,
+  handleSave,
+  confirmDelete,
+  closeDeleteConfirm,
+  handleDelete,
+} = useAdminCrudList({
+  pageSize: PAGE_SIZE,
+  fetchPage: ({ page, pageSize }) => {
+    if (!selectedSchoolId.value) {
+      return {
+        data: [],
+        pagination: {
+          total: 0,
+          limit: pageSize,
+          offset: 0,
+          has_more: false,
+        },
+      }
+    }
+
+    return adminService.getClassesBySchool(selectedSchoolId.value, {
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    })
+  },
+  createEmptyForm: () => ({
+    id: '',
+    name: '',
+    school_year: '2023-2024',
+    school_id: selectedSchoolId.value,
+  }),
+  toEditForm: (cls) => ({
+    ...cls,
+    id: cls.class_id,
+  }),
+  validateForm: (form) => {
+    if (!form.name || !form.school_year || !form.school_id) {
+      return 'Vui lòng nhập đầy đủ thông tin'
+    }
+
+    return ''
+  },
+  createItem: (form) =>
+    adminService.createClass({
+      name: form.name,
+      school_year: form.school_year,
+      school_id: form.school_id,
+    }),
+  updateItem: (form) =>
+    adminService.updateClass(form.id, {
+      name: form.name,
+      school_year: form.school_year,
+    }),
+  deleteItem: (cls) => adminService.deleteClass(cls.class_id),
+  saveErrorMessage: 'Không thể lưu lớp học',
+  deleteErrorPrefix: 'Không thể xóa lớp',
+  onAfterSave: async ({ mode, form, currentPage, fetchItems }) => {
+    if (mode === 'add' && selectedSchoolId.value !== form.school_id) {
+      selectedSchoolId.value = form.school_id
+      return true
+    }
+
+    await fetchItems(currentPage)
+    return true
+  },
+})
+
 async function fetchSchools() {
   try {
-    const data = await adminService.getSchools({ limit: 100, offset: 0 })
-    schools.value = Array.isArray(data?.data) ? data.data : []
+    const data = await adminService.getSchools({ limit: ADMIN_SELECTOR_FETCH_LIMIT, offset: 0 })
+    schools.value = normalizeListResponse(data)
 
     if (schools.value.length > 0) {
       selectedSchoolId.value = schools.value[0].school_id
@@ -53,33 +128,8 @@ async function fetchSchools() {
   }
 }
 
-async function fetchClasses(page = 1) {
-  if (!selectedSchoolId.value) return
-
-  isLoading.value = true
-  errorMessage.value = ''
-  currentPage.value = page
-
-  try {
-    const data = await adminService.getClassesBySchool(selectedSchoolId.value, {
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    })
-
-    classesList.value = Array.isArray(data?.data) ? data.data : []
-
-    if (data?.pagination) {
-      totalItems.value = data.pagination.total || 0
-      totalPages.value = Math.ceil(data.pagination.total / data.pagination.limit) || 1
-    } else {
-      totalItems.value = classesList.value.length
-      totalPages.value = classesList.value.length > 0 ? 1 : 0
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách lớp'
-  } finally {
-    isLoading.value = false
-  }
+function openAddModal() {
+  openCrudAddModal()
 }
 
 watch(selectedSchoolId, () => {
@@ -91,90 +141,8 @@ onMounted(async () => {
     await authStore.fetchCurrentUser()
   }
 
-  fetchSchools()
+  await fetchSchools()
 })
-
-function openAddModal() {
-  formMode.value = 'add'
-  formData.value = {
-    id: '',
-    name: '',
-    school_year: '2023-2024',
-    school_id: selectedSchoolId.value,
-  }
-  modalError.value = ''
-  isModalOpen.value = true
-}
-
-function openEditModal(cls) {
-  formMode.value = 'edit'
-  formData.value = {
-    ...cls,
-    id: cls.class_id,
-  }
-  modalError.value = ''
-  isModalOpen.value = true
-}
-
-async function handleSave() {
-  if (!formData.value.name || !formData.value.school_year || !formData.value.school_id) {
-    modalError.value = 'Vui lòng nhập đầy đủ thông tin'
-    return
-  }
-
-  isSubmitting.value = true
-  modalError.value = ''
-
-  try {
-    if (formMode.value === 'add') {
-      await adminService.createClass({
-        name: formData.value.name,
-        school_year: formData.value.school_year,
-        school_id: formData.value.school_id,
-      })
-    } else {
-      await adminService.updateClass(formData.value.id, {
-        name: formData.value.name,
-        school_year: formData.value.school_year,
-      })
-    }
-
-    isModalOpen.value = false
-
-    if (formMode.value === 'add' && selectedSchoolId.value !== formData.value.school_id) {
-      selectedSchoolId.value = formData.value.school_id
-    } else {
-      fetchClasses(currentPage.value)
-    }
-  } catch (error) {
-    modalError.value = extractErrorMessage(error) || 'Không thể lưu lớp học'
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-function confirmDelete(cls) {
-  itemToDelete.value = cls
-  isConfirmOpen.value = true
-}
-
-async function handleDelete() {
-  if (!itemToDelete.value) return
-
-  isSubmitting.value = true
-
-  try {
-    await adminService.deleteClass(itemToDelete.value.class_id)
-    isConfirmOpen.value = false
-    itemToDelete.value = null
-    fetchClasses(currentPage.value)
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể xóa lớp'
-    isConfirmOpen.value = false
-  } finally {
-    isSubmitting.value = false
-  }
-}
 </script>
 
 <template>
@@ -203,12 +171,12 @@ async function handleDelete() {
     </div>
 
     <div v-if="errorMessage" class="alert alert--error">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchClasses(currentPage)">Thử lại</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchClasses(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
     </div>
 
-    <LoadingSpinner v-else-if="isLoading" message="Đang tải dữ liệu..." />
+    <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
 
     <div v-else class="card classes-shell">
       <EmptyState
@@ -289,7 +257,7 @@ async function handleDelete() {
     <ActionModal
       :is-open="isModalOpen"
       :title="formMode === 'add' ? 'Thêm lớp học mới' : 'Sửa thông tin lớp'"
-      @close="isModalOpen = false"
+      @close="closeModal"
     >
       <form class="modal-form" @submit.prevent="handleSave">
         <div v-if="modalError" class="alert alert--error">
@@ -332,7 +300,7 @@ async function handleDelete() {
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="isModalOpen = false">
+          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="closeModal">
             Hủy
           </button>
           <button type="submit" class="btn btn--primary" :disabled="isSubmitting">
@@ -350,7 +318,7 @@ async function handleDelete() {
       is-danger
       :is-loading="isSubmitting"
       @confirm="handleDelete"
-      @cancel="isConfirmOpen = false"
+      @cancel="closeDeleteConfirm"
     />
   </div>
 </template>

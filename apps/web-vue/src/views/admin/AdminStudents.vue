@@ -1,10 +1,19 @@
 <script setup>
-import EmptyState from '../../components/EmptyState.vue'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import StudentsTable from './students/StudentsTable.vue'
 import StudentFormModal from './students/StudentFormModal.vue'
 import { useAdminStudentsPage } from './students/useAdminStudentsPage'
+import {
+  ADMIN_LOAD_ERROR_TITLE,
+  ADMIN_LOADING_MESSAGE,
+  ADMIN_RETRY_BUTTON_TEXT,
+} from '../../helpers/adminConfig'
+import {
+  getDeleteStudentConfirmMessage,
+  STUDENT_REVOKE_CONFIRM_MESSAGE,
+} from './students/studentConfig'
 
 const {
   schools,
@@ -94,10 +103,10 @@ const {
     </div>
 
     <div v-if="errorMessage" class="alert alert--error">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
       <button class="btn btn--outline mt-2" type="button" @click="loadStudents">
-        Thử lại
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
       </button>
     </div>
 
@@ -105,7 +114,7 @@ const {
       {{ codeError }}
     </div>
 
-    <LoadingSpinner v-if="isBootstrapping || isLoadingStudents" message="Đang tải dữ liệu..." />
+    <LoadingSpinner v-if="isBootstrapping || isLoadingStudents" :message="ADMIN_LOADING_MESSAGE" />
 
     <div v-else-if="schools.length === 0" class="card">
       <EmptyState
@@ -167,7 +176,7 @@ const {
     <ConfirmDialog
       :is-open="isDeleteConfirmOpen"
       title="Xác nhận xóa"
-      :message="`Bạn có chắc muốn xóa học sinh '${deleteTarget?.full_name || ''}' không? Hành động này không thể hoàn tác.`"
+      :message="getDeleteStudentConfirmMessage(deleteTarget?.full_name)"
       confirm-text="Xóa học sinh"
       is-danger
       :is-loading="isDeleteLoading"
@@ -178,7 +187,7 @@ const {
     <ConfirmDialog
       :is-open="isRevokeConfirmOpen"
       title="Thu hồi mã phụ huynh"
-      message="Mã phụ huynh hiện tại sẽ bị vô hiệu hóa. Phụ huynh đang sử dụng mã này sẽ bị đăng xuất. Bạn có chắc chắn muốn tiếp tục?"
+      :message="STUDENT_REVOKE_CONFIRM_MESSAGE"
       confirm-text="Thu hồi"
       is-danger
       :is-loading="Boolean(revokingCodeStudentId)"

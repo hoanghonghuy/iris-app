@@ -1,10 +1,15 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAuthStore } from '../../../stores/authStore'
 import { adminService } from '../../../services/adminService'
+import { fetchAllPaginated, normalizeListResponse } from '../../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../../helpers/errorHandler'
 import { normalizeGender } from './studentPresentation'
-
-const FETCH_LIMIT = 100
+import { ADMIN_SELECTOR_FETCH_LIMIT } from '../../../helpers/adminConfig'
+import {
+  STUDENT_COPY_FEEDBACK_TIMEOUT_MS,
+  STUDENT_ERROR_MESSAGES,
+  STUDENT_INITIAL_FORM,
+} from './studentConfig'
 
 export function useAdminStudentsPage() {
   const authStore = useAuthStore()
@@ -25,12 +30,7 @@ export function useAdminStudentsPage() {
   const isFormSubmitting = ref(false)
   const formError = ref('')
   const formMode = ref('add')
-  const formData = ref({
-    id: '',
-    full_name: '',
-    dob: '',
-    gender: 'male',
-  })
+  const formData = ref({ ...STUDENT_INITIAL_FORM })
 
   const generatingCodeStudentId = ref('')
   const revokingCodeStudentId = ref('')
@@ -63,12 +63,7 @@ export function useAdminStudentsPage() {
   })
 
   function resetForm() {
-    formData.value = {
-      id: '',
-      full_name: '',
-      dob: '',
-      gender: 'male',
-    }
+    formData.value = { ...STUDENT_INITIAL_FORM }
     formError.value = ''
   }
 
@@ -92,8 +87,8 @@ export function useAdminStudentsPage() {
   }
 
   async function loadSchools() {
-    const response = await adminService.getSchools({ limit: 100, offset: 0 })
-    const items = Array.isArray(response?.data) ? response.data : []
+    const response = await adminService.getSchools({ limit: ADMIN_SELECTOR_FETCH_LIMIT, offset: 0 })
+    const items = normalizeListResponse(response)
     schools.value = items
 
     if (!items.some((school) => school.school_id === selectedSchoolId.value)) {
@@ -110,10 +105,10 @@ export function useAdminStudentsPage() {
     }
 
     const response = await adminService.getClassesBySchool(selectedSchoolId.value, {
-      limit: 100,
+      limit: ADMIN_SELECTOR_FETCH_LIMIT,
       offset: 0,
     })
-    const items = Array.isArray(response?.data) ? response.data : []
+    const items = normalizeListResponse(response)
     classes.value = items
 
     if (!items.some((classItem) => classItem.class_id === selectedClassId.value)) {
@@ -136,27 +131,18 @@ export function useAdminStudentsPage() {
     codeError.value = ''
 
     try {
-      let offset = 0
-      let hasMore = true
-      const allStudents = []
+      const { items } = await fetchAllPaginated(
+        ({ limit, offset }) =>
+          adminService.getStudentsByClass(selectedClassId.value, {
+            limit,
+            offset,
+          }),
+        { limit: ADMIN_SELECTOR_FETCH_LIMIT },
+      )
 
-      while (hasMore) {
-        const response = await adminService.getStudentsByClass(selectedClassId.value, {
-          limit: FETCH_LIMIT,
-          offset,
-        })
-
-        const items = Array.isArray(response?.data) ? response.data : []
-        allStudents.push(...items)
-
-        const pagination = response?.pagination
-        hasMore = Boolean(pagination?.has_more) && items.length > 0
-        offset += pagination?.limit || FETCH_LIMIT
-      }
-
-      students.value = allStudents
+      students.value = items
     } catch (error) {
-      errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách học sinh'
+      errorMessage.value = extractErrorMessage(error) || STUDENT_ERROR_MESSAGES.LOAD_STUDENTS_LIST
     } finally {
       isLoadingStudents.value = false
     }
@@ -191,12 +177,12 @@ export function useAdminStudentsPage() {
 
   async function submitForm() {
     if (!formData.value.full_name.trim()) {
-      formError.value = 'Họ tên không được để trống'
+      formError.value = STUDENT_ERROR_MESSAGES.REQUIRED_FULL_NAME
       return
     }
 
     if (!formData.value.dob) {
-      formError.value = 'Ngày sinh không được để trống'
+      formError.value = STUDENT_ERROR_MESSAGES.REQUIRED_DOB
       return
     }
 
@@ -223,7 +209,7 @@ export function useAdminStudentsPage() {
       closeFormModal()
       await loadStudents()
     } catch (error) {
-      formError.value = extractErrorMessage(error) || 'Không thể lưu học sinh'
+      formError.value = extractErrorMessage(error) || STUDENT_ERROR_MESSAGES.SAVE_STUDENT
     } finally {
       isFormSubmitting.value = false
     }
@@ -251,7 +237,7 @@ export function useAdminStudentsPage() {
       closeDeleteConfirm()
       await loadStudents()
     } catch (error) {
-      errorMessage.value = `Lỗi xóa: ${extractErrorMessage(error)}`
+      errorMessage.value = `${STUDENT_ERROR_MESSAGES.DELETE_PREFIX}: ${extractErrorMessage(error)}`
       isDeleteConfirmOpen.value = false
     } finally {
       isDeleteLoading.value = false
@@ -278,7 +264,7 @@ export function useAdminStudentsPage() {
         }
       })
     } catch (error) {
-      codeError.value = extractErrorMessage(error) || 'Không thể tạo mã phụ huynh'
+      codeError.value = extractErrorMessage(error) || STUDENT_ERROR_MESSAGES.GENERATE_PARENT_CODE
     } finally {
       generatingCodeStudentId.value = ''
     }
@@ -317,7 +303,7 @@ export function useAdminStudentsPage() {
       })
       closeRevokeConfirm()
     } catch (error) {
-      codeError.value = extractErrorMessage(error) || 'Không thể thu hồi mã phụ huynh'
+      codeError.value = extractErrorMessage(error) || STUDENT_ERROR_MESSAGES.REVOKE_PARENT_CODE
     } finally {
       revokingCodeStudentId.value = ''
     }
@@ -336,9 +322,9 @@ export function useAdminStudentsPage() {
       }
       copyTimeoutId = window.setTimeout(() => {
         copiedStudentId.value = ''
-      }, 2000)
+      }, STUDENT_COPY_FEEDBACK_TIMEOUT_MS)
     } catch {
-      codeError.value = 'Không thể sao chép mã phụ huynh'
+      codeError.value = STUDENT_ERROR_MESSAGES.COPY_PARENT_CODE
     }
   }
 
@@ -366,7 +352,7 @@ export function useAdminStudentsPage() {
       await loadStudents()
       hasInitialized.value = true
     } catch (error) {
-      errorMessage.value = extractErrorMessage(error) || 'Không thể tải dữ liệu học sinh'
+      errorMessage.value = extractErrorMessage(error) || STUDENT_ERROR_MESSAGES.LOAD_STUDENTS_DATA
     } finally {
       isBootstrapping.value = false
     }

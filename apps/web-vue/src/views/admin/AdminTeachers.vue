@@ -1,224 +1,109 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { Link2, Pencil, Phone, Trash2, X } from 'lucide-vue-next'
-import { useAuthStore } from '../../stores/authStore'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
-import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
-
-const authStore = useAuthStore()
+import { useAdminPeopleManagement } from '../../composables/admin/useAdminPeopleManagement'
+import {
+  ADMIN_LOAD_ERROR_TITLE,
+  ADMIN_LOADING_MESSAGE,
+  ADMIN_RETRY_BUTTON_TEXT,
+} from '../../helpers/adminConfig'
 
 const PAGE_SIZE = 20
 
-const teachers = ref([])
-const totalPages = ref(0)
-const currentPage = ref(1)
-const totalItems = ref(0)
-const isLoading = ref(true)
-const errorMessage = ref('')
+const {
+  items: teachers,
+  totalPages,
+  currentPage,
+  totalItems,
+  isLoading,
+  errorMessage,
+  searchQuery,
+  isSuperAdmin,
+  isEditModalOpen,
+  editLoading,
+  editError,
+  editForm,
+  isAssignModalOpen,
+  assignTarget,
+  assignLoading,
+  assignError,
+  isUnassignOpen,
+  unassignTarget,
+  unassignLoading,
+  schools,
+  classes,
+  selectedSchoolId,
+  selectedClassId,
+  filteredItems: filteredTeachers,
+  fetchItems: fetchTeachers,
+  openAssignModal,
+  closeAssignModal,
+  openEditModal,
+  closeEditModal,
+  handleEdit,
+  handleAssign,
+  openUnassignDialog,
+  closeUnassignDialog,
+  handleUnassign,
+} = useAdminPeopleManagement({
+  pageSize: PAGE_SIZE,
+  searchFields: ['full_name', 'email', 'phone'],
+  fetchList: adminService.getTeachers,
+  createInitialEditForm: () => ({
+    teacher_id: '',
+    full_name: '',
+    phone: '',
+    school_id: '',
+  }),
+  toEditForm: (teacher, context) => ({
+    teacher_id: teacher.teacher_id,
+    full_name: teacher.full_name || '',
+    phone: teacher.phone || '',
+    school_id: teacher.school_id || context.selectedSchoolId || '',
+  }),
+  validateEditForm: (form) => {
+    if (!form.teacher_id || !form.full_name.trim() || !form.school_id) {
+      return 'Vui lòng nhập đầy đủ thông tin bắt buộc'
+    }
 
-const searchQuery = ref('')
-const isSuperAdmin = computed(() => authStore.currentUserRole === 'SUPER_ADMIN')
-
-const isEditModalOpen = ref(false)
-const editLoading = ref(false)
-const editError = ref('')
-const editForm = ref({
-  teacher_id: '',
-  full_name: '',
-  phone: '',
-  school_id: '',
+    return ''
+  },
+  updateItem: (form) =>
+    adminService.updateTeacher(form.teacher_id, {
+      full_name: form.full_name.trim(),
+      phone: form.phone?.trim() || '',
+      school_id: form.school_id,
+    }),
+  updateErrorMessage: 'Không thể cập nhật giáo viên',
+  assignItem: ({ target, selectedClassId: classId }) =>
+    adminService.assignTeacherToClass(target.teacher_id, classId),
+  toUnassignTarget: (teacher, cls) => ({
+    teacher_id: teacher.teacher_id,
+    class_id: cls.class_id,
+    class_name: cls.name,
+  }),
+  unassignItem: (target) => adminService.unassignTeacherFromClass(target.teacher_id, target.class_id),
 })
-
-const isAssignModalOpen = ref(false)
-const assignTarget = ref(null)
-const assignLoading = ref(false)
-const assignError = ref('')
-
-const isUnassignOpen = ref(false)
-const unassignTarget = ref(null)
-const unassignLoading = ref(false)
 
 const isDeleteOpen = ref(false)
 const deleteTarget = ref(null)
 const deleteLoading = ref(false)
 
-const schools = ref([])
-const classes = ref([])
-const selectedSchoolId = ref('')
-const selectedClassId = ref('')
-
-const filteredTeachers = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) {
-    return teachers.value
-  }
-
-  return teachers.value.filter((teacher) =>
-    teacher.full_name?.toLowerCase().includes(query) ||
-    teacher.email?.toLowerCase().includes(query) ||
-    teacher.phone?.includes(query)
-  )
-})
-
-async function fetchTeachers(page = 1) {
-  isLoading.value = true
-  errorMessage.value = ''
-  currentPage.value = page
-
-  try {
-    const data = await adminService.getTeachers({
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    })
-
-    teachers.value = Array.isArray(data?.data) ? data.data : []
-
-    if (data?.pagination) {
-      totalItems.value = data.pagination.total || 0
-      totalPages.value = Math.ceil(totalItems.value / Math.max(data.pagination.limit || PAGE_SIZE, 1)) || 1
-    } else {
-      totalItems.value = teachers.value.length
-      totalPages.value = teachers.value.length > 0 ? 1 : 0
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function fetchSchoolsForSelector() {
-  try {
-    const data = await adminService.getSchools({ limit: 100, offset: 0 })
-    schools.value = Array.isArray(data?.data) ? data.data : []
-    selectedSchoolId.value = schools.value[0]?.school_id || ''
-  } catch {
-    schools.value = []
-    selectedSchoolId.value = ''
-  }
-}
-
-async function fetchClassesForSelector() {
-  if (!selectedSchoolId.value) {
-    classes.value = []
-    selectedClassId.value = ''
-    return
-  }
-
-  try {
-    const data = await adminService.getClassesBySchool(selectedSchoolId.value, { limit: 100, offset: 0 })
-    classes.value = Array.isArray(data?.data) ? data.data : []
-    selectedClassId.value = classes.value[0]?.class_id || ''
-  } catch {
-    classes.value = []
-    selectedClassId.value = ''
-  }
-}
-
-watch(selectedSchoolId, () => {
-  fetchClassesForSelector()
-})
-
-onMounted(() => {
-  fetchTeachers()
-  fetchSchoolsForSelector()
-})
-
-function openAssignModal(teacher) {
-  assignTarget.value = teacher
-  assignError.value = ''
-  isAssignModalOpen.value = true
-}
-
-function openEditModal(teacher) {
-  editError.value = ''
-  editForm.value = {
-    teacher_id: teacher.teacher_id,
-    full_name: teacher.full_name || '',
-    phone: teacher.phone || '',
-    school_id: teacher.school_id || selectedSchoolId.value || '',
-  }
-  isEditModalOpen.value = true
-}
-
-async function handleEdit() {
-  if (!editForm.value.teacher_id || !editForm.value.full_name.trim() || !editForm.value.school_id) {
-    editError.value = 'Vui lòng nhập đầy đủ thông tin bắt buộc'
-    return
-  }
-
-  editLoading.value = true
-  editError.value = ''
-  try {
-    await adminService.updateTeacher(editForm.value.teacher_id, {
-      full_name: editForm.value.full_name.trim(),
-      phone: editForm.value.phone?.trim() || '',
-      school_id: editForm.value.school_id,
-    })
-
-    isEditModalOpen.value = false
-    await fetchTeachers(currentPage.value)
-  } catch (error) {
-    editError.value = extractErrorMessage(error) || 'Không thể cập nhật giáo viên'
-  } finally {
-    editLoading.value = false
-  }
-}
-
-async function handleAssign() {
-  if (!selectedClassId.value || !assignTarget.value) {
-    return
-  }
-
-  assignLoading.value = true
-  assignError.value = ''
-  try {
-    await adminService.assignTeacherToClass(assignTarget.value.teacher_id, selectedClassId.value)
-    isAssignModalOpen.value = false
-    await fetchTeachers(currentPage.value)
-  } catch (error) {
-    assignError.value = extractErrorMessage(error)
-  } finally {
-    assignLoading.value = false
-  }
-}
-
-function openUnassignDialog(teacher, cls) {
-  unassignTarget.value = {
-    teacher_id: teacher.teacher_id,
-    class_id: cls.class_id,
-    class_name: cls.name,
-  }
-  isUnassignOpen.value = true
-}
-
-async function handleUnassign() {
-  if (!unassignTarget.value) {
-    return
-  }
-
-  unassignLoading.value = true
-  try {
-    await adminService.unassignTeacherFromClass(unassignTarget.value.teacher_id, unassignTarget.value.class_id)
-    isUnassignOpen.value = false
-    unassignTarget.value = null
-    await fetchTeachers(currentPage.value)
-  } catch (error) {
-    errorMessage.value = `Lỗi hủy gán: ${extractErrorMessage(error)}`
-    isUnassignOpen.value = false
-  } finally {
-    unassignLoading.value = false
-  }
-}
-
 function openDeleteDialog(teacher) {
   deleteTarget.value = teacher
   isDeleteOpen.value = true
+}
+
+function closeDeleteDialog() {
+  isDeleteOpen.value = false
+  deleteTarget.value = null
 }
 
 async function handleDelete() {
@@ -229,12 +114,11 @@ async function handleDelete() {
   deleteLoading.value = true
   try {
     await adminService.deleteTeacher(deleteTarget.value.teacher_id)
-    isDeleteOpen.value = false
-    deleteTarget.value = null
+    closeDeleteDialog()
     await fetchTeachers(currentPage.value)
   } catch (error) {
     errorMessage.value = `Lỗi xóa: ${extractErrorMessage(error)}`
-    isDeleteOpen.value = false
+    closeDeleteDialog()
   } finally {
     deleteLoading.value = false
   }
@@ -244,12 +128,12 @@ async function handleDelete() {
 <template>
   <div class="admin-teachers page-stack">
     <div v-if="errorMessage" class="alert alert--error">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchTeachers(currentPage)">Thử lại</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchTeachers(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
     </div>
 
-    <LoadingSpinner v-else-if="isLoading" message="Đang tải dữ liệu..." />
+    <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
 
     <div v-else class="page-stack">
       <div v-if="teachers.length > 0" class="card toolbar-card">
@@ -399,7 +283,7 @@ async function handleDelete() {
     <ActionModal
       :is-open="isEditModalOpen"
       :title="`Sửa thông tin giáo viên - ${editForm.full_name || ''}`"
-      @close="isEditModalOpen = false"
+      @close="closeEditModal"
     >
       <form class="modal-form" @submit.prevent="handleEdit">
         <div v-if="editError" class="alert alert--error">
@@ -441,7 +325,7 @@ async function handleDelete() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="editLoading" @click="isEditModalOpen = false">
+          <button class="btn btn--outline" type="button" :disabled="editLoading" @click="closeEditModal">
             Hủy
           </button>
           <button class="btn btn--primary" type="submit" :disabled="editLoading">
@@ -454,14 +338,14 @@ async function handleDelete() {
     <ActionModal
       :is-open="isAssignModalOpen"
       :title="`Gán lớp phụ trách - ${assignTarget?.full_name || ''}`"
-      @close="isAssignModalOpen = false"
+      @close="closeAssignModal"
     >
       <div class="modal-form">
         <div v-if="assignError" class="alert alert--error">
           {{ assignError }}
         </div>
 
-        <div v-if="authStore.currentUserRole === 'SUPER_ADMIN'" class="form-group mb-0">
+        <div v-if="isSuperAdmin" class="form-group mb-0">
           <label class="form-label">Chọn trường</label>
           <select v-model="selectedSchoolId" class="form-input">
             <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
@@ -481,7 +365,7 @@ async function handleDelete() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="assignLoading" @click="isAssignModalOpen = false">
+          <button class="btn btn--outline" type="button" :disabled="assignLoading" @click="closeAssignModal">
             Hủy
           </button>
           <button
@@ -504,7 +388,7 @@ async function handleDelete() {
       is-danger
       :is-loading="unassignLoading"
       @confirm="handleUnassign"
-      @cancel="isUnassignOpen = false"
+      @cancel="closeUnassignDialog"
     />
 
     <ConfirmDialog
@@ -515,7 +399,7 @@ async function handleDelete() {
       is-danger
       :is-loading="deleteLoading"
       @confirm="handleDelete"
-      @cancel="isDeleteOpen = false"
+      @cancel="closeDeleteDialog"
     />
   </div>
 </template>

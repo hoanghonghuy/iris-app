@@ -3,10 +3,16 @@ import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
-import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import {
+  ADMIN_LOAD_ERROR_TITLE,
+  ADMIN_LOADING_MESSAGE,
+  ADMIN_RETRY_BUTTON_TEXT,
+} from '../../helpers/adminConfig'
+import { useAdminCrudList } from '../../composables/admin/useAdminCrudList'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
 
 const authStore = useAuthStore()
@@ -34,23 +40,68 @@ const STATUS_BADGES = {
   locked: 'badge badge--danger',
 }
 
-const users = ref([])
-const totalPages = ref(0)
-const currentPage = ref(1)
-const totalItems = ref(0)
-const isLoading = ref(true)
-const errorMessage = ref('')
-
 const searchQuery = ref('')
 const selectedRoleFilter = ref('ALL')
 const actionLoadingUserId = ref('')
 
-const isAddModalOpen = ref(false)
-const isSubmitting = ref(false)
-const modalError = ref('')
-const newUserData = ref({
-  email: '',
-  roles: ['TEACHER'],
+const {
+  items: users,
+  totalPages,
+  currentPage,
+  totalItems,
+  isLoading,
+  errorMessage,
+  isModalOpen: isAddModalOpen,
+  isSubmitting,
+  modalError,
+  formData: newUserData,
+  fetchItems: fetchUsers,
+  openAddModal,
+  closeModal: closeAddModal,
+  handleSave: handleAddUser,
+} = useAdminCrudList({
+  pageSize: PAGE_SIZE,
+  fetchPage: ({ page, pageSize }) => {
+    const params = {
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    }
+
+    if (selectedRoleFilter.value !== 'ALL') {
+      params.role = selectedRoleFilter.value
+    }
+
+    return adminService.getUsers(params)
+  },
+  createEmptyForm: () => ({
+    email: '',
+    roles: ['TEACHER'],
+  }),
+  toEditForm: (user) => ({
+    email: user?.email || '',
+    roles: formatRoles(user?.roles),
+  }),
+  validateForm: (form) => {
+    if (!form.email.trim()) {
+      return 'Vui lòng nhập email'
+    }
+
+    if (!Array.isArray(form.roles) || form.roles.length === 0) {
+      return 'Chọn ít nhất 1 vai trò'
+    }
+
+    return ''
+  },
+  createItem: (form) =>
+    adminService.createUser({
+      email: form.email.trim(),
+      roles: form.roles,
+    }),
+  saveErrorMessage: 'Không thể tạo user',
+  onAfterSave: async ({ fetchItems }) => {
+    await fetchItems(1)
+    return true
+  },
 })
 
 const isLockConfirmOpen = ref(false)
@@ -119,49 +170,8 @@ const emptyState = computed(() => {
   return null
 })
 
-async function fetchUsers(page = 1) {
-  isLoading.value = true
-  errorMessage.value = ''
-  currentPage.value = page
-
-  try {
-    const params = {
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    }
-
-    if (selectedRoleFilter.value !== 'ALL') {
-      params.role = selectedRoleFilter.value
-    }
-
-    const data = await adminService.getUsers(params)
-    users.value = Array.isArray(data?.data) ? data.data : []
-
-    if (data?.pagination) {
-      totalItems.value = data.pagination.total || 0
-      totalPages.value = Math.ceil(data.pagination.total / data.pagination.limit) || 1
-    } else {
-      totalItems.value = users.value.length
-      totalPages.value = users.value.length > 0 ? 1 : 0
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách người dùng'
-  } finally {
-    isLoading.value = false
-  }
-}
-
 function handleRoleFilterChange() {
   fetchUsers(1)
-}
-
-function openAddModal() {
-  newUserData.value = {
-    email: '',
-    roles: ['TEACHER'],
-  }
-  modalError.value = ''
-  isAddModalOpen.value = true
 }
 
 function toggleCreateRole(role) {
@@ -174,38 +184,14 @@ function toggleCreateRole(role) {
   newUserData.value.roles = [...currentRoles, role]
 }
 
-async function handleAddUser() {
-  if (!newUserData.value.email.trim()) {
-    modalError.value = 'Vui lòng nhập email'
-    return
-  }
-
-  if (newUserData.value.roles.length === 0) {
-    modalError.value = 'Chọn ít nhất 1 vai trò'
-    return
-  }
-
-  isSubmitting.value = true
-  modalError.value = ''
-
-  try {
-    await adminService.createUser({
-      email: newUserData.value.email.trim(),
-      roles: newUserData.value.roles,
-    })
-
-    isAddModalOpen.value = false
-    fetchUsers(1)
-  } catch (error) {
-    modalError.value = extractErrorMessage(error) || 'Không thể tạo user'
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
 function confirmToggleLock(user) {
   userToToggle.value = user
   isLockConfirmOpen.value = true
+}
+
+function closeLockConfirm() {
+  isLockConfirmOpen.value = false
+  userToToggle.value = null
 }
 
 async function handleToggleLock() {
@@ -222,12 +208,11 @@ async function handleToggleLock() {
       await adminService.lockUser(userToToggle.value.user_id)
     }
 
-    isLockConfirmOpen.value = false
-    userToToggle.value = null
+    closeLockConfirm()
     fetchUsers(currentPage.value)
   } catch (error) {
     errorMessage.value = extractErrorMessage(error) || `Không thể ${targetStatus === 'locked' ? 'mở khóa' : 'khóa'} tài khoản`
-    isLockConfirmOpen.value = false
+    closeLockConfirm()
   } finally {
     actionLoadingUserId.value = ''
     isSubmitting.value = false
@@ -272,12 +257,12 @@ onMounted(async () => {
     </div>
 
     <div v-if="errorMessage" class="alert alert--error">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchUsers(currentPage)">Thử lại</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchUsers(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
     </div>
 
-    <LoadingSpinner v-else-if="isLoading" message="Đang tải dữ liệu..." />
+    <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
 
     <div v-else-if="emptyState" class="card">
       <EmptyState :title="emptyState.title" :message="emptyState.message" icon="users">
@@ -404,7 +389,7 @@ onMounted(async () => {
     <ActionModal
       :is-open="isAddModalOpen"
       title="Tạo user mới"
-      @close="isAddModalOpen = false"
+      @close="closeAddModal"
     >
       <form class="modal-form" @submit.prevent="handleAddUser">
         <div v-if="modalError" class="alert alert--error">
@@ -446,7 +431,7 @@ onMounted(async () => {
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="isAddModalOpen = false">
+          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="closeAddModal">
             Hủy
           </button>
           <button type="submit" class="btn btn--primary" :disabled="isSubmitting">
@@ -466,7 +451,7 @@ onMounted(async () => {
       :is-danger="normalizeUserStatus(userToToggle) !== 'locked'"
       :is-loading="isSubmitting"
       @confirm="handleToggleLock"
-      @cancel="isLockConfirmOpen = false"
+      @cancel="closeLockConfirm"
     />
   </div>
 </template>

@@ -1,258 +1,108 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
 import { Link2, Pencil, Phone, X } from 'lucide-vue-next'
-import { useAuthStore } from '../../stores/authStore'
-import { adminService } from '../../services/adminService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
-import ConfirmDialog from '../../components/ConfirmDialog.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
+import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
-
-const authStore = useAuthStore()
+import { adminService } from '../../services/adminService'
+import { useAdminPeopleManagement } from '../../composables/admin/useAdminPeopleManagement'
+import {
+  ADMIN_LOAD_ERROR_TITLE,
+  ADMIN_LOADING_MESSAGE,
+  ADMIN_RETRY_BUTTON_TEXT,
+} from '../../helpers/adminConfig'
 
 const PAGE_SIZE = 20
 
-const parents = ref([])
-const totalPages = ref(0)
-const currentPage = ref(1)
-const totalItems = ref(0)
-const isLoading = ref(true)
-const errorMessage = ref('')
-
-const searchQuery = ref('')
-const isSuperAdmin = computed(() => authStore.currentUserRole === 'SUPER_ADMIN')
-
-const isEditModalOpen = ref(false)
-const editLoading = ref(false)
-const editError = ref('')
-const editForm = ref({
-  parent_id: '',
-  full_name: '',
-  phone: '',
-  school_id: '',
-})
-
-const isAssignModalOpen = ref(false)
-const assignTarget = ref(null)
-const assignLoading = ref(false)
-const assignError = ref('')
-
-const isUnassignOpen = ref(false)
-const unassignTarget = ref(null)
-const unassignLoading = ref(false)
-
-const schools = ref([])
-const classes = ref([])
-const students = ref([])
-const selectedSchoolId = ref('')
-const selectedClassId = ref('')
-const selectedStudentId = ref('')
-
-const filteredParents = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) {
-    return parents.value
-  }
-
-  return parents.value.filter((parent) =>
-    parent.full_name?.toLowerCase().includes(query) ||
-    parent.email?.toLowerCase().includes(query) ||
-    parent.phone?.includes(query)
-  )
-})
-
-async function fetchParents(page = 1) {
-  isLoading.value = true
-  errorMessage.value = ''
-  currentPage.value = page
-
-  try {
-    const data = await adminService.getParents({
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    })
-
-    parents.value = Array.isArray(data?.data) ? data.data : []
-
-    if (data?.pagination) {
-      totalItems.value = data.pagination.total || 0
-      totalPages.value = Math.ceil(totalItems.value / Math.max(data.pagination.limit || PAGE_SIZE, 1)) || 1
-    } else {
-      totalItems.value = parents.value.length
-      totalPages.value = parents.value.length > 0 ? 1 : 0
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-async function fetchSchoolsForSelector() {
-  try {
-    const data = await adminService.getSchools({ limit: 100, offset: 0 })
-    schools.value = Array.isArray(data?.data) ? data.data : []
-    selectedSchoolId.value = schools.value[0]?.school_id || ''
-  } catch {
-    schools.value = []
-    selectedSchoolId.value = ''
-  }
-}
-
-async function fetchClassesForSelector() {
-  if (!selectedSchoolId.value) {
-    classes.value = []
-    students.value = []
-    selectedClassId.value = ''
-    selectedStudentId.value = ''
-    return
-  }
-
-  classes.value = []
-  students.value = []
-  selectedClassId.value = ''
-  selectedStudentId.value = ''
-
-  try {
-    const data = await adminService.getClassesBySchool(selectedSchoolId.value, { limit: 100, offset: 0 })
-    classes.value = Array.isArray(data?.data) ? data.data : []
-    selectedClassId.value = classes.value[0]?.class_id || ''
-  } catch {
-    classes.value = []
-  }
-}
-
-async function fetchStudentsForSelector() {
-  if (!selectedClassId.value) {
-    students.value = []
-    selectedStudentId.value = ''
-    return
-  }
-
-  students.value = []
-  selectedStudentId.value = ''
-
-  try {
-    const data = await adminService.getStudentsByClass(selectedClassId.value, { limit: 100, offset: 0 })
-    students.value = Array.isArray(data?.data) ? data.data : []
-    selectedStudentId.value = students.value[0]?.student_id || ''
-  } catch {
-    students.value = []
-  }
-}
-
-watch(selectedSchoolId, () => {
-  fetchClassesForSelector()
-})
-
-watch(selectedClassId, () => {
-  fetchStudentsForSelector()
-})
-
-onMounted(() => {
-  fetchParents()
-  fetchSchoolsForSelector()
-})
-
-function openAssignModal(parent) {
-  assignTarget.value = parent
-  assignError.value = ''
-  isAssignModalOpen.value = true
-}
-
-function openEditModal(parent) {
-  editError.value = ''
-  editForm.value = {
+const {
+  items: parents,
+  totalPages,
+  currentPage,
+  totalItems,
+  isLoading,
+  errorMessage,
+  searchQuery,
+  isSuperAdmin,
+  isEditModalOpen,
+  editLoading,
+  editError,
+  editForm,
+  isAssignModalOpen,
+  assignTarget,
+  assignLoading,
+  assignError,
+  isUnassignOpen,
+  unassignTarget,
+  unassignLoading,
+  schools,
+  classes,
+  students,
+  selectedSchoolId,
+  selectedClassId,
+  selectedStudentId,
+  filteredItems: filteredParents,
+  fetchItems: fetchParents,
+  openAssignModal,
+  closeAssignModal,
+  openEditModal,
+  closeEditModal,
+  handleEdit,
+  handleAssign,
+  openUnassignDialog,
+  closeUnassignDialog,
+  handleUnassign,
+} = useAdminPeopleManagement({
+  pageSize: PAGE_SIZE,
+  searchFields: ['full_name', 'email', 'phone'],
+  fetchList: adminService.getParents,
+  createInitialEditForm: () => ({
+    parent_id: '',
+    full_name: '',
+    phone: '',
+    school_id: '',
+  }),
+  toEditForm: (parent, context) => ({
     parent_id: parent.parent_id,
     full_name: parent.full_name || '',
     phone: parent.phone || '',
-    school_id: parent.school_id || selectedSchoolId.value || '',
-  }
-  isEditModalOpen.value = true
-}
+    school_id: parent.school_id || context.selectedSchoolId || '',
+  }),
+  validateEditForm: (form) => {
+    if (!form.parent_id || !form.full_name.trim() || !form.school_id) {
+      return 'Vui lòng nhập đầy đủ thông tin bắt buộc'
+    }
 
-async function handleEdit() {
-  if (!editForm.value.parent_id || !editForm.value.full_name.trim() || !editForm.value.school_id) {
-    editError.value = 'Vui lòng nhập đầy đủ thông tin bắt buộc'
-    return
-  }
-
-  editLoading.value = true
-  editError.value = ''
-  try {
-    await adminService.updateParent(editForm.value.parent_id, {
-      full_name: editForm.value.full_name.trim(),
-      phone: editForm.value.phone?.trim() || '',
-      school_id: editForm.value.school_id,
-    })
-
-    isEditModalOpen.value = false
-    await fetchParents(currentPage.value)
-  } catch (error) {
-    editError.value = extractErrorMessage(error) || 'Không thể cập nhật phụ huynh'
-  } finally {
-    editLoading.value = false
-  }
-}
-
-async function handleAssign() {
-  if (!selectedStudentId.value || !assignTarget.value) {
-    return
-  }
-
-  assignLoading.value = true
-  assignError.value = ''
-  try {
-    await adminService.assignParentToStudent(assignTarget.value.parent_id, selectedStudentId.value)
-    isAssignModalOpen.value = false
-    await fetchParents(currentPage.value)
-  } catch (error) {
-    assignError.value = extractErrorMessage(error)
-  } finally {
-    assignLoading.value = false
-  }
-}
-
-function openUnassignDialog(parent, student) {
-  unassignTarget.value = {
+    return ''
+  },
+  updateItem: (form) =>
+    adminService.updateParent(form.parent_id, {
+      full_name: form.full_name.trim(),
+      phone: form.phone?.trim() || '',
+      school_id: form.school_id,
+    }),
+  updateErrorMessage: 'Không thể cập nhật phụ huynh',
+  assignItem: ({ target, selectedStudentId: studentId }) =>
+    adminService.assignParentToStudent(target.parent_id, studentId),
+  enableStudentSelector: true,
+  toUnassignTarget: (parent, student) => ({
     parent_id: parent.parent_id,
     student_id: student.student_id,
     student_name: student.full_name,
-  }
-  isUnassignOpen.value = true
-}
-
-async function handleUnassign() {
-  if (!unassignTarget.value) {
-    return
-  }
-
-  unassignLoading.value = true
-  try {
-    await adminService.unassignParentFromStudent(unassignTarget.value.parent_id, unassignTarget.value.student_id)
-    isUnassignOpen.value = false
-    unassignTarget.value = null
-    await fetchParents(currentPage.value)
-  } catch (error) {
-    errorMessage.value = `Lỗi hủy gán: ${extractErrorMessage(error)}`
-    isUnassignOpen.value = false
-  } finally {
-    unassignLoading.value = false
-  }
-}
+  }),
+  unassignItem: (target) => adminService.unassignParentFromStudent(target.parent_id, target.student_id),
+})
 </script>
 
 <template>
   <div class="admin-parents page-stack">
     <div v-if="errorMessage" class="alert alert--error">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchParents(currentPage)">Thử lại</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchParents(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
     </div>
 
-    <LoadingSpinner v-else-if="isLoading" message="Đang tải dữ liệu..." />
+    <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
 
     <div v-else class="page-stack">
       <div v-if="parents.length > 0" class="card toolbar-card">
@@ -394,7 +244,7 @@ async function handleUnassign() {
     <ActionModal
       :is-open="isEditModalOpen"
       :title="`Sửa thông tin phụ huynh - ${editForm.full_name || ''}`"
-      @close="isEditModalOpen = false"
+      @close="closeEditModal"
     >
       <form class="modal-form" @submit.prevent="handleEdit">
         <div v-if="editError" class="alert alert--error">
@@ -436,7 +286,7 @@ async function handleUnassign() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="editLoading" @click="isEditModalOpen = false">
+          <button class="btn btn--outline" type="button" :disabled="editLoading" @click="closeEditModal">
             Hủy
           </button>
           <button class="btn btn--primary" type="submit" :disabled="editLoading">
@@ -449,14 +299,14 @@ async function handleUnassign() {
     <ActionModal
       :is-open="isAssignModalOpen"
       :title="`Gán học sinh - ${assignTarget?.full_name || ''}`"
-      @close="isAssignModalOpen = false"
+      @close="closeAssignModal"
     >
       <div class="modal-form">
         <div v-if="assignError" class="alert alert--error">
           {{ assignError }}
         </div>
 
-        <div v-if="authStore.currentUserRole === 'SUPER_ADMIN'" class="form-group mb-0">
+        <div v-if="isSuperAdmin" class="form-group mb-0">
           <label class="form-label">Chọn trường</label>
           <select v-model="selectedSchoolId" class="form-input">
             <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
@@ -486,7 +336,7 @@ async function handleUnassign() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="assignLoading" @click="isAssignModalOpen = false">
+          <button class="btn btn--outline" type="button" :disabled="assignLoading" @click="closeAssignModal">
             Hủy
           </button>
           <button
@@ -509,7 +359,7 @@ async function handleUnassign() {
       is-danger
       :is-loading="unassignLoading"
       @confirm="handleUnassign"
-      @cancel="isUnassignOpen = false"
+      @cancel="closeUnassignDialog"
     />
   </div>
 </template>

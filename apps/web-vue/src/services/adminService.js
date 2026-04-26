@@ -11,8 +11,8 @@ export const adminService = {
   },
 
   // --- SCHOOLS ---
-  async getSchools(params) {
-    return await httpClient.get('/admin/schools', params)
+  async getSchools(params, options) {
+    return await httpClient.get('/admin/schools', params, options)
   },
   async createSchool(data) {
     return await httpClient.post('/admin/schools', data)
@@ -25,8 +25,8 @@ export const adminService = {
   },
 
   // --- CLASSES ---
-  async getClassesBySchool(schoolId, params) {
-    return await httpClient.get(`/admin/classes/by-school/${schoolId}`, params)
+  async getClassesBySchool(schoolId, params, options) {
+    return await httpClient.get(`/admin/classes/by-school/${schoolId}`, params, options)
   },
   async createClass(data) {
     return await httpClient.post('/admin/classes', data)
@@ -39,8 +39,8 @@ export const adminService = {
   },
 
   // --- STUDENTS ---
-  async getStudentsByClass(classId, params) {
-    return await httpClient.get(`/admin/students/by-class/${classId}`, params)
+  async getStudentsByClass(classId, params, options) {
+    return await httpClient.get(`/admin/students/by-class/${classId}`, params, options)
   },
   async getStudentProfile(studentId) {
     return await httpClient.get(`/admin/students/${studentId}`)
@@ -62,8 +62,8 @@ export const adminService = {
   },
 
   // --- USERS ---
-  async getUsers(params) {
-    return await httpClient.get('/admin/users', params)
+  async getUsers(params, options) {
+    return await httpClient.get('/admin/users', params, options)
   },
   async createUser(data) {
     return await httpClient.post('/admin/users', data)

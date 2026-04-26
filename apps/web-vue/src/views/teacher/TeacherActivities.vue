@@ -3,8 +3,8 @@ import { ref, onMounted, watch } from 'vue'
 import { teacherService } from '../../services/teacherService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { formatDate } from '../../helpers/dateFormatter'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
 
 const classes = ref([])
 const selectedClassId = ref('')
@@ -177,6 +177,7 @@ const toggleLike = async (post) => {
             
             <div class="post-actions flex gap-2">
               <button 
+                type="button"
                 class="btn flex-1 btn--sm flex-center gap-2" 
                 :class="post.liked_by_me ? 'text-primary bg-blue-50 border-none' : 'btn--outline border-none text-muted'"
                 @click="toggleLike(post)"
@@ -184,7 +185,7 @@ const toggleLike = async (post) => {
                 <span v-if="post.liked_by_me">❤️ Đã thích</span>
                 <span v-else>🤍 Thích</span>
               </button>
-              <button class="btn btn--outline border-none flex-1 btn--sm flex-center gap-2 text-muted">
+              <button type="button" class="btn btn--outline border-none flex-1 btn--sm flex-center gap-2 text-muted">
                 💬 Bình luận
               </button>
             </div>

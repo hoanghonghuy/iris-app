@@ -101,7 +101,7 @@ function handleOverlayClick() {
     <aside class="sidebar" :class="{ 'sidebar--open': isOpen }">
       <div class="sidebar__header">
         <h2 class="sidebar__brand">🎓 Iris School</h2>
-        <button class="sidebar__close-btn lg-hidden" @click="emit('close-sidebar')">
+        <button type="button" class="sidebar__close-btn lg-hidden" @click="emit('close-sidebar')">
           <X :size="20" />
         </button>
       </div>

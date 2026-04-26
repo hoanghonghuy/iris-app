@@ -9,6 +9,7 @@ const REQUEST_TIMEOUT = 30000
 // hàm gọi API chung — tất cả service đều dùng hàm này
 async function request(method, path, body = null, options = {}) {
   const token = sessionStorage.getItem('auth_token')
+  const { signal: externalSignal, timeout = REQUEST_TIMEOUT } = options
 
   const headers = {
     'Content-Type': 'application/json',
@@ -22,7 +23,16 @@ async function request(method, path, body = null, options = {}) {
 
   // tạo AbortController để hủy request khi quá thời gian chờ
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+  const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+  const handleExternalAbort = () => controller.abort()
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort()
+    } else {
+      externalSignal.addEventListener('abort', handleExternalAbort, { once: true })
+    }
+  }
 
   const fetchOptions = {
     method,
@@ -41,8 +51,14 @@ async function request(method, path, body = null, options = {}) {
   } catch (err) {
     // xử lý lỗi mạng hoặc timeout
     if (err.name === 'AbortError') {
-      const error = new Error('Yêu cầu quá thời gian, vui lòng thử lại')
-      error.status = 408
+      const isCancelledByCaller = Boolean(externalSignal?.aborted)
+      const error = new Error(
+        isCancelledByCaller
+          ? 'Yêu cầu đã bị hủy'
+          : 'Yêu cầu quá thời gian, vui lòng thử lại'
+      )
+      error.name = 'AbortError'
+      error.status = isCancelledByCaller ? 499 : 408
       throw error
     }
     const error = new Error('Không thể kết nối đến máy chủ')
@@ -50,6 +66,9 @@ async function request(method, path, body = null, options = {}) {
     throw error
   } finally {
     clearTimeout(timeoutId)
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', handleExternalAbort)
+    }
   }
 
   // xử lý 401 — token hết hạn → về trang login
@@ -81,7 +100,7 @@ async function request(method, path, body = null, options = {}) {
 
 // các hàm tiện ích — service chỉ cần gọi httpClient.get('/path')
 export const httpClient = {
-  get: (path, params) => {
+  get: (path, params, options = {}) => {
     // tự nối query string từ object params
     if (params) {
       const query = new URLSearchParams(
@@ -91,10 +110,10 @@ export const httpClient = {
       ).toString()
       if (query) path = `${path}?${query}`
     }
-    return request('GET', path)
+    return request('GET', path, null, options)
   },
-  post: (path, body) => request('POST', path, body),
-  put: (path, body) => request('PUT', path, body),
-  patch: (path, body) => request('PATCH', path, body),
-  del: (path) => request('DELETE', path),
+  post: (path, body, options = {}) => request('POST', path, body, options),
+  put: (path, body, options = {}) => request('PUT', path, body, options),
+  patch: (path, body, options = {}) => request('PATCH', path, body, options),
+  del: (path, options = {}) => request('DELETE', path, null, options),
 }

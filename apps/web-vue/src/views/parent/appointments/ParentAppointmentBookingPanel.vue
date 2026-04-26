@@ -1,8 +1,11 @@
 <script setup>
-import LoadingSpinner from '../../../components/LoadingSpinner.vue'
-import { formatDateRange } from './appointmentsPresentation'
+import LoadingSpinner from '../../../components/common/LoadingSpinner.vue'
 
 defineProps({
+  formatDateRange: {
+    type: Function,
+    required: true,
+  },
   children: {
     type: Array,
     required: true,

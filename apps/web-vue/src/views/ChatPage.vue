@@ -1,251 +1,72 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, LoaderCircle, MessageSquare, Plus, Search, Send, X } from 'lucide-vue-next'
-import { chatService, getChatWsUrl } from '../services/chatService'
+import { useChatWebSocket, useChatConversations, useChatMessages, useChatSearch } from '../composables/chat'
+import {
+  getConversationId,
+  getInitials,
+  getConversationName,
+  isFirstInGroup,
+  isLastInGroup,
+  shouldShowSenderName,
+  getSenderName,
+  parseJwtPayload,
+  getAuthToken,
+} from '../helpers/chatHelpers'
 
-const conversations = ref([])
-const selectedConversation = ref(null)
-const messages = ref([])
+const { isConnected, connect, sendMessage: wsSendMessage, onMessage } = useChatWebSocket()
+const { conversations, selectedConversation, loading, fetchConversations, selectConversation, createDirectConversation, getSelectedConversationId } = useChatConversations()
+const { messages, loadingMessages, loadingMore, hasMore, loadMessages, loadOlderMessages, addMessage } = useChatMessages()
+const { searchQuery, searchResults, showNewConversation, toggleNewConversation, clearSearch } = useChatSearch()
+
 const input = ref('')
-const loading = ref(true)
-const loadingMessages = ref(false)
-const loadingMore = ref(false)
 const currentUserId = ref('')
-const searchQuery = ref('')
-const searchResults = ref([])
-const showNewConversation = ref(false)
-const hasMore = ref(false)
-const nextCursor = ref(null)
-const isConnected = ref(false)
 const messagesContainer = ref(null)
 const messagesEnd = ref(null)
-const websocket = ref(null)
-let reconnectTimer = null
-let searchTimer = null
-let reconnectAttempts = 0
 
-const selectedConversationId = computed(() => getConversationId(selectedConversation.value))
+const selectedConversationId = computed(() => getSelectedConversationId())
 const visibleConversations = computed(() => conversations.value.filter(Boolean))
 const visibleSearchResults = computed(() => searchResults.value.filter(Boolean))
-
-function normalizeList(value) {
-  const data = value?.data ?? value
-  return Array.isArray(data) ? data.filter(Boolean) : []
-}
-
-function getConversationId(conversation) {
-  return conversation?.conversation_id || conversation?.id || ''
-}
-
-function getToken() {
-  return sessionStorage.getItem('auth_token')
-}
-
-function parseJwtPayload(token) {
-  try {
-    const [, payload] = token.split('.')
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-  } catch {
-    return null
-  }
-}
-
-function getInitials(name) {
-  return (name || '?')
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-}
-
-function getConversationName(conversation) {
-  if (conversation?.name) return conversation.name
-  const other = conversation?.participants?.find((participant) => participant.user_id !== currentUserId.value)
-  return other?.full_name || other?.email || 'Cuộc hội thoại'
-}
-
-function isFirstInGroup(index) {
-  const previous = messages.value[index - 1]
-  const current = messages.value[index]
-  return !previous || previous.sender_id !== current?.sender_id
-}
-
-function isLastInGroup(index) {
-  const next = messages.value[index + 1]
-  const current = messages.value[index]
-  return !next || next.sender_id !== current?.sender_id
-}
-
-function shouldShowSenderName(message, index) {
-  return selectedConversation.value?.type !== 'direct'
-    && message?.sender_id !== currentUserId.value
-    && isFirstInGroup(index)
-}
-
-function getSenderName(message) {
-  return message?.sender_name || message?.sender_email?.split('@')[0] || 'Người gửi'
-}
-
-function connectWebSocket() {
-  const token = getToken()
-  if (!token) return
-
-  if (websocket.value) {
-    websocket.value.close(1000, 'reconnect')
-  }
-
-  const ws = new WebSocket(getChatWsUrl(), ['Bearer', token])
-
-  ws.onopen = () => {
-    isConnected.value = true
-    reconnectAttempts = 0
-  }
-
-  ws.onmessage = (event) => {
-    try {
-      const wsEvent = JSON.parse(event.data)
-      if (wsEvent.type !== 'new_message') return
-      const message = wsEvent.data
-      if (message.conversation_id !== selectedConversationId.value) return
-      if (messages.value.some((item) => item.message_id === message.message_id)) return
-      messages.value = [...messages.value, message]
-    } catch (error) {
-      console.error('[chat] cannot parse websocket message', error)
-    }
-  }
-
-  ws.onclose = (event) => {
-    isConnected.value = false
-    if (event.code === 1000 || reconnectAttempts >= 5) return
-    reconnectAttempts += 1
-    reconnectTimer = setTimeout(connectWebSocket, Math.min(3000 * reconnectAttempts, 15000))
-  }
-
-  websocket.value = ws
-}
-
-async function fetchConversations() {
-  loading.value = true
-  try {
-    conversations.value = normalizeList(await chatService.listConversations())
-  } catch (error) {
-    console.error('[chat] cannot load conversations', error)
-    conversations.value = []
-  } finally {
-    loading.value = false
-  }
-}
-
-async function loadMessages(conversation) {
-  const conversationId = getConversationId(conversation)
-  if (!conversationId) return
-
-  selectedConversation.value = conversation
-  messages.value = []
-  nextCursor.value = null
-  hasMore.value = false
-  loadingMessages.value = true
-
-  try {
-    const response = await chatService.listMessages(conversationId)
-    messages.value = normalizeList(response).reverse()
-    nextCursor.value = response?.next_cursor ?? null
-    hasMore.value = Boolean(response?.has_more)
-    await nextTick()
-    scrollToBottom('auto')
-  } catch (error) {
-    console.error('[chat] cannot load messages', error)
-  } finally {
-    loadingMessages.value = false
-  }
-}
-
-async function loadOlderMessages() {
-  const container = messagesContainer.value
-  const conversationId = getConversationId(selectedConversation.value)
-  if (!container || !conversationId || !hasMore.value || loadingMore.value || !nextCursor.value) return
-  if (container.scrollTop >= 80) return
-
-  loadingMore.value = true
-  const previousHeight = container.scrollHeight
-  try {
-    const response = await chatService.listMessages(conversationId, 50, nextCursor.value)
-    messages.value = normalizeList(response).reverse().concat(messages.value)
-    nextCursor.value = response?.next_cursor ?? null
-    hasMore.value = Boolean(response?.has_more)
-    await nextTick()
-    container.scrollTop = container.scrollHeight - previousHeight
-  } catch (error) {
-    console.error('[chat] cannot load older messages', error)
-  } finally {
-    loadingMore.value = false
-  }
-}
 
 function scrollToBottom(behavior = 'smooth') {
   messagesEnd.value?.scrollIntoView({ behavior })
 }
 
-function sendMessage() {
+function handleSendMessage() {
   const content = input.value.trim()
   if (!content || !selectedConversationId.value) return
-  if (websocket.value?.readyState !== WebSocket.OPEN) return
 
-  websocket.value.send(
-    JSON.stringify({
-      conversation_id: selectedConversationId.value,
-      content,
-    }),
-  )
-  input.value = ''
+  const sent = wsSendMessage(selectedConversationId.value, content)
+  if (sent) {
+    input.value = ''
+  }
 }
 
 function handleKeydown(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
-    sendMessage()
+    handleSendMessage()
   }
 }
 
-function toggleNewConversation() {
-  showNewConversation.value = !showNewConversation.value
-  if (!showNewConversation.value) {
-    searchQuery.value = ''
-    searchResults.value = []
+async function handleLoadMessages(conversation) {
+  selectConversation(conversation)
+  await loadMessages(getConversationId(conversation))
+  await nextTick()
+  scrollToBottom('auto')
+}
+
+async function handleStartConversation(userId) {
+  const conversation = await createDirectConversation(userId)
+  if (conversation) {
+    clearSearch()
+    await handleLoadMessages(conversation)
   }
 }
 
-async function startConversation(userId) {
-  if (!userId) return
-  try {
-    const conversation = await chatService.createDirectConversation(userId)
-    await fetchConversations()
-    searchQuery.value = ''
-    searchResults.value = []
-    showNewConversation.value = false
-    await loadMessages(conversation)
-  } catch (error) {
-    console.error('[chat] cannot start conversation', error)
-  }
+function handleScroll() {
+  loadOlderMessages(selectedConversationId.value, messagesContainer.value)
 }
-
-watch(searchQuery, (query) => {
-  clearTimeout(searchTimer)
-  if (!query.trim()) {
-    searchResults.value = []
-    return
-  }
-
-  searchTimer = setTimeout(async () => {
-    try {
-      searchResults.value = normalizeList(await chatService.searchUsers(query.trim()))
-    } catch {
-      searchResults.value = []
-    }
-  }, 500)
-})
 
 watch(messages, async () => {
   await nextTick()
@@ -256,17 +77,18 @@ watch(messages, async () => {
 })
 
 onMounted(async () => {
-  const token = getToken()
+  const token = getAuthToken()
   const payload = token ? parseJwtPayload(token) : null
   currentUserId.value = payload?.user_id || ''
-  connectWebSocket()
+  
+  connect()
+  onMessage((message) => {
+    if (message.conversation_id === selectedConversationId.value) {
+      addMessage(message)
+    }
+  })
+  
   await fetchConversations()
-})
-
-onUnmounted(() => {
-  clearTimeout(reconnectTimer)
-  clearTimeout(searchTimer)
-  websocket.value?.close(1000, 'component unmount')
 })
 </script>
 
@@ -297,8 +119,9 @@ onUnmounted(() => {
           <button
             v-for="user in visibleSearchResults"
             :key="user.user_id"
+            type="button"
             class="conversation-item"
-            @click="startConversation(user.user_id)"
+            @click="handleStartConversation(user.user_id)"
           >
             <div class="avatar">{{ getInitials(user.full_name || user.email) }}</div>
             <div class="conversation-copy">
@@ -322,13 +145,14 @@ onUnmounted(() => {
         <button
           v-for="conversation in visibleConversations"
           :key="getConversationId(conversation)"
+          type="button"
           class="conversation-item"
           :class="{ 'conversation-item--active': selectedConversationId === getConversationId(conversation) }"
-          @click="loadMessages(conversation)"
+          @click="handleLoadMessages(conversation)"
         >
-          <div class="avatar">{{ getInitials(getConversationName(conversation)) }}</div>
+          <div class="avatar">{{ getInitials(getConversationName(conversation, currentUserId)) }}</div>
           <div class="conversation-copy">
-            <p>{{ getConversationName(conversation) }}</p>
+            <p>{{ getConversationName(conversation, currentUserId) }}</p>
             <span>{{ conversation.type === 'direct' ? 'Trò chuyện trực tiếp' : `Nhóm ${conversation.participants?.length || 0} thành viên` }}</span>
           </div>
         </button>
@@ -338,17 +162,17 @@ onUnmounted(() => {
     <section class="chat-area" :class="{ 'chat-area--active': selectedConversation }">
       <template v-if="selectedConversation">
         <header class="chat-area__header">
-          <button class="back-button" @click="selectedConversation = null">
+          <button type="button" class="back-button" @click="selectConversation(null)">
             <ArrowLeft :size="24" />
           </button>
-          <div class="avatar avatar--primary">{{ getInitials(getConversationName(selectedConversation)) }}</div>
+          <div class="avatar avatar--primary">{{ getInitials(getConversationName(selectedConversation, currentUserId)) }}</div>
           <div class="conversation-copy">
-            <p>{{ getConversationName(selectedConversation) }}</p>
+            <p>{{ getConversationName(selectedConversation, currentUserId) }}</p>
             <span>{{ selectedConversation.type === 'direct' ? 'Đang trực tuyến' : `${selectedConversation.participants?.length || 0} thành viên` }}</span>
           </div>
         </header>
 
-        <div ref="messagesContainer" class="message-list" @scroll="loadOlderMessages">
+        <div ref="messagesContainer" class="message-list" @scroll="handleScroll">
           <div v-if="loadingMore" class="history-loading">
             <LoaderCircle class="spin" :size="16" />
             Đang tải lịch sử...
@@ -374,11 +198,11 @@ onUnmounted(() => {
               class="message-bubble"
               :class="{
                 'message-bubble--mine': message.sender_id === currentUserId,
-                'message-bubble--first': isFirstInGroup(index),
-                'message-bubble--last': isLastInGroup(index),
+                'message-bubble--first': isFirstInGroup(messages, index),
+                'message-bubble--last': isLastInGroup(messages, index),
               }"
             >
-              <span v-if="shouldShowSenderName(message, index)" class="message-sender">
+              <span v-if="shouldShowSenderName(message, index, messages, selectedConversation?.type, currentUserId)" class="message-sender">
                 {{ getSenderName(message) }}
               </span>
               <p>{{ message.content }}</p>
@@ -389,7 +213,7 @@ onUnmounted(() => {
         </div>
 
         <footer class="composer">
-          <button class="attach-button">
+          <button type="button" class="attach-button">
             <Plus :size="24" />
           </button>
           <textarea
@@ -398,7 +222,7 @@ onUnmounted(() => {
             placeholder="Nhắn tin..."
             @keydown="handleKeydown"
           ></textarea>
-          <button class="send-button" :disabled="!input.trim()" @click="sendMessage">
+          <button type="button" class="send-button" :disabled="!input.trim()" @click="handleSendMessage">
             <Send :size="20" />
           </button>
         </footer>

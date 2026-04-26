@@ -1,17 +1,22 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ArrowLeft, Calendar, GraduationCap, LoaderCircle, User } from 'lucide-vue-next'
-import { teacherService } from '../../services/teacherService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
+import { useTeacherClassSelection } from '../../composables/teacher'
 import { formatDateVN } from '../../helpers/dateFormatter'
 
 const route = useRoute()
 
-const classes = ref([])
-const students = ref([])
-const loading = ref(true)
-const errorMessage = ref('')
+const {
+  classes,
+  selectedClassId,
+  students,
+  isLoadingClasses,
+  isLoadingStudents,
+  errorMessage,
+  fetchClasses,
+  fetchStudents,
+} = useTeacherClassSelection()
 
 const genderLabel = {
   male: 'Nam',
@@ -24,46 +29,23 @@ const selectedClass = computed(() => {
   return classes.value.find((classInfo) => String(classInfo.class_id) === classId.value) || null
 })
 
-function unwrapList(value) {
-  const data = value?.data ?? value
-  return Array.isArray(data) ? data.filter(Boolean) : []
-}
+const loading = computed(() => isLoadingClasses.value || isLoadingStudents.value)
 
-async function loadClassDetail() {
-  if (!classId.value) {
-    classes.value = []
-    students.value = []
-    errorMessage.value = 'Không tìm thấy lớp cần xem.'
-    loading.value = false
-    return
+// Sync route param with selectedClassId
+watch(classId, (newClassId) => {
+  if (newClassId && newClassId !== selectedClassId.value) {
+    selectedClassId.value = newClassId
   }
-
-  loading.value = true
-  errorMessage.value = ''
-
-  try {
-    const classesResponse = await teacherService.getMyClasses()
-    classes.value = unwrapList(classesResponse)
-
-    if (!selectedClass.value) {
-      students.value = []
-      errorMessage.value = 'Bạn không được phân công lớp này hoặc lớp không còn tồn tại.'
-      return
-    }
-
-    const studentsResponse = await teacherService.getStudentsInClass(classId.value)
-    students.value = unwrapList(studentsResponse)
-  } catch (error) {
-    students.value = []
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải chi tiết lớp học.'
-  } finally {
-    loading.value = false
-  }
-}
-
-watch(classId, () => {
-  loadClassDetail()
 }, { immediate: true })
+
+// Load classes on mount
+watch(isLoadingClasses, (isLoading) => {
+  if (!isLoading && classId.value && !selectedClass.value) {
+    errorMessage.value = 'Bạn không được phân công lớp này hoặc lớp không còn tồn tại.'
+  }
+}, { immediate: true })
+
+fetchClasses()
 </script>
 
 <template>

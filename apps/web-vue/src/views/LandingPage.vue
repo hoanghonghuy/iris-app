@@ -32,11 +32,11 @@ const navigateToRegister = () => {
         <div class="flex items-center gap-3">
           <ThemeToggle />
           <div class="hidden sm:flex items-center gap-3">
-            <button class="btn btn--outline border-none" @click="navigateToLogin">Đăng nhập</button>
-            <button class="btn btn--primary" @click="navigateToRegister">Đăng ký Phụ huynh</button>
+            <button type="button" class="btn btn--outline border-none" @click="navigateToLogin">Đăng nhập</button>
+            <button type="button" class="btn btn--primary" @click="navigateToRegister">Đăng ký Phụ huynh</button>
           </div>
           <!-- Mobile Menu Toggle (Tạm ẩn) -->
-          <button class="md:hidden btn btn--sm btn--outline border-none"><Menu :size="20" /></button>
+          <button type="button" class="md:hidden btn btn--sm btn--outline border-none"><Menu :size="20" /></button>
         </div>
       </div>
     </header>
@@ -56,7 +56,7 @@ const navigateToRegister = () => {
             Iris School kết nối Quản trị viên, Giáo viên và Phụ huynh trên một hệ thống duy nhất. Tối ưu hóa quy trình, nâng cao trải nghiệm giáo dục.
           </p>
           <div class="flex justify-center gap-4 hero-actions">
-            <button class="btn btn--primary btn--lg w-full sm:w-auto" @click="navigateToLogin">
+            <button type="button" class="btn btn--primary btn--lg w-full sm:w-auto" @click="navigateToLogin">
               Bắt đầu ngay <ArrowRight class="ml-2" :size="20" />
             </button>
             <a href="#features" class="btn btn--outline btn--lg w-full sm:w-auto hero-btn-outline text-center">

@@ -1,5 +1,11 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { computed, watchEffect } from 'vue'
+
+const MODAL_SIZE_CLASS = {
+  sm: 'modal-dialog--sm',
+  md: 'modal-dialog--md',
+  lg: 'modal-dialog--lg',
+}
 
 const props = defineProps({
   isOpen: {
@@ -12,33 +18,42 @@ const props = defineProps({
   },
   size: {
     type: String,
-    default: 'md' // sm, md, lg
+    default: 'md'
   }
 })
 
 const emit = defineEmits(['close'])
 
+const dialogSizeClass = computed(() => MODAL_SIZE_CLASS[props.size] || MODAL_SIZE_CLASS.md)
+
+function closeModal() {
+  emit('close')
+}
+
 const handleEscape = (e) => {
   if (e.key === 'Escape' && props.isOpen) {
-    emit('close')
+    closeModal()
   }
 }
 
-onMounted(() => {
-  document.addEventListener('keydown', handleEscape)
-})
+watchEffect((onCleanup) => {
+  if (!props.isOpen) {
+    return
+  }
 
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
+  document.addEventListener('keydown', handleEscape)
+  onCleanup(() => {
+    document.removeEventListener('keydown', handleEscape)
+  })
 })
 </script>
 
 <template>
-  <div v-if="isOpen" class="modal-backdrop" @click.self="emit('close')">
-    <div class="modal-dialog" :class="`modal-dialog--${size}`" role="dialog" aria-modal="true">
+  <div v-if="isOpen" class="modal-backdrop" @click.self="closeModal">
+    <div class="modal-dialog" :class="dialogSizeClass" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 class="font-bold text-lg m-0">{{ title }}</h3>
-        <button class="modal-close" @click="emit('close')">✕</button>
+        <button class="modal-close" type="button" aria-label="Đóng" @click="closeModal">✕</button>
       </div>
       
       <div class="modal-body">

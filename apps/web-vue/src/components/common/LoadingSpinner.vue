@@ -1,5 +1,5 @@
 <script setup>
-defineProps({
+const props = defineProps({
   message: {
     type: String,
     default: 'Đang tải...'
@@ -12,9 +12,15 @@ defineProps({
 </script>
 
 <template>
-  <div class="loading-wrapper" :class="{ 'loading-wrapper--fullscreen': fullScreen }">
-    <div class="spinner"></div>
-    <p v-if="message" class="loading-message">{{ message }}</p>
+  <div
+    class="loading-wrapper"
+    :class="{ 'loading-wrapper--fullscreen': fullScreen }"
+    role="status"
+    aria-live="polite"
+    aria-busy="true"
+  >
+    <div class="spinner" aria-hidden="true"></div>
+    <p v-if="props.message" class="loading-message">{{ props.message }}</p>
   </div>
 </template>
 

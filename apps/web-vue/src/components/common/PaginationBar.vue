@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 
+const MAX_VISIBLE_PAGES = 5
+
 const props = defineProps({
   currentPage: {
     type: Number,
@@ -22,17 +24,34 @@ const props = defineProps({
 
 const emit = defineEmits(['page-change'])
 
-// Lấy danh sách trang hiển thị (giới hạn tối đa 5 trang xung quanh trang hiện tại)
+const safeTotalPages = computed(() => Math.max(Number(props.totalPages) || 0, 0))
+
+const safeLimit = computed(() => Math.max(Number(props.limit) || 10, 1))
+
+const safeCurrentPage = computed(() => {
+  if (safeTotalPages.value === 0) {
+    return 1
+  }
+
+  const rawPage = Number(props.currentPage) || 1
+  return Math.min(Math.max(rawPage, 1), safeTotalPages.value)
+})
+
+const shouldShowPagination = computed(() => safeTotalPages.value > 0)
+
 const pages = computed(() => {
   const range = []
-  const maxPagesToShow = 5
+
+  if (!shouldShowPagination.value) {
+    return range
+  }
   
-  let start = Math.max(1, props.currentPage - Math.floor(maxPagesToShow / 2))
-  let end = start + maxPagesToShow - 1
+  let start = Math.max(1, safeCurrentPage.value - Math.floor(MAX_VISIBLE_PAGES / 2))
+  let end = start + MAX_VISIBLE_PAGES - 1
   
-  if (end > props.totalPages) {
-    end = props.totalPages
-    start = Math.max(1, end - maxPagesToShow + 1)
+  if (end > safeTotalPages.value) {
+    end = safeTotalPages.value
+    start = Math.max(1, end - MAX_VISIBLE_PAGES + 1)
   }
   
   for (let i = start; i <= end; i++) {
@@ -42,36 +61,44 @@ const pages = computed(() => {
   return range
 })
 
-const hasPrev = computed(() => props.currentPage > 1)
-const hasNext = computed(() => props.currentPage < props.totalPages)
+const hasPrev = computed(() => safeCurrentPage.value > 1)
+const hasNext = computed(() => safeCurrentPage.value < safeTotalPages.value)
 
 const startItem = computed(() => {
-  if (props.totalItems === 0) return 0
-  return (props.currentPage - 1) * props.limit + 1
+  if (props.totalItems <= 0) {
+    return 0
+  }
+
+  return (safeCurrentPage.value - 1) * safeLimit.value + 1
 })
 
 const endItem = computed(() => {
-  return Math.min(props.currentPage * props.limit, props.totalItems)
+  if (props.totalItems <= 0) {
+    return 0
+  }
+
+  return Math.min(safeCurrentPage.value * safeLimit.value, props.totalItems)
 })
 
 function goToPage(page) {
-  if (page !== props.currentPage && page >= 1 && page <= props.totalPages) {
+  if (page !== safeCurrentPage.value && page >= 1 && page <= safeTotalPages.value) {
     emit('page-change', page)
   }
 }
 </script>
 
 <template>
-  <div class="pagination-bar" v-if="totalPages > 0">
-    <div class="pagination-info text-sm text-muted hidden md-block">
+  <div v-if="shouldShowPagination" class="pagination-bar">
+    <div class="pagination-info text-sm text-muted">
       Hiển thị <span class="font-medium">{{ startItem }}</span> đến <span class="font-medium">{{ endItem }}</span> trong số <span class="font-medium">{{ totalItems }}</span> kết quả
     </div>
 
     <div class="pagination-controls">
       <button 
+        type="button"
         class="pagination-btn" 
         :disabled="!hasPrev" 
-        @click="goToPage(currentPage - 1)"
+        @click="goToPage(safeCurrentPage - 1)"
       >
         Trước
       </button>
@@ -80,8 +107,9 @@ function goToPage(page) {
         <button 
           v-for="page in pages" 
           :key="page"
+          type="button"
           class="pagination-page-btn"
-          :class="{ 'pagination-page-btn--active': page === currentPage }"
+          :class="{ 'pagination-page-btn--active': page === safeCurrentPage }"
           @click="goToPage(page)"
         >
           {{ page }}
@@ -89,9 +117,10 @@ function goToPage(page) {
       </div>
 
       <button 
+        type="button"
         class="pagination-btn" 
         :disabled="!hasNext" 
-        @click="goToPage(currentPage + 1)"
+        @click="goToPage(safeCurrentPage + 1)"
       >
         Sau
       </button>
@@ -158,11 +187,16 @@ function goToPage(page) {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: var(--color-on-primary);
-  font-weight: bold;
+  font-weight: 700;
 }
 
-.hidden { display: none; }
+.pagination-info {
+  display: none;
+}
+
 @media (min-width: 768px) {
-  .md-block { display: block; }
+  .pagination-info {
+    display: block;
+  }
 }
 </style>

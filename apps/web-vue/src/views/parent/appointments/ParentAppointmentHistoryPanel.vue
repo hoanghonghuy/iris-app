@@ -1,15 +1,25 @@
 <script setup>
-import LoadingSpinner from '../../../components/LoadingSpinner.vue'
-import EmptyState from '../../../components/EmptyState.vue'
-import PaginationBar from '../../../components/PaginationBar.vue'
-import {
-  formatDateRange,
-  getCancelReasonText,
-  getStatusBadge,
-  getStatusText,
-} from './appointmentsPresentation'
+import LoadingSpinner from '../../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../../components/common/EmptyState.vue'
+import PaginationBar from '../../../components/common/PaginationBar.vue'
 
 defineProps({
+  formatDateRange: {
+    type: Function,
+    required: true,
+  },
+  getCancelReasonText: {
+    type: Function,
+    required: true,
+  },
+  getStatusBadge: {
+    type: Function,
+    required: true,
+  },
+  getStatusText: {
+    type: Function,
+    required: true,
+  },
   historyView: {
     type: String,
     required: true,

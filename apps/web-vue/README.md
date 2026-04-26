@@ -42,3 +42,14 @@ npm run build
 ```sh
 npm run lint
 ```
+
+## Cấu trúc thư mục (Folder Structure Convention)
+
+Dự án này sử dụng mô hình gom nhóm module theo trang (page-local module) để dễ dàng bảo trì khi dự án lớn lên.
+
+- **`src/views/.../<page-folder>/`**: Khi các file (component, composable, helper) chỉ phục vụ độc quyền cho một page duy nhất, hãy đặt chúng vào folder con của page đó.
+  - Ví dụ: `src/views/admin/students/` chứa `StudentsTable.vue`, `useAdminStudentsPage.js` phục vụ riêng cho `AdminStudents.vue`.
+- **`src/components/common/`**: Thư mục này CHỈ chứa các UI component dùng chung thực sự, không chứa logic nghiệp vụ đặc thù (domain-specific).
+  - Ví dụ: `ConfirmDialog.vue`, `LoadingSpinner.vue`, `EmptyState.vue`, `PaginationBar.vue`.
+  - Luôn sử dụng alias `@/` khi import các component này (ví dụ: `import LoadingSpinner from '@/components/common/LoadingSpinner.vue'`).
+- **`src/composables/`**: Chỉ chứa các logic tái sử dụng (composable) khi chúng được dùng bởi >= 2 module/page khác nhau. Nếu composable chỉ dùng cho 1 page, hãy để ở thư mục page-local.

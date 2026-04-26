@@ -97,7 +97,7 @@ const userInitials = computed(() => {
 <template>
   <header class="header">
     <div class="header__left">
-      <button class="header__menu-btn lg-hidden" @click="emit('toggle-sidebar')">
+      <button type="button" class="header__menu-btn lg-hidden" @click="emit('toggle-sidebar')">
         <Menu :size="20" />
       </button>
 
@@ -120,7 +120,7 @@ const userInitials = computed(() => {
       <ThemeToggle class="mr-2" />
 
       <div class="user-menu relative">
-        <button class="user-menu__trigger" @click="toggleDropdown">
+        <button type="button" class="user-menu__trigger" @click="toggleDropdown">
           <div class="user-avatar">
             {{ userInitials }}
           </div>
@@ -146,7 +146,7 @@ const userInitials = computed(() => {
             Hồ sơ cá nhân
           </RouterLink>
           <hr v-if="profileRoute" class="my-1 border-border" />
-          <button class="dropdown-item text-danger w-full text-left" @click="handleLogout">
+          <button type="button" class="dropdown-item text-danger w-full text-left" @click="handleLogout">
             <LogOut :size="16" class="mr-2" />
             Đăng xuất
           </button>

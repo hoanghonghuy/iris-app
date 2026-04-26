@@ -2,8 +2,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { teacherService } from '../../services/teacherService'
+import { normalizeListResponse } from '../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const authStore = useAuthStore()
 const analytics = ref(null)
@@ -48,11 +49,6 @@ const quickActions = [
   { label: 'Bảng tin', to: '/teacher/posts' },
 ]
 
-function unwrapList(value) {
-  const data = value?.data ?? value
-  return Array.isArray(data) ? data.filter(Boolean) : []
-}
-
 async function fetchDashboard() {
   isLoading.value = true
   errorMessage.value = ''
@@ -64,7 +60,7 @@ async function fetchDashboard() {
     ])
 
     analytics.value = analyticsRes?.data ?? analyticsRes ?? {}
-    classes.value = unwrapList(classesRes)
+    classes.value = normalizeListResponse(classesRes)
   } catch (error) {
     errorMessage.value = extractErrorMessage(error)
   } finally {
@@ -97,7 +93,7 @@ onMounted(async () => {
     <div v-else-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" @click="fetchDashboard">Thử lại</button>
+      <button type="button" class="btn btn--outline mt-2" @click="fetchDashboard">Thử lại</button>
     </div>
 
     <div v-else class="dashboard-content">

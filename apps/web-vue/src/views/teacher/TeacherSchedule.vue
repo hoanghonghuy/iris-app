@@ -3,8 +3,8 @@ import { ref, onMounted } from 'vue'
 import { teacherService } from '../../services/teacherService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { formatDateTime } from '../../helpers/dateFormatter'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
 
 const appointments = ref([])
 const isLoading = ref(true)
@@ -52,7 +52,7 @@ const getStatusText = (status) => {
 <template>
   <div class="teacher-schedule">
     <div class="flex justify-end items-center mb-6">
-      <button class="btn btn--primary" disabled title="Tính năng tạo slot đang phát triển">
+      <button type="button" class="btn btn--primary" disabled title="Tính năng tạo slot đang phát triển">
         + Tạo khung giờ trống
       </button>
     </div>
@@ -61,7 +61,7 @@ const getStatusText = (status) => {
     <div v-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" @click="fetchAppointments">Thử lại</button>
+      <button type="button" class="btn btn--outline mt-2" @click="fetchAppointments">Thử lại</button>
     </div>
 
     <!-- Loading State -->
@@ -99,7 +99,7 @@ const getStatusText = (status) => {
                 <span :class="getStatusBadge(app.status)">{{ getStatusText(app.status) }}</span>
               </td>
               <td class="text-right">
-                <button class="btn btn--sm btn--outline" disabled>Chi tiết</button>
+                <button type="button" class="btn btn--sm btn--outline" disabled>Chi tiết</button>
               </td>
             </tr>
           </tbody>

@@ -1,7 +1,7 @@
 <script setup>
 import { AlertCircle, LoaderCircle, MessageSquare } from 'lucide-vue-next'
 import PostCard from '../../components/PostCard.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
 import ParentFeedSummaryCard from './feed/ParentFeedSummaryCard.vue'
 import { useParentFeedPage } from './feed/useParentFeedPage'
 

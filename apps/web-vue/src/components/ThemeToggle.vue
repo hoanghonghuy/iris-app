@@ -61,8 +61,11 @@ onUnmounted(() => {
 <template>
   <div class="theme-toggle-container relative">
     <button
+      type="button"
       class="theme-toggle-btn"
       title="Chọn giao diện"
+      :aria-expanded="isOpen"
+      aria-haspopup="menu"
       @click="toggleMenu"
     >
       <component :is="currentThemeIcon" :size="20" />
@@ -70,13 +73,13 @@ onUnmounted(() => {
     </button>
 
     <div v-if="isOpen" class="theme-menu">
-      <button class="theme-menu-item" :class="{ active: theme === 'light' }" @click="applyTheme('light')">
+      <button type="button" class="theme-menu-item" :class="{ active: theme === 'light' }" @click="applyTheme('light')">
         <Sun :size="16" class="mr-2" /> Sáng
       </button>
-      <button class="theme-menu-item" :class="{ active: theme === 'dark' }" @click="applyTheme('dark')">
+      <button type="button" class="theme-menu-item" :class="{ active: theme === 'dark' }" @click="applyTheme('dark')">
         <Moon :size="16" class="mr-2" /> Tối
       </button>
-      <button class="theme-menu-item" :class="{ active: theme === 'system' }" @click="applyTheme('system')">
+      <button type="button" class="theme-menu-item" :class="{ active: theme === 'system' }" @click="applyTheme('system')">
         <Laptop :size="16" class="mr-2" /> Hệ thống
       </button>
     </div>

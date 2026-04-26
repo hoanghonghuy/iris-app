@@ -1,5 +1,5 @@
 <script setup>
-import EmptyState from '../../components/EmptyState.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
 </script>
 
 <template>

@@ -3,7 +3,8 @@ import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
+import { ADMIN_LOAD_ERROR_TITLE, ADMIN_RETRY_BUTTON_TEXT } from '../../helpers/adminConfig'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const authStore = useAuthStore()
 const analytics = ref(null)
@@ -92,9 +93,9 @@ onMounted(async () => {
     <LoadingSpinner v-if="isLoading" message="Đang tải dữ liệu thống kê..." />
     
     <div v-else-if="errorMessage" class="p-4 bg-red-50 text-danger rounded border border-red-200">
-      <p class="font-bold">Lỗi tải dữ liệu</p>
+      <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" @click="fetchAnalytics">Thử lại</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchAnalytics">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
     </div>
 
     <div v-else-if="analytics" class="dashboard-content">

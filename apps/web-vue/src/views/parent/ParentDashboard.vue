@@ -2,9 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { parentService } from '../../services/parentService'
+import { normalizeListResponse } from '../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { POST_TYPE_META } from '../../helpers/postConfig'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const authStore = useAuthStore()
 const analytics = ref(null)
@@ -32,11 +33,6 @@ const quickActions = [
   { label: 'Bảng tin lớp', to: '/parent/posts' },
 ]
 
-function getFeedItems(value) {
-  if (Array.isArray(value?.data)) return value.data.filter(Boolean)
-  return Array.isArray(value) ? value.filter(Boolean) : []
-}
-
 function getPostMeta(type) {
   return POST_TYPE_META[type] || { label: type || 'Bài đăng', badgeClass: 'badge--outline' }
 }
@@ -57,7 +53,7 @@ async function fetchDashboard() {
     ])
 
     analytics.value = analyticsRes?.data ?? analyticsRes ?? {}
-    posts.value = getFeedItems(feedRes)
+    posts.value = normalizeListResponse(feedRes)
   } catch (error) {
     errorMessage.value = extractErrorMessage(error)
   } finally {
@@ -90,7 +86,7 @@ onMounted(async () => {
     <div v-else-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" @click="fetchDashboard">Thử lại</button>
+      <button type="button" class="btn btn--outline mt-2" @click="fetchDashboard">Thử lại</button>
     </div>
 
     <div v-else class="dashboard-content">

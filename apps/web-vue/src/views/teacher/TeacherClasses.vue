@@ -1,58 +1,24 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 import { GraduationCap, LoaderCircle, User, Calendar, ChevronDown } from 'lucide-vue-next'
-import { teacherService } from '../../services/teacherService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
+import { useTeacherClassSelection } from '../../composables/teacher'
 import { formatDateVN } from '../../helpers/dateFormatter'
 
-const classes = ref([])
-const selectedClassId = ref('')
-const students = ref([])
-const loadingClasses = ref(true)
-const loadingStudents = ref(false)
-const errorMessage = ref('')
+const {
+  classes,
+  selectedClassId,
+  students,
+  isLoadingClasses,
+  isLoadingStudents,
+  errorMessage,
+  fetchClasses,
+} = useTeacherClassSelection()
 
 const genderLabel = {
   male: 'Nam',
   female: 'Nữ',
   other: 'Khác',
 }
-
-const selectedClassName = computed(() => {
-  return classes.value.find((classInfo) => classInfo.class_id === selectedClassId.value)?.name || ''
-})
-
-async function fetchClasses() {
-  loadingClasses.value = true
-  errorMessage.value = ''
-  try {
-    const response = await teacherService.getMyClasses()
-    classes.value = response?.data ?? []
-    if (classes.value.length > 0) {
-      selectedClassId.value = classes.value[0].class_id
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách lớp'
-  } finally {
-    loadingClasses.value = false
-  }
-}
-
-async function fetchStudents() {
-  if (!selectedClassId.value) return
-  loadingStudents.value = true
-  errorMessage.value = ''
-  try {
-    const response = await teacherService.getStudentsInClass(selectedClassId.value)
-    students.value = response?.data ?? []
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải danh sách học sinh'
-  } finally {
-    loadingStudents.value = false
-  }
-}
-
-watch(selectedClassId, fetchStudents)
 
 onMounted(fetchClasses)
 </script>

@@ -1,204 +1,63 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { AlertCircle, CheckCircle2, LoaderCircle, Plus, RefreshCw, X } from 'lucide-vue-next'
-import { teacherService } from '../../services/teacherService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
+import { useTeacherClassSelection, useHealthForm, useHealthHistory } from '../../composables/teacher'
+import { HEALTH_SEVERITY_OPTIONS, getSeverityLabel, getSeverityBadge } from '../../helpers/healthConfig'
 import { formatDateTimeVN } from '../../helpers/dateFormatter'
-import LoadingSpinner from '../../components/LoadingSpinner.vue'
-import EmptyState from '../../components/EmptyState.vue'
+import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
 import ActionModal from '../../components/ActionModal.vue'
 
-const HEALTH_SEVERITY_OPTIONS = [
-  { value: 'normal', label: 'Bình thường', badge: 'badge badge--outline' },
-  { value: 'watch', label: 'Theo dõi', badge: 'badge badge--outline text-warning' },
-  { value: 'urgent', label: 'Khẩn cấp', badge: 'badge badge--danger' },
-]
+const {
+  classes,
+  selectedClassId,
+  students,
+  isLoadingClasses,
+  isLoadingStudents,
+  errorMessage,
+  fetchClasses,
+  fetchStudents,
+} = useTeacherClassSelection()
 
-const classes = ref([])
-const selectedClassId = ref('')
-const students = ref([])
-const isLoadingClasses = ref(true)
-const isLoadingStudents = ref(false)
-const errorMessage = ref('')
+const {
+  isModalOpen,
+  isSubmitting,
+  formError,
+  successMessage,
+  formStudentId,
+  temperature,
+  symptoms,
+  severity,
+  note,
+  selectedStudent,
+  openHealthModal,
+  closeModal,
+  handleSave,
+} = useHealthForm(students)
 
-const isModalOpen = ref(false)
-const isSubmitting = ref(false)
-const formError = ref('')
-const successMessage = ref('')
+const {
+  historyStudentId,
+  historyFrom,
+  historyTo,
+  historyLogs,
+  isLoadingHistory,
+  historyError,
+  fetchHistory,
+} = useHealthHistory(students)
 
-const formStudentId = ref('')
-const temperature = ref('')
-const symptoms = ref('')
-const severity = ref('normal')
-const note = ref('')
-
-const historyStudentId = ref('')
-const historyFrom = ref(getDateInputValue(daysAgo(6)))
-const historyTo = ref(getDateInputValue(new Date()))
-const historyLogs = ref([])
-const isLoadingHistory = ref(false)
-const historyError = ref('')
-
-const selectedStudent = computed(() => {
-  return students.value.find((student) => student.student_id === formStudentId.value) || null
-})
-
-function daysAgo(count) {
-  const date = new Date()
-  date.setDate(date.getDate() - count)
-  return date
-}
-
-function getDateInputValue(date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
-  return local.toISOString().slice(0, 10)
-}
-
-function unwrapList(value) {
-  const data = value?.data ?? value
-  return Array.isArray(data) ? data.filter(Boolean) : []
-}
-
-function getSeverityLabel(value) {
-  return HEALTH_SEVERITY_OPTIONS.find((option) => option.value === value)?.label || value || '-'
-}
-
-function getSeverityBadge(value) {
-  return HEALTH_SEVERITY_OPTIONS.find((option) => option.value === value)?.badge || 'badge badge--outline'
-}
-
-function resetForm(studentId = '') {
-  formStudentId.value = studentId || students.value[0]?.student_id || ''
-  temperature.value = ''
-  symptoms.value = ''
-  severity.value = 'normal'
-  note.value = ''
-  formError.value = ''
-}
-
-async function fetchClasses() {
-  isLoadingClasses.value = true
-  errorMessage.value = ''
-
-  try {
-    classes.value = unwrapList(await teacherService.getMyClasses())
-    if (!classes.value.some((classInfo) => classInfo.class_id === selectedClassId.value)) {
-      selectedClassId.value = classes.value[0]?.class_id || ''
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải lớp'
-  } finally {
-    isLoadingClasses.value = false
-  }
-}
-
-async function fetchStudents() {
-  if (!selectedClassId.value) {
-    students.value = []
-    historyLogs.value = []
-    return
-  }
-
-  isLoadingStudents.value = true
-  errorMessage.value = ''
-
-  try {
-    students.value = unwrapList(await teacherService.getStudentsInClass(selectedClassId.value))
-
-    if (!students.value.some((student) => student.student_id === formStudentId.value)) {
-      formStudentId.value = students.value[0]?.student_id || ''
-    }
-
-    if (!students.value.some((student) => student.student_id === historyStudentId.value)) {
-      historyStudentId.value = students.value[0]?.student_id || ''
-    }
-  } catch (error) {
-    students.value = []
-    historyLogs.value = []
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải học sinh'
-  } finally {
-    isLoadingStudents.value = false
-  }
-}
-
-async function fetchHistory() {
-  if (!historyStudentId.value) {
-    historyLogs.value = []
-    historyError.value = ''
-    return
-  }
-
-  isLoadingHistory.value = true
-  historyError.value = ''
-
-  try {
-    historyLogs.value = unwrapList(
-      await teacherService.getStudentHealth(
-        historyStudentId.value,
-        historyFrom.value || undefined,
-        historyTo.value || undefined,
-      ),
-    )
-  } catch (error) {
-    historyLogs.value = []
-    historyError.value = extractErrorMessage(error) || 'Không thể tải lịch sử sức khỏe'
-  } finally {
-    isLoadingHistory.value = false
-  }
-}
-
-function openHealthModal(studentId = '') {
-  resetForm(studentId)
-  successMessage.value = ''
-  isModalOpen.value = true
-}
-
-function closeModal() {
-  isModalOpen.value = false
-  formError.value = ''
-}
-
-async function handleSave() {
-  if (!formStudentId.value) {
-    formError.value = 'Vui lòng chọn học sinh'
-    return
-  }
-
-  isSubmitting.value = true
-  formError.value = ''
-  successMessage.value = ''
-
-  try {
-    await teacherService.createHealthLog({
-      student_id: formStudentId.value,
-      temperature: temperature.value ? Number(temperature.value) : undefined,
-      symptoms: symptoms.value.trim() || undefined,
-      severity: severity.value,
-      note: note.value.trim() || undefined,
-    })
-
-    successMessage.value = 'Đã ghi nhận sức khỏe thành công!'
-    closeModal()
-
-    if (historyStudentId.value === formStudentId.value) {
+async function handleSaveAndRefresh() {
+  const savedStudentId = await handleSave()
+  if (savedStudentId) {
+    if (historyStudentId.value === savedStudentId) {
       await fetchHistory()
     } else {
-      historyStudentId.value = formStudentId.value
+      historyStudentId.value = savedStudentId
     }
-  } catch (error) {
-    formError.value = extractErrorMessage(error) || 'Không thể ghi nhận sức khỏe'
-  } finally {
-    isSubmitting.value = false
   }
 }
 
-watch(selectedClassId, async () => {
+watch(selectedClassId, () => {
   successMessage.value = ''
-  await fetchStudents()
-})
-
-watch([historyStudentId, historyFrom, historyTo], () => {
-  fetchHistory()
 })
 
 onMounted(async () => {
@@ -400,7 +259,7 @@ onMounted(async () => {
             <X :size="16" />
             Đóng
           </button>
-          <button type="submit" class="btn btn--primary" :disabled="isSubmitting || !formStudentId">
+          <button type="submit" class="btn btn--primary" :disabled="isSubmitting || !formStudentId" @click="handleSaveAndRefresh">
             {{ isSubmitting ? 'Đang lưu...' : 'Lưu ghi nhận' }}
           </button>
         </div>

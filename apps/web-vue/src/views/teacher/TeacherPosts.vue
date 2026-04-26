@@ -1,151 +1,58 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { AlertCircle, LoaderCircle, MessageSquare, Plus, X } from 'lucide-vue-next'
-import { teacherService } from '../../services/teacherService'
-import { extractErrorMessage } from '../../helpers/errorHandler'
 import { POST_SCOPE_LABELS, POST_TYPE_OPTIONS } from '../../helpers/postConfig'
 import PostCard from '../../components/PostCard.vue'
-import PaginationBar from '../../components/PaginationBar.vue'
+import PaginationBar from '../../components/common/PaginationBar.vue'
+import { useTeacherPosts, usePostForm } from '../../composables/teacher'
 
-const classes = ref([])
-const selectedClassId = ref('')
-const students = ref([])
-const posts = ref([])
-const loading = ref(true)
-const loadingPosts = ref(false)
-const errorMessage = ref('')
-const showForm = ref(false)
-const scopeType = ref('class')
-const formStudentId = ref('')
-const postType = ref('announcement')
-const content = ref('')
-const submitting = ref(false)
-const formError = ref('')
-const pagination = ref({ total: 0, limit: 20, offset: 0, has_more: false })
-const currentPage = ref(1)
+const {
+  classes,
+  selectedClassId,
+  students,
+  posts,
+  loading,
+  loadingPosts,
+  errorMessage,
+  currentPage,
+  totalPages,
+  fetchClasses,
+  fetchStudents,
+  fetchPosts,
+  patchPostById,
+  setPage,
+  resetToFirstPage,
+} = useTeacherPosts()
 
-const currentOffset = computed(() => (currentPage.value - 1) * pagination.value.limit)
-const totalPages = computed(() => Math.max(1, Math.ceil((pagination.value.total || 0) / pagination.value.limit)))
-
-async function fetchBootstrap() {
-  loading.value = true
-  errorMessage.value = ''
-  try {
-    const classResponse = await teacherService.getMyClasses()
-    classes.value = classResponse?.data ?? []
-    if (classes.value.length > 0) {
-      selectedClassId.value = classes.value[0].class_id
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải dữ liệu lớp học'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function fetchStudents() {
-  if (!selectedClassId.value) {
-    students.value = []
-    return
-  }
-
-  try {
-    const response = await teacherService.getStudentsInClass(selectedClassId.value)
-    students.value = response?.data ?? []
-    if (!formStudentId.value && students.value.length > 0) {
-      formStudentId.value = students.value[0].student_id
-    }
-  } catch {
-    students.value = []
-  }
-}
-
-async function fetchPosts() {
-  if (!selectedClassId.value) {
-    posts.value = []
-    return
-  }
-
-  loadingPosts.value = true
-  errorMessage.value = ''
-  try {
-    const response = await teacherService.getClassPosts(selectedClassId.value, {
-      limit: pagination.value.limit,
-      offset: currentOffset.value,
-    })
-    posts.value = response?.data ?? []
-    if (response?.pagination) {
-      pagination.value = response.pagination
-    } else {
-      pagination.value = {
-        total: posts.value.length,
-        limit: pagination.value.limit,
-        offset: currentOffset.value,
-        has_more: false,
-      }
-    }
-  } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || 'Không thể tải bài đăng'
-  } finally {
-    loadingPosts.value = false
-  }
-}
+const {
+  showForm,
+  scopeType,
+  formStudentId,
+  postType,
+  content,
+  submitting,
+  formError,
+  openForm,
+  closeForm,
+  submitPost,
+} = usePostForm()
 
 async function handleCreatePost() {
-  formError.value = ''
-
-  if (!selectedClassId.value) {
-    formError.value = 'Vui lòng chọn lớp học'
-    return
-  }
-
-  if (!content.value.trim()) {
-    formError.value = 'Vui lòng nhập nội dung bài đăng'
-    return
-  }
-
-  if (scopeType.value === 'student' && !formStudentId.value) {
-    formError.value = 'Vui lòng chọn học sinh'
-    return
-  }
-
-  submitting.value = true
-  try {
-    await teacherService.createPost({
-      scope_type: scopeType.value,
-      class_id: selectedClassId.value,
-      student_id: scopeType.value === 'student' ? formStudentId.value : undefined,
-      type: postType.value,
-      content: content.value.trim(),
-    })
-    content.value = ''
-    showForm.value = false
-    currentPage.value = 1
+  await submitPost(selectedClassId.value, async () => {
+    resetToFirstPage()
     await fetchPosts()
-  } catch (error) {
-    formError.value = extractErrorMessage(error) || 'Không thể tạo bài đăng'
-  } finally {
-    submitting.value = false
-  }
-}
-
-function patchPostById(postId, patch) {
-  posts.value = posts.value.map((post) => (post.post_id === postId ? { ...post, ...patch } : post))
-}
-
-function handlePageChange(page) {
-  currentPage.value = page
+  })
 }
 
 watch(selectedClassId, async () => {
-  currentPage.value = 1
+  resetToFirstPage()
   await fetchStudents()
   await fetchPosts()
 })
 
 watch(currentPage, fetchPosts)
 
-onMounted(fetchBootstrap)
+onMounted(fetchClasses)
 </script>
 
 <template>
@@ -158,7 +65,7 @@ onMounted(fetchBootstrap)
       <div class="composer-shell card">
         <div class="composer-main">
           <div class="avatar">GV</div>
-          <button type="button" class="composer-toggle" @click="showForm = !showForm">
+          <button type="button" class="composer-toggle" @click="showForm ? closeForm() : openForm()">
             {{ showForm ? 'Đóng khung soạn bài' : 'Bạn muốn chia sẻ điều gì với lớp hôm nay?' }}
           </button>
         </div>
@@ -172,7 +79,7 @@ onMounted(fetchBootstrap)
         <div class="composer-stats">
           <span class="badge badge--outline">{{ pagination.total }} bài đăng</span>
           <span class="badge badge--info">{{ POST_SCOPE_LABELS[scopeType] }}</span>
-          <button type="button" class="btn btn--sm btn--outline" @click="showForm = !showForm">
+          <button type="button" class="btn btn--sm btn--outline" @click="showForm ? closeForm() : openForm()">
             <X v-if="showForm" :size="16" />
             <Plus v-else :size="16" />
             {{ showForm ? 'Đóng' : 'Tạo bài' }}
@@ -251,7 +158,7 @@ onMounted(fetchBootstrap)
         <MessageSquare :size="48" class="text-muted" />
         <h3>Chưa có bài đăng nào</h3>
         <p>Hãy tạo bài đầu tiên để cập nhật thông tin cho lớp học.</p>
-        <button class="btn btn--primary" @click="showForm = true">
+        <button type="button" class="btn btn--primary" @click="openForm">
           <Plus :size="16" />
           Tạo bài đăng
         </button>
@@ -274,7 +181,7 @@ onMounted(fetchBootstrap)
         :total-pages="totalPages"
         :total-items="pagination.total"
         :limit="pagination.limit"
-        @page-change="handlePageChange"
+        @page-change="setPage"
       />
     </template>
   </div>
