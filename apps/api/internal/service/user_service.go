@@ -93,8 +93,12 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchool
 	// Check if email already exists
 	existingUser, err := s.userRepo.FindByEmail(ctx, email)
 	if err == nil && existingUser != nil {
-		// User đã tồn tại - kiểm tra xem đã có role chưa
-		if len(existingUser.Roles) > 0 {
+		// User đã tồn tại - kiểm tra role hiện tại qua bảng user_roles
+		existingRoles, rolesErr := s.userRepo.RolesOfUser(ctx, existingUser.UserID)
+		if rolesErr != nil {
+			return nil, ErrFailedToCreateUser
+		}
+		if len(existingRoles) > 0 {
 			return nil, ErrUserAlreadyHasRole
 		}
 		// User tồn tại nhưng chưa có role → có thể assign role
