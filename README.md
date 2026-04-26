@@ -3,13 +3,12 @@
 ![Go](https://img.shields.io/badge/Go-1.25.5-00ADD8?logo=go&logoColor=white)
 ![Gin](https://img.shields.io/badge/Gin-1.11-009688?logo=gin&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=next.js&logoColor=white)
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=0A0A0A)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Vue.js](https://img.shields.io/badge/Vue.js-3.5-4FC08D?logo=vue.js&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Pinia](https://img.shields.io/badge/Pinia-3-FFD859?logo=pinia&logoColor=0A0A0A)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-Iris is a full-stack school management platform built for an undergraduate thesis, with a Go (Gin + PostgreSQL) backend and a Next.js frontend.
+Iris is a full-stack school management platform built for an undergraduate thesis, with a Go (Gin + PostgreSQL) backend and a Vue 3 (Vite) frontend.
 
 The platform supports role-based workflows for super admins, school admins, teachers, and parents.
 
@@ -35,11 +34,12 @@ The platform supports role-based workflows for super admins, school admins, teac
 - Google ID token verification (`google.golang.org/api/idtoken`)
 
 ### Frontend
-- Next.js `16.x`
-- React `19`
-- TypeScript `5`
-- Tailwind CSS `4`
-- shadcn/ui + lucide-react
+- Vue `3.5`
+- Vite `8`
+- Vue Router `5`
+- Pinia `3` (state management)
+- lucide-vue-next (icons)
+- Plain CSS (custom properties, no UI framework)
 
 ## Repository Structure
 
@@ -47,7 +47,7 @@ The platform supports role-based workflows for super admins, school admins, teac
 iris-app/
 ├── apps/
 │   ├── api/                        # Go API (cmd, internal, migrations)
-│   └── web/                        # Next.js frontend app
+│   └── web/                        # Vue 3 + Vite frontend app
 ├── infra/docker/                   # Docker Compose and deploy env example
 ├── scripts/db/                     # Seed and cleanup scripts
 ├── scripts/smoke/                  # API/UI smoke checks
@@ -63,7 +63,7 @@ iris-app/
 ## Prerequisites
 
 - Go `>= 1.25`
-- Node.js `>= 20`
+- Node.js `>= 20.19` or `>= 22.12`
 - npm
 - Docker + Docker Compose
 - PostgreSQL migration CLI (`migrate`)
@@ -100,8 +100,8 @@ Optional values:
 ```env
 DB_MAX_CONNS=50
 JWT_TTL_MINUTES=1440
-ALLOWED_ORIGINS=http://localhost:3000
-FRONTEND_URL=http://localhost:3000
+ALLOWED_ORIGINS=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
 
 # Google login (phase 1)
 GOOGLE_LOGIN_ENABLED=false
@@ -147,13 +147,11 @@ Backend base URL: `http://localhost:8080/api/v1`
 
 ### 6) Configure frontend environment
 
-Create `apps/web/.env.local` from `apps/web/.env.example`.
-
-Example values:
+Create `apps/web/.env` with:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=
+VITE_API_URL=http://localhost:8080/api/v1
+VITE_GOOGLE_CLIENT_ID=
 ```
 
 ### 7) Run frontend
@@ -164,7 +162,7 @@ npm install
 npm run dev
 ```
 
-Frontend URL: `http://localhost:3000`
+Frontend URL: `http://localhost:5173`
 
 ## Smoke and Validation
 
@@ -175,8 +173,7 @@ Frontend URL: `http://localhost:3000`
 go test ./...
 
 # From apps/web
-npx tsc --noEmit
-npx eslint
+npm run lint
 ```
 
 ### API smoke script
@@ -212,11 +209,14 @@ For detailed endpoint behavior and open issues, see:
 ## Development Notes
 
 - The backend keeps unit tests colocated next to the code they cover, using Go's standard `*_test.go` convention.
-- The frontend keeps unit tests colocated in `src`, using `*.test.ts` / `*.test.tsx` naming.
-- Integration and smoke coverage stay separate from unit tests under `scripts/smoke/`.
-- The backend is organized with explicit service/repository boundaries to keep business logic testable.
-- The frontend uses domain-driven route sections (`admin`, `teacher`, `parent`) and shared typed API clients.
-- Migration files are incremental and live in `apps/api/migrations`.
+- The frontend uses Vue 3 Composition API with `<script setup>` syntax throughout.
+- State management is handled via Pinia stores with setup-function syntax.
+- Composables are organized by feature/domain under `src/composables/` with barrel exports.
+- API calls go through a centralized `httpClient.js` with automatic JWT token injection and request timeout.
+- The frontend uses domain-driven route sections (`admin`, `teacher`, `parent`) with lazy-loaded views.
+- Layouts (`AuthLayout`, `DashboardLayout`) wrap route groups for consistent UI structure.
+- Styling uses plain CSS with custom properties (no Tailwind or UI framework).
+- Linting uses ESLint + oxlint + Prettier.
 
 ---
 
