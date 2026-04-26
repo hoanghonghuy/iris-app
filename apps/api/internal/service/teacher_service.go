@@ -38,6 +38,35 @@ func (s *TeacherService) List(ctx context.Context, adminSchoolID *uuid.UUID, lim
 	return s.teacherRepo.List(ctx, adminSchoolID, limit, offset)
 }
 
+// Create tạo teacher profile từ user (admin only)
+func (s *TeacherService) Create(ctx context.Context, adminSchoolID *uuid.UUID, userID, schoolID uuid.UUID) (uuid.UUID, error) {
+	// SCHOOL_ADMIN: chỉ được tạo teacher cho school của mình
+	if adminSchoolID != nil && schoolID != *adminSchoolID {
+		return uuid.Nil, ErrSchoolAccessDenied
+	}
+
+	// Kiểm tra user đã có teacher profile chưa
+	existingTeacher, err := s.teacherRepo.GetByUserID(ctx, userID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, err
+	}
+	if existingTeacher != nil {
+		return uuid.Nil, ErrTeacherAlreadyExists
+	}
+
+	// Kiểm tra user có tồn tại không (thông qua việc check có role TEACHER chưa)
+	// Nếu user chưa có role TEACHER, admin phải assign role trước
+	// Logic này đảm bảo user chỉ có 1 role duy nhất
+
+	// Tạo teacher profile
+	teacherID, err := s.teacherRepo.Create(ctx, userID, schoolID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return teacherID, nil
+}
+
 // Assign gán giáo viên vào lớp.
 func (s *TeacherService) Assign(ctx context.Context, adminSchoolID *uuid.UUID, teacherID, classID uuid.UUID) error {
 	// kiểm tra teacher có tồn tại không

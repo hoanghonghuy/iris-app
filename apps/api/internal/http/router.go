@@ -268,6 +268,9 @@ func NewRouter(
 				// teacher routes (quản lý giáo viên)
 				teachers := admin.Group("/teachers")
 				{
+					// tạo teacher profile từ user
+					teachers.POST("", teacherHandler.Create)
+
 					// lấy danh sách tất cả giáo viên
 					teachers.GET("", teacherHandler.List)
 

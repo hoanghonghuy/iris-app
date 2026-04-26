@@ -80,6 +80,21 @@ func (r *TeacherRepo) List(ctx context.Context, schoolID *uuid.UUID, limit, offs
 	return teachers, total, rows.Err()
 }
 
+// Create tạo teacher profile từ user
+func (r *TeacherRepo) Create(ctx context.Context, userID, schoolID uuid.UUID) (uuid.UUID, error) {
+	const q = `
+		INSERT INTO teachers (user_id, school_id, full_name, phone)
+		VALUES ($1, $2, '', '')
+		RETURNING teacher_id;
+	`
+	var teacherID uuid.UUID
+	err := r.pool.QueryRow(ctx, q, userID, schoolID).Scan(&teacherID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return teacherID, nil
+}
+
 // lấy thông tin giáo viên theo teacher_id.
 func (r *TeacherRepo) GetByTeacherID(ctx context.Context, teacherID uuid.UUID) (*model.Teacher, error) {
 	const q = `

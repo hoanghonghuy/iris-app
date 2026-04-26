@@ -55,7 +55,8 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const user = await authService.getMe()
       setUser(user)
-      // BE trả roles là array: ['SUPER_ADMIN'], lấy phần tử đầu tiên
+      
+      // Single role per user - lấy role đầu tiên (và duy nhất)
       if (user && Array.isArray(user.roles) && user.roles.length > 0) {
         setRole(user.roles[0])
       } else if (user && user.role) {

@@ -90,6 +90,17 @@ func (s *UserService) CreateUserWithoutPassword(ctx context.Context, adminSchool
 		}
 	}
 
+	// Check if email already exists
+	existingUser, err := s.userRepo.FindByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		// User đã tồn tại - kiểm tra xem đã có role chưa
+		if len(existingUser.Roles) > 0 {
+			return nil, ErrUserAlreadyHasRole
+		}
+		// User tồn tại nhưng chưa có role → có thể assign role
+		// (trường hợp này thường không xảy ra trong flow bình thường)
+	}
+
 	// Generate temporary password hash (user sẽ thay đổi khi activate)
 	tempPassword := uuid.New().String()
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(tempPassword), bcrypt.DefaultCost)

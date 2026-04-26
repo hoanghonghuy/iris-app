@@ -6,6 +6,7 @@ import "errors"
 var (
 	ErrInvalidUserID                = errors.New("invalid user ID")
 	ErrUserNotFound                 = errors.New("user not found")
+	ErrUserAlreadyHasRole           = errors.New("user already has a role, cannot assign another role")
 	ErrEmailCannotBeEmpty           = errors.New("email cannot be empty")
 	ErrPasswordCannotBeEmpty        = errors.New("password cannot be empty")
 	ErrFailedToHashPassword         = errors.New("failed to hash password")
@@ -65,6 +66,7 @@ var (
 	ErrInvalidDate                         = errors.New("invalid date format, use YYYY-MM-DD")
 	ErrInvalidStatus                       = errors.New("invalid attendance status")
 	ErrTeacherNotFound                     = errors.New("teacher not found")
+	ErrTeacherAlreadyExists                = errors.New("teacher profile already exists for this user")
 	ErrForbidden                           = errors.New("forbidden action")
 	ErrTeacherNotAssigned                  = errors.New("teacher is not assigned to this class")
 	ErrInvalidValue                        = errors.New("invalid value")

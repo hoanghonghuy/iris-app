@@ -14,6 +14,43 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 )
 
+// Create tạo teacher profile từ user (admin only)
+func (h *TeacherHandler) Create(c *gin.Context) {
+	adminSchoolID := shared.ExtractAdminSchoolID(c)
+
+	var req CreateTeacherRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	teacherID, err := h.teacherService.Create(ctx, adminSchoolID, req.UserID, req.SchoolID)
+	if err != nil {
+		if errors.Is(err, service.ErrSchoolAccessDenied) {
+			response.Fail(c, http.StatusForbidden, "access denied")
+			return
+		}
+		if errors.Is(err, service.ErrUserNotFound) {
+			response.Fail(c, http.StatusNotFound, "user not found")
+			return
+		}
+		if errors.Is(err, service.ErrTeacherAlreadyExists) {
+			response.Fail(c, http.StatusConflict, "teacher profile already exists for this user")
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to create teacher")
+		return
+	}
+
+	response.OK(c, gin.H{
+		"message":    "teacher created successfully",
+		"teacher_id": teacherID.String(),
+	})
+}
+
 // Update updates a teacher's information (admin only - can update all fields)
 func (h *TeacherHandler) Update(c *gin.Context) {
 	adminSchoolID := shared.ExtractAdminSchoolID(c)

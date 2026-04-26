@@ -85,6 +85,9 @@ export const adminService = {
   async getTeachers(params) {
     return await httpClient.get('/admin/teachers', params)
   },
+  async createTeacher(data) {
+    return await httpClient.post('/admin/teachers', data)
+  },
   async getTeacherById(teacherId) {
     return await httpClient.get(`/admin/teachers/${teacherId}`)
   },

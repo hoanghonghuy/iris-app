@@ -1,21 +1,39 @@
 <script setup>
-import { ref } from 'vue'
-import { Link2, Pencil, Phone, Trash2, X } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Link2, Pencil, Phone, Plus, Trash2, X } from 'lucide-vue-next'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
+import { normalizeListResponse } from '../../helpers/collectionUtils'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import PaginationBar from '../../components/common/PaginationBar.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
-import { useAdminPeopleManagement } from '../../composables/admin/useAdminPeopleManagement'
+import { useAdminPeopleManagement, useAdminUserSearch } from '../../composables/admin'
 import {
   ADMIN_LOAD_ERROR_TITLE,
   ADMIN_LOADING_MESSAGE,
   ADMIN_RETRY_BUTTON_TEXT,
+  ADMIN_SELECTOR_FETCH_LIMIT,
 } from '../../helpers/adminConfig'
 
 const PAGE_SIZE = 20
+const USER_SEARCH_MIN_LENGTH = 2
+const USER_SEARCH_RESULT_LIMIT = 6
+
+const {
+  searchQuery: userSearchQuery,
+  searchResults: userSearchResults,
+  searchLoading: userSearchLoading,
+  selectedUser,
+  searchUsers,
+  selectUser,
+  clearSelectedUser,
+  cleanup: cleanupUserSearch,
+} = useAdminUserSearch({
+  minLength: USER_SEARCH_MIN_LENGTH,
+  resultLimit: USER_SEARCH_RESULT_LIMIT,
+})
 
 const {
   items: teachers,
@@ -97,6 +115,11 @@ const isDeleteOpen = ref(false)
 const deleteTarget = ref(null)
 const deleteLoading = ref(false)
 
+const isCreateModalOpen = ref(false)
+const createLoading = ref(false)
+const createError = ref('')
+const createForm = ref({ school_id: '' })
+
 function openDeleteDialog(teacher) {
   deleteTarget.value = teacher
   isDeleteOpen.value = true
@@ -124,10 +147,79 @@ async function handleDelete() {
     deleteLoading.value = false
   }
 }
+
+function openCreateModal() {
+  createForm.value = { school_id: selectedSchoolId.value || '' }
+  createError.value = ''
+  userSearchQuery.value = ''
+  clearSelectedUser()
+  isCreateModalOpen.value = true
+}
+
+function closeCreateModal() {
+  isCreateModalOpen.value = false
+  createForm.value = { school_id: '' }
+  createError.value = ''
+  userSearchQuery.value = ''
+  clearSelectedUser()
+}
+
+async function handleCreateTeacher() {
+  if (!selectedUser.value || !createForm.value.school_id) {
+    createError.value = 'Vui lòng chọn user và trường học'
+    return
+  }
+
+  createLoading.value = true
+  createError.value = ''
+
+  try {
+    const roles = Array.isArray(selectedUser.value.roles) ? selectedUser.value.roles : []
+    if (!roles.includes('TEACHER')) {
+      await adminService.assignRole(selectedUser.value.user_id, 'TEACHER')
+    }
+
+    await adminService.createTeacher({
+      user_id: selectedUser.value.user_id,
+      school_id: createForm.value.school_id,
+    })
+
+    closeCreateModal()
+    await fetchTeachers(1)
+  } catch (error) {
+    createError.value = extractErrorMessage(error) || 'Không thể gán giáo viên'
+  } finally {
+    createLoading.value = false
+  }
+}
+
+async function fetchSchools() {
+  try {
+    const response = await adminService.getSchools({ limit: ADMIN_SELECTOR_FETCH_LIMIT, offset: 0 })
+    schools.value = normalizeListResponse(response)
+  } catch (error) {
+    console.error('Failed to fetch schools:', error)
+  }
+}
+
+onBeforeUnmount(() => {
+  cleanupUserSearch()
+})
+
+onMounted(() => {
+  fetchSchools()
+})
 </script>
 
 <template>
   <div class="admin-teachers page-stack">
+    <div class="page-actions">
+      <button class="btn btn--primary" type="button" @click="openCreateModal">
+        <Plus :size="16" />
+        Gán giáo viên
+      </button>
+    </div>
+
     <div v-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
@@ -431,6 +523,78 @@ async function handleDelete() {
       </div>
     </ActionModal>
 
+    <ActionModal :is-open="isCreateModalOpen" title="Gán giáo viên" @close="closeCreateModal">
+      <div class="modal-form">
+        <div v-if="createError" class="alert alert--error">{{ createError }}</div>
+
+        <div class="form-group">
+          <label class="form-label">Tìm user</label>
+          <input
+            v-model="userSearchQuery"
+            type="text"
+            class="form-input"
+            placeholder="Nhập email để tìm user..."
+            :disabled="createLoading"
+            @input="searchUsers(userSearchQuery)"
+          />
+          <div v-if="userSearchLoading" class="text-muted text-sm mt-1">Đang tìm...</div>
+          <div v-if="userSearchResults.length > 0" class="user-search-results">
+            <button
+              v-for="user in userSearchResults"
+              :key="user.user_id"
+              type="button"
+              class="user-search-item"
+              @click="selectUser(user)"
+            >
+              <span class="font-medium">{{ user.email }}</span>
+              <span class="text-xs text-muted">{{ user.roles?.join(', ') || 'No roles' }}</span>
+            </button>
+          </div>
+          <div v-if="selectedUser" class="selected-user-badge">
+            <span>{{ selectedUser.email }}</span>
+            <button type="button" @click="clearSelectedUser">
+              <X :size="14" />
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="createSchoolId">Trường học</label>
+          <select
+            id="createSchoolId"
+            v-model="createForm.school_id"
+            class="form-input"
+            :disabled="createLoading"
+            required
+          >
+            <option value="">-- Chọn trường --</option>
+            <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
+              {{ school.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            class="btn btn--outline"
+            type="button"
+            :disabled="createLoading"
+            @click="closeCreateModal"
+          >
+            Hủy
+          </button>
+          <button
+            class="btn btn--primary"
+            type="button"
+            :disabled="createLoading || !selectedUser || !createForm.school_id"
+            @click="handleCreateTeacher"
+          >
+            {{ createLoading ? 'Đang gán...' : 'Gán giáo viên' }}
+          </button>
+        </div>
+      </div>
+    </ActionModal>
+
     <ConfirmDialog
       :is-open="isUnassignOpen"
       title="Xác nhận hủy gán"
@@ -605,6 +769,62 @@ async function handleDelete() {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-2);
+}
+
+.user-search-results {
+  margin-top: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.user-search-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-3);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.user-search-item:last-child {
+  border-bottom: none;
+}
+
+.user-search-item:hover {
+  background-color: var(--color-background);
+}
+
+.selected-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background-color: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.selected-user-badge button {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 0;
+}
+
+.selected-user-badge button:hover {
+  color: var(--color-danger);
 }
 
 .mt-1 {

@@ -34,6 +34,9 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	resp, err := h.userService.CreateUserWithoutPassword(ctx, adminSchoolID, req.Email, req.Roles)
 	if err != nil {
 		switch {
+		case errors.Is(err, service.ErrUserAlreadyHasRole):
+			response.Fail(c, http.StatusConflict, "user already has a role, cannot assign another role")
+			return
 		case errors.Is(err, service.ErrCannotAssignRole):
 			response.Fail(c, http.StatusForbidden, "insufficient permissions to assign this role")
 			return
