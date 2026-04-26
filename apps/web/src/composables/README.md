@@ -22,9 +22,6 @@ composables/
 │   ├── useParentAppointments.js      # Appointments & booking management
 │   ├── useParentAppointmentActions.js # Booking & cancellation actions
 │   └── index.js                      # Barrel export
-├── shared/         # Shared composables (dùng chung nhiều feature)
-│   ├── useAuthForm.js                # Auth form state management
-│   └── index.js                      # Barrel export
 └── teacher/        # Teacher-related composables
     ├── useAppointmentsList.js        # Appointments list & filtering
     ├── useAppointmentSlotCreation.js # Slot creation & validation
