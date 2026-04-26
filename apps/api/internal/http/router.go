@@ -119,6 +119,7 @@ func NewRouter(
 		// Protected routes (require valid JWT)
 		protected := v1.Group("/")
 		protected.Use(middleware.AuthJWT(jwtSecret))
+		protected.Use(middleware.AuditLogger(auditLogService))
 		{
 			// /me endpoint trả về thông tin user hiện tại từ JWT claims (không cần query DB)
 			protected.GET("/me", authHandler.Me)
@@ -227,7 +228,6 @@ func NewRouter(
 			admin := protected.Group("/admin")
 			admin.Use(middleware.RequireAnyRole("SUPER_ADMIN", "SCHOOL_ADMIN"))
 			admin.Use(middleware.InjectAdminScope())
-			admin.Use(middleware.AdminAuditLogger(auditLogService))
 			{
 				// Admin ping/health check
 				admin.GET("/ping", func(c *gin.Context) {
