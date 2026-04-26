@@ -49,26 +49,38 @@ type SMTPEmailSender struct {
 	port        int
 	user        string
 	pass        string
+	from        string
+	fromName    string
 	frontendURL string
 }
 
-func NewSMTPEmailSender(host, portStr, user, pass, frontendURL string) *SMTPEmailSender {
+func NewSMTPEmailSender(host, portStr, user, pass, from, fromName, frontendURL string) *SMTPEmailSender {
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
 		port = 587 // default TLS port
+	}
+	// Nếu from trống, dùng user làm from
+	if from == "" {
+		from = user
+	}
+	// Nếu fromName trống, dùng from làm fromName
+	if fromName == "" {
+		fromName = from
 	}
 	return &SMTPEmailSender{
 		host:        host,
 		port:        port,
 		user:        user,
 		pass:        pass,
+		from:        from,
+		fromName:    fromName,
 		frontendURL: frontendURL,
 	}
 }
 
 func (s *SMTPEmailSender) Send(to, subject, htmlBody string) error {
 	m := mail.NewMsg()
-	if err := m.From(s.user); err != nil {
+	if err := m.FromFormat(s.fromName, s.from); err != nil {
 		return fmt.Errorf("failed to set From: %w", err)
 	}
 	if err := m.To(to); err != nil {

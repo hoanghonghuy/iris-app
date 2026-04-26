@@ -89,7 +89,7 @@ func main() {
 
 	var emailSender service.EmailSender
 	if cfg.SMTPHost != "" {
-		emailSender = service.NewSMTPEmailSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, frontendURL)
+		emailSender = service.NewSMTPEmailSender(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPFrom, cfg.SMTPFromName, frontendURL)
 		log.Println("Email: SMTP mode (", cfg.SMTPHost, ")")
 	} else {
 		emailSender = service.NewLogEmailSender(frontendURL)

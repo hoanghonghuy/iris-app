@@ -26,11 +26,13 @@ type Config struct {
 	AllowedOrigins                  []string // CORS + WS origin allowlist
 
 	// SMTP (empty = dev mode, dùng LogEmailSender)
-	SMTPHost    string
-	SMTPPort    string
-	SMTPUser    string
-	SMTPPass    string
-	FrontendURL string
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUser     string
+	SMTPPass     string
+	SMTPFrom     string // Email gửi đi (nếu trống, dùng SMTPUser)
+	SMTPFromName string // Tên hiển thị của người gửi (nếu trống, dùng SMTPFrom)
+	FrontendURL  string
 }
 
 // Load đọc cấu hình từ các biến môi trường.
@@ -100,6 +102,8 @@ func Load() (Config, error) {
 		SMTPPort:                        os.Getenv("SMTP_PORT"),
 		SMTPUser:                        os.Getenv("SMTP_USER"),
 		SMTPPass:                        os.Getenv("SMTP_PASS"),
+		SMTPFrom:                        os.Getenv("SMTP_FROM"),
+		SMTPFromName:                    os.Getenv("SMTP_FROM_NAME"),
 		FrontendURL:                     os.Getenv("FRONTEND_URL"),
 	}, nil
 }
