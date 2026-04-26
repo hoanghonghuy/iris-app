@@ -62,7 +62,12 @@ const {
 <template>
   <div class="admin-students page-stack">
     <div class="page-actions">
-      <button class="btn btn--primary" type="button" :disabled="!selectedClassId" @click="openAddModal">
+      <button
+        class="btn btn--primary"
+        type="button"
+        :disabled="!selectedClassId"
+        @click="openAddModal"
+      >
         + Thêm học sinh
       </button>
     </div>
@@ -71,7 +76,12 @@ const {
       <div class="toolbar-grid">
         <div v-if="isSuperAdmin" class="form-group mb-0">
           <label class="form-label" for="schoolFilter">Trường học</label>
-          <select id="schoolFilter" v-model="selectedSchoolId" class="form-input" :disabled="isBootstrapping">
+          <select
+            id="schoolFilter"
+            v-model="selectedSchoolId"
+            class="form-input"
+            :disabled="isBootstrapping"
+          >
             <option value="" disabled>-- Chọn trường --</option>
             <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
               {{ school.name }}
@@ -81,9 +91,20 @@ const {
 
         <div class="form-group mb-0">
           <label class="form-label" for="classFilter">Lớp học</label>
-          <select id="classFilter" v-model="selectedClassId" class="form-input" :disabled="isBootstrapping || classes.length === 0">
-            <option value="" disabled>{{ classes.length === 0 ? '-- Không có lớp --' : '-- Chọn lớp --' }}</option>
-            <option v-for="classItem in classes" :key="classItem.class_id" :value="classItem.class_id">
+          <select
+            id="classFilter"
+            v-model="selectedClassId"
+            class="form-input"
+            :disabled="isBootstrapping || classes.length === 0"
+          >
+            <option value="" disabled>
+              {{ classes.length === 0 ? '-- Không có lớp --' : '-- Chọn lớp --' }}
+            </option>
+            <option
+              v-for="classItem in classes"
+              :key="classItem.class_id"
+              :value="classItem.class_id"
+            >
               {{ classItem.name }}
             </option>
           </select>

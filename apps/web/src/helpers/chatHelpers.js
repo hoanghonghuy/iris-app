@@ -14,7 +14,9 @@ export function getInitials(name) {
 
 export function getConversationName(conversation, currentUserId) {
   if (conversation?.name) return conversation.name
-  const other = conversation?.participants?.find((participant) => participant.user_id !== currentUserId)
+  const other = conversation?.participants?.find(
+    (participant) => participant.user_id !== currentUserId,
+  )
   return other?.full_name || other?.email || 'Cuộc hội thoại'
 }
 
@@ -31,9 +33,11 @@ export function isLastInGroup(messages, index) {
 }
 
 export function shouldShowSenderName(message, index, messages, conversationType, currentUserId) {
-  return conversationType !== 'direct'
-    && message?.sender_id !== currentUserId
-    && isFirstInGroup(messages, index)
+  return (
+    conversationType !== 'direct' &&
+    message?.sender_id !== currentUserId &&
+    isFirstInGroup(messages, index)
+  )
 }
 
 export function getSenderName(message) {

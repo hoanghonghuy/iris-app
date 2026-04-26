@@ -19,7 +19,6 @@ const authStore = useAuthStore()
 
 const PAGE_SIZE = 20
 const ROLE_OPTIONS = ['TEACHER', 'PARENT', 'SCHOOL_ADMIN', 'SUPER_ADMIN']
-const CREATABLE_USER_ROLES = ['TEACHER', 'PARENT', 'SCHOOL_ADMIN']
 
 const ROLE_LABELS = {
   SUPER_ADMIN: 'Super Admin',
@@ -27,6 +26,16 @@ const ROLE_LABELS = {
   TEACHER: 'Giáo viên',
   PARENT: 'Phụ huynh',
 }
+
+// SCHOOL_ADMIN chỉ được tạo user với role TEACHER hoặc PARENT
+// SUPER_ADMIN có thể tạo tất cả role trừ SUPER_ADMIN
+const creatableUserRoles = computed(() => {
+  if (authStore.isSuperAdmin) {
+    return ['TEACHER', 'PARENT', 'SCHOOL_ADMIN']
+  }
+  // SCHOOL_ADMIN
+  return ['TEACHER', 'PARENT']
+})
 
 const STATUS_LABELS = {
   active: 'Hoạt động',
@@ -75,7 +84,7 @@ const {
   },
   createEmptyForm: () => ({
     email: '',
-    roles: ['TEACHER'],
+    roles: 'TEACHER',
   }),
   toEditForm: (user) => ({
     email: user?.email || '',
@@ -86,8 +95,8 @@ const {
       return 'Vui lòng nhập email'
     }
 
-    if (!Array.isArray(form.roles) || form.roles.length === 0) {
-      return 'Chọn ít nhất 1 vai trò'
+    if (!form.roles || form.roles.length === 0) {
+      return 'Vui lòng chọn vai trò'
     }
 
     return ''
@@ -95,7 +104,7 @@ const {
   createItem: (form) =>
     adminService.createUser({
       email: form.email.trim(),
-      roles: form.roles,
+      roles: [form.roles], // Chỉ gửi 1 role
     }),
   saveErrorMessage: 'Không thể tạo user',
   onAfterSave: async ({ fetchItems }) => {
@@ -174,14 +183,8 @@ function handleRoleFilterChange() {
   fetchUsers(1)
 }
 
-function toggleCreateRole(role) {
-  const currentRoles = [...newUserData.value.roles]
-  if (currentRoles.includes(role)) {
-    newUserData.value.roles = currentRoles.filter((item) => item !== role)
-    return
-  }
-
-  newUserData.value.roles = [...currentRoles, role]
+function selectCreateRole(role) {
+  newUserData.value.roles = role
 }
 
 function confirmToggleLock(user) {
@@ -211,7 +214,9 @@ async function handleToggleLock() {
     closeLockConfirm()
     fetchUsers(currentPage.value)
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error) || `Không thể ${targetStatus === 'locked' ? 'mở khóa' : 'khóa'} tài khoản`
+    errorMessage.value =
+      extractErrorMessage(error) ||
+      `Không thể ${targetStatus === 'locked' ? 'mở khóa' : 'khóa'} tài khoản`
     closeLockConfirm()
   } finally {
     actionLoadingUserId.value = ''
@@ -230,13 +235,16 @@ onMounted(async () => {
 <template>
   <div class="admin-users page-stack">
     <div class="page-actions">
-      <button class="btn btn--primary" type="button" @click="openAddModal">
-        + Tạo user
-      </button>
+      <button class="btn btn--primary" type="button" @click="openAddModal">+ Tạo user</button>
     </div>
 
     <div
-      v-if="!isLoading && !errorMessage && (users.length > 0 || selectedRoleFilter !== 'ALL') && !isAddModalOpen"
+      v-if="
+        !isLoading &&
+        !errorMessage &&
+        (users.length > 0 || selectedRoleFilter !== 'ALL') &&
+        !isAddModalOpen
+      "
       class="card toolbar-card"
     >
       <div class="toolbar-grid">
@@ -247,7 +255,11 @@ onMounted(async () => {
           placeholder="Tìm theo email..."
         />
 
-        <select v-model="selectedRoleFilter" class="form-input toolbar-select" @change="handleRoleFilterChange">
+        <select
+          v-model="selectedRoleFilter"
+          class="form-input toolbar-select"
+          @change="handleRoleFilterChange"
+        >
           <option value="ALL">Tất cả vai trò</option>
           <option v-for="role in ROLE_OPTIONS" :key="role" :value="role">
             {{ ROLE_LABELS[role] || role }}
@@ -259,7 +271,9 @@ onMounted(async () => {
     <div v-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchUsers(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchUsers(currentPage)">
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
+      </button>
     </div>
 
     <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
@@ -310,8 +324,12 @@ onMounted(async () => {
                     v-if="normalizeUserStatus(user) === 'active'"
                     class="btn btn--sm btn--danger"
                     type="button"
-                    :disabled="actionLoadingUserId === user.user_id || currentUserId === user.user_id"
-                    :title="currentUserId === user.user_id ? 'Bạn không thể tự khóa chính mình' : ''"
+                    :disabled="
+                      actionLoadingUserId === user.user_id || currentUserId === user.user_id
+                    "
+                    :title="
+                      currentUserId === user.user_id ? 'Bạn không thể tự khóa chính mình' : ''
+                    "
                     @click="confirmToggleLock(user)"
                   >
                     {{ actionLoadingUserId === user.user_id ? 'Đang xử lý...' : 'Khóa' }}
@@ -343,11 +361,7 @@ onMounted(async () => {
           </div>
 
           <div class="role-list">
-            <span
-              v-for="role in formatRoles(user.roles)"
-              :key="role"
-              class="badge badge--outline"
-            >
+            <span v-for="role in formatRoles(user.roles)" :key="role" class="badge badge--outline">
               {{ ROLE_LABELS[role] || role }}
             </span>
           </div>
@@ -386,11 +400,7 @@ onMounted(async () => {
       />
     </template>
 
-    <ActionModal
-      :is-open="isAddModalOpen"
-      title="Tạo user mới"
-      @close="closeAddModal"
-    >
+    <ActionModal :is-open="isAddModalOpen" title="Tạo user mới" @close="closeAddModal">
       <form class="modal-form" @submit.prevent="handleAddUser">
         <div v-if="modalError" class="alert alert--error">
           {{ modalError }}
@@ -413,17 +423,19 @@ onMounted(async () => {
           <label class="form-label">Vai trò ban đầu</label>
           <div class="role-picker">
             <label
-              v-for="role in CREATABLE_USER_ROLES"
+              v-for="role in creatableUserRoles"
               :key="role"
               class="role-option"
-              :class="{ 'role-option--active': newUserData.roles.includes(role) }"
+              :class="{ 'role-option--active': newUserData.roles === role }"
             >
               <input
-                type="checkbox"
-                class="role-option__checkbox"
-                :checked="newUserData.roles.includes(role)"
+                type="radio"
+                name="userRole"
+                class="role-option__radio"
+                :value="role"
+                :checked="newUserData.roles === role"
                 :disabled="isSubmitting"
-                @change="toggleCreateRole(role)"
+                @change="selectCreateRole(role)"
               />
               <span>{{ ROLE_LABELS[role] || role }}</span>
             </label>
@@ -431,7 +443,12 @@ onMounted(async () => {
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="closeAddModal">
+          <button
+            type="button"
+            class="btn btn--outline"
+            :disabled="isSubmitting"
+            @click="closeAddModal"
+          >
             Hủy
           </button>
           <button type="submit" class="btn btn--primary" :disabled="isSubmitting">
@@ -443,11 +460,19 @@ onMounted(async () => {
 
     <ConfirmDialog
       :is-open="isLockConfirmOpen"
-      :title="normalizeUserStatus(userToToggle) === 'locked' ? 'Xác nhận mở khóa tài khoản' : 'Xác nhận khóa tài khoản'"
-      :message="normalizeUserStatus(userToToggle) === 'locked'
-        ? `Tài khoản ${userToToggle?.email || ''} sẽ có thể đăng nhập lại bình thường.`
-        : `Tài khoản ${userToToggle?.email || ''} sẽ không thể đăng nhập được nữa. Bạn có chắc chắn?`"
-      :confirm-text="normalizeUserStatus(userToToggle) === 'locked' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'"
+      :title="
+        normalizeUserStatus(userToToggle) === 'locked'
+          ? 'Xác nhận mở khóa tài khoản'
+          : 'Xác nhận khóa tài khoản'
+      "
+      :message="
+        normalizeUserStatus(userToToggle) === 'locked'
+          ? `Tài khoản ${userToToggle?.email || ''} sẽ có thể đăng nhập lại bình thường.`
+          : `Tài khoản ${userToToggle?.email || ''} sẽ không thể đăng nhập được nữa. Bạn có chắc chắn?`
+      "
+      :confirm-text="
+        normalizeUserStatus(userToToggle) === 'locked' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'
+      "
       :is-danger="normalizeUserStatus(userToToggle) !== 'locked'"
       :is-loading="isSubmitting"
       @confirm="handleToggleLock"

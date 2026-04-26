@@ -1,9 +1,34 @@
 export const APPOINTMENT_STATUS_CONFIG = {
-  pending: { label: 'Chờ xác nhận', badge: 'badge--outline', text: 'Chờ xác nhận', badgeClass: 'badge badge--outline' },
-  confirmed: { label: 'Đã xác nhận', badge: 'badge--primary', text: 'Đã xác nhận', badgeClass: 'badge badge--success' },
-  cancelled: { label: 'Đã hủy', badge: 'badge--danger', text: 'Đã hủy', badgeClass: 'badge badge--danger' },
-  completed: { label: 'Hoàn tất', badge: 'badge--outline', text: 'Đã hoàn thành', badgeClass: 'badge badge--primary' },
-  no_show: { label: 'Vắng mặt', badge: 'badge--outline', text: 'Vắng mặt', badgeClass: 'badge badge--outline' },
+  pending: {
+    label: 'Chờ xác nhận',
+    badge: 'badge--outline',
+    text: 'Chờ xác nhận',
+    badgeClass: 'badge badge--outline',
+  },
+  confirmed: {
+    label: 'Đã xác nhận',
+    badge: 'badge--primary',
+    text: 'Đã xác nhận',
+    badgeClass: 'badge badge--success',
+  },
+  cancelled: {
+    label: 'Đã hủy',
+    badge: 'badge--danger',
+    text: 'Đã hủy',
+    badgeClass: 'badge badge--danger',
+  },
+  completed: {
+    label: 'Hoàn tất',
+    badge: 'badge--outline',
+    text: 'Đã hoàn thành',
+    badgeClass: 'badge badge--primary',
+  },
+  no_show: {
+    label: 'Vắng mặt',
+    badge: 'badge--outline',
+    text: 'Vắng mặt',
+    badgeClass: 'badge badge--outline',
+  },
 }
 
 export const APPOINTMENT_STATUS_OPTIONS = [

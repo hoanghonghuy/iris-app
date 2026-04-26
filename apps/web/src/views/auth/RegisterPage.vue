@@ -37,14 +37,10 @@ async function handleRegister() {
 
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
-    await authService.registerParent(
-      email.value, 
-      password.value, 
-      parentCode.value
-    )
-    
+    await authService.registerParent(email.value, password.value, parentCode.value)
+
     // Đăng ký thành công -> Tự động đăng nhập
     const data = await authService.login(email.value, password.value)
     handleLoginSuccess(data)
@@ -64,12 +60,9 @@ async function handleGoogleRegister(idToken) {
 
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
-    const data = await authService.registerParentWithGoogle(
-      idToken,
-      parentCode.value
-    )
+    const data = await authService.registerParentWithGoogle(idToken, parentCode.value)
     handleLoginSuccess(data)
   } catch (error) {
     errorMessage.value = extractErrorMessage(error)
@@ -99,61 +92,68 @@ function handleLoginSuccess(data) {
       <p class="text-muted text-sm">Sử dụng mã phụ huynh từ nhà trường để đăng ký</p>
     </div>
 
-    <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200">
+    <div
+      v-if="errorMessage"
+      class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+    >
       {{ errorMessage }}
     </div>
 
     <form @submit.prevent="handleRegister" class="flex-col gap-4">
       <div class="form-group">
-        <label class="form-label" for="parentCode">Mã phụ huynh <span class="text-danger">*</span></label>
-        <input 
-          id="parentCode" 
-          v-model="parentCode" 
-          type="text" 
-          class="form-input" 
+        <label class="form-label" for="parentCode"
+          >Mã phụ huynh <span class="text-danger">*</span></label
+        >
+        <input
+          id="parentCode"
+          v-model="parentCode"
+          type="text"
+          class="form-input"
           placeholder="Nhập mã từ nhà trường..."
           :disabled="isLoading"
-          required 
+          required
         />
       </div>
 
       <div class="form-group">
         <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
-        <input 
-          id="email" 
-          v-model="email" 
-          type="email" 
-          class="form-input" 
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          class="form-input"
           placeholder="parent@example.com"
           :disabled="isLoading"
-          required 
+          required
         />
       </div>
 
       <div class="form-group">
         <label class="form-label" for="password">Mật khẩu <span class="text-danger">*</span></label>
-        <input 
-          id="password" 
-          v-model="password" 
-          type="password" 
-          class="form-input" 
+        <input
+          id="password"
+          v-model="password"
+          type="password"
+          class="form-input"
           placeholder="Tối thiểu 6 ký tự"
           :disabled="isLoading"
-          required 
+          required
           minlength="6"
         />
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="confirmPassword">Xác nhận mật khẩu <span class="text-danger">*</span></label>
-        <input 
-          id="confirmPassword" 
-          v-model="confirmPassword" 
-          type="password" 
-          class="form-input" 
+        <label class="form-label" for="confirmPassword"
+          >Xác nhận mật khẩu <span class="text-danger">*</span></label
+        >
+        <input
+          id="confirmPassword"
+          v-model="confirmPassword"
+          type="password"
+          class="form-input"
           placeholder="Nhập lại mật khẩu"
           :disabled="isLoading"
-          required 
+          required
           minlength="6"
         />
       </div>
@@ -166,21 +166,22 @@ function handleLoginSuccess(data) {
         <span class="divider-text">hoặc đăng nhập bằng</span>
       </div>
 
-      <GoogleSignInButton 
-        :disabled="isLoading" 
-        @google-login="handleGoogleRegister" 
-      />
+      <GoogleSignInButton :disabled="isLoading" @google-login="handleGoogleRegister" />
 
       <div class="text-center text-sm mt-6 text-muted">
-        Đã có tài khoản? 
-        <RouterLink to="/login" class="font-medium text-foreground hover-underline">Đăng nhập</RouterLink>
+        Đã có tài khoản?
+        <RouterLink to="/login" class="font-medium text-foreground hover-underline"
+          >Đăng nhập</RouterLink
+        >
       </div>
     </form>
   </div>
 </template>
 
 <style scoped>
-.hover-underline:hover { text-decoration: underline; }
+.hover-underline:hover {
+  text-decoration: underline;
+}
 
 .divider {
   display: flex;
@@ -198,11 +199,11 @@ function handleLoginSuccess(data) {
 }
 
 .divider:not(:empty)::before {
-  margin-right: .25em;
+  margin-right: 0.25em;
 }
 
 .divider:not(:empty)::after {
-  margin-left: .25em;
+  margin-left: 0.25em;
 }
 
 .divider-text {

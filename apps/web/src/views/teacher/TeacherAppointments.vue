@@ -90,7 +90,18 @@ function exportAppointmentsCsv() {
 
   downloadCsv(
     `teacher-appointments-${toDateInputValue(new Date())}.csv`,
-    ['Ngay', 'HocSinh', 'Lop', 'PhuHuynh', 'TrangThai', 'BatDau', 'KetThuc', 'MuiGio', 'GhiChu', 'LyDoHuy'],
+    [
+      'Ngay',
+      'HocSinh',
+      'Lop',
+      'PhuHuynh',
+      'TrangThai',
+      'BatDau',
+      'KetThuc',
+      'MuiGio',
+      'GhiChu',
+      'LyDoHuy',
+    ],
     rows,
   )
 }
@@ -99,7 +110,6 @@ onMounted(async () => {
   await loadData()
   initializeClassId()
 })
-
 </script>
 
 <template>
@@ -149,7 +159,11 @@ onMounted(async () => {
           <div class="form-group mb-0">
             <label class="form-label">Lớp học</label>
             <select v-model="classId" class="form-input">
-              <option v-for="classInfo in classes" :key="classInfo.class_id" :value="classInfo.class_id">
+              <option
+                v-for="classInfo in classes"
+                :key="classInfo.class_id"
+                :value="classInfo.class_id"
+              >
                 {{ classInfo.name }}
               </option>
             </select>
@@ -157,7 +171,12 @@ onMounted(async () => {
 
           <div class="form-group mb-0">
             <label class="form-label">Thời gian bắt đầu</label>
-            <input v-model="startTime" class="form-input" type="datetime-local" :min="minStartTime" />
+            <input
+              v-model="startTime"
+              class="form-input"
+              type="datetime-local"
+              :min="minStartTime"
+            />
           </div>
 
           <div class="form-group mb-0">
@@ -175,7 +194,15 @@ onMounted(async () => {
             <label class="form-label">Kết thúc dự kiến</label>
             <div class="readonly-field">
               <Clock3 :size="16" />
-              {{ startTime ? formatDateTime(new Date(new Date(startTime).getTime() + durationMinutes * 60000).toISOString()) : 'Chưa xác định' }}
+              {{
+                startTime
+                  ? formatDateTime(
+                      new Date(
+                        new Date(startTime).getTime() + durationMinutes * 60000,
+                      ).toISOString(),
+                    )
+                  : 'Chưa xác định'
+              }}
             </div>
           </div>
         </div>
@@ -183,19 +210,37 @@ onMounted(async () => {
         <div class="form-grid two">
           <div class="form-group mb-0">
             <label class="form-label">Khoảng nghỉ giữa 2 lịch (phút)</label>
-            <input v-model.number="bufferMinutes" class="form-input" type="number" min="0" step="5" />
+            <input
+              v-model.number="bufferMinutes"
+              class="form-input"
+              type="number"
+              min="0"
+              step="5"
+            />
             <p class="hint">Hệ thống sẽ giữ khoảng nghỉ này trước hoặc sau mỗi lịch.</p>
           </div>
 
           <div class="form-group mb-0">
             <label class="form-label">Số lịch tối đa trong ngày</label>
-            <input v-model.number="maxBookingsPerDay" class="form-input" type="number" min="1" step="1" />
+            <input
+              v-model.number="maxBookingsPerDay"
+              class="form-input"
+              type="number"
+              min="1"
+              step="1"
+            />
           </div>
         </div>
 
         <div class="form-group mb-0">
           <label class="form-label">Ghi chú cho phụ huynh</label>
-          <textarea v-model="note" class="form-input" rows="3" maxlength="500" placeholder="Ví dụ: Vui lòng chuẩn bị các câu hỏi liên quan tới tiến độ học tập của bé..."></textarea>
+          <textarea
+            v-model="note"
+            class="form-input"
+            rows="3"
+            maxlength="500"
+            placeholder="Ví dụ: Vui lòng chuẩn bị các câu hỏi liên quan tới tiến độ học tập của bé..."
+          ></textarea>
           <p class="hint">Tối đa 500 ký tự.</p>
         </div>
 
@@ -205,8 +250,15 @@ onMounted(async () => {
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn btn--outline" @click="showCreateForm = false">Đóng</button>
-          <button type="button" class="btn btn--primary" :disabled="submitting || !classId || !startTime" @click="handleCreateSlot">
+          <button type="button" class="btn btn--outline" @click="showCreateForm = false">
+            Đóng
+          </button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            :disabled="submitting || !classId || !startTime"
+            @click="handleCreateSlot"
+          >
             {{ submitting ? 'Đang tạo...' : 'Tạo khung giờ' }}
           </button>
         </div>
@@ -219,7 +271,11 @@ onMounted(async () => {
         <div class="filters">
           <select v-model="statusFilter" class="form-input" @change="loadData">
             <option value="">Tất cả trạng thái</option>
-            <option v-for="option in APPOINTMENT_STATUS_OPTIONS" :key="option.value" :value="option.value">
+            <option
+              v-for="option in APPOINTMENT_STATUS_OPTIONS"
+              :key="option.value"
+              :value="option.value"
+            >
               {{ option.label }}
             </option>
           </select>
@@ -230,7 +286,9 @@ onMounted(async () => {
             <input v-model="filterToDate" class="form-input" type="date" @change="loadData" />
           </div>
 
-          <button type="button" class="btn btn--outline btn--sm" @click="resetLastSevenDays">7 ngày gần nhất</button>
+          <button type="button" class="btn btn--outline btn--sm" @click="resetLastSevenDays">
+            7 ngày gần nhất
+          </button>
           <button type="button" class="btn btn--outline btn--sm" @click="exportAppointmentsCsv">
             <Download :size="14" />
             Xuất CSV
@@ -251,34 +309,77 @@ onMounted(async () => {
             {{ formatDayHeading(group.dateKey) }}
           </div>
 
-          <article v-for="appointment in group.items" :key="appointment.appointment_id" class="appointment-item">
+          <article
+            v-for="appointment in group.items"
+            :key="appointment.appointment_id"
+            class="appointment-item"
+          >
             <div class="appointment-copy">
               <p class="appointment-title">
-                {{ appointment.student_name || appointment.student_id }} - {{ appointment.class_name || appointment.class_id }}
+                {{ appointment.student_name || appointment.student_id }} -
+                {{ appointment.class_name || appointment.class_id }}
               </p>
-              <p>{{ formatDateTime(appointment.start_time) }} - {{ formatDateTime(appointment.end_time) }}</p>
+              <p>
+                {{ formatDateTime(appointment.start_time) }} -
+                {{ formatDateTime(appointment.end_time) }}
+              </p>
               <p class="text-xs">Múi giờ: {{ timezoneDisplay }}</p>
               <p class="inline-meta">
                 <UserRound :size="14" />
                 Phụ huynh: {{ appointment.parent_name || appointment.parent_id }}
               </p>
               <p v-if="appointment.note">Ghi chú: {{ appointment.note }}</p>
-              <span class="badge" :class="statusConfig[appointment.status]?.badge || 'badge--outline'">
+              <span
+                class="badge"
+                :class="statusConfig[appointment.status]?.badge || 'badge--outline'"
+              >
                 {{ statusConfig[appointment.status]?.label || appointment.status }}
               </span>
             </div>
 
             <div class="status-actions">
-              <button type="button" class="btn btn--sm btn--primary" :disabled="appointment.status !== 'pending' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'confirmed')">
+              <button
+                type="button"
+                class="btn btn--sm btn--primary"
+                :disabled="
+                  appointment.status !== 'pending' ||
+                  updatingAppointmentId === appointment.appointment_id
+                "
+                @click="updateStatus(appointment.appointment_id, 'confirmed')"
+              >
                 Xác nhận
               </button>
-              <button type="button" class="btn btn--sm btn--outline" :disabled="appointment.status !== 'confirmed' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'completed')">
+              <button
+                type="button"
+                class="btn btn--sm btn--outline"
+                :disabled="
+                  appointment.status !== 'confirmed' ||
+                  updatingAppointmentId === appointment.appointment_id
+                "
+                @click="updateStatus(appointment.appointment_id, 'completed')"
+              >
                 Hoàn tất
               </button>
-              <button type="button" class="btn btn--sm btn--outline" :disabled="appointment.status !== 'confirmed' || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'no_show')">
+              <button
+                type="button"
+                class="btn btn--sm btn--outline"
+                :disabled="
+                  appointment.status !== 'confirmed' ||
+                  updatingAppointmentId === appointment.appointment_id
+                "
+                @click="updateStatus(appointment.appointment_id, 'no_show')"
+              >
                 Vắng mặt
               </button>
-              <button type="button" class="btn btn--sm btn--danger" :disabled="['cancelled', 'completed'].includes(appointment.status) || updatingAppointmentId === appointment.appointment_id" @click="updateStatus(appointment.appointment_id, 'cancelled')">
+              <button
+                type="button"
+                class="btn btn--sm btn--danger"
+                :disabled="
+                  ['cancelled', 'completed'].includes(appointment.status) ||
+                  updatingAppointmentId === appointment.appointment_id
+                "
+                @click="updateStatus(appointment.appointment_id, 'cancelled')"
+              >
                 {{ updatingAppointmentId === appointment.appointment_id ? 'Đang xử lý...' : 'Hủy' }}
               </button>
             </div>

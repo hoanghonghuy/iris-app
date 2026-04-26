@@ -4,8 +4,8 @@ import { ref, onMounted, watch } from 'vue'
 const props = defineProps({
   disabled: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const emit = defineEmits(['google-login'])
@@ -27,43 +27,48 @@ onMounted(() => {
   const script = document.createElement('script')
   script.src = 'https://accounts.google.com/gsi/client'
   script.async = true
-  script.onload = () => { isScriptLoaded.value = true }
+  script.onload = () => {
+    isScriptLoaded.value = true
+  }
   document.head.appendChild(script)
 })
 
 // 2. khi script load xong → init + render button
 // watch cũng xử lý re-render khi component được mount lại
-watch([isScriptLoaded, () => props.disabled], ([loaded, disabled]) => {
-  if (!loaded) return
+watch(
+  [isScriptLoaded, () => props.disabled],
+  ([loaded, disabled]) => {
+    if (!loaded) return
 
-  if (!isGoogleInitialized.value) {
-    window.google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: (response) => {
-        // gửi ID token lên cho component cha xử lý
-        emit('google-login', response.credential)
-      }
-    })
-    isGoogleInitialized.value = true
-  }
+    if (!isGoogleInitialized.value) {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: (response) => {
+          // gửi ID token lên cho component cha xử lý
+          emit('google-login', response.credential)
+        },
+      })
+      isGoogleInitialized.value = true
+    }
 
-  const buttonContainer = document.getElementById('google-signin-button')
-  if (buttonContainer && !disabled) {
-    // Xoá nội dung cũ để render lại
-    buttonContainer.innerHTML = ''
-    window.google.accounts.id.renderButton(buttonContainer, {
-      type: 'standard', 
-      size: 'large', 
-      shape: 'rectangular', 
-      theme: 'outline',
-      text: 'signin_with',
-      width: Math.min(400, Math.max(200, buttonContainer.clientWidth || 360))
-    })
-  } else if (buttonContainer && disabled) {
-    buttonContainer.innerHTML = ''
-  }
-}, { immediate: true })
-
+    const buttonContainer = document.getElementById('google-signin-button')
+    if (buttonContainer && !disabled) {
+      // Xoá nội dung cũ để render lại
+      buttonContainer.innerHTML = ''
+      window.google.accounts.id.renderButton(buttonContainer, {
+        type: 'standard',
+        size: 'large',
+        shape: 'rectangular',
+        theme: 'outline',
+        text: 'signin_with',
+        width: Math.min(400, Math.max(200, buttonContainer.clientWidth || 360)),
+      })
+    } else if (buttonContainer && disabled) {
+      buttonContainer.innerHTML = ''
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

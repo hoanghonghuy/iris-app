@@ -148,7 +148,12 @@ onMounted(async () => {
 <template>
   <div class="admin-classes page-stack">
     <div class="page-actions">
-      <button class="btn btn--primary" type="button" :disabled="schools.length === 0" @click="openAddModal">
+      <button
+        class="btn btn--primary"
+        type="button"
+        :disabled="schools.length === 0"
+        @click="openAddModal"
+      >
         + Thêm lớp học
       </button>
     </div>
@@ -156,7 +161,12 @@ onMounted(async () => {
     <div class="card toolbar-card">
       <div v-if="isSuperAdmin" class="form-group mb-0">
         <label class="form-label" for="schoolFilter">Chọn trường học</label>
-        <select id="schoolFilter" v-model="selectedSchoolId" class="form-input" :disabled="isLoading">
+        <select
+          id="schoolFilter"
+          v-model="selectedSchoolId"
+          class="form-input"
+          :disabled="isLoading"
+        >
           <option value="" disabled>-- Chọn trường --</option>
           <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
             {{ school.name }}
@@ -173,7 +183,9 @@ onMounted(async () => {
     <div v-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchClasses(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchClasses(currentPage)">
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
+      </button>
     </div>
 
     <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
@@ -191,9 +203,7 @@ onMounted(async () => {
         :message="`${selectedSchoolName || 'Trường này'} chưa có lớp học nào. Hãy thêm lớp đầu tiên.`"
       >
         <template #action>
-          <button class="btn btn--primary" type="button" @click="openAddModal">
-            Thêm lớp học
-          </button>
+          <button class="btn btn--primary" type="button" @click="openAddModal">Thêm lớp học</button>
         </template>
       </EmptyState>
 
@@ -210,13 +220,23 @@ onMounted(async () => {
             <tbody>
               <tr v-for="cls in classesList" :key="cls.class_id">
                 <td class="font-medium">{{ cls.name }}</td>
-                <td><span class="badge badge--outline">{{ cls.school_year }}</span></td>
+                <td>
+                  <span class="badge badge--outline">{{ cls.school_year }}</span>
+                </td>
                 <td class="text-right">
                   <div class="table-actions">
-                    <button class="btn btn--sm btn--outline" type="button" @click="openEditModal(cls)">
+                    <button
+                      class="btn btn--sm btn--outline"
+                      type="button"
+                      @click="openEditModal(cls)"
+                    >
                       Sửa
                     </button>
-                    <button class="btn btn--sm btn--danger" type="button" @click="confirmDelete(cls)">
+                    <button
+                      class="btn btn--sm btn--danger"
+                      type="button"
+                      @click="confirmDelete(cls)"
+                    >
                       Xóa
                     </button>
                   </div>
@@ -266,7 +286,13 @@ onMounted(async () => {
 
         <div v-if="formMode === 'add' && isSuperAdmin" class="form-group mb-0">
           <label class="form-label" for="schoolSelect">Thuộc trường</label>
-          <select id="schoolSelect" v-model="formData.school_id" class="form-input" :disabled="isSubmitting" required>
+          <select
+            id="schoolSelect"
+            v-model="formData.school_id"
+            class="form-input"
+            :disabled="isSubmitting"
+            required
+          >
             <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
               {{ school.name }}
             </option>
@@ -300,7 +326,12 @@ onMounted(async () => {
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="closeModal">
+          <button
+            type="button"
+            class="btn btn--outline"
+            :disabled="isSubmitting"
+            @click="closeModal"
+          >
             Hủy
           </button>
           <button type="submit" class="btn btn--primary" :disabled="isSubmitting">

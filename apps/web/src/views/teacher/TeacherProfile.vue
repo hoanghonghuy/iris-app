@@ -42,7 +42,13 @@ async function handleSubmit() {
 
           <div class="form-group mb-0">
             <label class="form-label" for="phone">Số điện thoại</label>
-            <input id="phone" v-model="phone" class="form-input" type="tel" placeholder="0900 000 000" />
+            <input
+              id="phone"
+              v-model="phone"
+              class="form-input"
+              type="tel"
+              placeholder="0900 000 000"
+            />
           </div>
 
           <button class="btn btn--primary fit-content" type="submit" :disabled="submitting">

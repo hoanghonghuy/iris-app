@@ -25,11 +25,16 @@ export const teacherService = {
   },
 
   async cancelAttendance(studentId, date) {
-    return await httpClient.del(`/teacher/attendance?${new URLSearchParams({ student_id: studentId, date })}`)
+    return await httpClient.del(
+      `/teacher/attendance?${new URLSearchParams({ student_id: studentId, date })}`,
+    )
   },
 
   async getStudentAttendance(studentId, from, to) {
-    return await httpClient.get(`/teacher/students/${studentId}/attendance`, buildDateRangeParams(from, to))
+    return await httpClient.get(
+      `/teacher/students/${studentId}/attendance`,
+      buildDateRangeParams(from, to),
+    )
   },
 
   async getStudentAttendanceChanges(studentId, from, to) {
@@ -48,7 +53,10 @@ export const teacherService = {
   },
 
   async getStudentHealth(studentId, from, to) {
-    return await httpClient.get(`/teacher/students/${studentId}/health`, buildDateRangeParams(from, to))
+    return await httpClient.get(
+      `/teacher/students/${studentId}/health`,
+      buildDateRangeParams(from, to),
+    )
   },
 
   async updateMyProfile(phone) {

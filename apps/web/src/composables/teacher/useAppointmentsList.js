@@ -42,11 +42,12 @@ export function useAppointmentsList() {
 
   async function fetchAllAppointments(params = {}) {
     const { items } = await fetchAllPaginated(
-      ({ limit, offset }) => teacherService.getAppointments({
-        ...params,
-        limit,
-        offset,
-      }),
+      ({ limit, offset }) =>
+        teacherService.getAppointments({
+          ...params,
+          limit,
+          offset,
+        }),
       { limit: FETCH_LIMIT },
     )
 
@@ -58,11 +59,16 @@ export function useAppointmentsList() {
     errorMessage.value = ''
 
     try {
-      const from = filterFromDate.value ? new Date(`${filterFromDate.value}T00:00:00`).toISOString() : undefined
-      const to = filterToDate.value ? new Date(`${filterToDate.value}T23:59:59.999`).toISOString() : undefined
+      const from = filterFromDate.value
+        ? new Date(`${filterFromDate.value}T00:00:00`).toISOString()
+        : undefined
+      const to = filterToDate.value
+        ? new Date(`${filterToDate.value}T23:59:59.999`).toISOString()
+        : undefined
 
       if (from && to && new Date(from).getTime() > new Date(to).getTime()) {
-        errorMessage.value = 'Khoảng ngày lọc không hợp lệ: Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.'
+        errorMessage.value =
+          'Khoảng ngày lọc không hợp lệ: Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.'
         appointments.value = []
         return
       }

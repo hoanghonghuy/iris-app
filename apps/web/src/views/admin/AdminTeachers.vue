@@ -89,7 +89,8 @@ const {
     class_id: cls.class_id,
     class_name: cls.name,
   }),
-  unassignItem: (target) => adminService.unassignTeacherFromClass(target.teacher_id, target.class_id),
+  unassignItem: (target) =>
+    adminService.unassignTeacherFromClass(target.teacher_id, target.class_id),
 })
 
 const isDeleteOpen = ref(false)
@@ -130,7 +131,9 @@ async function handleDelete() {
     <div v-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchTeachers(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchTeachers(currentPage)">
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
+      </button>
     </div>
 
     <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
@@ -204,15 +207,27 @@ async function handleDelete() {
                   </td>
                   <td class="action-column">
                     <div class="table-action-buttons">
-                      <button class="btn btn--sm btn--outline" type="button" @click="openEditModal(teacher)">
+                      <button
+                        class="btn btn--sm btn--outline"
+                        type="button"
+                        @click="openEditModal(teacher)"
+                      >
                         <Pencil :size="14" />
                         <span>Sửa</span>
                       </button>
-                      <button class="btn btn--sm btn--outline" type="button" @click="openAssignModal(teacher)">
+                      <button
+                        class="btn btn--sm btn--outline"
+                        type="button"
+                        @click="openAssignModal(teacher)"
+                      >
                         <Link2 :size="14" />
                         <span>Gán lớp</span>
                       </button>
-                      <button class="btn btn--sm btn--danger" type="button" @click="openDeleteDialog(teacher)">
+                      <button
+                        class="btn btn--sm btn--danger"
+                        type="button"
+                        @click="openDeleteDialog(teacher)"
+                      >
                         <Trash2 :size="14" />
                         <span>Xóa</span>
                       </button>
@@ -225,7 +240,11 @@ async function handleDelete() {
         </div>
 
         <div class="mobile-list">
-          <article v-for="teacher in filteredTeachers" :key="teacher.teacher_id" class="card mobile-card">
+          <article
+            v-for="teacher in filteredTeachers"
+            :key="teacher.teacher_id"
+            class="card mobile-card"
+          >
             <div class="mobile-card__head">
               <p class="mobile-card__title">{{ teacher.full_name || 'Chưa cập nhật' }}</p>
             </div>
@@ -256,14 +275,26 @@ async function handleDelete() {
             <p v-else class="mobile-card__meta italic">Chưa phân lớp</p>
 
             <div class="mobile-card__actions">
-              <button class="btn btn--sm btn--outline" type="button" @click="openEditModal(teacher)">
+              <button
+                class="btn btn--sm btn--outline"
+                type="button"
+                @click="openEditModal(teacher)"
+              >
                 Sửa
               </button>
-              <button class="btn btn--sm btn--outline" type="button" @click="openAssignModal(teacher)">
+              <button
+                class="btn btn--sm btn--outline"
+                type="button"
+                @click="openAssignModal(teacher)"
+              >
                 <Link2 :size="14" />
                 <span>Gán lớp</span>
               </button>
-              <button class="btn btn--sm btn--danger" type="button" @click="openDeleteDialog(teacher)">
+              <button
+                class="btn btn--sm btn--danger"
+                type="button"
+                @click="openDeleteDialog(teacher)"
+              >
                 Xóa
               </button>
             </div>
@@ -291,7 +322,9 @@ async function handleDelete() {
         </div>
 
         <div class="form-group mb-0">
-          <label class="form-label" for="teacherFullName">Họ và tên <span class="text-danger">*</span></label>
+          <label class="form-label" for="teacherFullName"
+            >Họ và tên <span class="text-danger">*</span></label
+          >
           <input
             id="teacherFullName"
             v-model="editForm.full_name"
@@ -316,8 +349,16 @@ async function handleDelete() {
         </div>
 
         <div v-if="isSuperAdmin" class="form-group mb-0">
-          <label class="form-label" for="teacherSchool">Trường học <span class="text-danger">*</span></label>
-          <select id="teacherSchool" v-model="editForm.school_id" class="form-input" :disabled="editLoading" required>
+          <label class="form-label" for="teacherSchool"
+            >Trường học <span class="text-danger">*</span></label
+          >
+          <select
+            id="teacherSchool"
+            v-model="editForm.school_id"
+            class="form-input"
+            :disabled="editLoading"
+            required
+          >
             <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
               {{ school.name }}
             </option>
@@ -325,7 +366,12 @@ async function handleDelete() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="editLoading" @click="closeEditModal">
+          <button
+            class="btn btn--outline"
+            type="button"
+            :disabled="editLoading"
+            @click="closeEditModal"
+          >
             Hủy
           </button>
           <button class="btn btn--primary" type="submit" :disabled="editLoading">
@@ -365,7 +411,12 @@ async function handleDelete() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="assignLoading" @click="closeAssignModal">
+          <button
+            class="btn btn--outline"
+            type="button"
+            :disabled="assignLoading"
+            @click="closeAssignModal"
+          >
             Hủy
           </button>
           <button

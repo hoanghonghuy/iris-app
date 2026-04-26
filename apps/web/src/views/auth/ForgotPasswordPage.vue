@@ -18,7 +18,7 @@ async function handleForgotPassword() {
   isLoading.value = true
   errorMessage.value = ''
   isSuccess.value = false
-  
+
   try {
     await authService.forgotPassword(email.value)
     isSuccess.value = true
@@ -42,12 +42,15 @@ async function handleForgotPassword() {
       <div class="flex-col items-center gap-4 py-6 text-center">
         <CheckCircle2 class="success-icon mx-auto" :size="48" />
         <p class="text-sm text-muted mt-4">
-          Nếu email <span class="font-medium text-foreground">{{ email }}</span> tồn tại trong hệ thống,
-          bạn sẽ nhận được mã đặt lại mật khẩu trong vài phút.
+          Nếu email <span class="font-medium text-foreground">{{ email }}</span> tồn tại trong hệ
+          thống, bạn sẽ nhận được mã đặt lại mật khẩu trong vài phút.
         </p>
       </div>
       <div class="mt-4">
-        <RouterLink to="/login" class="btn btn--outline w-full inline-flex items-center justify-center gap-2">
+        <RouterLink
+          to="/login"
+          class="btn btn--outline w-full inline-flex items-center justify-center gap-2"
+        >
           <ArrowLeft :size="16" /> Quay lại đăng nhập
         </RouterLink>
       </div>
@@ -55,7 +58,10 @@ async function handleForgotPassword() {
 
     <!-- Form nhập email -->
     <template v-else>
-      <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200">
+      <div
+        v-if="errorMessage"
+        class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+      >
         {{ errorMessage }}
       </div>
 
@@ -64,14 +70,14 @@ async function handleForgotPassword() {
           <label class="form-label" for="email">Email</label>
           <div class="input-icon-wrapper">
             <Mail class="input-icon" :size="16" />
-            <input 
-              id="email" 
-              v-model="email" 
-              type="email" 
-              class="form-input form-input--icon" 
+            <input
+              id="email"
+              v-model="email"
+              type="email"
+              class="form-input form-input--icon"
               placeholder="name@example.com"
               :disabled="isLoading"
-              required 
+              required
             />
           </div>
         </div>
@@ -80,14 +86,15 @@ async function handleForgotPassword() {
           <template v-if="isLoading">
             <Loader2 class="spin mr-2" :size="16" /> Đang gửi...
           </template>
-          <template v-else>
-            Gửi mã đặt lại mật khẩu
-          </template>
+          <template v-else> Gửi mã đặt lại mật khẩu </template>
         </button>
       </form>
 
       <div class="text-center text-sm mt-6">
-        <RouterLink to="/login" class="text-muted hover-text-primary inline-flex items-center gap-1">
+        <RouterLink
+          to="/login"
+          class="text-muted hover-text-primary inline-flex items-center gap-1"
+        >
           <ArrowLeft :size="12" /> Quay lại đăng nhập
         </RouterLink>
       </div>
@@ -131,7 +138,11 @@ async function handleForgotPassword() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

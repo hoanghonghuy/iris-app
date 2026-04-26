@@ -25,9 +25,7 @@ const {
     <div v-if="errorMessage" class="alert alert--error alert-row">
       <AlertCircle :size="16" />
       <span>{{ errorMessage }}</span>
-      <button class="btn btn--outline btn--sm" type="button" @click="fetchFeed">
-        Thử lại
-      </button>
+      <button class="btn btn--outline btn--sm" type="button" @click="fetchFeed">Thử lại</button>
     </div>
 
     <div v-if="loading" class="loading-block">

@@ -67,7 +67,12 @@ function handleNoteChange(event) {
   <section class="card panel">
     <div class="panel-head">
       <h3 class="font-bold m-0">Đặt lịch hẹn mới</h3>
-      <button class="btn btn--outline btn--sm" type="button" :disabled="isLoadingSlots || isLoadingAppointments" @click="emit('refresh')">
+      <button
+        class="btn btn--outline btn--sm"
+        type="button"
+        :disabled="isLoadingSlots || isLoadingAppointments"
+        @click="emit('refresh')"
+      >
         Làm mới
       </button>
     </div>
@@ -81,7 +86,9 @@ function handleNoteChange(event) {
         :disabled="isLoadingChildren"
         @change="handleChildChange"
       >
-        <option value="" disabled>{{ children.length === 0 ? '-- Không có dữ liệu --' : '-- Chọn học sinh --' }}</option>
+        <option value="" disabled>
+          {{ children.length === 0 ? '-- Không có dữ liệu --' : '-- Chọn học sinh --' }}
+        </option>
         <option v-for="child in children" :key="child.student_id" :value="child.student_id">
           {{ child.full_name }}
         </option>
@@ -118,11 +125,7 @@ function handleNoteChange(event) {
     </div>
 
     <div v-else class="slots-list">
-      <article
-        v-for="slot in availableSlots"
-        :key="slot.slot_id"
-        class="slot-item"
-      >
+      <article v-for="slot in availableSlots" :key="slot.slot_id" class="slot-item">
         <div class="slot-copy">
           <p class="font-bold text-sm m-0">{{ formatDateRange(slot.start_time, slot.end_time) }}</p>
           <p class="text-xs text-muted m-0 mt-1">Giáo viên: {{ slot.teacher_name || 'N/A' }}</p>

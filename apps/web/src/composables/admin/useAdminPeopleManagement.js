@@ -67,7 +67,11 @@ export function useAdminPeopleManagement(options) {
     }
 
     return items.value.filter((item) =>
-      searchFields.some((field) => String(item?.[field] || '').toLowerCase().includes(query)),
+      searchFields.some((field) =>
+        String(item?.[field] || '')
+          .toLowerCase()
+          .includes(query),
+      ),
     )
   })
 

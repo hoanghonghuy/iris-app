@@ -90,7 +90,9 @@ const headerMeta = computed(() => {
 })
 
 const userInitials = computed(() => {
-  return authStore.currentUser?.email ? authStore.currentUser.email.substring(0, 2).toUpperCase() : 'U'
+  return authStore.currentUser?.email
+    ? authStore.currentUser.email.substring(0, 2).toUpperCase()
+    : 'U'
 })
 </script>
 
@@ -131,7 +133,9 @@ const userInitials = computed(() => {
 
         <div v-if="isDropdownOpen" class="user-menu__dropdown shadow-md">
           <div class="dropdown-header">
-            <p class="text-sm font-medium leading-none truncate">{{ authStore.currentUser?.email }}</p>
+            <p class="text-sm font-medium leading-none truncate">
+              {{ authStore.currentUser?.email }}
+            </p>
             <p class="text-xs text-muted mt-1">{{ roleLabel }}</p>
           </div>
           <hr class="my-1 border-border" />
@@ -146,7 +150,11 @@ const userInitials = computed(() => {
             Hồ sơ cá nhân
           </RouterLink>
           <hr v-if="profileRoute" class="my-1 border-border" />
-          <button type="button" class="dropdown-item text-danger w-full text-left" @click="handleLogout">
+          <button
+            type="button"
+            class="dropdown-item text-danger w-full text-left"
+            @click="handleLogout"
+          >
             <LogOut :size="16" class="mr-2" />
             Đăng xuất
           </button>

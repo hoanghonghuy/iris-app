@@ -13,5 +13,8 @@ export function getSeverityLabel(value) {
 }
 
 export function getSeverityBadge(value) {
-  return HEALTH_SEVERITY_OPTIONS.find((option) => option.value === value)?.badge || 'badge badge--outline'
+  return (
+    HEALTH_SEVERITY_OPTIONS.find((option) => option.value === value)?.badge ||
+    'badge badge--outline'
+  )
 }

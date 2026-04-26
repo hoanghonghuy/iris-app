@@ -51,7 +51,9 @@ export function useAdminStudentsPage() {
     return schools.value.find((school) => school.school_id === selectedSchoolId.value)?.name || ''
   })
   const selectedClassName = computed(() => {
-    return classes.value.find((classItem) => classItem.class_id === selectedClassId.value)?.name || ''
+    return (
+      classes.value.find((classItem) => classItem.class_id === selectedClassId.value)?.name || ''
+    )
   })
   const filteredStudents = computed(() => {
     const normalizedQuery = searchQuery.value.trim().toLowerCase()
@@ -59,7 +61,9 @@ export function useAdminStudentsPage() {
       return students.value
     }
 
-    return students.value.filter((student) => student.full_name?.toLowerCase().includes(normalizedQuery))
+    return students.value.filter((student) =>
+      student.full_name?.toLowerCase().includes(normalizedQuery),
+    )
   })
 
   function resetForm() {

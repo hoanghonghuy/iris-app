@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import { teacherService } from '../../services/teacherService'
 import { normalizeListResponse } from '../../helpers/collectionUtils'
-import { extractErrorMessage } from '../../helpers/errorHandler'
 import { daysAgo, getDateInputValue, getTodayDateString } from '../../helpers/dateHelpers'
 
 export function useAttendanceHistory() {
@@ -90,9 +89,9 @@ export function useAttendanceHistory() {
       const items = normalizeListResponse(response).map((item) => ({
         ...item,
         student_name:
-          item.student_name
-          || students.find((student) => student.student_id === item.student_id)?.full_name
-          || 'Không rõ',
+          item.student_name ||
+          students.find((student) => student.student_id === item.student_id)?.full_name ||
+          'Không rõ',
       }))
 
       historyList.value = items

@@ -124,7 +124,7 @@ function switchView(view) {
             type="date"
             class="form-input"
             @input="emit('update:history-from-date', $event.target.value)"
-          >
+          />
         </div>
         <div class="form-group mb-0">
           <label class="form-label">Đến ngày</label>
@@ -133,12 +133,17 @@ function switchView(view) {
             type="date"
             class="form-input"
             @input="emit('update:history-to-date', $event.target.value)"
-          >
+          />
         </div>
         <button class="btn btn--outline btn--sm" type="button" @click="emit('reset-filters')">
           7 ngày gần nhất
         </button>
-        <button class="btn btn--primary btn--sm" type="button" :disabled="isLoadingAppointments" @click="emit('apply-filters')">
+        <button
+          class="btn btn--primary btn--sm"
+          type="button"
+          :disabled="isLoadingAppointments"
+          @click="emit('apply-filters')"
+        >
           Lọc lịch sử
         </button>
       </div>
@@ -160,7 +165,9 @@ function switchView(view) {
 
     <div v-else-if="filteredAppointments.length === 0" class="card">
       <EmptyState
-        :title="historyView === 'cancelled' ? 'Chưa có lịch hẹn đã hủy' : 'Chưa có lịch hẹn hoạt động'"
+        :title="
+          historyView === 'cancelled' ? 'Chưa có lịch hẹn đã hủy' : 'Chưa có lịch hẹn hoạt động'
+        "
         message="Bạn chưa có lịch hẹn phù hợp với bộ lọc hiện tại."
       />
     </div>
@@ -173,8 +180,12 @@ function switchView(view) {
       >
         <div class="appointment-top">
           <div>
-            <p class="font-bold m-0">{{ formatDateRange(appointment.start_time, appointment.end_time) }}</p>
-            <p class="text-sm text-muted m-0 mt-1">Giáo viên: {{ appointment.teacher_name || 'N/A' }}</p>
+            <p class="font-bold m-0">
+              {{ formatDateRange(appointment.start_time, appointment.end_time) }}
+            </p>
+            <p class="text-sm text-muted m-0 mt-1">
+              Giáo viên: {{ appointment.teacher_name || 'N/A' }}
+            </p>
             <p class="text-sm text-muted m-0">Học sinh: {{ appointment.student_name || 'N/A' }}</p>
             <p class="text-xs text-muted m-0 mt-1">Múi giờ: {{ timezoneDisplay }}</p>
           </div>
@@ -192,7 +203,11 @@ function switchView(view) {
         </p>
 
         <div class="appointment-actions">
-          <button class="btn btn--outline btn--sm" type="button" @click="emit('sync-child', appointment)">
+          <button
+            class="btn btn--outline btn--sm"
+            type="button"
+            @click="emit('sync-child', appointment)"
+          >
             Chọn học sinh
           </button>
           <button
@@ -202,7 +217,9 @@ function switchView(view) {
             :disabled="cancellingAppointmentId === appointment.appointment_id"
             @click="emit('cancel-appointment', appointment)"
           >
-            {{ cancellingAppointmentId === appointment.appointment_id ? 'Đang hủy...' : 'Hủy lịch' }}
+            {{
+              cancellingAppointmentId === appointment.appointment_id ? 'Đang hủy...' : 'Hủy lịch'
+            }}
           </button>
         </div>
       </article>

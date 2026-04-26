@@ -22,7 +22,7 @@ import {
   Newspaper,
   Bell,
   MessageSquare,
-  X
+  X,
 } from 'lucide-vue-next'
 
 const iconMap = {
@@ -43,14 +43,14 @@ const iconMap = {
   child: Baby,
   feed: Newspaper,
   bell: Bell,
-  message: MessageSquare
+  message: MessageSquare,
 }
 
 defineProps({
   isOpen: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const emit = defineEmits(['close-sidebar'])
@@ -69,7 +69,7 @@ const menuItems = computed(() => {
   }
 
   // Lọc theo role (VD: SUPER_ADMIN mới thấy menu School Admin)
-  return items.filter(item => {
+  return items.filter((item) => {
     if (!item.roles) return true
     return item.roles.includes(authStore.currentUserRole)
   })
@@ -91,9 +91,9 @@ function handleOverlayClick() {
 <template>
   <div class="sidebar-wrapper">
     <!-- Overlay cho mobile -->
-    <div 
-      class="sidebar-overlay" 
-      :class="{ 'sidebar-overlay--open': isOpen }" 
+    <div
+      class="sidebar-overlay"
+      :class="{ 'sidebar-overlay--open': isOpen }"
       @click="handleOverlayClick"
     ></div>
 
@@ -107,9 +107,9 @@ function handleOverlayClick() {
       </div>
 
       <nav class="sidebar__nav">
-        <RouterLink 
-          v-for="item in menuItems" 
-          :key="item.path" 
+        <RouterLink
+          v-for="item in menuItems"
+          :key="item.path"
           :to="item.path"
           class="sidebar__nav-item"
           :class="{ 'sidebar__nav-item--active': isActive(item.path) }"

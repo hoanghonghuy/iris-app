@@ -13,7 +13,7 @@ const errorMessage = ref('')
 const fetchAppointments = async () => {
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
     const data = await teacherService.getAppointments()
     appointments.value = data.data || []
@@ -30,21 +30,31 @@ onMounted(() => {
 
 const getStatusBadge = (status) => {
   switch (status) {
-    case 'PENDING': return 'badge badge--outline text-muted'
-    case 'CONFIRMED': return 'badge badge--success'
-    case 'CANCELLED': return 'badge badge--danger'
-    case 'COMPLETED': return 'badge badge--primary'
-    default: return 'badge badge--outline'
+    case 'PENDING':
+      return 'badge badge--outline text-muted'
+    case 'CONFIRMED':
+      return 'badge badge--success'
+    case 'CANCELLED':
+      return 'badge badge--danger'
+    case 'COMPLETED':
+      return 'badge badge--primary'
+    default:
+      return 'badge badge--outline'
   }
 }
 
 const getStatusText = (status) => {
   switch (status) {
-    case 'PENDING': return 'Chờ xác nhận'
-    case 'CONFIRMED': return 'Đã xác nhận'
-    case 'CANCELLED': return 'Đã hủy'
-    case 'COMPLETED': return 'Hoàn thành'
-    default: return status
+    case 'PENDING':
+      return 'Chờ xác nhận'
+    case 'CONFIRMED':
+      return 'Đã xác nhận'
+    case 'CANCELLED':
+      return 'Đã hủy'
+    case 'COMPLETED':
+      return 'Hoàn thành'
+    default:
+      return status
   }
 }
 </script>
@@ -52,7 +62,12 @@ const getStatusText = (status) => {
 <template>
   <div class="teacher-schedule">
     <div class="flex justify-end items-center mb-6">
-      <button type="button" class="btn btn--primary" disabled title="Tính năng tạo slot đang phát triển">
+      <button
+        type="button"
+        class="btn btn--primary"
+        disabled
+        title="Tính năng tạo slot đang phát triển"
+      >
         + Tạo khung giờ trống
       </button>
     </div>
@@ -61,7 +76,9 @@ const getStatusText = (status) => {
     <div v-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>
-      <button type="button" class="btn btn--outline mt-2" @click="fetchAppointments">Thử lại</button>
+      <button type="button" class="btn btn--outline mt-2" @click="fetchAppointments">
+        Thử lại
+      </button>
     </div>
 
     <!-- Loading State -->
@@ -69,9 +86,9 @@ const getStatusText = (status) => {
 
     <!-- Content -->
     <div v-else class="card">
-      <EmptyState 
-        v-if="appointments.length === 0" 
-        title="Chưa có lịch hẹn nào" 
+      <EmptyState
+        v-if="appointments.length === 0"
+        title="Chưa có lịch hẹn nào"
         message="Không có lịch hẹn nào được lên kế hoạch trong thời gian này."
       />
 
@@ -94,7 +111,9 @@ const getStatusText = (status) => {
               </td>
               <td>{{ app.parent_name || 'N/A' }}</td>
               <td>{{ app.student_name || 'N/A' }}</td>
-              <td class="text-sm text-muted max-w-xs truncate" :title="app.notes">{{ app.notes || '-' }}</td>
+              <td class="text-sm text-muted max-w-xs truncate" :title="app.notes">
+                {{ app.notes || '-' }}
+              </td>
               <td>
                 <span :class="getStatusBadge(app.status)">{{ getStatusText(app.status) }}</span>
               </td>
@@ -110,19 +129,47 @@ const getStatusText = (status) => {
 </template>
 
 <style scoped>
-.mb-6 { margin-bottom: var(--spacing-6); }
-.p-4 { padding: var(--spacing-4); }
-.mt-2 { margin-top: var(--spacing-2); }
-.rounded { border-radius: var(--radius); }
-.border { border: 1px solid var(--color-border); }
-.bg-red-50 { background-color: var(--color-danger-soft-bg); }
-.border-red-200 { border-color: var(--color-danger-soft-border); }
-.text-danger { color: var(--color-danger-soft-text); }
-.text-sm { font-size: var(--font-size-sm); }
-.text-right { text-align: right; }
-.whitespace-nowrap { white-space: nowrap; }
-.max-w-xs { max-width: 15rem; }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mb-6 {
+  margin-bottom: var(--spacing-6);
+}
+.p-4 {
+  padding: var(--spacing-4);
+}
+.mt-2 {
+  margin-top: var(--spacing-2);
+}
+.rounded {
+  border-radius: var(--radius);
+}
+.border {
+  border: 1px solid var(--color-border);
+}
+.bg-red-50 {
+  background-color: var(--color-danger-soft-bg);
+}
+.border-red-200 {
+  border-color: var(--color-danger-soft-border);
+}
+.text-danger {
+  color: var(--color-danger-soft-text);
+}
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+.text-right {
+  text-align: right;
+}
+.whitespace-nowrap {
+  white-space: nowrap;
+}
+.max-w-xs {
+  max-width: 15rem;
+}
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .table-responsive {
   overflow-x: auto;
@@ -133,7 +180,8 @@ const getStatusText = (status) => {
   border-collapse: collapse;
 }
 
-.table th, .table td {
+.table th,
+.table td {
   padding: var(--spacing-3) var(--spacing-4);
   text-align: left;
   border-bottom: 1px solid var(--color-border);

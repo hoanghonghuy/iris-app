@@ -2,12 +2,12 @@
 const props = defineProps({
   message: {
     type: String,
-    default: 'Đang tải...'
+    default: 'Đang tải...',
   },
   fullScreen: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 </script>
 

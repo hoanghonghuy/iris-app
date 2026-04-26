@@ -54,7 +54,12 @@ onMounted(() => {
 <template>
   <div class="admin-audit-logs page-stack">
     <div class="page-actions">
-      <button class="btn btn--outline" type="button" :disabled="isLoading" @click="fetchAuditLogs(1)">
+      <button
+        class="btn btn--outline"
+        type="button"
+        :disabled="isLoading"
+        @click="fetchAuditLogs(1)"
+      >
         Làm mới
       </button>
     </div>
@@ -94,7 +99,11 @@ onMounted(() => {
           <div class="form-group mb-0">
             <label class="form-label" for="entityType">Đối tượng</label>
             <select id="entityType" v-model="selectedEntityType" class="form-input">
-              <option v-for="option in AUDIT_ENTITY_OPTIONS" :key="option.value || 'all'" :value="option.value">
+              <option
+                v-for="option in AUDIT_ENTITY_OPTIONS"
+                :key="option.value || 'all'"
+                :value="option.value"
+              >
                 {{ option.label }}
               </option>
             </select>
@@ -114,7 +123,11 @@ onMounted(() => {
         <div class="filter-actions">
           <label class="page-size">
             <span class="page-size__label">Hiển thị</span>
-            <select class="form-input page-size__select" :value="pageSize" @change="handlePageSizeChange(Number($event.target.value))">
+            <select
+              class="form-input page-size__select"
+              :value="pageSize"
+              @change="handlePageSizeChange(Number($event.target.value))"
+            >
               <option v-for="size in ADMIN_PAGE_SIZE_OPTIONS" :key="size" :value="size">
                 {{ size }}
               </option>
@@ -122,12 +135,8 @@ onMounted(() => {
           </label>
 
           <div class="filter-actions__buttons">
-            <button class="btn btn--outline" type="button" @click="resetFilters">
-              Xóa lọc
-            </button>
-            <button class="btn btn--primary" type="button" @click="applyFilters">
-              Áp dụng
-            </button>
+            <button class="btn btn--outline" type="button" @click="resetFilters">Xóa lọc</button>
+            <button class="btn btn--primary" type="button" @click="applyFilters">Áp dụng</button>
           </div>
         </div>
       </div>
@@ -376,26 +385,26 @@ onMounted(() => {
 
 @media (min-width: 1200px) {
   .filters-grid {
-.mobile-list {
-  display: none;
-}
+    .mobile-list {
+      display: none;
+    }
 
-.raw-view {
-  padding: 0;
-  overflow: hidden;
-}
+    .raw-view {
+      padding: 0;
+      overflow: hidden;
+    }
 
-.raw-json {
-  margin: 0;
-  padding: var(--spacing-4);
-  background: var(--color-bg-code, #f6f8fa);
-  color: var(--color-text);
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  overflow-x: auto;
-  white-space: pre;
-}
+    .raw-json {
+      margin: 0;
+      padding: var(--spacing-4);
+      background: var(--color-bg-code, #f6f8fa);
+      color: var(--color-text);
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      overflow-x: auto;
+      white-space: pre;
+    }
 
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }

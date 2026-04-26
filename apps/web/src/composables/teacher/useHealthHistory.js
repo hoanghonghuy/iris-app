@@ -38,7 +38,7 @@ export function useHealthHistory(students) {
           historyStudentId.value,
           historyFrom.value || undefined,
           historyTo.value || undefined,
-        )
+        ),
       )
     } catch (error) {
       historyLogs.value = []

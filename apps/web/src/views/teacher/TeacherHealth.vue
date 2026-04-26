@@ -1,8 +1,16 @@
 <script setup>
 import { onMounted, watch } from 'vue'
 import { AlertCircle, CheckCircle2, LoaderCircle, Plus, RefreshCw, X } from 'lucide-vue-next'
-import { useTeacherClassSelection, useHealthForm, useHealthHistory } from '../../composables/teacher'
-import { HEALTH_SEVERITY_OPTIONS, getSeverityLabel, getSeverityBadge } from '../../helpers/healthConfig'
+import {
+  useTeacherClassSelection,
+  useHealthForm,
+  useHealthHistory,
+} from '../../composables/teacher'
+import {
+  HEALTH_SEVERITY_OPTIONS,
+  getSeverityLabel,
+  getSeverityBadge,
+} from '../../helpers/healthConfig'
 import { formatDateTimeVN } from '../../helpers/dateFormatter'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
@@ -77,7 +85,12 @@ onMounted(async () => {
       <div class="toolbar-row">
         <div class="form-group mb-0 class-filter">
           <label class="form-label" for="classFilter">Chọn lớp học</label>
-          <select id="classFilter" v-model="selectedClassId" class="form-input" :disabled="isLoadingClasses">
+          <select
+            id="classFilter"
+            v-model="selectedClassId"
+            class="form-input"
+            :disabled="isLoadingClasses"
+          >
             <option value="" disabled v-if="classes.length === 0">-- Không có lớp --</option>
             <option v-for="cls in classes" :key="cls.class_id" :value="cls.class_id">
               {{ cls.name }} ({{ cls.school_year }})
@@ -85,7 +98,12 @@ onMounted(async () => {
           </select>
         </div>
 
-        <button class="btn btn--primary" type="button" :disabled="students.length === 0" @click="openHealthModal()">
+        <button
+          class="btn btn--primary"
+          type="button"
+          :disabled="students.length === 0"
+          @click="openHealthModal()"
+        >
           <Plus :size="16" />
           Ghi nhận
         </button>
@@ -102,7 +120,10 @@ onMounted(async () => {
       {{ successMessage }}
     </div>
 
-    <LoadingSpinner v-if="isLoadingClasses || isLoadingStudents" message="Đang tải danh sách học sinh..." />
+    <LoadingSpinner
+      v-if="isLoadingClasses || isLoadingStudents"
+      message="Đang tải danh sách học sinh..."
+    />
 
     <div v-else class="page-stack">
       <div class="card">
@@ -133,7 +154,11 @@ onMounted(async () => {
                 <td class="text-center">{{ index + 1 }}</td>
                 <td class="font-medium">{{ student.full_name }}</td>
                 <td class="text-right">
-                  <button class="btn btn--sm btn--primary" type="button" @click="openHealthModal(student.student_id)">
+                  <button
+                    class="btn btn--sm btn--primary"
+                    type="button"
+                    @click="openHealthModal(student.student_id)"
+                  >
                     Ghi nhận sức khỏe
                   </button>
                 </td>
@@ -147,9 +172,16 @@ onMounted(async () => {
         <div class="history-head">
           <div>
             <h3>Lịch sử sức khỏe</h3>
-            <p class="history-copy">Theo dõi nhật ký sức khỏe đã ghi theo từng học sinh và khoảng ngày.</p>
+            <p class="history-copy">
+              Theo dõi nhật ký sức khỏe đã ghi theo từng học sinh và khoảng ngày.
+            </p>
           </div>
-          <button class="btn btn--outline btn--sm" type="button" :disabled="isLoadingHistory || !historyStudentId" @click="fetchHistory">
+          <button
+            class="btn btn--outline btn--sm"
+            type="button"
+            :disabled="isLoadingHistory || !historyStudentId"
+            @click="fetchHistory"
+          >
             <RefreshCw :size="14" :class="{ spin: isLoadingHistory }" />
             Làm mới
           </button>
@@ -159,7 +191,11 @@ onMounted(async () => {
           <div class="form-group mb-0">
             <label class="form-label">Học sinh</label>
             <select v-model="historyStudentId" class="form-input">
-              <option v-for="student in students" :key="student.student_id" :value="student.student_id">
+              <option
+                v-for="student in students"
+                :key="student.student_id"
+                :value="student.student_id"
+              >
                 {{ student.full_name }}
               </option>
             </select>
@@ -194,11 +230,16 @@ onMounted(async () => {
           <article v-for="log in historyLogs" :key="log.health_log_id" class="history-item">
             <div class="history-item__head">
               <p class="history-date">{{ formatDateTimeVN(log.recorded_at) }}</p>
-              <span :class="getSeverityBadge(log.severity)">{{ getSeverityLabel(log.severity) }}</span>
+              <span :class="getSeverityBadge(log.severity)">{{
+                getSeverityLabel(log.severity)
+              }}</span>
             </div>
 
             <div class="history-item__body">
-              <p><span class="label">Nhiệt độ:</span> {{ typeof log.temperature === 'number' ? `${log.temperature}°C` : 'Không ghi' }}</p>
+              <p>
+                <span class="label">Nhiệt độ:</span>
+                {{ typeof log.temperature === 'number' ? `${log.temperature}°C` : 'Không ghi' }}
+              </p>
               <p><span class="label">Triệu chứng:</span> {{ log.symptoms || 'Không ghi' }}</p>
               <p><span class="label">Ghi chú:</span> {{ log.note || 'Không ghi' }}</p>
             </div>
@@ -207,14 +248,22 @@ onMounted(async () => {
       </div>
     </div>
 
-    <ActionModal :is-open="isModalOpen" :title="`Ghi nhận sức khỏe${selectedStudent ? `: ${selectedStudent.full_name}` : ''}`" @close="closeModal">
+    <ActionModal
+      :is-open="isModalOpen"
+      :title="`Ghi nhận sức khỏe${selectedStudent ? `: ${selectedStudent.full_name}` : ''}`"
+      @close="closeModal"
+    >
       <form class="form-stack" @submit.prevent="handleSave">
         <div v-if="formError" class="alert alert--error">{{ formError }}</div>
 
         <div class="form-group mb-0">
           <label class="form-label">Học sinh</label>
           <select v-model="formStudentId" class="form-input" :disabled="isSubmitting">
-            <option v-for="student in students" :key="student.student_id" :value="student.student_id">
+            <option
+              v-for="student in students"
+              :key="student.student_id"
+              :value="student.student_id"
+            >
               {{ student.full_name }}
             </option>
           </select>
@@ -223,7 +272,14 @@ onMounted(async () => {
         <div class="form-grid">
           <div class="form-group mb-0">
             <label class="form-label">Nhiệt độ (°C)</label>
-            <input v-model="temperature" type="number" step="0.1" class="form-input" placeholder="36.5" :disabled="isSubmitting" />
+            <input
+              v-model="temperature"
+              type="number"
+              step="0.1"
+              class="form-input"
+              placeholder="36.5"
+              :disabled="isSubmitting"
+            />
           </div>
 
           <div class="form-group mb-0">
@@ -246,20 +302,42 @@ onMounted(async () => {
 
         <div class="form-group mb-0">
           <label class="form-label">Triệu chứng</label>
-          <input v-model="symptoms" class="form-input" type="text" placeholder="VD: ho nhẹ, sổ mũi..." :disabled="isSubmitting" />
+          <input
+            v-model="symptoms"
+            class="form-input"
+            type="text"
+            placeholder="VD: ho nhẹ, sổ mũi..."
+            :disabled="isSubmitting"
+          />
         </div>
 
         <div class="form-group mb-0">
           <label class="form-label">Ghi chú</label>
-          <textarea v-model="note" class="form-input" rows="3" placeholder="Ghi chú thêm..." :disabled="isSubmitting"></textarea>
+          <textarea
+            v-model="note"
+            class="form-input"
+            rows="3"
+            placeholder="Ghi chú thêm..."
+            :disabled="isSubmitting"
+          ></textarea>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="closeModal">
+          <button
+            type="button"
+            class="btn btn--outline"
+            :disabled="isSubmitting"
+            @click="closeModal"
+          >
             <X :size="16" />
             Đóng
           </button>
-          <button type="submit" class="btn btn--primary" :disabled="isSubmitting || !formStudentId" @click="handleSaveAndRefresh">
+          <button
+            type="submit"
+            class="btn btn--primary"
+            :disabled="isSubmitting || !formStudentId"
+            @click="handleSaveAndRefresh"
+          >
             {{ isSubmitting ? 'Đang lưu...' : 'Lưu ghi nhận' }}
           </button>
         </div>

@@ -29,10 +29,12 @@ const goHome = () => router.push('/')
       <!-- Center content -->
       <div class="brand-content">
         <h1 class="brand-title">
-          Kết nối nhà trường và <span class="whitespace-nowrap">phụ huynh</span><br/> trong một nền tảng toàn diện.
+          Kết nối nhà trường và <span class="whitespace-nowrap">phụ huynh</span><br />
+          trong một nền tảng toàn diện.
         </h1>
         <p class="brand-subtitle">
-          Hệ sinh thái công nghệ giáo dục Iris School mang lại sự tiện lợi, minh bạch và an toàn. Tương tác nhanh chóng, theo dõi hành trình học viên hiệu quả mỗi ngày.
+          Hệ sinh thái công nghệ giáo dục Iris School mang lại sự tiện lợi, minh bạch và an toàn.
+          Tương tác nhanh chóng, theo dõi hành trình học viên hiệu quả mỗi ngày.
         </p>
 
         <div class="brand-features">
@@ -62,7 +64,7 @@ const goHome = () => router.push('/')
         <p>&copy; {{ new Date().getFullYear() }} Iris Education. All rights reserved.</p>
       </div>
     </div>
-    
+
     <!-- Nửa phải: Form (hiện trên mọi thiết bị) -->
     <div class="auth-layout__form-container">
       <!-- Mobile Header -->
@@ -131,7 +133,7 @@ const goHome = () => router.push('/')
 .brand-bg-pattern {
   position: absolute;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(to right, var(--color-auth-pattern-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--color-auth-pattern-line) 1px, transparent 1px);
   background-size: 14px 24px;
@@ -163,7 +165,9 @@ const goHome = () => router.push('/')
   filter: blur(100px);
 }
 
-.brand-header, .brand-content, .brand-footer {
+.brand-header,
+.brand-content,
+.brand-footer {
   position: relative;
   z-index: 10;
   padding: 2rem;
@@ -248,9 +252,15 @@ const goHome = () => router.push('/')
   box-shadow: var(--shadow-sm);
 }
 
-.feature-blue { color: var(--color-auth-feature-blue); }
-.feature-green { color: var(--color-auth-feature-green); }
-.feature-purple { color: var(--color-auth-feature-purple); }
+.feature-blue {
+  color: var(--color-auth-feature-blue);
+}
+.feature-green {
+  color: var(--color-auth-feature-green);
+}
+.feature-purple {
+  color: var(--color-auth-feature-purple);
+}
 
 .brand-footer p {
   font-size: 0.75rem;

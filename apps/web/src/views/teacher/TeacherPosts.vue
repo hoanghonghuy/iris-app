@@ -14,6 +14,7 @@ const {
   loading,
   loadingPosts,
   errorMessage,
+  pagination,
   currentPage,
   totalPages,
   fetchClasses,
@@ -65,13 +66,21 @@ onMounted(fetchClasses)
       <div class="composer-shell card">
         <div class="composer-main">
           <div class="avatar">GV</div>
-          <button type="button" class="composer-toggle" @click="showForm ? closeForm() : openForm()">
+          <button
+            type="button"
+            class="composer-toggle"
+            @click="showForm ? closeForm() : openForm()"
+          >
             {{ showForm ? 'Đóng khung soạn bài' : 'Bạn muốn chia sẻ điều gì với lớp hôm nay?' }}
           </button>
         </div>
 
         <select v-if="classes.length > 0" v-model="selectedClassId" class="form-input class-select">
-          <option v-for="classInfo in classes" :key="classInfo.class_id" :value="classInfo.class_id">
+          <option
+            v-for="classInfo in classes"
+            :key="classInfo.class_id"
+            :value="classInfo.class_id"
+          >
             {{ classInfo.name }}
           </option>
         </select>
@@ -79,7 +88,11 @@ onMounted(fetchClasses)
         <div class="composer-stats">
           <span class="badge badge--outline">{{ pagination.total }} bài đăng</span>
           <span class="badge badge--info">{{ POST_SCOPE_LABELS[scopeType] }}</span>
-          <button type="button" class="btn btn--sm btn--outline" @click="showForm ? closeForm() : openForm()">
+          <button
+            type="button"
+            class="btn btn--sm btn--outline"
+            @click="showForm ? closeForm() : openForm()"
+          >
             <X v-if="showForm" :size="16" />
             <Plus v-else :size="16" />
             {{ showForm ? 'Đóng' : 'Tạo bài' }}
@@ -112,7 +125,11 @@ onMounted(fetchClasses)
               <div v-if="scopeType === 'student'" class="form-group mb-0">
                 <label class="form-label">Học sinh</label>
                 <select v-model="formStudentId" class="form-input">
-                  <option v-for="student in students" :key="student.student_id" :value="student.student_id">
+                  <option
+                    v-for="student in students"
+                    :key="student.student_id"
+                    :value="student.student_id"
+                  >
                     {{ student.full_name }}
                   </option>
                 </select>
@@ -121,7 +138,11 @@ onMounted(fetchClasses)
               <div class="form-group mb-0">
                 <label class="form-label">Loại bài</label>
                 <select v-model="postType" class="form-input">
-                  <option v-for="option in POST_TYPE_OPTIONS" :key="option.value" :value="option.value">
+                  <option
+                    v-for="option in POST_TYPE_OPTIONS"
+                    :key="option.value"
+                    :value="option.value"
+                  >
                     {{ option.label }}
                   </option>
                 </select>

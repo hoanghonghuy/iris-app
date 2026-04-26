@@ -33,7 +33,9 @@ const applyTheme = (newTheme) => {
   } else if (newTheme === 'light') {
     syncDocumentTheme(false)
   } else {
-    syncDocumentTheme(mediaQuery?.matches ?? window.matchMedia('(prefers-color-scheme: dark)').matches)
+    syncDocumentTheme(
+      mediaQuery?.matches ?? window.matchMedia('(prefers-color-scheme: dark)').matches,
+    )
   }
 
   isOpen.value = false
@@ -73,13 +75,28 @@ onUnmounted(() => {
     </button>
 
     <div v-if="isOpen" class="theme-menu">
-      <button type="button" class="theme-menu-item" :class="{ active: theme === 'light' }" @click="applyTheme('light')">
+      <button
+        type="button"
+        class="theme-menu-item"
+        :class="{ active: theme === 'light' }"
+        @click="applyTheme('light')"
+      >
         <Sun :size="16" class="mr-2" /> Sáng
       </button>
-      <button type="button" class="theme-menu-item" :class="{ active: theme === 'dark' }" @click="applyTheme('dark')">
+      <button
+        type="button"
+        class="theme-menu-item"
+        :class="{ active: theme === 'dark' }"
+        @click="applyTheme('dark')"
+      >
         <Moon :size="16" class="mr-2" /> Tối
       </button>
-      <button type="button" class="theme-menu-item" :class="{ active: theme === 'system' }" @click="applyTheme('system')">
+      <button
+        type="button"
+        class="theme-menu-item"
+        :class="{ active: theme === 'system' }"
+        @click="applyTheme('system')"
+      >
         <Laptop :size="16" class="mr-2" /> Hệ thống
       </button>
     </div>
@@ -87,7 +104,9 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.relative { position: relative; }
+.relative {
+  position: relative;
+}
 
 .sr-only {
   position: absolute;
@@ -101,7 +120,9 @@ onUnmounted(() => {
   border-width: 0;
 }
 
-.mr-2 { margin-right: 0.5rem; }
+.mr-2 {
+  margin-right: 0.5rem;
+}
 
 .theme-toggle-btn {
   background: transparent;

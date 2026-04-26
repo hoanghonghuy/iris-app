@@ -3,10 +3,7 @@ import { adminService } from '../../services/adminService'
 import { ADMIN_SELECTOR_FETCH_LIMIT } from '../../helpers/adminConfig'
 
 export function useAdminUserSearch(options = {}) {
-  const {
-    minLength = 2,
-    resultLimit = 6,
-  } = options
+  const { minLength = 2, resultLimit = 6 } = options
 
   const searchQuery = ref('')
   const searchResults = ref([])
@@ -49,12 +46,15 @@ export function useAdminUserSearch(options = {}) {
       let hasMore = true
 
       while (hasMore && matches.length < resultLimit) {
-        const response = await adminService.getUsers({
-          limit: ADMIN_SELECTOR_FETCH_LIMIT,
-          offset,
-        }, {
-          signal: controller.signal,
-        })
+        const response = await adminService.getUsers(
+          {
+            limit: ADMIN_SELECTOR_FETCH_LIMIT,
+            offset,
+          },
+          {
+            signal: controller.signal,
+          },
+        )
 
         if (controller.signal.aborted) {
           return

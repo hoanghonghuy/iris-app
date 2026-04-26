@@ -53,9 +53,7 @@ async function request(method, path, body = null, options = {}) {
     if (err.name === 'AbortError') {
       const isCancelledByCaller = Boolean(externalSignal?.aborted)
       const error = new Error(
-        isCancelledByCaller
-          ? 'Yêu cầu đã bị hủy'
-          : 'Yêu cầu quá thời gian, vui lòng thử lại'
+        isCancelledByCaller ? 'Yêu cầu đã bị hủy' : 'Yêu cầu quá thời gian, vui lòng thử lại',
       )
       error.name = 'AbortError'
       error.status = isCancelledByCaller ? 499 : 408
@@ -104,9 +102,7 @@ export const httpClient = {
     // tự nối query string từ object params
     if (params) {
       const query = new URLSearchParams(
-        Object.fromEntries(
-          Object.entries(params).filter(([, value]) => value != null)
-        )
+        Object.fromEntries(Object.entries(params).filter(([, value]) => value != null)),
       ).toString()
       if (query) path = `${path}?${query}`
     }

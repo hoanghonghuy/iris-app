@@ -90,7 +90,8 @@ const {
     student_id: student.student_id,
     student_name: student.full_name,
   }),
-  unassignItem: (target) => adminService.unassignParentFromStudent(target.parent_id, target.student_id),
+  unassignItem: (target) =>
+    adminService.unassignParentFromStudent(target.parent_id, target.student_id),
 })
 </script>
 
@@ -99,7 +100,9 @@ const {
     <div v-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchParents(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchParents(currentPage)">
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
+      </button>
     </div>
 
     <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
@@ -173,11 +176,19 @@ const {
                   </td>
                   <td class="action-column">
                     <div class="table-action-buttons">
-                      <button class="btn btn--sm btn--outline" type="button" @click="openEditModal(parent)">
+                      <button
+                        class="btn btn--sm btn--outline"
+                        type="button"
+                        @click="openEditModal(parent)"
+                      >
                         <Pencil :size="14" />
                         <span>Sửa</span>
                       </button>
-                      <button class="btn btn--sm btn--outline" type="button" @click="openAssignModal(parent)">
+                      <button
+                        class="btn btn--sm btn--outline"
+                        type="button"
+                        @click="openAssignModal(parent)"
+                      >
                         <Link2 :size="14" />
                         <span>Gán HS</span>
                       </button>
@@ -190,10 +201,18 @@ const {
         </div>
 
         <div class="mobile-list">
-          <article v-for="parent in filteredParents" :key="parent.parent_id" class="card mobile-card">
+          <article
+            v-for="parent in filteredParents"
+            :key="parent.parent_id"
+            class="card mobile-card"
+          >
             <div class="mobile-card__head">
               <p class="mobile-card__title">{{ parent.full_name || 'Chưa cập nhật' }}</p>
-              <button class="btn btn--sm btn--outline" type="button" @click="openAssignModal(parent)">
+              <button
+                class="btn btn--sm btn--outline"
+                type="button"
+                @click="openAssignModal(parent)"
+              >
                 <Link2 :size="14" />
                 <span>Gán HS</span>
               </button>
@@ -252,7 +271,9 @@ const {
         </div>
 
         <div class="form-group mb-0">
-          <label class="form-label" for="parentFullName">Họ và tên <span class="text-danger">*</span></label>
+          <label class="form-label" for="parentFullName"
+            >Họ và tên <span class="text-danger">*</span></label
+          >
           <input
             id="parentFullName"
             v-model="editForm.full_name"
@@ -277,8 +298,16 @@ const {
         </div>
 
         <div v-if="isSuperAdmin" class="form-group mb-0">
-          <label class="form-label" for="parentSchool">Trường học <span class="text-danger">*</span></label>
-          <select id="parentSchool" v-model="editForm.school_id" class="form-input" :disabled="editLoading" required>
+          <label class="form-label" for="parentSchool"
+            >Trường học <span class="text-danger">*</span></label
+          >
+          <select
+            id="parentSchool"
+            v-model="editForm.school_id"
+            class="form-input"
+            :disabled="editLoading"
+            required
+          >
             <option v-for="school in schools" :key="school.school_id" :value="school.school_id">
               {{ school.name }}
             </option>
@@ -286,7 +315,12 @@ const {
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="editLoading" @click="closeEditModal">
+          <button
+            class="btn btn--outline"
+            type="button"
+            :disabled="editLoading"
+            @click="closeEditModal"
+          >
             Hủy
           </button>
           <button class="btn btn--primary" type="submit" :disabled="editLoading">
@@ -329,14 +363,23 @@ const {
           <label class="form-label">Chọn học sinh <span class="text-danger">*</span></label>
           <select v-model="selectedStudentId" class="form-input" :disabled="students.length === 0">
             <option v-if="students.length === 0" value="" disabled>Không có học sinh</option>
-            <option v-for="student in students" :key="student.student_id" :value="student.student_id">
+            <option
+              v-for="student in students"
+              :key="student.student_id"
+              :value="student.student_id"
+            >
               {{ student.full_name }}
             </option>
           </select>
         </div>
 
         <div class="modal-actions">
-          <button class="btn btn--outline" type="button" :disabled="assignLoading" @click="closeAssignModal">
+          <button
+            class="btn btn--outline"
+            type="button"
+            :disabled="assignLoading"
+            @click="closeAssignModal"
+          >
             Hủy
           </button>
           <button

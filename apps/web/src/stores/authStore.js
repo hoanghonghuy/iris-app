@@ -12,7 +12,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isAuthenticated = computed(() => !!token.value)
-  const isAdmin = computed(() => currentUserRole.value === 'SUPER_ADMIN' || currentUserRole.value === 'SCHOOL_ADMIN')
+  const isAdmin = computed(
+    () => currentUserRole.value === 'SUPER_ADMIN' || currentUserRole.value === 'SCHOOL_ADMIN',
+  )
   const isTeacher = computed(() => currentUserRole.value === 'TEACHER')
   const isParent = computed(() => currentUserRole.value === 'PARENT')
 
@@ -78,18 +80,18 @@ export const useAuthStore = defineStore('auth', () => {
     currentUserRole,
     isLoading,
     errorMessage,
-    
+
     // Getters
     isAuthenticated,
     isAdmin,
     isTeacher,
     isParent,
-    
+
     // Actions
     setToken,
     setRole,
     setUser,
     clearAuth,
-    fetchCurrentUser
+    fetchCurrentUser,
   }
 })

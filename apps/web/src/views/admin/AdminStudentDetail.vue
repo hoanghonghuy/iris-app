@@ -165,7 +165,8 @@ onMounted(() => {
         </div>
 
         <p v-else class="parent-code__meta">
-          Hồ sơ chi tiết hiện không có mã phụ huynh đang hoạt động. Bạn có thể tạo hoặc thu hồi mã trực tiếp ở màn danh sách học sinh.
+          Hồ sơ chi tiết hiện không có mã phụ huynh đang hoạt động. Bạn có thể tạo hoặc thu hồi mã
+          trực tiếp ở màn danh sách học sinh.
         </p>
       </div>
     </div>

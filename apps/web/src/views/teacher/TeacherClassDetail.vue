@@ -15,7 +15,6 @@ const {
   isLoadingStudents,
   errorMessage,
   fetchClasses,
-  fetchStudents,
 } = useTeacherClassSelection()
 
 const genderLabel = {
@@ -32,18 +31,26 @@ const selectedClass = computed(() => {
 const loading = computed(() => isLoadingClasses.value || isLoadingStudents.value)
 
 // Sync route param with selectedClassId
-watch(classId, (newClassId) => {
-  if (newClassId && newClassId !== selectedClassId.value) {
-    selectedClassId.value = newClassId
-  }
-}, { immediate: true })
+watch(
+  classId,
+  (newClassId) => {
+    if (newClassId && newClassId !== selectedClassId.value) {
+      selectedClassId.value = newClassId
+    }
+  },
+  { immediate: true },
+)
 
 // Load classes on mount
-watch(isLoadingClasses, (isLoading) => {
-  if (!isLoading && classId.value && !selectedClass.value) {
-    errorMessage.value = 'Bạn không được phân công lớp này hoặc lớp không còn tồn tại.'
-  }
-}, { immediate: true })
+watch(
+  isLoadingClasses,
+  (isLoading) => {
+    if (!isLoading && classId.value && !selectedClass.value) {
+      errorMessage.value = 'Bạn không được phân công lớp này hoặc lớp không còn tồn tại.'
+    }
+  },
+  { immediate: true },
+)
 
 fetchClasses()
 </script>
@@ -128,7 +135,8 @@ fetchClasses()
               <p class="font-medium m-0">{{ student.full_name }}</p>
               <p class="student-meta">
                 <Calendar :size="12" />
-                {{ formatDateVN(student.dob) }} · {{ genderLabel[student.gender] || student.gender }}
+                {{ formatDateVN(student.dob) }} ·
+                {{ genderLabel[student.gender] || student.gender }}
               </p>
             </div>
           </article>

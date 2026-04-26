@@ -94,9 +94,7 @@ const {
     return true
   },
   onAfterDelete: async ({ currentPage, currentItemsCount, fetchItems }) => {
-    const nextPage = currentItemsCount === 1 && currentPage > 1
-      ? currentPage - 1
-      : currentPage
+    const nextPage = currentItemsCount === 1 && currentPage > 1 ? currentPage - 1 : currentPage
 
     await fetchItems(nextPage)
     return true
@@ -121,10 +119,7 @@ function getAdminEmail(admin) {
 
 function getAdminSchoolName(admin) {
   return (
-    admin?.school_name ||
-    admin?.school?.name ||
-    schoolNameById.value.get(admin?.school_id) ||
-    'N/A'
+    admin?.school_name || admin?.school?.name || schoolNameById.value.get(admin?.school_id) || 'N/A'
   )
 }
 
@@ -163,7 +158,11 @@ async function fetchSchools() {
 }
 
 watch(userSearchQuery, (value) => {
-  if (selectedUser.value && value === (selectedUser.value.email || selectedUser.value.full_name || selectedUser.value.user_id)) {
+  if (
+    selectedUser.value &&
+    value ===
+      (selectedUser.value.email || selectedUser.value.full_name || selectedUser.value.user_id)
+  ) {
     return
   }
 
@@ -237,7 +236,11 @@ onBeforeUnmount(() => {
                   <span class="badge badge--primary">{{ getAdminSchoolName(admin) }}</span>
                 </td>
                 <td class="text-right">
-                  <button class="btn btn--sm btn--danger" type="button" @click="confirmDelete(admin)">
+                  <button
+                    class="btn btn--sm btn--danger"
+                    type="button"
+                    @click="confirmDelete(admin)"
+                  >
                     Gỡ bỏ
                   </button>
                 </td>
@@ -248,7 +251,11 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="mobile-list">
-        <article v-for="admin in schoolAdmins" :key="getAdminKey(admin)" class="card school-admin-card">
+        <article
+          v-for="admin in schoolAdmins"
+          :key="getAdminKey(admin)"
+          class="card school-admin-card"
+        >
           <div class="school-admin-card__row">
             <div>
               <p class="school-admin-card__label">Người dùng</p>
@@ -275,18 +282,15 @@ onBeforeUnmount(() => {
       />
     </template>
 
-    <ActionModal
-      :is-open="isModalOpen"
-      title="Gán quản trị viên cho trường"
-      @close="closeModal"
-    >
+    <ActionModal :is-open="isModalOpen" title="Gán quản trị viên cho trường" @close="closeModal">
       <form class="modal-form" @submit.prevent="handleSave">
         <div v-if="modalError" class="alert alert--error">
           {{ modalError }}
         </div>
 
         <div class="alert alert--info">
-          Hệ thống sẽ tự động cấp quyền <strong>SCHOOL_ADMIN</strong> nếu user được chọn chưa có vai trò này.
+          Hệ thống sẽ tự động cấp quyền <strong>SCHOOL_ADMIN</strong> nếu user được chọn chưa có vai
+          trò này.
         </div>
 
         <div class="form-group mb-0">
@@ -298,7 +302,12 @@ onBeforeUnmount(() => {
                 <p class="selected-user__email">{{ selectedUser.email || selectedUser.user_id }}</p>
                 <p class="selected-user__meta">{{ selectedUser.user_id }}</p>
               </div>
-              <button class="btn btn--outline btn--sm" type="button" :disabled="isSubmitting" @click="clearSelectedUser">
+              <button
+                class="btn btn--outline btn--sm"
+                type="button"
+                :disabled="isSubmitting"
+                @click="clearSelectedUser"
+              >
                 Đổi user
               </button>
             </div>
@@ -317,12 +326,13 @@ onBeforeUnmount(() => {
 
             <p class="search-helper">Nhập ít nhất 2 ký tự để tìm user.</p>
 
-            <div v-if="userSearchLoading" class="search-feedback">
-              Đang tìm user...
-            </div>
+            <div v-if="userSearchLoading" class="search-feedback">Đang tìm user...</div>
 
             <div
-              v-else-if="userSearchQuery.trim().length >= USER_SEARCH_MIN_LENGTH && userSearchResults.length > 0"
+              v-else-if="
+                userSearchQuery.trim().length >= USER_SEARCH_MIN_LENGTH &&
+                userSearchResults.length > 0
+              "
               class="search-results"
             >
               <button
@@ -338,7 +348,9 @@ onBeforeUnmount(() => {
             </div>
 
             <div
-              v-else-if="userSearchQuery.trim().length >= USER_SEARCH_MIN_LENGTH && !userSearchLoading"
+              v-else-if="
+                userSearchQuery.trim().length >= USER_SEARCH_MIN_LENGTH && !userSearchLoading
+              "
               class="search-feedback"
             >
               Không tìm thấy user nào.
@@ -365,7 +377,12 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="closeModal">
+          <button
+            type="button"
+            class="btn btn--outline"
+            :disabled="isSubmitting"
+            @click="closeModal"
+          >
             Hủy
           </button>
           <button type="submit" class="btn btn--primary" :disabled="isSubmitting">

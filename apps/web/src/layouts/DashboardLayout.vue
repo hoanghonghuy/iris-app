@@ -22,7 +22,7 @@ const closeSidebar = () => {
     <!-- Main Content -->
     <div class="dashboard-main">
       <AppHeader @toggle-sidebar="toggleSidebar" />
-      
+
       <main class="dashboard-content">
         <RouterView />
       </main>

@@ -34,10 +34,10 @@ const fetchClasses = async () => {
 // Lấy danh sách bài đăng
 const fetchPosts = async () => {
   if (!selectedClassId.value) return
-  
+
   isLoadingPosts.value = true
   errorMessage.value = ''
-  
+
   try {
     const data = await teacherService.getClassPosts(selectedClassId.value, { limit: 20 })
     posts.value = data.data || []
@@ -60,14 +60,14 @@ onMounted(() => {
 
 const handleCreatePost = async () => {
   if (!postContent.value.trim() || !selectedClassId.value) return
-  
+
   isSubmitting.value = true
   try {
     await teacherService.createPost({
       scope_type: 'class',
       class_id: selectedClassId.value,
       type: 'activity',
-      content: postContent.value
+      content: postContent.value,
     })
     postContent.value = ''
     fetchPosts()
@@ -97,7 +97,12 @@ const toggleLike = async (post) => {
         <div class="card mb-6 p-4">
           <div class="form-group mb-0">
             <label class="form-label" for="classFilter">Chọn lớp học</label>
-            <select id="classFilter" v-model="selectedClassId" class="form-input" :disabled="isLoadingClasses">
+            <select
+              id="classFilter"
+              v-model="selectedClassId"
+              class="form-input"
+              :disabled="isLoadingClasses"
+            >
               <option value="" disabled v-if="classes.length === 0">-- Không có lớp --</option>
               <option v-for="cls in classes" :key="cls.class_id" :value="cls.class_id">
                 {{ cls.name }} ({{ cls.school_year }})
@@ -109,20 +114,29 @@ const toggleLike = async (post) => {
         <div class="card p-4" v-if="selectedClassId">
           <h3 class="font-bold mb-4">Tạo bài đăng mới</h3>
           <form @submit.prevent="handleCreatePost">
-            <textarea 
-              v-model="postContent" 
-              class="form-input mb-4" 
-              rows="4" 
+            <textarea
+              v-model="postContent"
+              class="form-input mb-4"
+              rows="4"
               placeholder="Chia sẻ hoạt động hôm nay của lớp..."
               :disabled="isSubmitting"
               required
             ></textarea>
-            
+
             <div class="flex justify-between items-center">
-              <button type="button" class="btn btn--sm btn--outline" disabled title="Tính năng đăng ảnh sắp ra mắt">
+              <button
+                type="button"
+                class="btn btn--sm btn--outline"
+                disabled
+                title="Tính năng đăng ảnh sắp ra mắt"
+              >
                 📷 Thêm ảnh
               </button>
-              <button type="submit" class="btn btn--primary" :disabled="isSubmitting || !postContent.trim()">
+              <button
+                type="submit"
+                class="btn btn--primary"
+                :disabled="isSubmitting || !postContent.trim()"
+              >
                 {{ isSubmitting ? 'Đang đăng...' : 'Đăng bài' }}
               </button>
             </div>
@@ -133,15 +147,18 @@ const toggleLike = async (post) => {
       <!-- Cột phải: Timeline bài đăng -->
       <div class="right-col">
         <LoadingSpinner v-if="isLoadingClasses || isLoadingPosts" message="Đang tải bài đăng..." />
-        
-        <div v-else-if="errorMessage" class="p-4 bg-red-50 text-danger rounded border border-red-200">
+
+        <div
+          v-else-if="errorMessage"
+          class="p-4 bg-red-50 text-danger rounded border border-red-200"
+        >
           <p class="font-bold">Lỗi tải dữ liệu</p>
           <p>{{ errorMessage }}</p>
         </div>
 
         <div v-else-if="posts.length === 0">
-          <EmptyState 
-            title="Chưa có bài đăng nào" 
+          <EmptyState
+            title="Chưa có bài đăng nào"
             message="Hãy là người đầu tiên chia sẻ hoạt động của lớp học này."
             icon="box"
           />
@@ -158,34 +175,43 @@ const toggleLike = async (post) => {
                 <p class="text-xs text-muted m-0">{{ formatDate(post.created_at) }}</p>
               </div>
             </div>
-            
+
             <div class="post-content mb-4 text-sm whitespace-pre-line">
               {{ post.content }}
             </div>
-            
+
             <div v-if="post.media_urls && post.media_urls.length > 0" class="post-media mb-4">
               <!-- Placeholder cho Media -->
               <div class="bg-gray-100 p-8 text-center text-muted rounded">
                 [Đính kèm hình ảnh/video]
               </div>
             </div>
-            
-            <div class="post-stats flex justify-between text-xs text-muted pb-3 border-b border-gray-100 mb-3">
+
+            <div
+              class="post-stats flex justify-between text-xs text-muted pb-3 border-b border-gray-100 mb-3"
+            >
               <span>{{ post.like_count }} lượt thích</span>
               <span>{{ post.comment_count }} bình luận</span>
             </div>
-            
+
             <div class="post-actions flex gap-2">
-              <button 
+              <button
                 type="button"
-                class="btn flex-1 btn--sm flex-center gap-2" 
-                :class="post.liked_by_me ? 'text-primary bg-blue-50 border-none' : 'btn--outline border-none text-muted'"
+                class="btn flex-1 btn--sm flex-center gap-2"
+                :class="
+                  post.liked_by_me
+                    ? 'text-primary bg-blue-50 border-none'
+                    : 'btn--outline border-none text-muted'
+                "
                 @click="toggleLike(post)"
               >
                 <span v-if="post.liked_by_me">❤️ Đã thích</span>
                 <span v-else>🤍 Thích</span>
               </button>
-              <button type="button" class="btn btn--outline border-none flex-1 btn--sm flex-center gap-2 text-muted">
+              <button
+                type="button"
+                class="btn btn--outline border-none flex-1 btn--sm flex-center gap-2 text-muted"
+              >
                 💬 Bình luận
               </button>
             </div>
@@ -198,8 +224,13 @@ const toggleLike = async (post) => {
 
 <style scoped>
 /* Layout cục bộ */
-.m-0 { margin-bottom: 0; margin-top: 0; }
-.border-b { border-bottom: 1px solid var(--color-border); }
+.m-0 {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+.border-b {
+  border-bottom: 1px solid var(--color-border);
+}
 
 .layout-grid {
   display: grid;

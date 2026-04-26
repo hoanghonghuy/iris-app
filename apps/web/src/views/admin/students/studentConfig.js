@@ -19,7 +19,8 @@ export const STUDENT_ERROR_MESSAGES = {
   REQUIRED_DOB: 'Ngày sinh không được để trống',
 }
 
-export const STUDENT_REVOKE_CONFIRM_MESSAGE = 'Mã phụ huynh hiện tại sẽ bị vô hiệu hóa. Phụ huynh đang sử dụng mã này sẽ bị đăng xuất. Bạn có chắc chắn muốn tiếp tục?'
+export const STUDENT_REVOKE_CONFIRM_MESSAGE =
+  'Mã phụ huynh hiện tại sẽ bị vô hiệu hóa. Phụ huynh đang sử dụng mã này sẽ bị đăng xuất. Bạn có chắc chắn muốn tiếp tục?'
 
 export function getDeleteStudentConfirmMessage(studentName) {
   return `Bạn có chắc muốn xóa học sinh '${studentName || ''}' không? Hành động này không thể hoàn tác.`

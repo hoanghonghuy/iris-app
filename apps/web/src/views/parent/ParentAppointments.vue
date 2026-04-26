@@ -21,7 +21,6 @@ const {
   children,
   selectedChildId,
   availableSlots,
-  appointments,
   analytics,
   bookingNote,
   historyView,
@@ -121,7 +120,9 @@ function exportHistoryCsv() {
   }
 
   const rows = [...filteredAppointments.value]
-    .sort((left, right) => new Date(left.start_time).getTime() - new Date(right.start_time).getTime())
+    .sort(
+      (left, right) => new Date(left.start_time).getTime() - new Date(right.start_time).getTime(),
+    )
     .map((item) => [
       item.student_name || item.student_id || 'N/A',
       item.teacher_name || item.teacher_id || 'N/A',

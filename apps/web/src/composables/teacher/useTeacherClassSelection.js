@@ -21,7 +21,7 @@ export function useTeacherClassSelection() {
 
     try {
       classes.value = normalizeListResponse(await teacherService.getMyClasses())
-      
+
       // Auto-select first class if current selection is invalid
       if (!classes.value.some((cls) => cls.class_id === selectedClassId.value)) {
         selectedClassId.value = classes.value[0]?.class_id || ''
@@ -44,7 +44,7 @@ export function useTeacherClassSelection() {
 
     try {
       students.value = normalizeListResponse(
-        await teacherService.getStudentsInClass(selectedClassId.value)
+        await teacherService.getStudentsInClass(selectedClassId.value),
       )
     } catch (error) {
       students.value = []

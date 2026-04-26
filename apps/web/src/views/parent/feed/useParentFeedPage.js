@@ -54,9 +54,9 @@ export function useParentFeedPage() {
   }
 
   function patchPostById(postId, patch) {
-    posts.value = posts.value.map((post) => (
-      post.post_id === postId ? { ...post, ...patch } : post
-    ))
+    posts.value = posts.value.map((post) =>
+      post.post_id === postId ? { ...post, ...patch } : post,
+    )
   }
 
   function handlePageChange(page) {

@@ -120,7 +120,9 @@ async function submitComment() {
   submittingComment.value = true
   interactionError.value = ''
   try {
-    const response = await services[props.audience].createPostComment(props.post.post_id, { content })
+    const response = await services[props.audience].createPostComment(props.post.post_id, {
+      content,
+    })
     const payload = response?.data ?? response
     if (payload.comment) {
       comments.value = [payload.comment, ...comments.value]
@@ -160,7 +162,8 @@ async function handleShare() {
           <div class="post-card__author-copy">
             <p class="post-card__author-name">{{ authorLabel }}</p>
             <p class="post-card__meta">
-              {{ formatDateTime(post.created_at) }} · {{ POST_SCOPE_LABELS[post.scope_type] || post.scope_type }}
+              {{ formatDateTime(post.created_at) }} ·
+              {{ POST_SCOPE_LABELS[post.scope_type] || post.scope_type }}
             </p>
           </div>
         </div>
@@ -211,7 +214,11 @@ async function handleShare() {
               placeholder="Viết bình luận..."
               aria-label="Viết bình luận"
             />
-            <button type="submit" class="btn btn--primary btn--sm" :disabled="!commentDraft.trim() || submittingComment">
+            <button
+              type="submit"
+              class="btn btn--primary btn--sm"
+              :disabled="!commentDraft.trim() || submittingComment"
+            >
               Gửi
             </button>
           </form>

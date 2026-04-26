@@ -10,16 +10,16 @@ const MODAL_SIZE_CLASS = {
 const props = defineProps({
   isOpen: {
     type: Boolean,
-    required: true
+    required: true,
   },
   title: {
     type: String,
-    required: true
+    required: true,
   },
   size: {
     type: String,
-    default: 'md'
-  }
+    default: 'md',
+  },
 })
 
 const emit = defineEmits(['close'])
@@ -55,7 +55,7 @@ watchEffect((onCleanup) => {
         <h3 class="font-bold text-lg m-0">{{ title }}</h3>
         <button class="modal-close" type="button" aria-label="Đóng" @click="closeModal">✕</button>
       </div>
-      
+
       <div class="modal-body">
         <slot></slot>
       </div>
@@ -91,9 +91,15 @@ watchEffect((onCleanup) => {
   flex-direction: column;
 }
 
-.modal-dialog--sm { max-width: 400px; }
-.modal-dialog--md { max-width: 600px; }
-.modal-dialog--lg { max-width: 800px; }
+.modal-dialog--sm {
+  max-width: 400px;
+}
+.modal-dialog--md {
+  max-width: 600px;
+}
+.modal-dialog--lg {
+  max-width: 800px;
+}
 
 .modal-header {
   padding: var(--spacing-4) var(--spacing-5);

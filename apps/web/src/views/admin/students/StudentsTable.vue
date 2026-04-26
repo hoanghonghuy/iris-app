@@ -22,13 +22,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits([
-  'edit',
-  'delete',
-  'generate-code',
-  'copy-code',
-  'revoke-code',
-])
+const emit = defineEmits(['edit', 'delete', 'generate-code', 'copy-code', 'revoke-code'])
 </script>
 
 <template>
@@ -63,8 +57,14 @@ const emit = defineEmits([
                     <button
                       class="icon-button"
                       type="button"
-                      :title="copiedStudentId === student.student_id ? 'Đã sao chép' : 'Sao chép mã'"
-                      :aria-label="copiedStudentId === student.student_id ? 'Đã sao chép mã phụ huynh' : 'Sao chép mã phụ huynh'"
+                      :title="
+                        copiedStudentId === student.student_id ? 'Đã sao chép' : 'Sao chép mã'
+                      "
+                      :aria-label="
+                        copiedStudentId === student.student_id
+                          ? 'Đã sao chép mã phụ huynh'
+                          : 'Sao chép mã phụ huynh'
+                      "
                       @click="emit('copy-code', student.active_parent_code, student.student_id)"
                     >
                       <Check v-if="copiedStudentId === student.student_id" :size="14" />
@@ -78,10 +78,20 @@ const emit = defineEmits([
                       :disabled="revokingCodeStudentId === student.student_id"
                       @click="emit('revoke-code', student)"
                     >
-                      <LoaderCircle v-if="revokingCodeStudentId === student.student_id" :size="14" class="spin" />
+                      <LoaderCircle
+                        v-if="revokingCodeStudentId === student.student_id"
+                        :size="14"
+                        class="spin"
+                      />
                       <X v-else :size="14" />
                     </button>
-                    <span class="code-expiry" :class="{ 'code-expiry--expired': getCodeExpiryText(student.code_expires_at) === 'Hết hạn' }">
+                    <span
+                      class="code-expiry"
+                      :class="{
+                        'code-expiry--expired':
+                          getCodeExpiryText(student.code_expires_at) === 'Hết hạn',
+                      }"
+                    >
                       {{ getCodeExpiryText(student.code_expires_at) }}
                     </span>
                   </div>
@@ -94,9 +104,15 @@ const emit = defineEmits([
                     :disabled="generatingCodeStudentId === student.student_id"
                     @click="emit('generate-code', student)"
                   >
-                    <LoaderCircle v-if="generatingCodeStudentId === student.student_id" :size="14" class="spin" />
+                    <LoaderCircle
+                      v-if="generatingCodeStudentId === student.student_id"
+                      :size="14"
+                      class="spin"
+                    />
                     <KeyRound v-else :size="14" />
-                    <span>{{ generatingCodeStudentId === student.student_id ? 'Đang tạo...' : 'Tạo mã' }}</span>
+                    <span>{{
+                      generatingCodeStudentId === student.student_id ? 'Đang tạo...' : 'Tạo mã'
+                    }}</span>
                   </button>
                 </div>
               </td>
@@ -132,7 +148,10 @@ const emit = defineEmits([
       <article v-for="student in students" :key="student.student_id" class="mobile-card">
         <div class="mobile-card__head">
           <div>
-            <RouterLink :to="`/admin/students/${student.student_id}`" class="student-link mobile-card__title">
+            <RouterLink
+              :to="`/admin/students/${student.student_id}`"
+              class="student-link mobile-card__title"
+            >
               {{ student.full_name }}
             </RouterLink>
             <p class="mobile-card__meta">
@@ -147,13 +166,22 @@ const emit = defineEmits([
         <div v-if="student.active_parent_code" class="mobile-code">
           <div class="mobile-code__row">
             <code class="code-pill">{{ student.active_parent_code }}</code>
-            <span class="code-expiry" :class="{ 'code-expiry--expired': getCodeExpiryText(student.code_expires_at) === 'Hết hạn' }">
+            <span
+              class="code-expiry"
+              :class="{
+                'code-expiry--expired': getCodeExpiryText(student.code_expires_at) === 'Hết hạn',
+              }"
+            >
               {{ getCodeExpiryText(student.code_expires_at) }}
             </span>
           </div>
 
           <div class="mobile-card__actions">
-            <button class="btn btn--sm btn--outline" type="button" @click="emit('copy-code', student.active_parent_code, student.student_id)">
+            <button
+              class="btn btn--sm btn--outline"
+              type="button"
+              @click="emit('copy-code', student.active_parent_code, student.student_id)"
+            >
               {{ copiedStudentId === student.student_id ? 'Đã chép' : 'Sao chép' }}
             </button>
             <button
@@ -174,9 +202,15 @@ const emit = defineEmits([
             :disabled="generatingCodeStudentId === student.student_id"
             @click="emit('generate-code', student)"
           >
-            <LoaderCircle v-if="generatingCodeStudentId === student.student_id" :size="14" class="spin" />
+            <LoaderCircle
+              v-if="generatingCodeStudentId === student.student_id"
+              :size="14"
+              class="spin"
+            />
             <KeyRound v-else :size="14" />
-            <span>{{ generatingCodeStudentId === student.student_id ? 'Đang tạo...' : 'Tạo mã PH' }}</span>
+            <span>{{
+              generatingCodeStudentId === student.student_id ? 'Đang tạo...' : 'Tạo mã PH'
+            }}</span>
           </button>
         </div>
 
@@ -314,7 +348,10 @@ const emit = defineEmits([
   background: transparent;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .icon-button:hover:not(:disabled) {

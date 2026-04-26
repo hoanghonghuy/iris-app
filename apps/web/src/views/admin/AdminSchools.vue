@@ -82,7 +82,9 @@ onMounted(() => {
     <div v-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchSchools(currentPage)">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchSchools(currentPage)">
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
+      </button>
     </div>
 
     <LoadingSpinner v-else-if="isLoading" :message="ADMIN_LOADING_MESSAGE" />
@@ -94,7 +96,9 @@ onMounted(() => {
         message="Hãy thêm trường học đầu tiên để bắt đầu quản lý."
       >
         <template #action>
-          <button class="btn btn--primary" type="button" @click="openAddModal">Thêm trường học</button>
+          <button class="btn btn--primary" type="button" @click="openAddModal">
+            Thêm trường học
+          </button>
         </template>
       </EmptyState>
 
@@ -113,10 +117,18 @@ onMounted(() => {
               <td>{{ school.address }}</td>
               <td class="text-right">
                 <div class="flex justify-end gap-2">
-                  <button class="btn btn--sm btn--outline" type="button" @click="openEditModal(school)">
+                  <button
+                    class="btn btn--sm btn--outline"
+                    type="button"
+                    @click="openEditModal(school)"
+                  >
                     Sửa
                   </button>
-                  <button class="btn btn--sm btn--danger" type="button" @click="confirmDelete(school)">
+                  <button
+                    class="btn btn--sm btn--danger"
+                    type="button"
+                    @click="confirmDelete(school)"
+                  >
                     Xóa
                   </button>
                 </div>
@@ -142,12 +154,17 @@ onMounted(() => {
       @close="closeModal"
     >
       <form @submit.prevent="handleSave" class="flex-col gap-4">
-        <div v-if="modalError" class="p-3 bg-red-50 text-danger text-sm rounded border border-red-200">
+        <div
+          v-if="modalError"
+          class="p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+        >
           {{ modalError }}
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="schoolName">Tên trường <span class="text-danger">*</span></label>
+          <label class="form-label" for="schoolName"
+            >Tên trường <span class="text-danger">*</span></label
+          >
           <input
             id="schoolName"
             v-model="formData.name"
@@ -172,7 +189,12 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-2 mt-4 pt-4 border-t">
-          <button type="button" class="btn btn--outline" @click="closeModal" :disabled="isSubmitting">
+          <button
+            type="button"
+            class="btn btn--outline"
+            @click="closeModal"
+            :disabled="isSubmitting"
+          >
             Hủy
           </button>
           <button type="submit" class="btn btn--primary" :disabled="isSubmitting">
@@ -196,19 +218,45 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.mb-6 { margin-bottom: var(--spacing-6); }
-.p-3 { padding: var(--spacing-3); }
-.p-4 { padding: var(--spacing-4); }
-.gap-2 { gap: var(--spacing-2); }
-.gap-4 { gap: var(--spacing-4); }
-.mt-2 { margin-top: var(--spacing-2); }
-.mt-4 { margin-top: var(--spacing-4); }
-.pt-4 { padding-top: var(--spacing-4); }
-.border-t { border-top: 1px solid var(--color-border); }
-.rounded { border-radius: var(--radius); }
-.bg-red-50 { background-color: var(--color-danger-soft-bg); }
-.border-red-200 { border-color: var(--color-danger-soft-border); }
-.text-right { text-align: right; }
+.mb-6 {
+  margin-bottom: var(--spacing-6);
+}
+.p-3 {
+  padding: var(--spacing-3);
+}
+.p-4 {
+  padding: var(--spacing-4);
+}
+.gap-2 {
+  gap: var(--spacing-2);
+}
+.gap-4 {
+  gap: var(--spacing-4);
+}
+.mt-2 {
+  margin-top: var(--spacing-2);
+}
+.mt-4 {
+  margin-top: var(--spacing-4);
+}
+.pt-4 {
+  padding-top: var(--spacing-4);
+}
+.border-t {
+  border-top: 1px solid var(--color-border);
+}
+.rounded {
+  border-radius: var(--radius);
+}
+.bg-red-50 {
+  background-color: var(--color-danger-soft-bg);
+}
+.border-red-200 {
+  border-color: var(--color-danger-soft-border);
+}
+.text-right {
+  text-align: right;
+}
 
 .table-responsive {
   overflow-x: auto;
@@ -219,7 +267,8 @@ onMounted(() => {
   border-collapse: collapse;
 }
 
-.table th, .table td {
+.table th,
+.table td {
   padding: var(--spacing-3) var(--spacing-4);
   text-align: left;
   border-bottom: 1px solid var(--color-border);

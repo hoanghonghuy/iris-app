@@ -30,7 +30,13 @@ export function useChatMessages() {
   }
 
   async function loadOlderMessages(conversationId, messagesContainer) {
-    if (!messagesContainer || !conversationId || !hasMore.value || loadingMore.value || !nextCursor.value) {
+    if (
+      !messagesContainer ||
+      !conversationId ||
+      !hasMore.value ||
+      loadingMore.value ||
+      !nextCursor.value
+    ) {
       return
     }
     if (messagesContainer.scrollTop >= 80) return

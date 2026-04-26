@@ -11,7 +11,18 @@ export function useParentAppointmentActions() {
     await fetchAvailableSlots(selectedChildId)
   }
 
-  async function handleBookSlot(slot, selectedChildId, bookingNote, fetchAvailableSlots, fetchAppointments, fetchAnalytics, clearMessages, actionError, successMessage, isSubmittingBooking) {
+  async function handleBookSlot(
+    slot,
+    selectedChildId,
+    bookingNote,
+    fetchAvailableSlots,
+    fetchAppointments,
+    fetchAnalytics,
+    clearMessages,
+    actionError,
+    successMessage,
+    isSubmittingBooking,
+  ) {
     if (!selectedChildId || !slot?.slot_id) {
       actionError.value = 'Vui lòng chọn học sinh trước khi đặt lịch.'
       return
@@ -47,14 +58,25 @@ export function useParentAppointmentActions() {
     isCancelConfirmOpen.value = false
   }
 
-  async function handleCancelAppointment(cancellingAppointmentId, fetchAppointments, fetchAvailableSlots, fetchAnalytics, clearMessages, actionError, successMessage) {
+  async function handleCancelAppointment(
+    cancellingAppointmentId,
+    fetchAppointments,
+    fetchAvailableSlots,
+    fetchAnalytics,
+    clearMessages,
+    actionError,
+    successMessage,
+  ) {
     if (!appointmentToCancel.value?.appointment_id) return
 
     cancellingAppointmentId.value = appointmentToCancel.value.appointment_id
     clearMessages()
 
     try {
-      await parentService.cancelAppointment(appointmentToCancel.value.appointment_id, 'parent_cancelled')
+      await parentService.cancelAppointment(
+        appointmentToCancel.value.appointment_id,
+        'parent_cancelled',
+      )
       successMessage.value = 'Đã hủy lịch hẹn.'
       closeCancelConfirm()
       await Promise.all([fetchAppointments(), fetchAvailableSlots(), fetchAnalytics()])

@@ -29,7 +29,7 @@ async function handleActivate() {
   }
 
   isLoading.value = true
-  
+
   try {
     await authService.activateWithToken(token.value.trim(), password.value)
     isSuccess.value = true
@@ -49,9 +49,7 @@ async function handleActivate() {
         <ShieldCheck class="success-icon mx-auto" :size="64" />
         <h2 class="text-xl font-semibold mt-4">Kích hoạt thành công!</h2>
         <p class="text-sm text-muted mt-2">Bạn có thể đăng nhập với mật khẩu mới.</p>
-        <RouterLink to="/login" class="btn btn--primary mt-6 inline-flex">
-          Đăng nhập
-        </RouterLink>
+        <RouterLink to="/login" class="btn btn--primary mt-6 inline-flex"> Đăng nhập </RouterLink>
       </div>
     </template>
 
@@ -65,48 +63,51 @@ async function handleActivate() {
         <p class="text-muted text-sm">Nhập token kích hoạt và đặt mật khẩu mới</p>
       </div>
 
-      <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200">
+      <div
+        v-if="errorMessage"
+        class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+      >
         {{ errorMessage }}
       </div>
 
       <form @submit.prevent="handleActivate" class="flex-col gap-4">
         <div class="form-group">
           <label class="form-label" for="token">Token kích hoạt</label>
-          <input 
-            id="token" 
-            v-model="token" 
-            type="text" 
-            class="form-input" 
+          <input
+            id="token"
+            v-model="token"
+            type="text"
+            class="form-input"
             placeholder="Nhập token từ email..."
             :disabled="isLoading"
-            required 
+            required
           />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="password">Mật khẩu mới</label>
-          <input 
-            id="password" 
-            v-model="password" 
-            type="password" 
-            class="form-input" 
+          <input
+            id="password"
+            v-model="password"
+            type="password"
+            class="form-input"
             placeholder="Tối thiểu 6 ký tự"
             :disabled="isLoading"
-            required 
+            required
             minlength="6"
           />
         </div>
 
         <div class="form-group">
           <label class="form-label" for="confirmPassword">Xác nhận mật khẩu</label>
-          <input 
-            id="confirmPassword" 
-            v-model="confirmPassword" 
-            type="password" 
-            class="form-input" 
+          <input
+            id="confirmPassword"
+            v-model="confirmPassword"
+            type="password"
+            class="form-input"
             placeholder="Nhập lại mật khẩu"
             :disabled="isLoading"
-            required 
+            required
             minlength="6"
           />
         </div>
@@ -119,8 +120,10 @@ async function handleActivate() {
         </button>
 
         <div class="text-center text-sm mt-4 text-muted">
-          Đã có tài khoản? 
-          <RouterLink to="/login" class="font-medium text-foreground hover-underline">Đăng nhập</RouterLink>
+          Đã có tài khoản?
+          <RouterLink to="/login" class="font-medium text-foreground hover-underline"
+            >Đăng nhập</RouterLink
+          >
         </div>
       </form>
     </template>
@@ -145,7 +148,11 @@ async function handleActivate() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

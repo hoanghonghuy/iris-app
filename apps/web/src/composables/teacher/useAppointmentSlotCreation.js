@@ -38,10 +38,12 @@ export function useAppointmentSlotCreation(classes, fetchAllAppointments) {
       const dayEnd = new Date(startDate)
       dayEnd.setHours(23, 59, 59, 999)
 
-      const activeAppointments = (await fetchAllAppointments({
-        from: dayStart.toISOString(),
-        to: dayEnd.toISOString(),
-      })).filter((item) => item.status !== 'cancelled')
+      const activeAppointments = (
+        await fetchAllAppointments({
+          from: dayStart.toISOString(),
+          to: dayEnd.toISOString(),
+        })
+      ).filter((item) => item.status !== 'cancelled')
 
       if (activeAppointments.length >= maxBookingsPerDay.value) {
         errorMessage.value = `Đã đạt giới hạn ${maxBookingsPerDay.value} lịch trong ngày này.`
@@ -54,7 +56,9 @@ export function useAppointmentSlotCreation(classes, fetchAllAppointments) {
       const conflicting = activeAppointments.find((appointment) => {
         const existingStart = new Date(appointment.start_time).getTime()
         const existingEnd = new Date(appointment.end_time).getTime()
-        return !(proposedEndMs + bufferMs <= existingStart || proposedStartMs >= existingEnd + bufferMs)
+        return !(
+          proposedEndMs + bufferMs <= existingStart || proposedStartMs >= existingEnd + bufferMs
+        )
       })
 
       if (conflicting) {
@@ -74,7 +78,7 @@ export function useAppointmentSlotCreation(classes, fetchAllAppointments) {
       startTime.value = ''
       note.value = ''
       showCreateForm.value = false
-      
+
       if (onSuccess) await onSuccess()
     } catch (error) {
       errorMessage.value = extractErrorMessage(error) || 'Không thể tạo khung giờ.'

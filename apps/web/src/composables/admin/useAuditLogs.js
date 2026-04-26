@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { normalizePaginatedResponse } from '../../helpers/collectionUtils'
@@ -59,7 +59,10 @@ export function useAuditLogs(isSuperAdmin) {
 
       if (hasPagination) {
         totalItems.value = normalized.pagination.total || 0
-        totalPages.value = Math.ceil(totalItems.value / Math.max(normalized.pagination.limit || pageSize.value, 1)) || 1
+        totalPages.value =
+          Math.ceil(
+            totalItems.value / Math.max(normalized.pagination.limit || pageSize.value, 1),
+          ) || 1
         pageSize.value = normalized.pagination.limit || pageSize.value
       } else {
         totalItems.value = auditLogs.value.length

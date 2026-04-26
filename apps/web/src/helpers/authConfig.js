@@ -29,7 +29,7 @@ export const adminMenuItems = [
   { label: 'Phụ huynh', path: '/admin/parents', icon: 'parent' },
   { label: 'School Admin', path: '/admin/school-admins', icon: 'shield', roles: ['SUPER_ADMIN'] },
   { label: 'Audit Logs', path: '/admin/audit-logs', icon: 'logs', roles: ['SUPER_ADMIN'] },
-  { label: 'Tin nhắn', path: '/admin/chat', icon: 'message' },
+  { label: 'Tin nhắn', path: '/admin/chat', icon: 'message', roles: ['SCHOOL_ADMIN'] },
 ]
 
 export const teacherMenuItems = [

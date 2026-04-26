@@ -6,20 +6,20 @@ const MAX_VISIBLE_PAGES = 5
 const props = defineProps({
   currentPage: {
     type: Number,
-    required: true
+    required: true,
   },
   totalPages: {
     type: Number,
-    required: true
+    required: true,
   },
   totalItems: {
     type: Number,
-    default: 0
+    default: 0,
   },
   limit: {
     type: Number,
-    default: 10
-  }
+    default: 10,
+  },
 })
 
 const emit = defineEmits(['page-change'])
@@ -45,19 +45,19 @@ const pages = computed(() => {
   if (!shouldShowPagination.value) {
     return range
   }
-  
+
   let start = Math.max(1, safeCurrentPage.value - Math.floor(MAX_VISIBLE_PAGES / 2))
   let end = start + MAX_VISIBLE_PAGES - 1
-  
+
   if (end > safeTotalPages.value) {
     end = safeTotalPages.value
     start = Math.max(1, end - MAX_VISIBLE_PAGES + 1)
   }
-  
+
   for (let i = start; i <= end; i++) {
     range.push(i)
   }
-  
+
   return range
 })
 
@@ -90,22 +90,24 @@ function goToPage(page) {
 <template>
   <div v-if="shouldShowPagination" class="pagination-bar">
     <div class="pagination-info text-sm text-muted">
-      Hiển thị <span class="font-medium">{{ startItem }}</span> đến <span class="font-medium">{{ endItem }}</span> trong số <span class="font-medium">{{ totalItems }}</span> kết quả
+      Hiển thị <span class="font-medium">{{ startItem }}</span> đến
+      <span class="font-medium">{{ endItem }}</span> trong số
+      <span class="font-medium">{{ totalItems }}</span> kết quả
     </div>
 
     <div class="pagination-controls">
-      <button 
+      <button
         type="button"
-        class="pagination-btn" 
-        :disabled="!hasPrev" 
+        class="pagination-btn"
+        :disabled="!hasPrev"
         @click="goToPage(safeCurrentPage - 1)"
       >
         Trước
       </button>
 
       <div class="pagination-pages">
-        <button 
-          v-for="page in pages" 
+        <button
+          v-for="page in pages"
           :key="page"
           type="button"
           class="pagination-page-btn"
@@ -116,10 +118,10 @@ function goToPage(page) {
         </button>
       </div>
 
-      <button 
+      <button
         type="button"
-        class="pagination-btn" 
-        :disabled="!hasNext" 
+        class="pagination-btn"
+        :disabled="!hasNext"
         @click="goToPage(safeCurrentPage + 1)"
       >
         Sau
@@ -149,7 +151,8 @@ function goToPage(page) {
   gap: var(--spacing-1);
 }
 
-.pagination-btn, .pagination-page-btn {
+.pagination-btn,
+.pagination-page-btn {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   color: var(--color-text);
@@ -172,7 +175,7 @@ function goToPage(page) {
   padding: 0 var(--spacing-1);
 }
 
-.pagination-btn:hover:not(:disabled), 
+.pagination-btn:hover:not(:disabled),
 .pagination-page-btn:hover:not(.pagination-page-btn--active) {
   background-color: var(--color-background);
   border-color: var(--color-text-muted);

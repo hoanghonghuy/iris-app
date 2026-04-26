@@ -14,7 +14,9 @@ export function useTeacherPosts() {
   const currentPage = ref(1)
 
   const currentOffset = computed(() => (currentPage.value - 1) * pagination.value.limit)
-  const totalPages = computed(() => Math.max(1, Math.ceil((pagination.value.total || 0) / pagination.value.limit)))
+  const totalPages = computed(() =>
+    Math.max(1, Math.ceil((pagination.value.total || 0) / pagination.value.limit)),
+  )
 
   async function fetchClasses() {
     loading.value = true
@@ -78,7 +80,9 @@ export function useTeacherPosts() {
   }
 
   function patchPostById(postId, patch) {
-    posts.value = posts.value.map((post) => (post.post_id === postId ? { ...post, ...patch } : post))
+    posts.value = posts.value.map((post) =>
+      post.post_id === postId ? { ...post, ...patch } : post,
+    )
   }
 
   function setPage(page) {

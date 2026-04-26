@@ -44,7 +44,9 @@ export function useAttendanceTaking() {
   const displayedStudents = computed(() => {
     const normalizedSearch = studentSearch.value.trim().toLowerCase()
     const searchedStudents = normalizedSearch
-      ? students.value.filter((student) => student.full_name?.toLowerCase().includes(normalizedSearch))
+      ? students.value.filter((student) =>
+          student.full_name?.toLowerCase().includes(normalizedSearch),
+        )
       : students.value
 
     let filtered = searchedStudents
@@ -63,10 +65,18 @@ export function useAttendanceTaking() {
     return [...unsavedStudents, ...savedStudents]
   })
 
-  const dirtyCount = computed(() => students.value.filter((student) => isRowDirty(student.student_id)).length)
-  const displayedDirtyCount = computed(() => displayedStudents.value.filter((student) => isRowDirty(student.student_id)).length)
-  const displayedSavedCount = computed(() => displayedStudents.value.length - displayedDirtyCount.value)
-  const globalPendingCount = computed(() => students.value.filter((student) => isRowDirty(student.student_id)).length)
+  const dirtyCount = computed(
+    () => students.value.filter((student) => isRowDirty(student.student_id)).length,
+  )
+  const displayedDirtyCount = computed(
+    () => displayedStudents.value.filter((student) => isRowDirty(student.student_id)).length,
+  )
+  const displayedSavedCount = computed(
+    () => displayedStudents.value.length - displayedDirtyCount.value,
+  )
+  const globalPendingCount = computed(
+    () => students.value.filter((student) => isRowDirty(student.student_id)).length,
+  )
 
   async function fetchStudentsAndAttendance(classId) {
     if (!classId) {
@@ -98,7 +108,9 @@ export function useAttendanceTaking() {
               await teacherService.getStudentAttendance(student.student_id, today, today),
             )
 
-            const existingRecord = records.find((record) => String(record.date || '').slice(0, 10) === today)
+            const existingRecord = records.find(
+              (record) => String(record.date || '').slice(0, 10) === today,
+            )
             if (existingRecord) {
               const savedValue = {
                 status: existingRecord.status || fallback.status,
@@ -271,9 +283,10 @@ export function useAttendanceTaking() {
 
       savedAttendance.value = nextSavedAttendance
       hasSavedForDate.value = nextHasSaved
-      successMessage.value = savingMode === 'displayed'
-        ? 'Đã lưu danh sách đang hiển thị.'
-        : 'Đã lưu điểm danh cho toàn lớp.'
+      successMessage.value =
+        savingMode === 'displayed'
+          ? 'Đã lưu danh sách đang hiển thị.'
+          : 'Đã lưu điểm danh cho toàn lớp.'
     } catch (error) {
       errorMessage.value = extractErrorMessage(error) || 'Không thể lưu điểm danh hàng loạt'
     } finally {
@@ -283,7 +296,9 @@ export function useAttendanceTaking() {
   }
 
   async function handleSaveDisplayed() {
-    const dirtyStudents = displayedStudents.value.filter((student) => isRowDirty(student.student_id))
+    const dirtyStudents = displayedStudents.value.filter((student) =>
+      isRowDirty(student.student_id),
+    )
     await saveStudents(dirtyStudents, 'displayed')
   }
 

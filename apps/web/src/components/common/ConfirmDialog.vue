@@ -4,32 +4,32 @@ import { watchEffect } from 'vue'
 const props = defineProps({
   isOpen: {
     type: Boolean,
-    required: true
+    required: true,
   },
   title: {
     type: String,
-    required: true
+    required: true,
   },
   message: {
     type: String,
-    required: true
+    required: true,
   },
   confirmText: {
     type: String,
-    default: 'Xác nhận'
+    default: 'Xác nhận',
   },
   cancelText: {
     type: String,
-    default: 'Hủy'
+    default: 'Hủy',
   },
   isDanger: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isLoading: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
@@ -63,8 +63,8 @@ watchEffect((onCleanup) => {
     <div class="modal-dialog" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 class="font-bold text-lg m-0">{{ title }}</h3>
-        <button 
-          class="modal-close" 
+        <button
+          class="modal-close"
           type="button"
           aria-label="Đóng"
           @click="handleCancel"
@@ -73,22 +73,17 @@ watchEffect((onCleanup) => {
           ✕
         </button>
       </div>
-      
+
       <div class="modal-body">
         <p>{{ message }}</p>
       </div>
-      
+
       <div class="modal-footer">
-        <button 
-          class="btn btn--outline" 
-          type="button"
-          @click="handleCancel"
-          :disabled="isLoading"
-        >
+        <button class="btn btn--outline" type="button" @click="handleCancel" :disabled="isLoading">
           {{ cancelText }}
         </button>
-        <button 
-          class="btn" 
+        <button
+          class="btn"
           type="button"
           :class="isDanger ? 'btn--danger' : 'btn--primary'"
           @click="emit('confirm')"

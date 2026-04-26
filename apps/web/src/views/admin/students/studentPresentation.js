@@ -11,7 +11,9 @@ export function normalizeGender(gender) {
 
 export function getGenderLabel(gender) {
   const normalizedGender = normalizeGender(gender)
-  return GENDER_OPTIONS.find((option) => option.value === normalizedGender)?.label || normalizedGender
+  return (
+    GENDER_OPTIONS.find((option) => option.value === normalizedGender)?.label || normalizedGender
+  )
 }
 
 export function getCodeExpiryText(dateString) {

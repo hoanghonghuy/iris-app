@@ -67,7 +67,9 @@ export const AUDIT_ENTITY_OPTIONS = [
 ]
 
 function normalizeEntityKey(value) {
-  return String(value || '').trim().replace(/-/g, '_')
+  return String(value || '')
+    .trim()
+    .replace(/-/g, '_')
 }
 
 function normalizeText(value) {
@@ -101,7 +103,10 @@ function parseHttpAction(action) {
 }
 
 function getFriendlyHttpAction(method, path, entityType) {
-  if (path.includes('/students/:student_id/generate-parent-code') || path.endsWith('/generate-parent-code')) {
+  if (
+    path.includes('/students/:student_id/generate-parent-code') ||
+    path.endsWith('/generate-parent-code')
+  ) {
     return 'Tạo mã phụ huynh'
   }
 
@@ -215,7 +220,10 @@ function formatInlineValue(value) {
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => formatInlineValue(item)).filter(Boolean).join(', ')
+    return value
+      .map((item) => formatInlineValue(item))
+      .filter(Boolean)
+      .join(', ')
   }
 
   if (typeof value === 'object') {
@@ -298,7 +306,13 @@ export function getAuditFriendlyAction(log) {
 export function getAuditActionTone(log) {
   const action = normalizeText(log?.action).toLowerCase()
 
-  if ((action.includes('delete') || action.includes('cancel') || action.includes('lock') || action.includes('revoke')) && !action.includes('unlock')) {
+  if (
+    (action.includes('delete') ||
+      action.includes('cancel') ||
+      action.includes('lock') ||
+      action.includes('revoke')) &&
+    !action.includes('unlock')
+  ) {
     return 'badge badge--danger'
   }
 

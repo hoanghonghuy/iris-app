@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { GraduationCap, LoaderCircle, User, Calendar, ChevronDown } from 'lucide-vue-next'
 import { useTeacherClassSelection } from '../../composables/teacher'
 import { formatDateVN } from '../../helpers/dateFormatter'
@@ -20,6 +20,11 @@ const genderLabel = {
   other: 'Khác',
 }
 
+const selectedClassName = computed(() => {
+  const selectedClass = classes.value.find((cls) => cls.class_id === selectedClassId.value)
+  return selectedClass?.name || ''
+})
+
 onMounted(fetchClasses)
 </script>
 
@@ -28,7 +33,11 @@ onMounted(fetchClasses)
     <div class="toolbar">
       <div v-if="classes.length > 0" class="select-wrap">
         <select v-model="selectedClassId" class="form-input class-select">
-          <option v-for="classInfo in classes" :key="classInfo.class_id" :value="classInfo.class_id">
+          <option
+            v-for="classInfo in classes"
+            :key="classInfo.class_id"
+            :value="classInfo.class_id"
+          >
             {{ classInfo.name }} ({{ classInfo.school_year }})
           </option>
         </select>
@@ -38,7 +47,7 @@ onMounted(fetchClasses)
 
     <div v-if="errorMessage" class="alert alert--error">{{ errorMessage }}</div>
 
-    <div v-if="loadingClasses || loadingStudents" class="loading-block">
+    <div v-if="isLoadingClasses || isLoadingStudents" class="loading-block">
       <LoaderCircle class="spin text-muted" :size="32" />
     </div>
 

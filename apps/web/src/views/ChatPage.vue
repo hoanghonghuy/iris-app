@@ -1,7 +1,12 @@
 <script setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { ArrowLeft, LoaderCircle, MessageSquare, Plus, Search, Send, X } from 'lucide-vue-next'
-import { useChatWebSocket, useChatConversations, useChatMessages, useChatSearch } from '../composables/chat'
+import {
+  useChatWebSocket,
+  useChatConversations,
+  useChatMessages,
+  useChatSearch,
+} from '../composables/chat'
 import {
   getConversationId,
   getInitials,
@@ -15,9 +20,26 @@ import {
 } from '../helpers/chatHelpers'
 
 const { isConnected, connect, sendMessage: wsSendMessage, onMessage } = useChatWebSocket()
-const { conversations, selectedConversation, loading, fetchConversations, selectConversation, createDirectConversation, getSelectedConversationId } = useChatConversations()
-const { messages, loadingMessages, loadingMore, hasMore, loadMessages, loadOlderMessages, addMessage } = useChatMessages()
-const { searchQuery, searchResults, showNewConversation, toggleNewConversation, clearSearch } = useChatSearch()
+const {
+  conversations,
+  selectedConversation,
+  loading,
+  fetchConversations,
+  selectConversation,
+  createDirectConversation,
+  getSelectedConversationId,
+} = useChatConversations()
+const {
+  messages,
+  loadingMessages,
+  loadingMore,
+  hasMore,
+  loadMessages,
+  loadOlderMessages,
+  addMessage,
+} = useChatMessages()
+const { searchQuery, searchResults, showNewConversation, toggleNewConversation, clearSearch } =
+  useChatSearch()
 
 const input = ref('')
 const currentUserId = ref('')
@@ -80,14 +102,14 @@ onMounted(async () => {
   const token = getAuthToken()
   const payload = token ? parseJwtPayload(token) : null
   currentUserId.value = payload?.user_id || ''
-  
+
   connect()
   onMessage((message) => {
     if (message.conversation_id === selectedConversationId.value) {
       addMessage(message)
     }
   })
-  
+
   await fetchConversations()
 })
 </script>
@@ -98,11 +120,19 @@ onMounted(async () => {
       <div class="chat-sidebar__header">
         <h1>Tin nhắn</h1>
         <div class="chat-header-actions">
-          <div class="connection-pill" :class="isConnected ? 'connection-pill--online' : 'connection-pill--offline'">
+          <div
+            class="connection-pill"
+            :class="isConnected ? 'connection-pill--online' : 'connection-pill--offline'"
+          >
             <span class="connection-dot"></span>
             <span>{{ isConnected ? 'Online' : 'Offline' }}</span>
           </div>
-          <button class="new-chat-button" type="button" :title="showNewConversation ? 'Đóng' : 'Tạo mới'" @click="toggleNewConversation">
+          <button
+            class="new-chat-button"
+            type="button"
+            :title="showNewConversation ? 'Đóng' : 'Tạo mới'"
+            @click="toggleNewConversation"
+          >
             <X v-if="showNewConversation" :size="20" />
             <Plus v-else :size="20" />
           </button>
@@ -147,13 +177,21 @@ onMounted(async () => {
           :key="getConversationId(conversation)"
           type="button"
           class="conversation-item"
-          :class="{ 'conversation-item--active': selectedConversationId === getConversationId(conversation) }"
+          :class="{
+            'conversation-item--active': selectedConversationId === getConversationId(conversation),
+          }"
           @click="handleLoadMessages(conversation)"
         >
-          <div class="avatar">{{ getInitials(getConversationName(conversation, currentUserId)) }}</div>
+          <div class="avatar">
+            {{ getInitials(getConversationName(conversation, currentUserId)) }}
+          </div>
           <div class="conversation-copy">
             <p>{{ getConversationName(conversation, currentUserId) }}</p>
-            <span>{{ conversation.type === 'direct' ? 'Trò chuyện trực tiếp' : `Nhóm ${conversation.participants?.length || 0} thành viên` }}</span>
+            <span>{{
+              conversation.type === 'direct'
+                ? 'Trò chuyện trực tiếp'
+                : `Nhóm ${conversation.participants?.length || 0} thành viên`
+            }}</span>
           </div>
         </button>
       </div>
@@ -165,10 +203,16 @@ onMounted(async () => {
           <button type="button" class="back-button" @click="selectConversation(null)">
             <ArrowLeft :size="24" />
           </button>
-          <div class="avatar avatar--primary">{{ getInitials(getConversationName(selectedConversation, currentUserId)) }}</div>
+          <div class="avatar avatar--primary">
+            {{ getInitials(getConversationName(selectedConversation, currentUserId)) }}
+          </div>
           <div class="conversation-copy">
             <p>{{ getConversationName(selectedConversation, currentUserId) }}</p>
-            <span>{{ selectedConversation.type === 'direct' ? 'Đang trực tuyến' : `${selectedConversation.participants?.length || 0} thành viên` }}</span>
+            <span>{{
+              selectedConversation.type === 'direct'
+                ? 'Đang trực tuyến'
+                : `${selectedConversation.participants?.length || 0} thành viên`
+            }}</span>
           </div>
         </header>
 
@@ -202,11 +246,27 @@ onMounted(async () => {
                 'message-bubble--last': isLastInGroup(messages, index),
               }"
             >
-              <span v-if="shouldShowSenderName(message, index, messages, selectedConversation?.type, currentUserId)" class="message-sender">
+              <span
+                v-if="
+                  shouldShowSenderName(
+                    message,
+                    index,
+                    messages,
+                    selectedConversation?.type,
+                    currentUserId,
+                  )
+                "
+                class="message-sender"
+              >
                 {{ getSenderName(message) }}
               </span>
               <p>{{ message.content }}</p>
-              <span>{{ new Date(message.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }}</span>
+              <span>{{
+                new Date(message.created_at).toLocaleTimeString('vi-VN', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              }}</span>
             </div>
           </div>
           <div ref="messagesEnd"></div>
@@ -222,7 +282,12 @@ onMounted(async () => {
             placeholder="Nhắn tin..."
             @keydown="handleKeydown"
           ></textarea>
-          <button type="button" class="send-button" :disabled="!input.trim()" @click="handleSendMessage">
+          <button
+            type="button"
+            class="send-button"
+            :disabled="!input.trim()"
+            @click="handleSendMessage"
+          >
             <Send :size="20" />
           </button>
         </footer>

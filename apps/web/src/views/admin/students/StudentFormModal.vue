@@ -88,7 +88,12 @@ const emit = defineEmits(['close', 'submit', 'update:formData'])
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn btn--outline" :disabled="isSubmitting" @click="emit('close')">
+        <button
+          type="button"
+          class="btn btn--outline"
+          :disabled="isSubmitting"
+          @click="emit('close')"
+        >
           Hủy
         </button>
         <button type="submit" class="btn btn--primary" :disabled="isSubmitting">

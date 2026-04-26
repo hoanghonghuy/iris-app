@@ -35,8 +35,8 @@ export function useParentAppointments() {
   const fetchedAppointmentCount = ref(0)
   const totalAppointmentCount = ref(0)
 
-  const activeAppointmentsCount = computed(() =>
-    appointments.value.filter((item) => ACTIVE_STATUSES.includes(item.status)).length,
+  const activeAppointmentsCount = computed(
+    () => appointments.value.filter((item) => ACTIVE_STATUSES.includes(item.status)).length,
   )
 
   const filteredAppointments = computed(() => {
@@ -51,8 +51,8 @@ export function useParentAppointments() {
     return sorted.filter((item) => item.status !== 'cancelled')
   })
 
-  const totalHistoryPages = computed(() =>
-    Math.ceil(filteredAppointments.value.length / HISTORY_PAGE_SIZE) || 0,
+  const totalHistoryPages = computed(
+    () => Math.ceil(filteredAppointments.value.length / HISTORY_PAGE_SIZE) || 0,
   )
 
   const pagedAppointments = computed(() => {
@@ -139,7 +139,8 @@ export function useParentAppointments() {
         fetchedAppointmentCount.value = 0
         totalAppointmentCount.value = 0
         historyCurrentPage.value = 1
-        errorMessage.value = 'Khoảng thời gian không hợp lệ: Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.'
+        errorMessage.value =
+          'Khoảng thời gian không hợp lệ: Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.'
         return
       }
 

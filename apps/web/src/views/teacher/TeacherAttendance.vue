@@ -4,7 +4,11 @@ import { AlertCircle, Check, History, LoaderCircle } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
 import { formatDateTimeVN, formatDateVN } from '../../helpers/dateFormatter'
 import { ATTENDANCE_STATUS_OPTIONS, getStatusLabel } from '../../helpers/attendanceConfig'
-import { useAttendanceClasses, useAttendanceTaking, useAttendanceHistory } from '../../composables/teacher'
+import {
+  useAttendanceClasses,
+  useAttendanceTaking,
+  useAttendanceHistory,
+} from '../../composables/teacher'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 
@@ -22,7 +26,6 @@ const {
 const {
   students,
   attendanceData,
-  savedAttendance,
   hasSavedForDate,
   isLoadingStudents,
   savingRowId,
@@ -102,7 +105,6 @@ onMounted(async () => {
     await fetchStudentsAndAttendance(selectedClassId.value)
   }
 })
-
 </script>
 
 <template>
@@ -171,7 +173,8 @@ onMounted(async () => {
       <div class="card take-controls">
         <div class="take-controls__mobile-head">
           <p class="take-controls__summary">
-            Hiển thị {{ displayedStudents.length }}/{{ students.length }} • Chờ lưu {{ displayedDirtyCount }}
+            Hiển thị {{ displayedStudents.length }}/{{ students.length }} • Chờ lưu
+            {{ displayedDirtyCount }}
           </p>
           <button
             class="btn btn--outline btn--sm take-controls__toggle"
@@ -222,11 +225,19 @@ onMounted(async () => {
 
           <div class="take-badges">
             <span class="badge badge--outline">Toàn lớp chờ lưu: {{ globalPendingCount }}</span>
-            <span class="badge badge--outline">Đang hiển thị: {{ displayedStudents.length }}/{{ students.length }}</span>
-            <span class="badge" :class="displayedDirtyCount > 0 ? 'badge--warning' : 'badge--outline'">
+            <span class="badge badge--outline"
+              >Đang hiển thị: {{ displayedStudents.length }}/{{ students.length }}</span
+            >
+            <span
+              class="badge"
+              :class="displayedDirtyCount > 0 ? 'badge--warning' : 'badge--outline'"
+            >
               Chờ lưu trong danh sách: {{ displayedDirtyCount }}
             </span>
-            <span class="badge" :class="displayedSavedCount > 0 ? 'badge--primary' : 'badge--outline'">
+            <span
+              class="badge"
+              :class="displayedSavedCount > 0 ? 'badge--primary' : 'badge--outline'"
+            >
               Đã lưu trong danh sách: {{ displayedSavedCount }}
             </span>
           </div>
@@ -248,12 +259,20 @@ onMounted(async () => {
               :disabled="isSavingDisplayed || displayedDirtyCount === 0"
               @click="handleSaveDisplayed"
             >
-              {{ isSavingDisplayed ? 'Đang lưu...' : `Lưu danh sách hiển thị${displayedDirtyCount > 0 ? ` (${displayedDirtyCount})` : ''}` }}
+              {{
+                isSavingDisplayed
+                  ? 'Đang lưu...'
+                  : `Lưu danh sách hiển thị${displayedDirtyCount > 0 ? ` (${displayedDirtyCount})` : ''}`
+              }}
             </button>
           </div>
 
           <p class="take-controls__hint">
-            {{ listOrderMode === 'prioritize' ? 'Đang ưu tiên học sinh chưa lưu.' : 'Đang giữ nguyên thứ tự danh sách.' }}
+            {{
+              listOrderMode === 'prioritize'
+                ? 'Đang ưu tiên học sinh chưa lưu.'
+                : 'Đang giữ nguyên thứ tự danh sách.'
+            }}
           </p>
         </div>
       </div>
@@ -270,7 +289,10 @@ onMounted(async () => {
           v-for="student in displayedStudents"
           :key="student.student_id"
           class="card attendance-item"
-          :class="{ 'attendance-item--saved': !isRowDirty(student.student_id) && hasSavedForDate[student.student_id] }"
+          :class="{
+            'attendance-item--saved':
+              !isRowDirty(student.student_id) && hasSavedForDate[student.student_id],
+          }"
         >
           <div class="attendance-item__head">
             <div class="attendance-item__identity">
@@ -279,7 +301,13 @@ onMounted(async () => {
                 <span class="student-meta-inline">• {{ formatDateVN(student.dob) }}</span>
               </p>
               <p class="student-meta">
-                {{ !hasSavedForDate[student.student_id] ? 'Chưa lưu' : isRowDirty(student.student_id) ? 'Đã chỉnh sửa, chưa lưu' : 'Đã lưu' }}
+                {{
+                  !hasSavedForDate[student.student_id]
+                    ? 'Chưa lưu'
+                    : isRowDirty(student.student_id)
+                      ? 'Đã chỉnh sửa, chưa lưu'
+                      : 'Đã lưu'
+                }}
               </p>
             </div>
 
@@ -289,7 +317,11 @@ onMounted(async () => {
                 :value="attendanceData[student.student_id]?.status || 'present'"
                 @change="handleAttendanceStatusChange(student.student_id, $event.target.value)"
               >
-                <option v-for="option in ATTENDANCE_STATUS_OPTIONS" :key="option.value" :value="option.value">
+                <option
+                  v-for="option in ATTENDANCE_STATUS_OPTIONS"
+                  :key="option.value"
+                  :value="option.value"
+                >
                   {{ option.label }}
                 </option>
               </select>
@@ -300,7 +332,10 @@ onMounted(async () => {
                 v-for="option in ATTENDANCE_STATUS_OPTIONS"
                 :key="option.value"
                 class="status-chip"
-                :class="{ 'status-chip--active': attendanceData[student.student_id]?.status === option.value }"
+                :class="{
+                  'status-chip--active':
+                    attendanceData[student.student_id]?.status === option.value,
+                }"
                 type="button"
                 @click="handleAttendanceStatusChange(student.student_id, option.value)"
               >
@@ -320,7 +355,11 @@ onMounted(async () => {
 
             <button
               class="btn btn--sm"
-              :class="!isRowDirty(student.student_id) && hasSavedForDate[student.student_id] ? 'btn--outline' : 'btn--primary'"
+              :class="
+                !isRowDirty(student.student_id) && hasSavedForDate[student.student_id]
+                  ? 'btn--outline'
+                  : 'btn--primary'
+              "
               type="button"
               :disabled="savingRowId === student.student_id"
               @click="handleMark(student.student_id)"
@@ -372,7 +411,10 @@ onMounted(async () => {
                 Đang tải lịch sử...
               </div>
 
-              <p v-else-if="(historyByStudent[student.student_id] || []).length === 0" class="attendance-history__empty">
+              <p
+                v-else-if="(historyByStudent[student.student_id] || []).length === 0"
+                class="attendance-history__empty"
+              >
                 Chưa có lịch sử điểm danh.
               </p>
 
@@ -385,7 +427,13 @@ onMounted(async () => {
                   <div class="attendance-history__row">
                     <span class="text-muted">{{ formatDateTimeVN(record.changed_at) }}</span>
                     <span class="attendance-history__type">
-                      {{ record.change_type === 'create' ? 'Tạo mới' : record.change_type === 'delete' ? 'Hủy lưu' : 'Cập nhật' }}
+                      {{
+                        record.change_type === 'create'
+                          ? 'Tạo mới'
+                          : record.change_type === 'delete'
+                            ? 'Hủy lưu'
+                            : 'Cập nhật'
+                      }}
                     </span>
                   </div>
                   <div class="attendance-history__row text-muted">
@@ -413,12 +461,10 @@ onMounted(async () => {
         </article>
       </div>
 
-      <div
-        v-if="displayedDirtyCount > 0 || globalPendingCount > 0"
-        class="take-summary-bar"
-      >
+      <div v-if="displayedDirtyCount > 0 || globalPendingCount > 0" class="take-summary-bar">
         <p class="take-summary-bar__text">
-          Còn {{ displayedDirtyCount }} học sinh chưa lưu trong danh sách hiển thị • Toàn lớp còn {{ globalPendingCount }} học sinh chưa lưu.
+          Còn {{ displayedDirtyCount }} học sinh chưa lưu trong danh sách hiển thị • Toàn lớp còn
+          {{ globalPendingCount }} học sinh chưa lưu.
         </p>
 
         <div class="take-summary-bar__actions">
@@ -428,7 +474,11 @@ onMounted(async () => {
             :disabled="isSavingDisplayed || displayedDirtyCount === 0"
             @click="handleSaveDisplayed"
           >
-            {{ isSavingDisplayed ? 'Đang lưu...' : `Lưu danh sách hiển thị${displayedDirtyCount > 0 ? ` (${displayedDirtyCount})` : ''}` }}
+            {{
+              isSavingDisplayed
+                ? 'Đang lưu...'
+                : `Lưu danh sách hiển thị${displayedDirtyCount > 0 ? ` (${displayedDirtyCount})` : ''}`
+            }}
           </button>
           <button
             class="btn btn--primary btn--sm"
@@ -436,7 +486,11 @@ onMounted(async () => {
             :disabled="isSavingAll || dirtyCount === 0"
             @click="handleSaveAll"
           >
-            {{ isSavingAll ? 'Đang lưu...' : `Lưu toàn lớp${dirtyCount > 0 ? ` (${dirtyCount})` : ''}` }}
+            {{
+              isSavingAll
+                ? 'Đang lưu...'
+                : `Lưu toàn lớp${dirtyCount > 0 ? ` (${dirtyCount})` : ''}`
+            }}
           </button>
         </div>
       </div>
@@ -450,21 +504,34 @@ onMounted(async () => {
 
           <select v-model="historyStudentId" class="form-input">
             <option value="all">Tất cả học sinh</option>
-            <option v-for="student in students" :key="student.student_id" :value="student.student_id">
+            <option
+              v-for="student in students"
+              :key="student.student_id"
+              :value="student.student_id"
+            >
               {{ student.full_name }}
             </option>
           </select>
 
           <select v-model="historyStatus" class="form-input">
             <option value="all">Tất cả trạng thái</option>
-            <option v-for="option in ATTENDANCE_STATUS_OPTIONS" :key="option.value" :value="option.value">
+            <option
+              v-for="option in ATTENDANCE_STATUS_OPTIONS"
+              :key="option.value"
+              :value="option.value"
+            >
               {{ option.label }}
             </option>
           </select>
         </div>
 
         <div class="history-actions-row">
-          <button class="btn btn--primary btn--sm" type="button" :disabled="historyListLoading" @click="handleHistorySearch">
+          <button
+            class="btn btn--primary btn--sm"
+            type="button"
+            :disabled="historyListLoading"
+            @click="handleHistorySearch"
+          >
             {{ historyListLoading ? 'Đang tải...' : 'Xem lịch sử' }}
           </button>
           <p class="history-total">Tổng bản ghi: {{ historyTotal }}</p>
@@ -492,7 +559,13 @@ onMounted(async () => {
                 <p class="student-meta">{{ formatDateTimeVN(record.changed_at) }}</p>
               </div>
               <span class="badge badge--outline">
-                {{ record.change_type === 'create' ? 'Tạo mới' : record.change_type === 'delete' ? 'Hủy lưu' : 'Cập nhật' }}
+                {{
+                  record.change_type === 'create'
+                    ? 'Tạo mới'
+                    : record.change_type === 'delete'
+                      ? 'Hủy lưu'
+                      : 'Cập nhật'
+                }}
               </span>
             </div>
 
@@ -519,13 +592,28 @@ onMounted(async () => {
       </div>
 
       <div class="history-pagination">
-        <button class="btn btn--outline btn--sm" type="button" :disabled="historyOffset === 0" @click="handleHistoryPrevPage">
+        <button
+          class="btn btn--outline btn--sm"
+          type="button"
+          :disabled="historyOffset === 0"
+          @click="handleHistoryPrevPage"
+        >
           Trang trước
         </button>
         <p class="history-total">
-          {{ historyTotal === 0 ? '0-0' : `${historyOffset + 1}-${Math.min(historyOffset + 20, historyTotal)}` }} / {{ historyTotal }}
+          {{
+            historyTotal === 0
+              ? '0-0'
+              : `${historyOffset + 1}-${Math.min(historyOffset + 20, historyTotal)}`
+          }}
+          / {{ historyTotal }}
         </p>
-        <button class="btn btn--outline btn--sm" type="button" :disabled="!historyHasMore" @click="handleHistoryNextPage">
+        <button
+          class="btn btn--outline btn--sm"
+          type="button"
+          :disabled="!historyHasMore"
+          @click="handleHistoryNextPage"
+        >
           Trang sau
         </button>
       </div>

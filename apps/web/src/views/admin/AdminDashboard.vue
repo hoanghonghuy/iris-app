@@ -91,17 +91,24 @@ onMounted(async () => {
     </div>
 
     <LoadingSpinner v-if="isLoading" message="Đang tải dữ liệu thống kê..." />
-    
+
     <div v-else-if="errorMessage" class="p-4 bg-red-50 text-danger rounded border border-red-200">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchAnalytics">{{ ADMIN_RETRY_BUTTON_TEXT }}</button>
+      <button class="btn btn--outline mt-2" type="button" @click="fetchAnalytics">
+        {{ ADMIN_RETRY_BUTTON_TEXT }}
+      </button>
     </div>
 
     <div v-else-if="analytics" class="dashboard-content">
       <!-- Cards thống kê chính -->
       <div class="grid-cards mb-8">
-        <RouterLink v-for="card in statCards" :key="card.to" :to="card.to" class="card stat-card p-4">
+        <RouterLink
+          v-for="card in statCards"
+          :key="card.to"
+          :to="card.to"
+          class="card stat-card p-4"
+        >
           <p class="text-sm font-medium text-muted">{{ card.label }}</p>
           <p class="text-2xl font-bold mt-1">{{ card.value }}</p>
         </RouterLink>
@@ -110,7 +117,9 @@ onMounted(async () => {
       <div class="grid-2-cols gap-6">
         <div class="card p-4">
           <p class="text-sm font-medium text-muted uppercase">Tỷ lệ điểm danh hôm nay</p>
-          <p class="text-3xl font-bold mt-2">{{ analyticsView.today_attendance.attendance_rate.toFixed(1) }}%</p>
+          <p class="text-3xl font-bold mt-2">
+            {{ analyticsView.today_attendance.attendance_rate.toFixed(1) }}%
+          </p>
         </div>
 
         <div class="card p-4">
@@ -122,7 +131,12 @@ onMounted(async () => {
       <section class="quick-actions mt-8">
         <h3>Quản lý nhanh</h3>
         <div class="quick-grid">
-          <RouterLink v-for="action in quickActions" :key="action.to" :to="action.to" class="card quick-action">
+          <RouterLink
+            v-for="action in quickActions"
+            :key="action.to"
+            :to="action.to"
+            class="card quick-action"
+          >
             {{ action.label }}
           </RouterLink>
         </div>
@@ -198,11 +212,15 @@ onMounted(async () => {
 }
 
 @media (min-width: 768px) {
-  .grid-cards { grid-template-columns: repeat(3, 1fr); }
+  .grid-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (min-width: 1024px) {
-  .grid-cards { grid-template-columns: repeat(5, 1fr); }
+  .grid-cards {
+    grid-template-columns: repeat(5, 1fr);
+  }
   .grid-2-cols {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

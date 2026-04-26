@@ -29,7 +29,7 @@ async function handleLogin() {
 
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
     const data = await authService.login(email.value, password.value)
     handleLoginSuccess(data)
@@ -43,17 +43,21 @@ async function handleLogin() {
 async function handleGoogleLogin(idToken) {
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
     const data = await authService.loginWithGoogle(idToken)
     handleLoginSuccess(data)
   } catch (error) {
     const errorMsg = extractErrorMessage(error)
     // Nếu API trả về GOOGLE_LINK_PASSWORD_REQUIRED -> Bật form nhập mật khẩu
-    if (error?.data?.error_code === 'GOOGLE_LINK_PASSWORD_REQUIRED' || errorMsg === 'GOOGLE_LINK_PASSWORD_REQUIRED') {
+    if (
+      error?.data?.error_code === 'GOOGLE_LINK_PASSWORD_REQUIRED' ||
+      errorMsg === 'GOOGLE_LINK_PASSWORD_REQUIRED'
+    ) {
       isLinkMode.value = true
       tempGoogleIdToken.value = idToken
-      errorMessage.value = 'Tài khoản này đã tồn tại. Vui lòng nhập mật khẩu để liên kết với Google.'
+      errorMessage.value =
+        'Tài khoản này đã tồn tại. Vui lòng nhập mật khẩu để liên kết với Google.'
     } else {
       errorMessage.value = errorMsg
     }
@@ -70,7 +74,7 @@ async function handleLinkPassword() {
 
   isLoading.value = true
   errorMessage.value = ''
-  
+
   try {
     const data = await authService.linkGooglePassword(tempGoogleIdToken.value, linkPassword.value)
     handleLoginSuccess(data)
@@ -89,7 +93,7 @@ function handleLoginSuccess(data) {
     return
   }
   authStore.setToken(token)
-  
+
   // Gọi API lấy thông tin user để lưu role
   authStore.fetchCurrentUser().then((user) => {
     if (!user) return
@@ -128,7 +132,10 @@ function cancelLinkMode() {
       <p class="text-muted text-sm">Đăng nhập để quản lý thông tin trường học</p>
     </div>
 
-    <div v-if="errorMessage" class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200">
+    <div
+      v-if="errorMessage"
+      class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+    >
       {{ errorMessage }}
     </div>
 
@@ -136,19 +143,24 @@ function cancelLinkMode() {
     <form v-if="isLinkMode" @submit.prevent="handleLinkPassword" class="flex-col gap-4">
       <div class="form-group">
         <label class="form-label" for="link-password">Mật khẩu hiện tại</label>
-        <input 
-          id="link-password" 
-          v-model="linkPassword" 
-          type="password" 
-          class="form-input" 
+        <input
+          id="link-password"
+          v-model="linkPassword"
+          type="password"
+          class="form-input"
           placeholder="Nhập mật khẩu của bạn"
           :disabled="isLoading"
-          required 
+          required
         />
       </div>
 
       <div class="flex gap-2 mt-4">
-        <button type="button" class="btn btn--outline w-full" @click="cancelLinkMode" :disabled="isLoading">
+        <button
+          type="button"
+          class="btn btn--outline w-full"
+          @click="cancelLinkMode"
+          :disabled="isLoading"
+        >
           Hủy
         </button>
         <button type="submit" class="btn btn--primary w-full" :disabled="isLoading">
@@ -161,30 +173,32 @@ function cancelLinkMode() {
     <form v-else @submit.prevent="handleLogin" class="flex-col gap-4">
       <div class="form-group">
         <label class="form-label" for="email">Email</label>
-        <input 
-          id="email" 
-          v-model="email" 
-          type="email" 
-          class="form-input" 
+        <input
+          id="email"
+          v-model="email"
+          type="email"
+          class="form-input"
           placeholder="name@example.com"
           :disabled="isLoading"
-          required 
+          required
         />
       </div>
 
       <div class="form-group">
         <div class="flex justify-between items-center mb-1">
           <label class="form-label m-0" for="password">Mật khẩu</label>
-          <RouterLink to="/forgot-password" class="text-xs text-muted hover-text-primary">Quên mật khẩu?</RouterLink>
+          <RouterLink to="/forgot-password" class="text-xs text-muted hover-text-primary"
+            >Quên mật khẩu?</RouterLink
+          >
         </div>
-        <input 
-          id="password" 
-          v-model="password" 
-          type="password" 
-          class="form-input" 
+        <input
+          id="password"
+          v-model="password"
+          type="password"
+          class="form-input"
           placeholder="••••••••"
           :disabled="isLoading"
-          required 
+          required
         />
       </div>
 
@@ -196,13 +210,10 @@ function cancelLinkMode() {
         <span class="divider-text">phương thức khác</span>
       </div>
 
-      <GoogleSignInButton 
-        :disabled="isLoading" 
-        @google-login="handleGoogleLogin" 
-      />
+      <GoogleSignInButton :disabled="isLoading" @google-login="handleGoogleLogin" />
 
       <div class="text-center text-sm mt-6 text-muted">
-        Phụ huynh chưa có tài khoản? 
+        Phụ huynh chưa có tài khoản?
         <RouterLink to="/register" class="font-medium text-primary">Đăng ký tại đây</RouterLink>
       </div>
     </form>
@@ -210,11 +221,22 @@ function cancelLinkMode() {
 </template>
 
 <style scoped>
-.mb-6 { margin-bottom: var(--spacing-6); }
-.bg-red-50 { background-color: var(--color-danger-soft-bg); }
-.border-red-200 { border-color: var(--color-danger-soft-border); }
-.rounded { border-radius: var(--radius); }
-.my-4 { margin-top: var(--spacing-4); margin-bottom: var(--spacing-4); }
+.mb-6 {
+  margin-bottom: var(--spacing-6);
+}
+.bg-red-50 {
+  background-color: var(--color-danger-soft-bg);
+}
+.border-red-200 {
+  border-color: var(--color-danger-soft-border);
+}
+.rounded {
+  border-radius: var(--radius);
+}
+.my-4 {
+  margin-top: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
 
 .divider {
   display: flex;
@@ -230,11 +252,11 @@ function cancelLinkMode() {
 }
 
 .divider:not(:empty)::before {
-  margin-right: .25em;
+  margin-right: 0.25em;
 }
 
 .divider:not(:empty)::after {
-  margin-left: .25em;
+  margin-left: 0.25em;
 }
 
 .divider-text {

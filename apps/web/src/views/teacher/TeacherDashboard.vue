@@ -23,7 +23,8 @@ const analyticsView = computed(() => {
     total_classes: data.total_classes ?? classes.value.length ?? 0,
     total_students: data.total_students ?? 0,
     total_posts: data.total_posts ?? data.recent_posts_count ?? 0,
-    today_attendance_marked_count: data.today_attendance_marked_count ?? data.today_attendance_count ?? 0,
+    today_attendance_marked_count:
+      data.today_attendance_marked_count ?? data.today_attendance_count ?? 0,
     today_attendance_pending_count: data.today_attendance_pending_count ?? 0,
     pending_appointments: data.pending_appointments ?? 0,
     recent_health_alerts_24h: data.recent_health_alerts_24h ?? 0,
@@ -81,7 +82,9 @@ onMounted(async () => {
     <div class="dashboard-hero mb-6">
       <div>
         <h2>Xin chào, {{ displayName }}</h2>
-        <p class="hero-copy">Hôm nay bạn có {{ analyticsView.total_students }} học sinh cần theo dõi.</p>
+        <p class="hero-copy">
+          Hôm nay bạn có {{ analyticsView.total_students }} học sinh cần theo dõi.
+        </p>
       </div>
       <button class="btn btn--outline" type="button" @click="fetchDashboard" :disabled="isLoading">
         Làm mới
@@ -90,7 +93,10 @@ onMounted(async () => {
 
     <LoadingSpinner v-if="isLoading" message="Đang tải dữ liệu tổng quan..." />
 
-    <div v-else-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
+    <div
+      v-else-if="errorMessage"
+      class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200"
+    >
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>
       <button type="button" class="btn btn--outline mt-2" @click="fetchDashboard">Thử lại</button>
@@ -98,7 +104,12 @@ onMounted(async () => {
 
     <div v-else class="dashboard-content">
       <div class="stats-grid mb-6">
-        <RouterLink v-for="card in primaryStats" :key="card.to" :to="card.to" class="stat-card stat-card--link">
+        <RouterLink
+          v-for="card in primaryStats"
+          :key="card.to"
+          :to="card.to"
+          class="stat-card stat-card--link"
+        >
           <span class="stat-label">{{ card.label }}</span>
           <strong class="stat-value">{{ card.value }}</strong>
         </RouterLink>
@@ -112,7 +123,12 @@ onMounted(async () => {
         <section class="quick-actions">
           <h3>Hoạt động nhanh</h3>
           <div class="quick-grid">
-            <RouterLink v-for="action in quickActions" :key="action.to" :to="action.to" class="quick-action">
+            <RouterLink
+              v-for="action in quickActions"
+              :key="action.to"
+              :to="action.to"
+              class="quick-action"
+            >
               {{ action.label }}
             </RouterLink>
           </div>

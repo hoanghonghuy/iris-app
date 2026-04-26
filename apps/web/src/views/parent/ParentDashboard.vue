@@ -83,7 +83,10 @@ onMounted(async () => {
 
     <LoadingSpinner v-if="isLoading" message="Đang tải thông tin..." />
 
-    <div v-else-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
+    <div
+      v-else-if="errorMessage"
+      class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200"
+    >
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>
       <button type="button" class="btn btn--outline mt-2" @click="fetchDashboard">Thử lại</button>
@@ -101,18 +104,27 @@ onMounted(async () => {
         </div>
         <div class="stat-card">
           <span class="stat-label">Con có mặt hôm nay</span>
-          <strong class="stat-value stat-value--small">{{ analyticsView.today_attendance_present_count }}</strong>
+          <strong class="stat-value stat-value--small">{{
+            analyticsView.today_attendance_present_count
+          }}</strong>
         </div>
         <div class="stat-card">
           <span class="stat-label">Con chưa điểm danh</span>
-          <strong class="stat-value stat-value--small">{{ analyticsView.today_attendance_pending_count }}</strong>
+          <strong class="stat-value stat-value--small">{{
+            analyticsView.today_attendance_pending_count
+          }}</strong>
         </div>
       </div>
 
       <section class="quick-actions mb-8">
         <h3>Truy cập nhanh</h3>
         <div class="quick-grid">
-          <RouterLink v-for="action in quickActions" :key="action.to" :to="action.to" class="quick-action">
+          <RouterLink
+            v-for="action in quickActions"
+            :key="action.to"
+            :to="action.to"
+            class="quick-action"
+          >
             {{ action.label }}
           </RouterLink>
         </div>
