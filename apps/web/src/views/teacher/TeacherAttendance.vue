@@ -2,7 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { AlertCircle, Check, History, LoaderCircle } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'
-import { formatDateTimeVN, formatDateVN } from '../../helpers/dateFormatter'
+import { formatDateTime, formatDate } from '../../helpers/dateFormatter'
 import { ATTENDANCE_STATUS_OPTIONS, getStatusLabel } from '../../helpers/attendanceConfig'
 import {
   useAttendanceClasses,
@@ -298,7 +298,7 @@ onMounted(async () => {
             <div class="attendance-item__identity">
               <p class="student-name">
                 {{ student.full_name }}
-                <span class="student-meta-inline">• {{ formatDateVN(student.dob) }}</span>
+                <span class="student-meta-inline">• {{ formatDate(student.dob) }}</span>
               </p>
               <p class="student-meta">
                 {{
@@ -425,7 +425,7 @@ onMounted(async () => {
                   class="attendance-history__item"
                 >
                   <div class="attendance-history__row">
-                    <span class="text-muted">{{ formatDateTimeVN(record.changed_at) }}</span>
+                    <span class="text-muted">{{ formatDateTime(record.changed_at) }}</span>
                     <span class="attendance-history__type">
                       {{
                         record.change_type === 'create'
@@ -556,7 +556,7 @@ onMounted(async () => {
             <div class="history-item__head">
               <div>
                 <p class="student-name">{{ record.student_name }}</p>
-                <p class="student-meta">{{ formatDateTimeVN(record.changed_at) }}</p>
+                <p class="student-meta">{{ formatDateTime(record.changed_at) }}</p>
               </div>
               <span class="badge badge--outline">
                 {{

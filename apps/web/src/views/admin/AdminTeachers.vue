@@ -3,7 +3,10 @@ import { onBeforeUnmount, ref } from 'vue'
 import { Link2, Pencil, Trash2, X } from 'lucide-vue-next'
 import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import { createAdminPersonEditFormConfig } from '../../helpers/adminPeopleFormConfig'
+import {
+  createAdminPersonEditFormConfig,
+  createAdminPersonRelationConfig,
+} from '../../helpers/adminPeopleFormConfig'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ActionModal from '../../components/ActionModal.vue'
@@ -22,6 +25,15 @@ const USER_SEARCH_MIN_LENGTH = 2
 const USER_SEARCH_RESULT_LIMIT = 6
 
 const teacherEditFormConfig = createAdminPersonEditFormConfig({ idField: 'teacher_id' })
+const teacherRelationConfig = createAdminPersonRelationConfig({
+  ownerIdField: 'teacher_id',
+  relationIdField: 'class_id',
+  relationNameField: 'name',
+  unassignNameField: 'class_name',
+  assignSelectionField: 'selectedClassId',
+  assignService: adminService.assignTeacherToClass,
+  unassignService: adminService.unassignTeacherFromClass,
+})
 
 const {
   searchQuery: userSearchQuery,
@@ -88,15 +100,7 @@ const {
       school_id: form.school_id,
     }),
   updateErrorMessage: 'Không thể cập nhật giáo viên',
-  assignItem: ({ target, selectedClassId: classId }) =>
-    adminService.assignTeacherToClass(target.teacher_id, classId),
-  toUnassignTarget: (teacher, cls) => ({
-    teacher_id: teacher.teacher_id,
-    class_id: cls.class_id,
-    class_name: cls.name,
-  }),
-  unassignItem: (target) =>
-    adminService.unassignTeacherFromClass(target.teacher_id, target.class_id),
+  ...teacherRelationConfig,
 })
 
 const isDeleteOpen = ref(false)

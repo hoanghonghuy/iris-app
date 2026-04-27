@@ -3,7 +3,7 @@ import { teacherService } from '../../services/teacherService'
 import { fetchAllPaginated, normalizeListResponse } from '../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { getLocalDateKey } from '../../helpers/appointmentConfig'
-import { offsetDate, toDateInputValue } from '../../helpers/dateHelpers'
+import { offsetDate, getDateInputValue } from '../../helpers/dateHelpers'
 
 const FETCH_LIMIT = 100
 
@@ -15,8 +15,8 @@ export function useAppointmentsList() {
   const updatingAppointmentId = ref(null)
 
   const statusFilter = ref('')
-  const filterFromDate = ref(toDateInputValue(offsetDate(-6)))
-  const filterToDate = ref(toDateInputValue(new Date()))
+  const filterFromDate = ref(getDateInputValue(offsetDate(-6)))
+  const filterToDate = ref(getDateInputValue(new Date()))
 
   const stats = computed(() => ({
     totalClasses: classes.value.length,
@@ -108,8 +108,8 @@ export function useAppointmentsList() {
   }
 
   async function resetLastSevenDays() {
-    filterFromDate.value = toDateInputValue(offsetDate(-6))
-    filterToDate.value = toDateInputValue(new Date())
+    filterFromDate.value = getDateInputValue(offsetDate(-6))
+    filterToDate.value = getDateInputValue(new Date())
     await loadData()
   }
 

@@ -3,7 +3,7 @@ import { computed, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ArrowLeft, Calendar, GraduationCap, LoaderCircle, User } from 'lucide-vue-next'
 import { useTeacherClassSelection } from '../../composables/teacher'
-import { formatDateVN } from '../../helpers/dateFormatter'
+import { formatDate } from '../../helpers/dateFormatter'
 
 const route = useRoute()
 
@@ -120,7 +120,7 @@ fetchClasses()
               <tbody>
                 <tr v-for="student in students" :key="student.student_id">
                   <td class="font-medium">{{ student.full_name }}</td>
-                  <td class="text-muted">{{ formatDateVN(student.dob) }}</td>
+                  <td class="text-muted">{{ formatDate(student.dob) }}</td>
                   <td class="text-muted">{{ genderLabel[student.gender] || student.gender }}</td>
                 </tr>
               </tbody>
@@ -135,7 +135,7 @@ fetchClasses()
               <p class="font-medium m-0">{{ student.full_name }}</p>
               <p class="student-meta">
                 <Calendar :size="12" />
-                {{ formatDateVN(student.dob) }} ·
+                {{ formatDate(student.dob) }} ·
                 {{ genderLabel[student.gender] || student.gender }}
               </p>
             </div>

@@ -27,3 +27,30 @@ export function createAdminPersonEditFormConfig({ idField }) {
     validateEditForm,
   }
 }
+
+export function createAdminPersonRelationConfig({
+  ownerIdField,
+  relationIdField,
+  relationNameField,
+  unassignNameField,
+  assignSelectionField,
+  assignService,
+  unassignService,
+}) {
+  const assignItem = ({ target, ...selection }) =>
+    assignService(target[ownerIdField], selection[assignSelectionField])
+
+  const toUnassignTarget = (owner, relation) => ({
+    [ownerIdField]: owner[ownerIdField],
+    [relationIdField]: relation[relationIdField],
+    [unassignNameField]: relation[relationNameField],
+  })
+
+  const unassignItem = (target) => unassignService(target[ownerIdField], target[relationIdField])
+
+  return {
+    assignItem,
+    toUnassignTarget,
+    unassignItem,
+  }
+}

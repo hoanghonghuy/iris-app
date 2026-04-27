@@ -39,7 +39,7 @@ export const APPOINTMENT_STATUS_OPTIONS = [
   { value: 'no_show', label: 'Vắng mặt' },
 ]
 
-export const CANCEL_REASON_MAP = {
+const CANCEL_REASON_MAP = {
   parent_cancelled: 'Phụ huynh đã hủy lịch',
   teacher_cancelled: 'Giáo viên đã hủy lịch',
   system_cancelled: 'Hệ thống đã hủy lịch',
@@ -77,7 +77,7 @@ export function getTimezoneDisplay() {
   return `${timezone} (UTC${sign}${hours}:${minutes})`
 }
 
-export function formatShortTime(value) {
+function formatShortTime(value) {
   if (!value) return ''
   return new Date(value).toLocaleTimeString('vi-VN', {
     hour: '2-digit',

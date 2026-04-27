@@ -15,8 +15,6 @@ export function getDateInputValue(date) {
   return local.toISOString().slice(0, 10)
 }
 
-export const toDateInputValue = getDateInputValue
-
 export function getTodayDateString() {
   return getDateInputValue(new Date())
 }

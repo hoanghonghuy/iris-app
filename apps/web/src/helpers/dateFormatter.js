@@ -1,4 +1,4 @@
-export function formatDateVN(dateString) {
+export function formatDate(dateString) {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return ''
@@ -10,7 +10,7 @@ export function formatDateVN(dateString) {
   })
 }
 
-export function formatDateTimeVN(dateString) {
+export function formatDateTime(dateString) {
   if (!dateString) return ''
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return ''
@@ -23,7 +23,3 @@ export function formatDateTimeVN(dateString) {
     year: 'numeric',
   })
 }
-
-// Alias ngắn để các view dùng nhất quán
-export const formatDate = formatDateVN
-export const formatDateTime = formatDateTimeVN

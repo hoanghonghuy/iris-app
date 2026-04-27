@@ -11,6 +11,7 @@ import { downloadCsv } from '../../helpers/csvExport'
 import { getDateInputValue } from '../../helpers/dateHelpers'
 import {
   getStatusText,
+  getStatusBadge,
   getCancelReasonText,
   getTimezoneDisplay,
   formatDateRange as formatDateRangeHelper,
@@ -36,6 +37,8 @@ const {
   errorMessage,
   actionError,
   successMessage,
+  fetchedAppointmentCount,
+  totalAppointmentCount,
   activeAppointmentsCount,
   filteredAppointments,
   totalHistoryPages,
@@ -157,6 +160,16 @@ function updateHistoryFromDate(value) {
 
 function updateHistoryToDate(value) {
   historyToDate.value = value
+}
+
+async function syncChildFromAppointment(appointment) {
+  const childId = appointment?.student_id
+  if (!childId) return
+
+  if (selectedChildId.value !== childId) {
+    selectedChildId.value = childId
+    await fetchAvailableSlots(childId)
+  }
 }
 
 onMounted(async () => {

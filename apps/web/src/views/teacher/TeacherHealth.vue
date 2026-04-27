@@ -11,7 +11,7 @@ import {
   getSeverityLabel,
   getSeverityBadge,
 } from '../../helpers/healthConfig'
-import { formatDateTimeVN } from '../../helpers/dateFormatter'
+import { formatDateTime } from '../../helpers/dateFormatter'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import ActionModal from '../../components/ActionModal.vue'
@@ -229,7 +229,7 @@ onMounted(async () => {
         <div v-else class="history-list">
           <article v-for="log in historyLogs" :key="log.health_log_id" class="history-item">
             <div class="history-item__head">
-              <p class="history-date">{{ formatDateTimeVN(log.recorded_at) }}</p>
+              <p class="history-date">{{ formatDateTime(log.recorded_at) }}</p>
               <span :class="getSeverityBadge(log.severity)">{{
                 getSeverityLabel(log.severity)
               }}</span>

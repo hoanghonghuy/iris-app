@@ -4,7 +4,7 @@ import { RouterLink } from 'vue-router'
 import { Calendar, LoaderCircle, User, Users } from 'lucide-vue-next'
 import { parentService } from '../../services/parentService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import { formatDateVN } from '../../helpers/dateFormatter'
+import { formatDate } from '../../helpers/dateFormatter'
 
 const children = ref([])
 const loading = ref(true)
@@ -58,7 +58,7 @@ onMounted(fetchChildren)
           <div class="child-meta">
             <p>
               <Calendar :size="12" />
-              Ngày sinh: {{ formatDateVN(child.dob) }}
+              Ngày sinh: {{ formatDate(child.dob) }}
             </p>
             <p>Giới tính: {{ genderLabel[child.gender] || child.gender }}</p>
           </div>

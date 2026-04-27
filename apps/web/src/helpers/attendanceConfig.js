@@ -5,7 +5,7 @@ export const ATTENDANCE_STATUS_OPTIONS = [
   { value: 'excused', label: 'Có phép', badge: 'badge badge--outline' },
 ]
 
-export function getStatusOption(status) {
+function getStatusOption(status) {
   return ATTENDANCE_STATUS_OPTIONS.find((option) => option.value === status)
 }
 

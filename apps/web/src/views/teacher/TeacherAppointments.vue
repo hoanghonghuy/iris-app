@@ -10,7 +10,7 @@ import {
   UserRound,
 } from 'lucide-vue-next'
 import { downloadCsv } from '../../helpers/csvExport'
-import { toDateInputValue } from '../../helpers/dateHelpers'
+import { getDateInputValue } from '../../helpers/dateHelpers'
 import {
   APPOINTMENT_STATUS_CONFIG,
   APPOINTMENT_STATUS_OPTIONS,
@@ -89,7 +89,7 @@ function exportAppointmentsCsv() {
     ])
 
   downloadCsv(
-    `teacher-appointments-${toDateInputValue(new Date())}.csv`,
+    `teacher-appointments-${getDateInputValue(new Date())}.csv`,
     [
       'Ngay',
       'HocSinh',

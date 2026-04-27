@@ -6,7 +6,10 @@ import AdminPeopleList from '../../components/admin/AdminPeopleList.vue'
 import AdminPeopleEditModal from '../../components/admin/AdminPeopleEditModal.vue'
 import AdminPeopleAssignModal from '../../components/admin/AdminPeopleAssignModal.vue'
 import { adminService } from '../../services/adminService'
-import { createAdminPersonEditFormConfig } from '../../helpers/adminPeopleFormConfig'
+import {
+  createAdminPersonEditFormConfig,
+  createAdminPersonRelationConfig,
+} from '../../helpers/adminPeopleFormConfig'
 import { useAdminPeopleManagement } from '../../composables/admin'
 import {
   ADMIN_LOAD_ERROR_TITLE,
@@ -16,6 +19,15 @@ import {
 
 const PAGE_SIZE = 20
 const parentEditFormConfig = createAdminPersonEditFormConfig({ idField: 'parent_id' })
+const parentRelationConfig = createAdminPersonRelationConfig({
+  ownerIdField: 'parent_id',
+  relationIdField: 'student_id',
+  relationNameField: 'full_name',
+  unassignNameField: 'student_name',
+  assignSelectionField: 'selectedStudentId',
+  assignService: adminService.assignParentToStudent,
+  unassignService: adminService.unassignParentFromStudent,
+})
 
 const {
   items: parents,
@@ -71,16 +83,8 @@ const {
       school_id: form.school_id,
     }),
   updateErrorMessage: 'Không thể cập nhật phụ huynh',
-  assignItem: ({ target, selectedStudentId: studentId }) =>
-    adminService.assignParentToStudent(target.parent_id, studentId),
+  ...parentRelationConfig,
   enableStudentSelector: true,
-  toUnassignTarget: (parent, student) => ({
-    parent_id: parent.parent_id,
-    student_id: student.student_id,
-    student_name: student.full_name,
-  }),
-  unassignItem: (target) =>
-    adminService.unassignParentFromStudent(target.parent_id, target.student_id),
 })
 </script>
 

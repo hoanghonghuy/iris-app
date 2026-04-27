@@ -2,7 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { GraduationCap, LoaderCircle, User, Calendar, ChevronDown } from 'lucide-vue-next'
 import { useTeacherClassSelection } from '../../composables/teacher'
-import { formatDateVN } from '../../helpers/dateFormatter'
+import { formatDate } from '../../helpers/dateFormatter'
 
 const {
   classes,
@@ -75,7 +75,7 @@ onMounted(fetchClasses)
             <tbody>
               <tr v-for="student in students" :key="student.student_id">
                 <td class="font-medium">{{ student.full_name }}</td>
-                <td class="text-muted">{{ formatDateVN(student.dob) }}</td>
+                <td class="text-muted">{{ formatDate(student.dob) }}</td>
                 <td class="text-muted">{{ genderLabel[student.gender] || student.gender }}</td>
               </tr>
             </tbody>
@@ -90,7 +90,7 @@ onMounted(fetchClasses)
             <p class="font-medium m-0">{{ student.full_name }}</p>
             <p class="student-meta">
               <Calendar :size="12" />
-              {{ formatDateVN(student.dob) }} · {{ genderLabel[student.gender] || student.gender }}
+              {{ formatDate(student.dob) }} · {{ genderLabel[student.gender] || student.gender }}
             </p>
           </div>
         </article>

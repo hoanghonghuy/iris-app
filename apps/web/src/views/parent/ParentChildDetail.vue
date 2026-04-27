@@ -4,7 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 import { ArrowLeft, Calendar, LoaderCircle } from 'lucide-vue-next'
 import { parentService } from '../../services/parentService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import { formatDateVN } from '../../helpers/dateFormatter'
+import { formatDate } from '../../helpers/dateFormatter'
 
 const route = useRoute()
 const children = ref([])
@@ -77,7 +77,7 @@ onMounted(loadChild)
       <div class="card__body info-stack">
         <p>
           <Calendar :size="16" />
-          Ngày sinh: {{ formatDateVN(child.dob) }}
+          Ngày sinh: {{ formatDate(child.dob) }}
         </p>
         <p>Giới tính: {{ genderLabel[child.gender] || child.gender }}</p>
         <p v-if="childAge !== null">{{ childAge }} tuổi</p>
