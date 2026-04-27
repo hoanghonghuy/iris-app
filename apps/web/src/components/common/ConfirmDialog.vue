@@ -1,5 +1,6 @@
 <script setup>
 import { watchEffect } from 'vue'
+import { X } from 'lucide-vue-next'
 
 const props = defineProps({
   isOpen: {
@@ -70,7 +71,7 @@ watchEffect((onCleanup) => {
           @click="handleCancel"
           :disabled="isLoading"
         >
-          ✕
+          <X :size="18" />
         </button>
       </div>
 
@@ -133,14 +134,23 @@ watchEffect((onCleanup) => {
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-size: var(--font-size-lg);
   cursor: pointer;
-  padding: 0;
-  display: flex;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
 }
 
 .modal-close:hover {
   color: var(--color-text);
+  background: var(--color-surface-muted);
+}
+
+.modal-close:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .modal-body {
@@ -152,7 +162,7 @@ watchEffect((onCleanup) => {
 .modal-footer {
   padding: var(--spacing-4) var(--spacing-5);
   border-top: 1px solid var(--color-border);
-  background-color: var(--color-background);
+  background-color: var(--color-surface-muted);
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-3);

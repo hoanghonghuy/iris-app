@@ -26,7 +26,7 @@ const navigateToRegister = () => {
   <div class="landing-page flex-col">
     <!-- Header Navigation -->
     <header class="header sticky">
-      <div class="container flex justify-between items-center">
+      <div class="container flex justify-between items-center header-card">
         <div class="flex items-center gap-2">
           <div class="logo-icon flex-center text-foreground"><GraduationCap :size="28" /></div>
           <span class="text-xl font-bold tracking-tight">Iris School</span>
@@ -48,7 +48,11 @@ const navigateToRegister = () => {
             </button>
           </div>
           <!-- Mobile Menu Toggle (Tạm ẩn) -->
-          <button type="button" class="md:hidden btn btn--sm btn--outline border-none">
+          <button
+            type="button"
+            class="md:hidden btn btn--sm btn--outline border-none"
+            aria-label="Mở menu điều hướng"
+          >
             <Menu :size="20" />
           </button>
         </div>
@@ -63,7 +67,7 @@ const navigateToRegister = () => {
         <div class="hero-pattern"></div>
 
         <div class="container relative z-10">
-          <h1 class="hero-title mb-6">Nền tảng Quản lý Tập trung dành cho Trường học</h1>
+          <h1 class="hero-title mb-6">Nền tảng quản lý trường học hiện đại, tập trung và minh bạch</h1>
           <p class="hero-subtitle mb-8 mx-auto">
             Iris School kết nối Quản trị viên, Giáo viên và Phụ huynh trên một hệ thống duy nhất.
             Tối ưu hóa quy trình, nâng cao trải nghiệm giáo dục.
@@ -139,6 +143,27 @@ const navigateToRegister = () => {
           </div>
         </div>
       </section>
+
+      <section id="about" class="cta-section">
+        <div class="container">
+          <div class="cta-card">
+            <p class="cta-kicker">Sẵn sàng triển khai tại trường của bạn?</p>
+            <h2 class="cta-title">Bắt đầu với Iris School ngay hôm nay</h2>
+            <p class="cta-copy">
+              Giữ nguyên quy trình nghiệp vụ hiện có, đồng thời nâng cấp trải nghiệm quản trị, giảng
+              dạy và tương tác phụ huynh trên một giao diện đồng nhất.
+            </p>
+            <div class="cta-actions">
+              <button type="button" class="btn btn--primary btn--lg" @click="navigateToRegister">
+                Tạo tài khoản phụ huynh
+              </button>
+              <button type="button" class="btn btn--outline btn--lg" @click="navigateToLogin">
+                Đăng nhập hệ thống
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- Footer -->
@@ -167,10 +192,7 @@ const navigateToRegister = () => {
   flex-direction: column;
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family:
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: var(--font-family-body);
 }
 
 /* Utilities cho layout */
@@ -295,13 +317,21 @@ const navigateToRegister = () => {
 
 /* Header */
 .header {
-  border-bottom: 1px solid var(--color-border);
-  background-color: var(--color-header-backdrop);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  background-color: color-mix(in srgb, var(--color-header-backdrop) 85%, transparent);
   backdrop-filter: blur(12px);
   padding: 1rem 0;
 }
 .dark .header {
   background-color: var(--color-header-backdrop-dark);
+}
+
+.header-card {
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  border-radius: var(--radius-xl);
+  padding: 0.625rem 0.875rem;
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  box-shadow: var(--shadow-sm);
 }
 .logo-icon {
   width: 28px;
@@ -311,7 +341,7 @@ const navigateToRegister = () => {
 
 /* Hero Section */
 .hero {
-  padding: 6rem 1rem 8rem;
+  padding: 5.5rem 1rem 7rem;
   overflow: hidden;
 }
 @media (min-width: 768px) {
@@ -325,8 +355,8 @@ const navigateToRegister = () => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 800px;
-  height: 600px;
+  width: 880px;
+  height: 640px;
   background-color: var(--color-hero-glow);
   border-radius: 50%;
   filter: blur(120px);
@@ -344,10 +374,10 @@ const navigateToRegister = () => {
 }
 
 .hero-title {
-  font-size: 2.5rem;
+  font-size: 2.4rem;
   font-weight: 800;
-  letter-spacing: -0.05em;
-  background: linear-gradient(to right, var(--color-text), var(--color-text-muted));
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--color-text), var(--color-primary));
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -365,7 +395,9 @@ const navigateToRegister = () => {
 .hero-subtitle {
   max-width: 700px;
   font-size: 1.125rem;
-  font-weight: 300;
+  font-weight: 400;
+  color: var(--color-text-muted);
+  line-height: 1.75;
 }
 @media (min-width: 768px) {
   .hero-subtitle {
@@ -408,18 +440,22 @@ const navigateToRegister = () => {
 }
 @media (min-width: 1024px) {
   .features-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 .feature-card {
   background-color: color-mix(in srgb, var(--color-background) 50%, var(--color-surface));
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
   border-radius: 1rem;
 }
 .feature-card:hover {
   box-shadow: var(--shadow-md);
   border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.feature-card:focus-within {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .feature-icon {
@@ -436,6 +472,52 @@ const navigateToRegister = () => {
 /* Footer */
 .footer {
   padding: 2.5rem 1rem;
+}
+
+.cta-section {
+  padding: 0 0 5rem;
+}
+
+.cta-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 50%),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--color-cta) 12%, transparent), transparent 55%),
+    var(--color-surface);
+  box-shadow: var(--shadow-md);
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  text-align: center;
+}
+
+.cta-kicker {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cta-title {
+  margin: var(--spacing-3) 0 var(--spacing-2);
+  font-size: clamp(1.6rem, 3.2vw, 2.25rem);
+  color: var(--color-text);
+}
+
+.cta-copy {
+  margin: 0 auto;
+  max-width: 56ch;
+  color: var(--color-text-muted);
+  line-height: 1.7;
+}
+
+.cta-actions {
+  margin-top: var(--spacing-6);
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 /* Responsive utils */

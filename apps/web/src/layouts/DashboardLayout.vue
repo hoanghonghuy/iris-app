@@ -35,7 +35,10 @@ const closeSidebar = () => {
   display: flex;
   min-height: 100vh;
   width: 100%;
-  background-color: var(--color-background);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 40%),
+    radial-gradient(circle at bottom left, color-mix(in srgb, var(--color-secondary) 9%, transparent), transparent 36%),
+    var(--color-background);
 }
 
 .dashboard-main {

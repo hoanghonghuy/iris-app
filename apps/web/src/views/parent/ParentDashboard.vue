@@ -160,8 +160,15 @@ onMounted(async () => {
 .dashboard-hero {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 58%),
+    var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .dashboard-hero h2,
@@ -179,7 +186,7 @@ onMounted(async () => {
 .hero-copy {
   margin: var(--spacing-1) 0 0;
   color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
 }
 
 .stats-grid {
@@ -238,7 +245,7 @@ onMounted(async () => {
 }
 
 .quick-action {
-  min-height: 4.5rem;
+  min-height: 4.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,6 +264,11 @@ onMounted(async () => {
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+}
+
+.quick-action:focus-visible,
+.section-link:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .section-header {

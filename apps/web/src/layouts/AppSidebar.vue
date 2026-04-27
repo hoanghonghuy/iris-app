@@ -100,7 +100,12 @@ function handleOverlayClick() {
     <!-- Sidebar cố định -->
     <aside class="sidebar" :class="{ 'sidebar--open': isOpen }">
       <div class="sidebar__header">
-        <h2 class="sidebar__brand">🎓 Iris School</h2>
+        <h2 class="sidebar__brand">
+          <span class="sidebar__brand-icon">
+            <GraduationCap :size="18" />
+          </span>
+          Iris School
+        </h2>
         <button type="button" class="sidebar__close-btn lg-hidden" @click="emit('close-sidebar')">
           <X :size="20" />
         </button>
@@ -113,6 +118,7 @@ function handleOverlayClick() {
           :to="item.path"
           class="sidebar__nav-item"
           :class="{ 'sidebar__nav-item--active': isActive(item.path) }"
+          :aria-current="isActive(item.path) ? 'page' : undefined"
           @click="emit('close-sidebar')"
         >
           <span class="sidebar__nav-icon">
@@ -133,9 +139,13 @@ function handleOverlayClick() {
   z-index: 40;
   width: var(--sidebar-width);
   height: 100vh;
-  background-color: var(--color-surface);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 94%, var(--color-background)),
+    var(--color-surface)
+  );
   border-right: 1px solid var(--color-border);
-  transition: transform 0.3s ease-in-out;
+  transition: transform var(--transition-base);
   transform: translateX(-100%);
   display: flex;
   flex-direction: column;
@@ -155,7 +165,7 @@ function handleOverlayClick() {
   z-index: 30;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease-in-out;
+  transition: opacity var(--transition-base);
 }
 
 .sidebar-overlay--open {
@@ -185,10 +195,23 @@ function handleOverlayClick() {
 }
 
 .sidebar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
   font-size: var(--font-size-xl);
-  font-weight: bold;
+  font-weight: 700;
   color: var(--color-primary);
   margin: 0;
+}
+
+.sidebar__brand-icon {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius);
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
 .sidebar__close-btn {
@@ -197,6 +220,13 @@ function handleOverlayClick() {
   font-size: var(--font-size-lg);
   color: var(--color-text-muted);
   cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+  border-radius: var(--radius-md);
+}
+
+.sidebar__close-btn:hover {
+  background: var(--color-surface-muted);
 }
 
 .sidebar__nav {
@@ -212,16 +242,24 @@ function handleOverlayClick() {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  min-height: 44px;
   padding: var(--spacing-2) var(--spacing-3);
   border-radius: var(--radius-md);
   color: var(--color-text);
-  transition: all 0.2s;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
   font-weight: 500;
 }
 
 .sidebar__nav-item:hover {
-  background-color: var(--color-background);
+  background-color: var(--color-surface-muted);
   color: var(--color-primary);
+}
+
+.sidebar__nav-item:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .sidebar__nav-item--active {

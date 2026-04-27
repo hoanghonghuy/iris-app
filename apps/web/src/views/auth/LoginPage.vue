@@ -265,4 +265,18 @@ function cancelLinkMode() {
   padding: 0 var(--spacing-2);
   text-transform: uppercase;
 }
+
+.hover-text-primary {
+  transition: color var(--transition-fast);
+}
+
+.hover-text-primary:hover {
+  color: var(--color-primary);
+}
+
+.text-primary:focus-visible,
+.hover-text-primary:focus-visible {
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
 </style>

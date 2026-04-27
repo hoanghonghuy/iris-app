@@ -8,6 +8,7 @@ const isDark = ref(false)
 let mediaQuery = null
 
 const currentThemeIcon = computed(() => (isDark.value ? Moon : Sun))
+const themeButtonLabel = computed(() => `Giao diện hiện tại: ${theme.value}`)
 
 const toggleMenu = () => {
   isOpen.value = !isOpen.value
@@ -66,6 +67,7 @@ onUnmounted(() => {
       type="button"
       class="theme-toggle-btn"
       title="Chọn giao diện"
+      :aria-label="themeButtonLabel"
       :aria-expanded="isOpen"
       aria-haspopup="menu"
       @click="toggleMenu"
@@ -132,14 +134,21 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
   padding: var(--spacing-2);
   border-radius: var(--radius);
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
 }
 
 .theme-toggle-btn:hover {
-  background: var(--color-border);
+  background: var(--color-surface-muted);
   color: var(--color-text);
+}
+
+.theme-toggle-btn:focus-visible,
+.theme-menu-item:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .theme-menu {
@@ -161,6 +170,7 @@ onUnmounted(() => {
 .theme-menu-item {
   display: flex;
   align-items: center;
+  min-height: 40px;
   width: 100%;
   padding: 0.5rem;
   background: transparent;
@@ -170,7 +180,7 @@ onUnmounted(() => {
   font-size: 0.875rem;
   cursor: pointer;
   text-align: left;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
 }
 
 .theme-menu-item:hover {

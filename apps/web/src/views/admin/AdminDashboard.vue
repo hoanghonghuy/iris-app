@@ -150,8 +150,15 @@ onMounted(async () => {
 .dashboard-hero {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 60%),
+    var(--color-surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .dashboard-hero h2,
@@ -161,8 +168,8 @@ onMounted(async () => {
 }
 
 .dashboard-hero h2 {
-  margin-top: var(--spacing-2);
-  font-size: var(--font-size-3xl);
+  margin-top: 0;
+  font-size: clamp(1.5rem, 3.2vw, var(--font-size-3xl));
   font-weight: 800;
 }
 
@@ -177,9 +184,9 @@ onMounted(async () => {
   color: inherit;
   text-decoration: none;
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s,
-    transform 0.2s;
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .stat-card:hover,
@@ -187,6 +194,11 @@ onMounted(async () => {
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
   box-shadow: var(--shadow-md);
   transform: translateY(-1px);
+}
+
+.stat-card:focus-visible,
+.quick-action:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .quick-actions h3 {
@@ -209,6 +221,7 @@ onMounted(async () => {
   padding: var(--spacing-4);
   text-align: center;
   font-weight: 700;
+  border-radius: var(--radius-lg);
 }
 
 @media (min-width: 768px) {

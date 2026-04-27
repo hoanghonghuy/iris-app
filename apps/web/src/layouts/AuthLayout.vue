@@ -96,7 +96,10 @@ const goHome = () => router.push('/')
   min-height: 100vh;
   width: 100%;
   grid-template-columns: 1fr;
-  background-color: var(--color-background);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 45%),
+    radial-gradient(circle at bottom right, color-mix(in srgb, var(--color-secondary) 11%, transparent), transparent 40%),
+    var(--color-background);
   transition: background-color 0.3s;
 }
 
@@ -136,7 +139,7 @@ const goHome = () => router.push('/')
   background-image:
     linear-gradient(to right, var(--color-auth-pattern-line) 1px, transparent 1px),
     linear-gradient(to bottom, var(--color-auth-pattern-line) 1px, transparent 1px);
-  background-size: 14px 24px;
+  background-size: 16px 24px;
   -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 70%, transparent 100%);
   mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black 70%, transparent 100%);
 }
@@ -170,7 +173,7 @@ const goHome = () => router.push('/')
 .brand-footer {
   position: relative;
   z-index: 10;
-  padding: 2rem;
+  padding: var(--spacing-10);
 }
 
 .logo-link {
@@ -178,7 +181,8 @@ const goHome = () => router.push('/')
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  transition: opacity 0.2s;
+  border-radius: var(--radius-md);
+  transition: opacity var(--transition-fast);
 }
 
 .logo-link:hover {
@@ -188,7 +192,7 @@ const goHome = () => router.push('/')
 .logo-text {
   font-weight: 700;
   font-size: 1.25rem;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.015em;
   color: inherit;
 }
 
@@ -200,8 +204,8 @@ const goHome = () => router.push('/')
 .brand-title {
   font-size: 1.875rem;
   font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.25;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
   margin: 0;
 }
 
@@ -219,7 +223,7 @@ const goHome = () => router.push('/')
   margin-top: 1.5rem;
   color: var(--color-auth-subtitle);
   font-size: 1rem;
-  line-height: 1.625;
+  line-height: 1.7;
   max-width: 36rem;
 }
 
@@ -235,7 +239,7 @@ const goHome = () => router.push('/')
   align-items: center;
   gap: 1rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--color-auth-feature-text);
 }
 
@@ -246,7 +250,7 @@ const goHome = () => router.push('/')
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background-color: var(--color-auth-feature-bg);
   border: 1px solid var(--color-auth-feature-border);
   box-shadow: var(--shadow-sm);
@@ -276,6 +280,7 @@ const goHome = () => router.push('/')
   position: relative;
   height: 100dvh;
   overflow-y: auto;
+  backdrop-filter: blur(8px);
 }
 
 @media (min-width: 1024px) {
@@ -288,7 +293,7 @@ const goHome = () => router.push('/')
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem 0.5rem;
+  padding: 1rem 1.25rem 0.5rem;
 }
 
 @media (min-width: 1024px) {

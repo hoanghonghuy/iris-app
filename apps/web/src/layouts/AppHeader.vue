@@ -100,6 +100,7 @@ const userInitials = computed(() => {
   <header class="header">
     <div class="header__left">
       <button type="button" class="header__menu-btn lg-hidden" @click="emit('toggle-sidebar')">
+        <span class="sr-only">Mở menu điều hướng</span>
         <Menu :size="20" />
       </button>
 
@@ -167,7 +168,7 @@ const userInitials = computed(() => {
 <style scoped>
 .header {
   height: var(--header-height);
-  background-color: color-mix(in srgb, var(--color-background) 80%, transparent);
+  background-color: color-mix(in srgb, var(--color-header-backdrop) 88%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
   display: flex;
@@ -177,7 +178,7 @@ const userInitials = computed(() => {
   position: sticky;
   top: 0;
   z-index: 30;
-  transition: background-color 0.3s;
+  transition: background-color var(--transition-base);
 }
 
 @media (min-width: 1024px) {
@@ -246,15 +247,24 @@ const userInitials = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-1);
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--spacing-2);
   border-radius: var(--radius-md);
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
 }
 
 .header__menu-btn:hover,
 .user-menu__trigger:hover,
 .dropdown-item:hover {
-  background-color: var(--color-background);
+  background-color: var(--color-surface-muted);
+}
+
+.header__menu-btn:focus-visible,
+.user-menu__trigger:focus-visible,
+.dropdown-item:focus-visible,
+.modal-close:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 @media (min-width: 640px) {
@@ -281,9 +291,10 @@ const userInitials = computed(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
+  min-height: 44px;
   padding: var(--spacing-1) var(--spacing-3) var(--spacing-1) var(--spacing-1);
   border-radius: var(--radius-full);
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
 }
 
 .user-name {
@@ -302,8 +313,8 @@ const userInitials = computed(() => {
 }
 
 .user-avatar {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-full);
   background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
@@ -334,13 +345,14 @@ const userInitials = computed(() => {
 .dropdown-item {
   display: flex;
   align-items: center;
+  min-height: 44px;
   width: 100%;
   padding: var(--spacing-2) var(--spacing-4);
   font-size: var(--font-size-sm);
   color: var(--color-text);
   background: none;
   border: none;
-  transition: background-color 0.2s;
+  transition: background-color var(--transition-fast);
 }
 
 .text-danger {
@@ -364,5 +376,17 @@ const userInitials = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 </style>

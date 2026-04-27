@@ -1,5 +1,6 @@
 <script setup>
 import { computed, watchEffect } from 'vue'
+import { X } from 'lucide-vue-next'
 
 const MODAL_SIZE_CLASS = {
   sm: 'modal-dialog--sm',
@@ -53,7 +54,9 @@ watchEffect((onCleanup) => {
     <div class="modal-dialog" :class="dialogSizeClass" role="dialog" aria-modal="true">
       <div class="modal-header">
         <h3 class="font-bold text-lg m-0">{{ title }}</h3>
-        <button class="modal-close" type="button" aria-label="Đóng" @click="closeModal">✕</button>
+        <button class="modal-close" type="button" aria-label="Đóng" @click="closeModal">
+          <X :size="18" />
+        </button>
       </div>
 
       <div class="modal-body">
@@ -114,14 +117,23 @@ watchEffect((onCleanup) => {
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-size: var(--font-size-lg);
   cursor: pointer;
-  padding: 0;
-  display: flex;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast);
 }
 
 .modal-close:hover {
   color: var(--color-text);
+  background: var(--color-surface-muted);
+}
+
+.modal-close:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .modal-body {

@@ -1,74 +1,84 @@
 :root {
-  /* màu chính */
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-primary-focus-ring: rgb(99 102 241 / 0.2);
-  --color-danger: #ef4444;
-  --color-danger-hover: #dc2626;
-  --color-success: #22c55e;
-  --color-success-hover: #16a34a;
-  --color-warning: #f59e0b;
+  /* màu thương hiệu (theo design system) */
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6d28d9;
+  --color-primary-focus-ring: rgb(124 58 237 / 0.28);
+  --color-primary-light: rgb(124 58 237 / 0.12);
+  --color-secondary: #a78bfa;
+  --color-cta: #f97316;
+  --color-cta-hover: #ea580c;
+
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-success: #16a34a;
+  --color-success-hover: #15803d;
+  --color-warning: #d97706;
   --color-on-primary: #ffffff;
-  --color-on-primary-muted: rgb(255 255 255 / 0.78);
+  --color-on-primary-muted: rgb(255 255 255 / 0.82);
 
-  /* nền và chữ */
-  --color-background: #f8fafc;
+  /* nền + chữ */
+  --color-background: #faf5ff;
   --color-surface: #ffffff;
-  --color-text: #1e293b;
-  --color-text-muted: #64748b;
-  --color-border: #e2e8f0;
-  --color-overlay: rgb(0 0 0 / 0.5);
-  --color-loading-overlay: rgb(255 255 255 / 0.8);
+  --color-surface-muted: #f4ebff;
+  --color-text: #3b1d78;
+  --color-text-muted: #6d5f92;
+  --color-border: #e4d7ff;
+  --color-overlay: rgb(27 13 54 / 0.58);
+  --color-loading-overlay: rgb(250 245 255 / 0.78);
 
-  /* semantic tones */
-  --color-primary-soft-bg: #e0e7ff;
-  --color-primary-soft-text: #3730a3;
+  /* semantic */
+  --color-primary-soft-bg: #efe7ff;
+  --color-primary-soft-text: #53249d;
   --color-danger-soft-bg: #fef2f2;
   --color-danger-soft-border: #fecaca;
   --color-danger-soft-text: #991b1b;
   --color-danger-soft-accent-bg: #fee2e2;
-  --color-success-soft-bg: #f0fdf4;
+  --color-success-soft-bg: #ecfdf3;
   --color-success-soft-border: #bbf7d0;
   --color-success-soft-text: #166534;
   --color-success-soft-accent-bg: #dcfce7;
-  --color-warning-soft-bg: #fef3c7;
-  --color-warning-soft-text: #92400e;
+  --color-warning-soft-bg: #fff7ed;
+  --color-warning-soft-text: #9a3412;
   --color-info-soft-bg: #eff6ff;
   --color-info-soft-border: #bfdbfe;
   --color-info-soft-text: #1d4ed8;
-  --color-neutral-soft-bg: #f9fafb;
-  --color-neutral-soft-bg-strong: #f3f4f6;
+  --color-neutral-soft-bg: #f8f5ff;
+  --color-neutral-soft-bg-strong: #efe7ff;
 
-  /* page-specific accents */
-  --color-sidebar-active-bg: #eef2ff;
-  --color-header-backdrop: rgb(255 255 255 / 0.8);
-  --color-header-backdrop-dark: rgb(15 23 42 / 0.8);
-  --color-hero-glow: rgb(79 70 229 / 0.1);
-  --color-hero-button-overlay: rgb(255 255 255 / 0.5);
-  --color-hero-button-overlay-dark: rgb(15 23 42 / 0.5);
-  --color-auth-brand-bg: #09090b;
-  --color-auth-brand-border: rgb(39 39 42 / 0.5);
-  --color-auth-pattern-line: rgb(79 79 79 / 0.18);
-  --color-auth-subtitle: #a1a1aa;
-  --color-auth-feature-text: #d4d4d8;
-  --color-auth-feature-bg: #18181b;
-  --color-auth-feature-border: #27272a;
-  --color-auth-feature-blue: #60a5fa;
-  --color-auth-feature-green: #4ade80;
-  --color-auth-feature-purple: #c084fc;
-  --color-auth-footer: #71717a;
-  --color-auth-glow-top: rgb(99 102 241 / 0.2);
-  --color-auth-glow-bottom: rgb(37 99 235 / 0.1);
+  /* page accents */
+  --color-sidebar-active-bg: rgb(124 58 237 / 0.16);
+  --color-header-backdrop: rgb(255 255 255 / 0.82);
+  --color-header-backdrop-dark: rgb(19 13 34 / 0.82);
+  --color-hero-glow: rgb(124 58 237 / 0.2);
+  --color-hero-button-overlay: rgb(255 255 255 / 0.76);
+  --color-hero-button-overlay-dark: rgb(27 19 48 / 0.66);
+  --color-auth-brand-bg: #120a26;
+  --color-auth-brand-border: rgb(92 72 142 / 0.45);
+  --color-auth-pattern-line: rgb(196 181 253 / 0.2);
+  --color-auth-subtitle: #d4c7f7;
+  --color-auth-feature-text: #efe8ff;
+  --color-auth-feature-bg: rgb(255 255 255 / 0.06);
+  --color-auth-feature-border: rgb(196 181 253 / 0.32);
+  --color-auth-feature-blue: #93c5fd;
+  --color-auth-feature-green: #86efac;
+  --color-auth-feature-purple: #d8b4fe;
+  --color-auth-footer: #c6b8eb;
+  --color-auth-glow-top: rgb(124 58 237 / 0.26);
+  --color-auth-glow-bottom: rgb(249 115 22 / 0.12);
 
   /* font */
-  --font-family:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family-heading:
+    'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  --font-family-body:
+    'Fira Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-family: var(--font-family-body);
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
 
   /* spacing */
   --spacing-1: 0.25rem;
@@ -78,36 +88,41 @@
   --spacing-5: 1.25rem;
   --spacing-6: 1.5rem;
   --spacing-8: 2rem;
+  --spacing-10: 2.5rem;
 
   /* border radius */
   --radius-sm: 0.25rem;
   --radius: 0.5rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.75rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1rem;
   --radius-full: 9999px;
 
   /* shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px rgb(26 14 56 / 0.08);
+  --shadow: 0 2px 6px rgb(26 14 56 / 0.1);
+  --shadow-md: 0 8px 16px rgb(41 20 87 / 0.14);
+  --shadow-lg: 0 18px 32px rgb(34 14 76 / 0.2);
 
-  /* layout */
-  --sidebar-width: 16rem;
-  --header-height: 4rem;
+  /* transitions + layout */
+  --transition-fast: 160ms ease;
+  --transition-base: 220ms ease;
+  --sidebar-width: 16.5rem;
+  --header-height: 4.25rem;
 }
 
 .dark {
-  --color-background: #0f172a;
-  --color-surface: #1e293b;
-  --color-text: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --color-border: #334155;
-  --color-overlay: rgb(2 6 23 / 0.72);
-  --color-loading-overlay: rgb(15 23 42 / 0.76);
+  --color-background: #110b24;
+  --color-surface: #1a1234;
+  --color-surface-muted: #231a45;
+  --color-text: #f8f5ff;
+  --color-text-muted: #c4b9e8;
+  --color-border: #3d2f68;
+  --color-overlay: rgb(3 0 10 / 0.72);
+  --color-loading-overlay: rgb(17 11 36 / 0.76);
 
-  --color-primary-soft-bg: #312e81;
-  --color-primary-soft-text: #c7d2fe;
+  --color-primary-soft-bg: #2f1c5a;
+  --color-primary-soft-text: #d6c8ff;
   --color-danger-soft-bg: #3f1318;
   --color-danger-soft-border: #7f1d1d;
   --color-danger-soft-text: #fecaca;
@@ -121,21 +136,12 @@
   --color-info-soft-bg: #172554;
   --color-info-soft-border: #1d4ed8;
   --color-info-soft-text: #bfdbfe;
-  --color-neutral-soft-bg: #111827;
-  --color-neutral-soft-bg-strong: #1f2937;
+  --color-neutral-soft-bg: #18142f;
+  --color-neutral-soft-bg-strong: #241c43;
 
-  --color-sidebar-active-bg: rgb(99 102 241 / 0.25);
-  --color-auth-brand-bg: #09090b;
-  --color-auth-brand-border: rgb(63 63 70 / 0.45);
-  --color-auth-pattern-line: rgb(148 163 184 / 0.14);
-  --color-auth-subtitle: #a1a1aa;
-  --color-auth-feature-text: #d4d4d8;
-  --color-auth-feature-bg: #18181b;
-  --color-auth-feature-border: #27272a;
-  --color-auth-feature-blue: #60a5fa;
-  --color-auth-feature-green: #4ade80;
-  --color-auth-feature-purple: #c084fc;
-  --color-auth-footer: #71717a;
-  --color-auth-glow-top: rgb(99 102 241 / 0.2);
-  --color-auth-glow-bottom: rgb(37 99 235 / 0.1);
+  --color-sidebar-active-bg: rgb(124 58 237 / 0.3);
+  --color-header-backdrop: rgb(26 18 52 / 0.82);
+  --color-auth-brand-bg: #0d071f;
+  --color-auth-brand-border: rgb(107 87 160 / 0.42);
+  --color-auth-pattern-line: rgb(196 181 253 / 0.16);
 }

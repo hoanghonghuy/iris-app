@@ -275,6 +275,9 @@
 .text-primary {
   color: var(--color-primary);
 }
+.text-foreground {
+  color: var(--color-text);
+}
 .text-white {
   color: var(--color-on-primary);
 }
@@ -317,6 +320,9 @@
 }
 .bg-primary {
   background-color: var(--color-primary);
+}
+.bg-surface-muted {
+  background-color: var(--color-surface-muted);
 }
 
 /* --- Backgrounds (alert / status semantic) --- */
@@ -396,4 +402,9 @@
 }
 .absolute {
   position: absolute;
+}
+
+/* --- Interaction --- */
+.cursor-pointer {
+  cursor: pointer;
 }
