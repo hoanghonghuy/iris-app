@@ -96,18 +96,4 @@ async function handleSubmit() {
   font-size: var(--font-size-lg);
   margin: 0;
 }
-
-.fit-content {
-  width: fit-content;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 </style>

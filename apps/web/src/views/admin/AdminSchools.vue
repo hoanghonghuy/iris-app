@@ -79,7 +79,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="errorMessage" class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200">
+    <div v-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
       <button class="btn btn--outline mt-2" type="button" @click="fetchSchools(currentPage)">
@@ -156,7 +156,7 @@ onMounted(() => {
       <form @submit.prevent="handleSave" class="flex-col gap-4">
         <div
           v-if="modalError"
-          class="p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+          class="alert alert--error"
         >
           {{ modalError }}
         </div>

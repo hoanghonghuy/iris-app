@@ -65,7 +65,7 @@ async function handleActivate() {
 
       <div
         v-if="errorMessage"
-        class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+        class="alert alert--error"
       >
         {{ errorMessage }}
       </div>
@@ -133,10 +133,6 @@ async function handleActivate() {
 <style scoped>
 .success-icon {
   color: var(--color-success);
-}
-
-.text-foreground {
-  color: var(--color-text);
 }
 
 .hover-underline:hover {

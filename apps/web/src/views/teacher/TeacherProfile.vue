@@ -64,55 +64,14 @@ async function handleSubmit() {
 </template>
 
 <style scoped>
-.profile-stack,
-.profile-body,
 .form-stack {
   display: flex;
   flex-direction: column;
-}
-
-.profile-stack {
-  gap: var(--spacing-6);
-}
-
-.profile-body,
-.form-stack {
   gap: var(--spacing-4);
-}
-
-.profile-card {
-  max-width: 32rem;
 }
 
 .title {
   margin: 0;
   font-size: var(--font-size-lg);
-}
-
-.field-readonly label {
-  display: block;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  margin-bottom: var(--spacing-2);
-}
-
-.field-readonly p {
-  margin: 0;
-  font-size: var(--font-size-sm);
-}
-
-.fit-content {
-  width: fit-content;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

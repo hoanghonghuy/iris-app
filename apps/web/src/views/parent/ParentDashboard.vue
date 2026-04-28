@@ -85,7 +85,7 @@ onMounted(async () => {
 
     <div
       v-else-if="errorMessage"
-      class="p-4 mb-6 bg-red-50 text-danger rounded border border-red-200"
+      class="alert alert--error"
     >
       <p class="font-bold">Lỗi tải dữ liệu</p>
       <p>{{ errorMessage }}</p>

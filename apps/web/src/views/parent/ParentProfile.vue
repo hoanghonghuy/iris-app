@@ -25,39 +25,8 @@ const authStore = useAuthStore()
 </template>
 
 <style scoped>
-.profile-stack,
-.profile-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.profile-stack {
-  gap: var(--spacing-6);
-}
-
-.profile-body {
-  gap: var(--spacing-4);
-}
-
-.profile-card {
-  max-width: 32rem;
-}
-
 .title {
   margin: 0;
   font-size: var(--font-size-lg);
-}
-
-.field-readonly label {
-  display: block;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  margin-bottom: var(--spacing-2);
-}
-
-.field-readonly p {
-  margin: 0;
-  font-size: var(--font-size-sm);
 }
 </style>

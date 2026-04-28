@@ -1,12 +1,12 @@
 :root {
   /* màu thương hiệu (theo design system) */
-  --color-primary: #7c3aed;
-  --color-primary-hover: #6d28d9;
-  --color-primary-focus-ring: rgb(124 58 237 / 0.28);
-  --color-primary-light: rgb(124 58 237 / 0.12);
-  --color-secondary: #a78bfa;
-  --color-cta: #f97316;
-  --color-cta-hover: #ea580c;
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-focus-ring: rgb(99 102 241 / 0.28);
+  --color-primary-light: rgb(99 102 241 / 0.12);
+  --color-secondary: #818cf8;
+  --color-cta: #10b981;
+  --color-cta-hover: #059669;
 
   --color-danger: #dc2626;
   --color-danger-hover: #b91c1c;
@@ -17,18 +17,18 @@
   --color-on-primary-muted: rgb(255 255 255 / 0.82);
 
   /* nền + chữ */
-  --color-background: #faf5ff;
+  --color-background: #f8f9fa;
   --color-surface: #ffffff;
-  --color-surface-muted: #f4ebff;
-  --color-text: #3b1d78;
-  --color-text-muted: #6d5f92;
-  --color-border: #e4d7ff;
-  --color-overlay: rgb(27 13 54 / 0.58);
-  --color-loading-overlay: rgb(250 245 255 / 0.78);
+  --color-surface-muted: #f1f3f5;
+  --color-text: #1a1d23;
+  --color-text-muted: #6b7280;
+  --color-border: #e5e7eb;
+  --color-overlay: rgb(15 17 23 / 0.55);
+  --color-loading-overlay: rgb(248 249 250 / 0.78);
 
   /* semantic */
-  --color-primary-soft-bg: #efe7ff;
-  --color-primary-soft-text: #53249d;
+  --color-primary-soft-bg: #eef2ff;
+  --color-primary-soft-text: #4338ca;
   --color-danger-soft-bg: #fef2f2;
   --color-danger-soft-border: #fecaca;
   --color-danger-soft-text: #991b1b;
@@ -42,17 +42,17 @@
   --color-info-soft-bg: #eff6ff;
   --color-info-soft-border: #bfdbfe;
   --color-info-soft-text: #1d4ed8;
-  --color-neutral-soft-bg: #f8f5ff;
-  --color-neutral-soft-bg-strong: #efe7ff;
+  --color-neutral-soft-bg: #f8f9fa;
+  --color-neutral-soft-bg-strong: #f1f3f5;
 
   /* page accents */
-  --color-sidebar-active-bg: rgb(124 58 237 / 0.16);
+  --color-sidebar-active-bg: rgb(99 102 241 / 0.12);
   --color-header-backdrop: rgb(255 255 255 / 0.82);
-  --color-header-backdrop-dark: rgb(19 13 34 / 0.82);
-  --color-hero-glow: rgb(124 58 237 / 0.2);
+  --color-header-backdrop-dark: rgb(15 17 23 / 0.82);
+  --color-hero-glow: rgb(99 102 241 / 0.15);
   --color-hero-button-overlay: rgb(255 255 255 / 0.76);
-  --color-hero-button-overlay-dark: rgb(27 19 48 / 0.66);
-  --color-auth-brand-bg: #120a26;
+  --color-hero-button-overlay-dark: rgb(15 17 23 / 0.66);
+  --color-auth-brand-bg: #0f1117;
   --color-auth-brand-border: rgb(92 72 142 / 0.45);
   --color-auth-pattern-line: rgb(196 181 253 / 0.2);
   --color-auth-subtitle: #d4c7f7;
@@ -112,36 +112,38 @@
 }
 
 .dark {
-  --color-background: #110b24;
-  --color-surface: #1a1234;
-  --color-surface-muted: #231a45;
-  --color-text: #f8f5ff;
-  --color-text-muted: #c4b9e8;
-  --color-border: #3d2f68;
-  --color-overlay: rgb(3 0 10 / 0.72);
-  --color-loading-overlay: rgb(17 11 36 / 0.76);
+  --color-background: #0f1117;
+  --color-surface: #1a1b1e;
+  --color-surface-muted: #25262b;
+  --color-text: #e4e5e7;
+  --color-text-muted: #9ca3af;
+  --color-border: #2d3036;
+  --color-overlay: rgb(0 0 0 / 0.65);
+  --color-loading-overlay: rgb(15 17 23 / 0.78);
 
-  --color-primary-soft-bg: #2f1c5a;
-  --color-primary-soft-text: #d6c8ff;
-  --color-danger-soft-bg: #3f1318;
+  --color-primary-soft-bg: #1e1b3a;
+  --color-primary-soft-text: #c7d2fe;
+  --color-danger-soft-bg: #2d1b1b;
   --color-danger-soft-border: #7f1d1d;
   --color-danger-soft-text: #fecaca;
-  --color-danger-soft-accent-bg: #7f1d1d;
-  --color-success-soft-bg: #052e16;
+  --color-danger-soft-accent-bg: #5f1a1a;
+  --color-success-soft-bg: #0b2818;
   --color-success-soft-border: #166534;
   --color-success-soft-text: #bbf7d0;
   --color-success-soft-accent-bg: #14532d;
-  --color-warning-soft-bg: #3f2a08;
+  --color-warning-soft-bg: #2d2008;
   --color-warning-soft-text: #fcd34d;
-  --color-info-soft-bg: #172554;
+  --color-info-soft-bg: #111c3a;
   --color-info-soft-border: #1d4ed8;
   --color-info-soft-text: #bfdbfe;
-  --color-neutral-soft-bg: #18142f;
-  --color-neutral-soft-bg-strong: #241c43;
+  --color-neutral-soft-bg: #1a1b1e;
+  --color-neutral-soft-bg-strong: #25262b;
 
-  --color-sidebar-active-bg: rgb(124 58 237 / 0.3);
-  --color-header-backdrop: rgb(26 18 52 / 0.82);
-  --color-auth-brand-bg: #0d071f;
-  --color-auth-brand-border: rgb(107 87 160 / 0.42);
-  --color-auth-pattern-line: rgb(196 181 253 / 0.16);
+  --color-sidebar-active-bg: rgb(99 102 241 / 0.2);
+  --color-header-backdrop: rgb(15 17 23 / 0.85);
+  --color-header-backdrop-dark: rgb(15 17 23 / 0.85);
+  --color-hero-button-overlay-dark: rgb(15 17 23 / 0.7);
+  --color-auth-brand-bg: #0a0b0f;
+  --color-auth-brand-border: rgb(75 85 99 / 0.4);
+  --color-auth-pattern-line: rgb(156 163 175 / 0.12);
 }

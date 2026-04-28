@@ -40,7 +40,7 @@ async function handleForgotPassword() {
     <!-- Trạng thái thành công -->
     <template v-if="isSuccess">
       <div class="flex-col items-center gap-4 py-6 text-center">
-        <CheckCircle2 class="success-icon mx-auto" :size="48" />
+        <CheckCircle2 class="text-success mx-auto" :size="48" />
         <p class="text-sm text-muted mt-4">
           Nếu email <span class="font-medium text-foreground">{{ email }}</span> tồn tại trong hệ
           thống, bạn sẽ nhận được mã đặt lại mật khẩu trong vài phút.
@@ -60,7 +60,7 @@ async function handleForgotPassword() {
     <template v-else>
       <div
         v-if="errorMessage"
-        class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+        class="alert alert--error"
       >
         {{ errorMessage }}
       </div>
@@ -103,19 +103,6 @@ async function handleForgotPassword() {
 </template>
 
 <style scoped>
-.success-icon {
-  color: var(--color-success);
-}
-
-.text-foreground {
-  color: var(--color-text);
-}
-
-.hover-text-primary:hover {
-  color: var(--color-primary);
-  transition: color 0.2s;
-}
-
 .input-icon-wrapper {
   position: relative;
 }
@@ -131,18 +118,5 @@ async function handleForgotPassword() {
 
 .form-input--icon {
   padding-left: 2.5rem;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

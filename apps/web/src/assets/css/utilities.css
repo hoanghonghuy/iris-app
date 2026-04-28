@@ -408,3 +408,25 @@
 .cursor-pointer {
   cursor: pointer;
 }
+
+/* --- Animations --- */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* --- Hover utilities --- */
+.hover-text-primary:hover {
+  color: var(--color-primary);
+  transition: color var(--transition-fast);
+}
+
+/* --- Sizing utilities --- */
+.fit-content {
+  width: fit-content;
+}

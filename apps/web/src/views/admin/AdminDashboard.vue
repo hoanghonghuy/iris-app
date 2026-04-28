@@ -92,7 +92,7 @@ onMounted(async () => {
 
     <LoadingSpinner v-if="isLoading" message="Đang tải dữ liệu thống kê..." />
 
-    <div v-else-if="errorMessage" class="p-4 bg-red-50 text-danger rounded border border-red-200">
+    <div v-else-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
       <button class="btn btn--outline mt-2" type="button" @click="fetchAnalytics">

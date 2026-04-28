@@ -306,10 +306,6 @@ const goHome = () => router.push('/')
   color: var(--color-primary);
 }
 
-.text-foreground {
-  color: var(--color-text);
-}
-
 .desktop-theme-toggle {
   display: none;
   position: absolute;

@@ -55,7 +55,7 @@ async function handleResetPassword() {
     <!-- Trạng thái thành công -->
     <template v-if="isSuccess">
       <div class="flex-col items-center gap-4 py-8 text-center">
-        <CheckCircle2 class="success-icon mx-auto" :size="48" />
+        <CheckCircle2 class="text-success mx-auto" :size="48" />
         <p class="text-sm font-medium mt-4">Đặt lại mật khẩu thành công!</p>
         <p class="text-sm text-muted mt-1">Đang chuyển về trang đăng nhập...</p>
       </div>
@@ -70,7 +70,7 @@ async function handleResetPassword() {
 
       <div
         v-if="errorMessage"
-        class="mb-4 p-3 bg-red-50 text-danger text-sm rounded border border-red-200"
+        class="alert alert--error"
       >
         {{ errorMessage }}
       </div>
@@ -151,25 +151,4 @@ async function handleResetPassword() {
 </template>
 
 <style scoped>
-.success-icon {
-  color: var(--color-success);
-}
-
-.hover-text-primary:hover {
-  color: var(--color-primary);
-  transition: color 0.2s;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 </style>

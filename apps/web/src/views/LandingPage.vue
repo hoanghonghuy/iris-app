@@ -301,9 +301,6 @@ const navigateToRegister = () => {
 .text-muted {
   color: var(--color-text-muted);
 }
-.text-foreground {
-  color: var(--color-text);
-}
 .bg-muted {
   background-color: var(--color-background);
 } /* fallback */

@@ -152,11 +152,3 @@ const schoolId = computed({
     </form>
   </ActionModal>
 </template>
-
-<style scoped>
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-2);
-}
-</style>
