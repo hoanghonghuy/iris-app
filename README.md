@@ -1,6 +1,6 @@
 # Iris School Management Platform
 
-![Go](https://img.shields.io/badge/Go-1.25.5-00ADD8?logo=go&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.25.9-00ADD8?logo=go&logoColor=white)
 ![Gin](https://img.shields.io/badge/Gin-1.11-009688?logo=gin&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.5-4FC08D?logo=vue.js&logoColor=white)
@@ -17,17 +17,21 @@ The platform supports role-based workflows for super admins, school admins, teac
 
 ## Highlights
 
-- Role-based auth and authorization (admin, teacher, parent)
-- School domain management (schools, classes, students, teachers, parents)
-- Attendance and health logs
-- Posts/feed interactions (like, comment, share)
-- Real-time chat via WebSocket
-- Local dev stack with Docker, migrations, and smoke scripts
+- **Role-based auth and authorization** — four-tier role system: Super Admin, School Admin, Teacher, Parent
+- **School domain management** — schools, classes, students, teachers, parents with scoped data access
+- **Attendance tracking** — daily check-in/check-out with statuses (present, absent, late, excused) and full change-log audit trail
+- **Health logs** — teachers record student health observations with severity levels
+- **Posts & feed interactions** — class-scoped and student-scoped posts with like, comment, share; aggregated parent feed
+- **Appointments** — teacher-created time slots, parent booking with status workflow (pending → confirmed → completed/cancelled/no-show)
+- **Parent activation codes** — per-student codes with usage limits and expiration for secure parent registration
+- **Real-time chat** — WebSocket-based direct messaging between users
+- **Audit logs** — immutable activity trail for all protected operations, queryable by Super Admin
+- **Local dev stack** — Docker Compose, PostgreSQL migrations, seed scripts, and API/UI smoke tests
 
 ## Tech Stack
 
 ### Backend
-- Go `1.25.5`
+- Go `1.25.9`
 - Gin
 - PostgreSQL + `pgx/v5`
 - JWT (`golang-jwt/jwt/v5`)
@@ -193,12 +197,13 @@ node scripts/smoke/ui-smoke.mjs
 
 ## API Summary
 
-- Public: health, login, Google login, forgot/reset password, account activation, parent registration
-- Protected: profile (`/me`), role-scoped routes (`/admin/*`, `/teacher/*`, `/parent/*`), chat (`/chat/*`, `/chat/ws`)
+- **Public**: health check, email/Google login, forgot/reset password, account activation, parent registration via invite codes
+- **Protected** (all roles): profile (`/me`), password change, account deletion, real-time chat (REST + WebSocket)
+- **Teacher scope**: class/student management, attendance + change-log audit, health logs, posts (CRUD + interactions), appointment slots
+- **Parent scope**: children overview, aggregated feed, appointment booking, child-specific posts
+- **Admin scope**: full CRUD for schools, classes, students, users, teachers, parents; parent-code generation, school admin management, role assignment, audit-log querying
 
-For detailed endpoint behavior and open issues, see:
-- `docs/iris-issues-audit.md`
-- `docs/remaining-issues.md`
+> Detailed endpoint reference: [`apps/api/README.md`](apps/api/README.md)
 
 ## Security Notes
 
