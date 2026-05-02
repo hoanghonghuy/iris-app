@@ -1,3 +1,5 @@
+import { tokenStorage } from '@/helpers/auth'
+
 export function getConversationId(conversation) {
   return conversation?.conversation_id || conversation?.id || ''
 }
@@ -54,5 +56,5 @@ export function parseJwtPayload(token) {
 }
 
 export function getAuthToken() {
-  return sessionStorage.getItem('auth_token')
+  return tokenStorage.getToken()
 }

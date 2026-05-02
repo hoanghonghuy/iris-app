@@ -5,6 +5,7 @@ import { parentService } from '../../services/parentService'
 import { normalizeListResponse } from '../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { POST_TYPE_META } from '../../helpers/postConfig'
+import { formatDateTime } from '@/helpers/dateFormatter'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 
 const authStore = useAuthStore()
@@ -35,11 +36,6 @@ const quickActions = [
 
 function getPostMeta(type) {
   return POST_TYPE_META[type] || { label: type || 'Bài đăng', badgeClass: 'badge--outline' }
-}
-
-function formatDateTime(value) {
-  if (!value) return ''
-  return new Date(value).toLocaleString('vi-VN')
 }
 
 async function fetchDashboard() {

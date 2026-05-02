@@ -1,4 +1,5 @@
 import { httpClient } from './httpClient'
+import { parentPostService } from './postService'
 
 export const parentService = {
   async getAnalytics() {
@@ -17,21 +18,8 @@ export const parentService = {
     return await httpClient.get(`/parent/children/${studentId}/posts`, params)
   },
 
-  async togglePostLike(postId) {
-    return await httpClient.post(`/parent/posts/${postId}/like`)
-  },
-
-  async getPostComments(postId, params) {
-    return await httpClient.get(`/parent/posts/${postId}/comments`, params)
-  },
-
-  async createPostComment(postId, data) {
-    return await httpClient.post(`/parent/posts/${postId}/comments`, data)
-  },
-
-  async sharePost(postId) {
-    return await httpClient.post(`/parent/posts/${postId}/share`)
-  },
+  // Post interactions delegated to postService
+  ...parentPostService,
 
   async getAvailableSlots(params) {
     return await httpClient.get('/parent/appointments/slots', params)

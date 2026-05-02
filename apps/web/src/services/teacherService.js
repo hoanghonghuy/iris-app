@@ -1,4 +1,5 @@
 import { httpClient } from './httpClient'
+import { teacherPostService } from './postService'
 
 function buildDateRangeParams(from, to) {
   const params = {}
@@ -75,21 +76,8 @@ export const teacherService = {
     return await httpClient.get(`/teacher/students/${studentId}/posts`, params)
   },
 
-  async togglePostLike(postId) {
-    return await httpClient.post(`/teacher/posts/${postId}/like`)
-  },
-
-  async getPostComments(postId, params) {
-    return await httpClient.get(`/teacher/posts/${postId}/comments`, params)
-  },
-
-  async createPostComment(postId, data) {
-    return await httpClient.post(`/teacher/posts/${postId}/comments`, data)
-  },
-
-  async sharePost(postId) {
-    return await httpClient.post(`/teacher/posts/${postId}/share`)
-  },
+  // Post interactions delegated to postService
+  ...teacherPostService,
 
   async getAppointments(params) {
     return await httpClient.get('/teacher/appointments', params)

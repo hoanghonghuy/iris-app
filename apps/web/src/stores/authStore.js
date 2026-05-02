@@ -1,12 +1,13 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { authService } from '../services/authService'
+import { tokenStorage } from '@/helpers/auth'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
-  const token = ref(sessionStorage.getItem('auth_token') || null)
+  const token = ref(tokenStorage.getToken() || null)
   const currentUser = ref(null)
-  const currentUserRole = ref(localStorage.getItem('user_role') || null)
+  const currentUserRole = ref(tokenStorage.getRole() || null)
   const isLoading = ref(false)
   const errorMessage = ref(null)
 
@@ -21,20 +22,12 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
   function setToken(newToken) {
     token.value = newToken
-    if (newToken) {
-      sessionStorage.setItem('auth_token', newToken)
-    } else {
-      sessionStorage.removeItem('auth_token')
-    }
+    tokenStorage.setToken(newToken)
   }
 
   function setRole(role) {
     currentUserRole.value = role
-    if (role) {
-      localStorage.setItem('user_role', role)
-    } else {
-      localStorage.removeItem('user_role')
-    }
+    tokenStorage.setRole(role)
   }
 
   function setUser(user) {
@@ -42,9 +35,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function clearAuth() {
-    setToken(null)
-    setRole(null)
-    setUser(null)
+    token.value = null
+    currentUserRole.value = null
+    currentUser.value = null
+    tokenStorage.clear()
   }
 
   async function fetchCurrentUser() {

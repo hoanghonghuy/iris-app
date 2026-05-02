@@ -1,9 +1,9 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { Heart, MessageCircle, SendHorizontal } from 'lucide-vue-next'
-import { teacherService } from '../services/teacherService'
-import { parentService } from '../services/parentService'
 import { POST_SCOPE_LABELS, POST_TYPE_META } from '../helpers/postConfig'
+import { formatDateTime } from '@/helpers/dateFormatter'
+import { usePostInteractions } from '@/composables/usePostInteractions'
 
 const props = defineProps({
   post: {
@@ -30,6 +30,19 @@ const props = defineProps({
 
 const emit = defineEmits(['patch-post'])
 
+// Post interaction composable
+const {
+  processing: processingLike,
+  loadingComments,
+  submittingComment,
+  error: interactionError,
+  toggleLike,
+  loadComments: loadCommentsFromService,
+  createComment: createCommentViaService,
+  share: sharePost,
+} = usePostInteractions(props.audience)
+
+// Local state
 const liked = ref(props.post.liked_by_me)
 const likeCount = ref(props.post.like_count || 0)
 const shareCount = ref(props.post.share_count || 0)
@@ -38,16 +51,7 @@ const showComments = ref(false)
 const comments = ref([])
 const commentsLoaded = ref(false)
 const commentDraft = ref('')
-const loadingComments = ref(false)
-const processingLike = ref(false)
 const processingShare = ref(false)
-const submittingComment = ref(false)
-const interactionError = ref('')
-
-const services = {
-  teacher: teacherService,
-  parent: parentService,
-}
 
 watch(
   () => props.post,
@@ -64,45 +68,31 @@ function patchPost(patch) {
   emit('patch-post', props.post.post_id, patch)
 }
 
-function formatDateTime(value) {
-  if (!value) return ''
-  return new Date(value).toLocaleString('vi-VN')
-}
-
 function initials(text) {
   return (text || props.authorLabel || 'GV').slice(0, 2).toUpperCase()
 }
 
 async function handleLikeToggle() {
-  processingLike.value = true
-  interactionError.value = ''
   try {
-    const response = await services[props.audience].togglePostLike(props.post.post_id)
-    const payload = response?.data ?? response
+    const payload = await toggleLike(props.post.post_id)
     liked.value = payload.liked_by_me
     likeCount.value = payload.like_count
     patchPost({ liked_by_me: payload.liked_by_me, like_count: payload.like_count })
   } catch {
-    interactionError.value = 'Không thể cập nhật lượt thích. Vui lòng thử lại.'
-  } finally {
-    processingLike.value = false
+    // Error already handled by composable
   }
 }
 
 async function loadComments() {
-  loadingComments.value = true
-  interactionError.value = ''
   try {
-    const response = await services[props.audience].getPostComments(props.post.post_id, {
+    const loadedComments = await loadCommentsFromService(props.post.post_id, {
       limit: 50,
       offset: 0,
     })
-    comments.value = response?.data ?? []
+    comments.value = loadedComments
     commentsLoaded.value = true
   } catch {
-    interactionError.value = 'Không thể tải bình luận. Vui lòng thử lại.'
-  } finally {
-    loadingComments.value = false
+    // Error already handled by composable
   }
 }
 
@@ -117,36 +107,27 @@ async function submitComment() {
   const content = commentDraft.value.trim()
   if (!content) return
 
-  submittingComment.value = true
-  interactionError.value = ''
   try {
-    const response = await services[props.audience].createPostComment(props.post.post_id, {
-      content,
-    })
-    const payload = response?.data ?? response
-    if (payload.comment) {
+    const payload = await createCommentViaService(props.post.post_id, content)
+    if (payload && payload.comment) {
       comments.value = [payload.comment, ...comments.value]
     }
-    commentCount.value = payload.comment_count ?? commentCount.value + 1
+    commentCount.value = payload?.comment_count ?? commentCount.value + 1
     patchPost({ comment_count: commentCount.value })
     commentDraft.value = ''
   } catch {
-    interactionError.value = 'Không thể gửi bình luận. Vui lòng thử lại.'
-  } finally {
-    submittingComment.value = false
+    // Error already handled by composable
   }
 }
 
 async function handleShare() {
   processingShare.value = true
-  interactionError.value = ''
   try {
-    const response = await services[props.audience].sharePost(props.post.post_id)
-    const payload = response?.data ?? response
+    const payload = await sharePost(props.post.post_id)
     shareCount.value = payload.share_count
     patchPost({ share_count: payload.share_count })
   } catch {
-    interactionError.value = 'Không thể chia sẻ bài viết. Vui lòng thử lại.'
+    // Error already handled by composable
   } finally {
     processingShare.value = false
   }

@@ -1,4 +1,5 @@
 // src/services/httpClient.js
+import { tokenStorage } from '@/helpers/auth'
 
 // base URL mặc định, đọc từ biến môi trường
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
@@ -8,7 +9,7 @@ const REQUEST_TIMEOUT = 30000
 
 // hàm gọi API chung — tất cả service đều dùng hàm này
 async function request(method, path, body = null, options = {}) {
-  const token = sessionStorage.getItem('auth_token')
+  const token = tokenStorage.getToken()
   const { signal: externalSignal, timeout = REQUEST_TIMEOUT } = options
 
   const headers = {
@@ -71,8 +72,7 @@ async function request(method, path, body = null, options = {}) {
 
   // xử lý 401 — token hết hạn → về trang login
   if (response.status === 401) {
-    sessionStorage.removeItem('auth_token')
-    localStorage.removeItem('user_role')
+    tokenStorage.clear()
     if (!window.location.pathname.includes('/login')) {
       window.location.href = '/login'
     }
