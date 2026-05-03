@@ -37,6 +37,7 @@ DECLARE
   v_aid               uuid;
   v_sid               uuid;
   v_cid               uuid;
+  class_records       record;
   i                   int;
   j                   int;
 BEGIN

@@ -17,13 +17,12 @@ DECLARE
   j              int;
 BEGIN
   -- Lấy tất cả student IDs và teacher user IDs
-  SELECT array_agg(student_id) INTO v_student_ids FROM students ORDER BY full_name;
-  SELECT array_agg(u.user_id) INTO v_teacher_users
+  SELECT array_agg(student_id ORDER BY full_name) INTO v_student_ids FROM students;
+  SELECT array_agg(u.user_id ORDER BY u.email) INTO v_teacher_users
   FROM users u
   JOIN user_roles ur ON u.user_id = ur.user_id
   JOIN roles r ON ur.role_id = r.role_id
-  WHERE r.name = 'TEACHER'
-  ORDER BY u.email;
+  WHERE r.name = 'TEACHER';
 
   -- ======================
   -- 1) ATTENDANCE RECORDS (56 students × 3 days = 168 records, đủ 4 status)
@@ -37,6 +36,15 @@ BEGIN
       JOIN teachers t ON t.user_id = u.user_id
       JOIN students s ON s.school_id = t.school_id AND s.student_id = v_sid
       LIMIT 1;
+      IF v_tuid IS NULL THEN
+        SELECT u.user_id INTO v_tuid
+        FROM users u
+        JOIN user_roles ur ON u.user_id = ur.user_id
+        JOIN roles r ON ur.role_id = r.role_id
+        WHERE r.name = 'TEACHER'
+        ORDER BY u.email
+        LIMIT 1;
+      END IF;
 
       -- Day 1: Hôm nay — đa dạng status
       v_date := CURRENT_DATE;
@@ -45,8 +53,8 @@ BEGIN
           -- present + check-in/out
           INSERT INTO attendance_records (student_id, date, status, check_in_at, check_out_at, note, recorded_by)
           VALUES (v_sid, v_date, 'present',
-                  (v_date + TIME '08:' || LPAD(((i*7)%60)::text,2,'0') || ':00')::timestamptz,
-                  (v_date + TIME '16:' || LPAD(((i*11)%60)::text,2,'0') || ':00')::timestamptz,
+              (v_date + make_time(8, ((i * 7) % 60), 0))::timestamptz,
+              (v_date + make_time(16, ((i * 11) % 60), 0))::timestamptz,
                   CASE (i % 3)
                     WHEN 0 THEN 'Đi học đúng giờ, tham gia tốt hoạt động nhóm'
                     WHEN 1 THEN 'Ăn trưa đủ suất, ngủ trưa ngoan'
@@ -58,7 +66,7 @@ BEGIN
           -- late
           INSERT INTO attendance_records (student_id, date, status, check_in_at, note, recorded_by)
           VALUES (v_sid, v_date, 'late',
-                  (v_date + TIME '09:' || LPAD(((i*13)%60)::text,2,'0') || ':00')::timestamptz,
+              (v_date + make_time(9, ((i * 13) % 60), 0))::timestamptz,
                   CASE (i % 3)
                     WHEN 0 THEN 'Đi học muộn do tắc đường'
                     WHEN 1 THEN 'Đến lớp muộn vì trời mưa'
@@ -95,8 +103,8 @@ BEGIN
       INSERT INTO attendance_records (student_id, date, status, check_in_at, check_out_at, note, recorded_by)
       VALUES (v_sid, v_date,
               CASE WHEN i % 3 = 0 THEN 'late' ELSE 'present' END,
-              (v_date + TIME '08:' || LPAD(((i*5+10)%60)::text,2,'0') || ':00')::timestamptz,
-              (v_date + TIME '16:' || LPAD(((i*7+15)%60)::text,2,'0') || ':00')::timestamptz,
+              (v_date + make_time(8, ((i * 5 + 10) % 60), 0))::timestamptz,
+              (v_date + make_time(16, ((i * 7 + 15) % 60), 0))::timestamptz,
               '',
               v_tuid)
       ON CONFLICT (student_id, date) DO NOTHING;
@@ -105,7 +113,7 @@ BEGIN
       v_date := CURRENT_DATE - 2;
       INSERT INTO attendance_records (student_id, date, status, check_in_at, note, recorded_by)
       VALUES (v_sid, v_date, 'present',
-              (v_date + TIME '08:' || LPAD(((i*3+20)%60)::text,2,'0') || ':00')::timestamptz,
+              (v_date + make_time(8, ((i * 3 + 20) % 60), 0))::timestamptz,
               '',
               v_tuid)
       ON CONFLICT (student_id, date) DO NOTHING;
@@ -123,6 +131,15 @@ BEGIN
       JOIN teachers t ON t.user_id = u.user_id
       JOIN students s ON s.school_id = t.school_id AND s.student_id = v_sid
       LIMIT 1;
+      IF v_tuid IS NULL THEN
+        SELECT u.user_id INTO v_tuid
+        FROM users u
+        JOIN user_roles ur ON u.user_id = ur.user_id
+        JOIN roles r ON ur.role_id = r.role_id
+        WHERE r.name = 'TEACHER'
+        ORDER BY u.email
+        LIMIT 1;
+      END IF;
 
       -- Log 1: Hôm nay
       CASE (i % 3)
@@ -184,8 +201,8 @@ BEGIN
     -- Lấy 50 attendance records đầu tiên để tạo change logs
     FOR i IN 1..50 LOOP
       -- Lấy 1 attendance record
-      SELECT a.attendance_id, a.student_id, a.date, a.status, a.note
-      INTO v_aid, v_sid, v_date, NULL, NULL
+      SELECT a.attendance_id, a.student_id, a.date
+      INTO v_aid, v_sid, v_date
       FROM attendance_records a
       ORDER BY a.date DESC, a.student_id
       OFFSET (i - 1) LIMIT 1;
@@ -196,6 +213,15 @@ BEGIN
         JOIN teachers t ON t.user_id = u.user_id
         JOIN students s ON s.school_id = t.school_id AND s.student_id = v_sid
         LIMIT 1;
+        IF v_tuid IS NULL THEN
+          SELECT u.user_id INTO v_tuid
+          FROM users u
+          JOIN user_roles ur ON u.user_id = ur.user_id
+          JOIN roles r ON ur.role_id = r.role_id
+          WHERE r.name = 'TEACHER'
+          ORDER BY u.email
+          LIMIT 1;
+        END IF;
 
         CASE (i % 3)
           WHEN 0 THEN

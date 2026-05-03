@@ -68,103 +68,64 @@ BEGIN
   -- ======================
   -- 1) SCHOOLS
   -- ======================
-  SELECT school_id INTO v_school1
-  FROM schools
-  WHERE name = 'Trường Mầm non Bình Minh Cầu Giấy'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_school1 IS NULL THEN
+  -- Bình Minh Cầu Giấy
+  IF NOT EXISTS (SELECT 1 FROM schools WHERE name = 'Trường Mầm non Bình Minh Cầu Giấy') THEN
     INSERT INTO schools (name, address)
     VALUES ('Trường Mầm non Bình Minh Cầu Giấy', 'Số 18 ngõ 165 Xuân Thủy, Dịch Vọng Hậu, Cầu Giấy, Hà Nội')
     RETURNING school_id INTO v_school1;
+  ELSE
+    SELECT school_id INTO v_school1 FROM schools WHERE name = 'Trường Mầm non Bình Minh Cầu Giấy' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT school_id INTO v_school2
-  FROM schools
-  WHERE name = 'Trường Mầm non Hoa Mai Quận 7'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_school2 IS NULL THEN
+  -- Hoa Mai Quận 7
+  IF NOT EXISTS (SELECT 1 FROM schools WHERE name = 'Trường Mầm non Hoa Mai Quận 7') THEN
     INSERT INTO schools (name, address)
     VALUES ('Trường Mầm non Hoa Mai Quận 7', 'Số 12 đường số 3, KDC Him Lam, Tân Hưng, Quận 7, TP. Hồ Chí Minh')
     RETURNING school_id INTO v_school2;
+  ELSE
+    SELECT school_id INTO v_school2 FROM schools WHERE name = 'Trường Mầm non Hoa Mai Quận 7' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT school_id INTO v_school3
-  FROM schools
-  WHERE name = 'Trường Mầm non Ánh Dương Hải Châu'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_school3 IS NULL THEN
+  -- Ánh Dương Hải Châu
+  IF NOT EXISTS (SELECT 1 FROM schools WHERE name = 'Trường Mầm non Ánh Dương Hải Châu') THEN
     INSERT INTO schools (name, address)
     VALUES ('Trường Mầm non Ánh Dương Hải Châu', 'Số 25 Lê Đình Dương, Phước Ninh, Hải Châu, Đà Nẵng')
     RETURNING school_id INTO v_school3;
+  ELSE
+    SELECT school_id INTO v_school3 FROM schools WHERE name = 'Trường Mầm non Ánh Dương Hải Châu' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
   -- ======================
   -- 2) CLASSES
   -- ======================
-  SELECT class_id INTO v_class1
-  FROM classes
-  WHERE school_id = v_school1 AND name = 'Lá Non'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_class1 IS NULL THEN
-    INSERT INTO classes (school_id, name, school_year)
-    VALUES (v_school1, 'Lá Non', '2025-2026')
-    RETURNING class_id INTO v_class1;
+  IF NOT EXISTS (SELECT 1 FROM classes WHERE school_id = v_school1 AND name = 'Lá Non') THEN
+    INSERT INTO classes (school_id, name, school_year) VALUES (v_school1, 'Lá Non', '2025-2026') RETURNING class_id INTO v_class1;
+  ELSE
+    SELECT class_id INTO v_class1 FROM classes WHERE school_id = v_school1 AND name = 'Lá Non' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT class_id INTO v_class2
-  FROM classes
-  WHERE school_id = v_school1 AND name = 'Lá Măng'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_class2 IS NULL THEN
-    INSERT INTO classes (school_id, name, school_year)
-    VALUES (v_school1, 'Lá Măng', '2025-2026')
-    RETURNING class_id INTO v_class2;
+  IF NOT EXISTS (SELECT 1 FROM classes WHERE school_id = v_school1 AND name = 'Lá Măng') THEN
+    INSERT INTO classes (school_id, name, school_year) VALUES (v_school1, 'Lá Măng', '2025-2026') RETURNING class_id INTO v_class2;
+  ELSE
+    SELECT class_id INTO v_class2 FROM classes WHERE school_id = v_school1 AND name = 'Lá Măng' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT class_id INTO v_class3
-  FROM classes
-  WHERE school_id = v_school2 AND name = 'Lá Sen'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_class3 IS NULL THEN
-    INSERT INTO classes (school_id, name, school_year)
-    VALUES (v_school2, 'Lá Sen', '2025-2026')
-    RETURNING class_id INTO v_class3;
+  IF NOT EXISTS (SELECT 1 FROM classes WHERE school_id = v_school2 AND name = 'Lá Sen') THEN
+    INSERT INTO classes (school_id, name, school_year) VALUES (v_school2, 'Lá Sen', '2025-2026') RETURNING class_id INTO v_class3;
+  ELSE
+    SELECT class_id INTO v_class3 FROM classes WHERE school_id = v_school2 AND name = 'Lá Sen' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT class_id INTO v_class4
-  FROM classes
-  WHERE school_id = v_school3 AND name = 'Chồi Xanh'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_class4 IS NULL THEN
-    INSERT INTO classes (school_id, name, school_year)
-    VALUES (v_school3, 'Chồi Xanh', '2025-2026')
-    RETURNING class_id INTO v_class4;
+  IF NOT EXISTS (SELECT 1 FROM classes WHERE school_id = v_school3 AND name = 'Chồi Xanh') THEN
+    INSERT INTO classes (school_id, name, school_year) VALUES (v_school3, 'Chồi Xanh', '2025-2026') RETURNING class_id INTO v_class4;
+  ELSE
+    SELECT class_id INTO v_class4 FROM classes WHERE school_id = v_school3 AND name = 'Chồi Xanh' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT class_id INTO v_class5
-  FROM classes
-  WHERE school_id = v_school3 AND name = 'Mầm Sáng'
-  ORDER BY created_at
-  LIMIT 1;
-
-  IF v_class5 IS NULL THEN
-    INSERT INTO classes (school_id, name, school_year)
-    VALUES (v_school3, 'Mầm Sáng', '2025-2026')
-    RETURNING class_id INTO v_class5;
+  IF NOT EXISTS (SELECT 1 FROM classes WHERE school_id = v_school3 AND name = 'Mầm Sáng') THEN
+    INSERT INTO classes (school_id, name, school_year) VALUES (v_school3, 'Mầm Sáng', '2025-2026') RETURNING class_id INTO v_class5;
+  ELSE
+    SELECT class_id INTO v_class5 FROM classes WHERE school_id = v_school3 AND name = 'Mầm Sáng' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
   -- ======================
@@ -267,159 +228,121 @@ BEGIN
   -- ======================
   -- 5) TEACHER PROFILES
   -- ======================
-  SELECT teacher_id INTO v_teacher1 FROM teachers WHERE user_id = v_teacher1_user;
-  IF v_teacher1 IS NULL THEN
-    INSERT INTO teachers (user_id, school_id, full_name, phone)
-    VALUES (v_teacher1_user, v_school1, 'Nguyễn Thị Lan Anh', '0983124501')
-    RETURNING teacher_id INTO v_teacher1;
-  END IF;
+  INSERT INTO teachers (user_id, school_id, full_name, phone)
+  VALUES (v_teacher1_user, v_school1, 'Nguyễn Thị Lan Anh', '0983124501')
+  ON CONFLICT (user_id) DO NOTHING;
 
-  SELECT teacher_id INTO v_teacher2 FROM teachers WHERE user_id = v_teacher2_user;
-  IF v_teacher2 IS NULL THEN
-    INSERT INTO teachers (user_id, school_id, full_name, phone)
-    VALUES (v_teacher2_user, v_school1, 'Trần Hoàng Nam', '0917642208')
-    RETURNING teacher_id INTO v_teacher2;
-  END IF;
+  SELECT teacher_id INTO v_teacher1 FROM teachers WHERE user_id = v_teacher1_user ORDER BY created_at DESC LIMIT 1;
 
-  SELECT teacher_id INTO v_teacher3 FROM teachers WHERE user_id = v_teacher3_user;
-  IF v_teacher3 IS NULL THEN
-    INSERT INTO teachers (user_id, school_id, full_name, phone)
-    VALUES (v_teacher3_user, v_school3, 'Đặng Minh Phương', '0908765123')
-    RETURNING teacher_id INTO v_teacher3;
-  END IF;
+  INSERT INTO teachers (user_id, school_id, full_name, phone)
+  VALUES (v_teacher2_user, v_school1, 'Trần Hoàng Nam', '0917642208')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT teacher_id INTO v_teacher2 FROM teachers WHERE user_id = v_teacher2_user ORDER BY created_at DESC LIMIT 1;
+
+  INSERT INTO teachers (user_id, school_id, full_name, phone)
+  VALUES (v_teacher3_user, v_school3, 'Đặng Minh Phương', '0908765123')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT teacher_id INTO v_teacher3 FROM teachers WHERE user_id = v_teacher3_user ORDER BY created_at DESC LIMIT 1;
 
   -- ======================
   -- 6) PARENT PROFILES
   -- ======================
-  SELECT parent_id INTO v_parent1 FROM parents WHERE user_id = v_parent1_user;
-  IF v_parent1 IS NULL THEN
-    INSERT INTO parents (user_id, school_id, full_name, phone)
-    VALUES (v_parent1_user, v_school1, 'Lê Quang Minh', '0935587612')
-    RETURNING parent_id INTO v_parent1;
-  END IF;
+  INSERT INTO parents (user_id, school_id, full_name, phone)
+  VALUES (v_parent1_user, v_school1, 'Lê Quang Minh', '0935587612')
+  ON CONFLICT (user_id) DO NOTHING;
 
-  SELECT parent_id INTO v_parent2 FROM parents WHERE user_id = v_parent2_user;
-  IF v_parent2 IS NULL THEN
-    INSERT INTO parents (user_id, school_id, full_name, phone)
-    VALUES (v_parent2_user, v_school1, 'Phạm Thu Hoa', '0964412097')
-    RETURNING parent_id INTO v_parent2;
-  END IF;
+  SELECT parent_id INTO v_parent1 FROM parents WHERE user_id = v_parent1_user ORDER BY created_at DESC LIMIT 1;
 
-  SELECT parent_id INTO v_parent3 FROM parents WHERE user_id = v_parent3_user;
-  IF v_parent3 IS NULL THEN
-    INSERT INTO parents (user_id, school_id, full_name, phone)
-    VALUES (v_parent3_user, v_school3, 'Võ Văn Quân', '0978123456')
-    RETURNING parent_id INTO v_parent3;
-  END IF;
+  INSERT INTO parents (user_id, school_id, full_name, phone)
+  VALUES (v_parent2_user, v_school1, 'Phạm Thu Hoa', '0964412097')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT parent_id INTO v_parent2 FROM parents WHERE user_id = v_parent2_user ORDER BY created_at DESC LIMIT 1;
+
+  INSERT INTO parents (user_id, school_id, full_name, phone)
+  VALUES (v_parent3_user, v_school3, 'Võ Văn Quân', '0978123456')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT parent_id INTO v_parent3 FROM parents WHERE user_id = v_parent3_user ORDER BY created_at DESC LIMIT 1;
 
   -- ======================
   -- 7) SCHOOL ADMIN PROFILES
   -- ======================
-  SELECT admin_id INTO v_school_admin FROM school_admins WHERE user_id = v_school_admin_user;
-  IF v_school_admin IS NULL THEN
-    INSERT INTO school_admins (user_id, school_id, full_name, phone)
-    VALUES (v_school_admin_user, v_school1, 'Bùi Thanh Hương', '0972331184')
-    RETURNING admin_id INTO v_school_admin;
-  END IF;
+  INSERT INTO school_admins (user_id, school_id, full_name, phone)
+  VALUES (v_school_admin_user, v_school1, 'Bùi Thanh Hương', '0972331184')
+  ON CONFLICT (user_id) DO NOTHING;
 
-  SELECT admin_id INTO v_school_admin2 FROM school_admins WHERE user_id = v_school_admin2_user;
-  IF v_school_admin2 IS NULL THEN
-    INSERT INTO school_admins (user_id, school_id, full_name, phone)
-    VALUES (v_school_admin2_user, v_school3, 'Ngô Quang Duy', '0933123123')
-    RETURNING admin_id INTO v_school_admin2;
-  END IF;
+  SELECT admin_id INTO v_school_admin FROM school_admins WHERE user_id = v_school_admin_user ORDER BY created_at DESC LIMIT 1;
+
+  INSERT INTO school_admins (user_id, school_id, full_name, phone)
+  VALUES (v_school_admin2_user, v_school3, 'Ngô Quang Duy', '0933123123')
+  ON CONFLICT (user_id) DO NOTHING;
+
+  SELECT admin_id INTO v_school_admin2 FROM school_admins WHERE user_id = v_school_admin2_user ORDER BY created_at DESC LIMIT 1;
 
   -- ======================
   -- 8) STUDENTS
   -- ======================
-  SELECT student_id INTO v_s1 FROM students
-  WHERE school_id = v_school1 AND full_name = 'Nguyễn Gia An' AND dob = DATE '2020-05-12'
-  LIMIT 1;
-  IF v_s1 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school1, v_class1, 'Nguyễn Gia An', DATE '2020-05-12', 'male')
-    RETURNING student_id INTO v_s1;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school1 AND full_name = 'Nguyễn Gia An' AND dob = DATE '2020-05-12') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school1, v_class1, 'Nguyễn Gia An', DATE '2020-05-12', 'male') RETURNING student_id INTO v_s1;
+  ELSE
+    SELECT student_id INTO v_s1 FROM students WHERE school_id = v_school1 AND full_name = 'Nguyễn Gia An' AND dob = DATE '2020-05-12' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s2 FROM students
-  WHERE school_id = v_school1 AND full_name = 'Trần Khánh Băng' AND dob = DATE '2020-09-03'
-  LIMIT 1;
-  IF v_s2 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school1, v_class1, 'Trần Khánh Băng', DATE '2020-09-03', 'female')
-    RETURNING student_id INTO v_s2;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school1 AND full_name = 'Trần Khánh Băng' AND dob = DATE '2020-09-03') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school1, v_class1, 'Trần Khánh Băng', DATE '2020-09-03', 'female') RETURNING student_id INTO v_s2;
+  ELSE
+    SELECT student_id INTO v_s2 FROM students WHERE school_id = v_school1 AND full_name = 'Trần Khánh Băng' AND dob = DATE '2020-09-03' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s3 FROM students
-  WHERE school_id = v_school1 AND full_name = 'Lê Ngọc Nhi' AND dob = DATE '2021-01-20'
-  LIMIT 1;
-  IF v_s3 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school1, v_class2, 'Lê Ngọc Nhi', DATE '2021-01-20', 'female')
-    RETURNING student_id INTO v_s3;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school1 AND full_name = 'Lê Ngọc Nhi' AND dob = DATE '2021-01-20') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school1, v_class2, 'Lê Ngọc Nhi', DATE '2021-01-20', 'female') RETURNING student_id INTO v_s3;
+  ELSE
+    SELECT student_id INTO v_s3 FROM students WHERE school_id = v_school1 AND full_name = 'Lê Ngọc Nhi' AND dob = DATE '2021-01-20' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s4 FROM students
-  WHERE school_id = v_school1 AND full_name = 'Phạm Đức Dương' AND dob = DATE '2020-11-15'
-  LIMIT 1;
-  IF v_s4 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school1, v_class2, 'Phạm Đức Dương', DATE '2020-11-15', 'male')
-    RETURNING student_id INTO v_s4;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school1 AND full_name = 'Phạm Đức Dương' AND dob = DATE '2020-11-15') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school1, v_class2, 'Phạm Đức Dương', DATE '2020-11-15', 'male') RETURNING student_id INTO v_s4;
+  ELSE
+    SELECT student_id INTO v_s4 FROM students WHERE school_id = v_school1 AND full_name = 'Phạm Đức Dương' AND dob = DATE '2020-11-15' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s5 FROM students
-  WHERE school_id = v_school1 AND full_name = 'Đỗ Minh Khang' AND dob = DATE '2020-07-08'
-  LIMIT 1;
-  IF v_s5 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school1, v_class2, 'Đỗ Minh Khang', DATE '2020-07-08', 'male')
-    RETURNING student_id INTO v_s5;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school1 AND full_name = 'Đỗ Minh Khang' AND dob = DATE '2020-07-08') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school1, v_class2, 'Đỗ Minh Khang', DATE '2020-07-08', 'male') RETURNING student_id INTO v_s5;
+  ELSE
+    SELECT student_id INTO v_s5 FROM students WHERE school_id = v_school1 AND full_name = 'Đỗ Minh Khang' AND dob = DATE '2020-07-08' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s6 FROM students
-  WHERE school_id = v_school1 AND full_name = 'Ngô Phương My' AND dob = DATE '2021-02-14'
-  LIMIT 1;
-  IF v_s6 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school1, v_class1, 'Ngô Phương My', DATE '2021-02-14', 'female')
-    RETURNING student_id INTO v_s6;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school1 AND full_name = 'Ngô Phương My' AND dob = DATE '2021-02-14') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school1, v_class1, 'Ngô Phương My', DATE '2021-02-14', 'female') RETURNING student_id INTO v_s6;
+  ELSE
+    SELECT student_id INTO v_s6 FROM students WHERE school_id = v_school1 AND full_name = 'Ngô Phương My' AND dob = DATE '2021-02-14' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s7 FROM students
-  WHERE school_id = v_school2 AND full_name = 'Huỳnh Bảo Khôi' AND dob = DATE '2020-03-19'
-  LIMIT 1;
-  IF v_s7 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school2, v_class3, 'Huỳnh Bảo Khôi', DATE '2020-03-19', 'male')
-    RETURNING student_id INTO v_s7;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school2 AND full_name = 'Huỳnh Bảo Khôi' AND dob = DATE '2020-03-19') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school2, v_class3, 'Huỳnh Bảo Khôi', DATE '2020-03-19', 'male') RETURNING student_id INTO v_s7;
+  ELSE
+    SELECT student_id INTO v_s7 FROM students WHERE school_id = v_school2 AND full_name = 'Huỳnh Bảo Khôi' AND dob = DATE '2020-03-19' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s8 FROM students
-  WHERE school_id = v_school2 AND full_name = 'Đinh Gia Trâm' AND dob = DATE '2020-12-02'
-  LIMIT 1;
-  IF v_s8 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school2, v_class3, 'Đinh Gia Trâm', DATE '2020-12-02', 'female')
-    RETURNING student_id INTO v_s8;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school2 AND full_name = 'Đinh Gia Trâm' AND dob = DATE '2020-12-02') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school2, v_class3, 'Đinh Gia Trâm', DATE '2020-12-02', 'female') RETURNING student_id INTO v_s8;
+  ELSE
+    SELECT student_id INTO v_s8 FROM students WHERE school_id = v_school2 AND full_name = 'Đinh Gia Trâm' AND dob = DATE '2020-12-02' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s9 FROM students
-  WHERE school_id = v_school3 AND full_name = 'Lý Minh Bảo' AND dob = DATE '2021-04-11'
-  LIMIT 1;
-  IF v_s9 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school3, v_class4, 'Lý Minh Bảo', DATE '2021-04-11', 'male')
-    RETURNING student_id INTO v_s9;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school3 AND full_name = 'Lý Minh Bảo' AND dob = DATE '2021-04-11') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school3, v_class4, 'Lý Minh Bảo', DATE '2021-04-11', 'male') RETURNING student_id INTO v_s9;
+  ELSE
+    SELECT student_id INTO v_s9 FROM students WHERE school_id = v_school3 AND full_name = 'Lý Minh Bảo' AND dob = DATE '2021-04-11' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
-  SELECT student_id INTO v_s10 FROM students
-  WHERE school_id = v_school3 AND full_name = 'Trương Hạ Vy' AND dob = DATE '2020-10-27'
-  LIMIT 1;
-  IF v_s10 IS NULL THEN
-    INSERT INTO students (school_id, current_class_id, full_name, dob, gender)
-    VALUES (v_school3, v_class5, 'Trương Hạ Vy', DATE '2020-10-27', 'female')
-    RETURNING student_id INTO v_s10;
+  IF NOT EXISTS (SELECT 1 FROM students WHERE school_id = v_school3 AND full_name = 'Trương Hạ Vy' AND dob = DATE '2020-10-27') THEN
+    INSERT INTO students (school_id, current_class_id, full_name, dob, gender) VALUES (v_school3, v_class5, 'Trương Hạ Vy', DATE '2020-10-27', 'female') RETURNING student_id INTO v_s10;
+  ELSE
+    SELECT student_id INTO v_s10 FROM students WHERE school_id = v_school3 AND full_name = 'Trương Hạ Vy' AND dob = DATE '2020-10-27' ORDER BY created_at DESC LIMIT 1;
   END IF;
 
   -- ======================
@@ -970,11 +893,11 @@ BEGIN
            date_trunc('day', NOW()) + INTERVAL '1 day 09 hours 20 minutes',
            'Tư vấn kỹ năng tự phục vụ cho Gia An', true
     WHERE NOT EXISTS (
-      SELECT 1 FROM appointment_slots s
-      WHERE s.teacher_id = v_teacher1
-        AND s.class_id = v_class1
-        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours'
-        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours 20 minutes'
+      SELECT 1 FROM appointment_slots
+      WHERE teacher_id = v_teacher1
+        AND class_id = v_class1
+        AND start_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours'
+        AND end_time = date_trunc('day', NOW()) + INTERVAL '1 day 09 hours 20 minutes'
     );
 
     INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
@@ -983,11 +906,11 @@ BEGIN
            date_trunc('day', NOW()) + INTERVAL '1 day 10 hours 20 minutes',
            'Trao đổi về nếp ngủ trưa của Ngô Phương My', true
     WHERE NOT EXISTS (
-      SELECT 1 FROM appointment_slots s
-      WHERE s.teacher_id = v_teacher1
-        AND s.class_id = v_class1
-        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours'
-        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours 20 minutes'
+      SELECT 1 FROM appointment_slots
+      WHERE teacher_id = v_teacher1
+        AND class_id = v_class1
+        AND start_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours'
+        AND end_time = date_trunc('day', NOW()) + INTERVAL '1 day 10 hours 20 minutes'
     );
 
     INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
@@ -996,11 +919,11 @@ BEGIN
            date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 50 minutes',
            'Theo dõi sức khỏe bé Minh Khang sau đợt ho nhẹ', true
     WHERE NOT EXISTS (
-      SELECT 1 FROM appointment_slots s
-      WHERE s.teacher_id = v_teacher2
-        AND s.class_id = v_class2
-        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 30 minutes'
-        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 50 minutes'
+      SELECT 1 FROM appointment_slots
+      WHERE teacher_id = v_teacher2
+        AND class_id = v_class2
+        AND start_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 30 minutes'
+        AND end_time = date_trunc('day', NOW()) + INTERVAL '2 days 09 hours 50 minutes'
     );
 
     INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
@@ -1009,11 +932,11 @@ BEGIN
            date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours 20 minutes',
            'Tổng kết tiến bộ vận động của Lý Minh Bảo', true
     WHERE NOT EXISTS (
-      SELECT 1 FROM appointment_slots s
-      WHERE s.teacher_id = v_teacher3
-        AND s.class_id = v_class4
-        AND s.start_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours'
-        AND s.end_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours 20 minutes'
+      SELECT 1 FROM appointment_slots
+      WHERE teacher_id = v_teacher3
+        AND class_id = v_class4
+        AND start_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours'
+        AND end_time = date_trunc('day', NOW()) - INTERVAL '2 days' + INTERVAL '09 hours 20 minutes'
     );
 
     INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
@@ -1022,11 +945,11 @@ BEGIN
            date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours 20 minutes',
            'Hẹn đánh giá tương tác nhóm của Trương Hạ Vy', true
     WHERE NOT EXISTS (
-      SELECT 1 FROM appointment_slots s
-      WHERE s.teacher_id = v_teacher3
-        AND s.class_id = v_class5
-        AND s.start_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours'
-        AND s.end_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours 20 minutes'
+      SELECT 1 FROM appointment_slots
+      WHERE teacher_id = v_teacher3
+        AND class_id = v_class5
+        AND start_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours'
+        AND end_time = date_trunc('day', NOW()) - INTERVAL '1 day' + INTERVAL '14 hours 20 minutes'
     );
 
     INSERT INTO appointment_slots (teacher_id, class_id, start_time, end_time, note, is_active)
@@ -1035,11 +958,11 @@ BEGIN
            date_trunc('day', NOW()) + INTERVAL '3 days 10 hours 20 minutes',
            'Slot trống để phụ huynh đặt mới', true
     WHERE NOT EXISTS (
-      SELECT 1 FROM appointment_slots s
-      WHERE s.teacher_id = v_teacher2
-        AND s.class_id = v_class2
-        AND s.start_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours'
-        AND s.end_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours 20 minutes'
+      SELECT 1 FROM appointment_slots
+      WHERE teacher_id = v_teacher2
+        AND class_id = v_class2
+        AND start_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours'
+        AND end_time = date_trunc('day', NOW()) + INTERVAL '3 days 10 hours 20 minutes'
     );
 
     SELECT slot_id INTO v_slot1
@@ -1100,30 +1023,25 @@ BEGIN
   IF to_regclass('public.appointments') IS NOT NULL THEN
     INSERT INTO appointments (slot_id, parent_id, student_id, status, note)
     SELECT v_slot1, v_parent1, v_s1, 'pending', 'Phụ huynh muốn trao đổi thêm về kỹ năng giao tiếp của bé'
-    WHERE v_slot1 IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot1);
+    WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE slot_id = v_slot1 AND parent_id = v_parent1);
 
     INSERT INTO appointments (slot_id, parent_id, student_id, status, note, confirmed_at)
     SELECT v_slot2, v_parent2, v_s6, 'confirmed', 'Hỏi thêm về nếp ngủ trưa ở nhà', NOW() - INTERVAL '2 hours'
-    WHERE v_slot2 IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot2);
+    WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE slot_id = v_slot2 AND parent_id = v_parent2);
 
     INSERT INTO appointments (slot_id, parent_id, student_id, status, note, cancel_reason, cancelled_at)
     SELECT v_slot3, v_parent1, v_s5, 'cancelled', 'Muốn cập nhật kế hoạch theo dõi sức khỏe',
            'Phụ huynh bận công tác đột xuất, xin dời lịch', NOW() - INTERVAL '1 hour'
-    WHERE v_slot3 IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot3);
+    WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE slot_id = v_slot3 AND parent_id = v_parent1);
 
     INSERT INTO appointments (slot_id, parent_id, student_id, status, note, confirmed_at, completed_at)
     SELECT v_slot4, v_parent3, v_s9, 'completed', 'Đã trao đổi về vận động tinh và thói quen ăn uống',
            NOW() - INTERVAL '2 days 3 hours', NOW() - INTERVAL '2 days 2 hours 30 minutes'
-    WHERE v_slot4 IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot4);
+    WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE slot_id = v_slot4 AND parent_id = v_parent3);
 
     INSERT INTO appointments (slot_id, parent_id, student_id, status, note, confirmed_at)
     SELECT v_slot5, v_parent3, v_s10, 'no_show', 'Lịch trao đổi định kỳ cuối tuần', NOW() - INTERVAL '1 day 5 hours'
-    WHERE v_slot5 IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM appointments a WHERE a.slot_id = v_slot5);
+    WHERE NOT EXISTS (SELECT 1 FROM appointments WHERE slot_id = v_slot5 AND parent_id = v_parent3);
 
     SELECT appointment_id INTO v_appt1
     FROM appointments
@@ -1170,7 +1088,7 @@ BEGIN
            ),
            NOW() - INTERVAL '3 hours'
     WHERE NOT EXISTS (
-      SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_001'
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_001'
     );
 
     INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
@@ -1182,10 +1100,9 @@ BEGIN
              'request', jsonb_build_object('class_id', v_class2, 'teacher_id', v_teacher2)
            ),
            NOW() - INTERVAL '2 hours 45 minutes'
-    WHERE v_slot6 IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_002'
-      );
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_002'
+    );
 
     INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
     SELECT v_parent1_user, 'PARENT', v_school1,
@@ -1196,10 +1113,9 @@ BEGIN
              'status', 'pending'
            ),
            NOW() - INTERVAL '2 hours 30 minutes'
-    WHERE v_appt1 IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_003'
-      );
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_003'
+    );
 
     INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
     SELECT v_teacher1_user, 'TEACHER', v_school1,
@@ -1210,10 +1126,9 @@ BEGIN
              'status', 'confirmed'
            ),
            NOW() - INTERVAL '2 hours'
-    WHERE v_appt2 IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_004'
-      );
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_004'
+    );
 
     INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
     SELECT v_parent1_user, 'PARENT', v_school1,
@@ -1224,10 +1139,9 @@ BEGIN
              'status', 'cancelled'
            ),
            NOW() - INTERVAL '90 minutes'
-    WHERE v_appt3 IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_005'
-      );
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_005'
+    );
 
     INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
     SELECT v_school_admin2_user, 'SCHOOL_ADMIN', v_school3,
@@ -1239,7 +1153,7 @@ BEGIN
            ),
            NOW() - INTERVAL '1 hour'
     WHERE NOT EXISTS (
-      SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_006'
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_006'
     );
 
     INSERT INTO audit_logs (actor_user_id, actor_role, school_id, action, entity_type, entity_id, details, created_at)
@@ -1251,10 +1165,9 @@ BEGIN
              'status', 'completed'
            ),
            NOW() - INTERVAL '45 minutes'
-    WHERE v_appt4 IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM audit_logs al WHERE al.details->>'seed_key' = 'seed_audit_007'
-      );
+    WHERE NOT EXISTS (
+      SELECT 1 FROM audit_logs WHERE details->>'seed_key' = 'seed_audit_007'
+    );
   END IF;
 
 END $$;

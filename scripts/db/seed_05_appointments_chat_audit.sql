@@ -25,13 +25,14 @@ DECLARE
   v_apt_id         uuid;
   i                int;
   j                int;
+  k                int;
 BEGIN
-  SELECT array_agg(teacher_id) INTO v_teacher_ids FROM teachers ORDER BY full_name;
-  SELECT array_agg(parent_id) INTO v_parent_ids FROM parents ORDER BY full_name;
-  SELECT array_agg(student_id) INTO v_student_ids FROM students ORDER BY full_name;
-  SELECT array_agg(class_id) INTO v_class_ids FROM classes ORDER BY school_id, name;
-  SELECT array_agg(school_id) INTO v_school_ids FROM schools ORDER BY name;
-  SELECT array_agg(user_id) INTO v_user_ids FROM users ORDER BY email;
+  SELECT array_agg(teacher_id ORDER BY full_name) INTO v_teacher_ids FROM teachers;
+  SELECT array_agg(parent_id ORDER BY full_name) INTO v_parent_ids FROM parents;
+  SELECT array_agg(student_id ORDER BY full_name) INTO v_student_ids FROM students;
+  SELECT array_agg(class_id ORDER BY school_id, name) INTO v_class_ids FROM classes;
+  SELECT array_agg(school_id ORDER BY name) INTO v_school_ids FROM schools;
+  SELECT array_agg(user_id ORDER BY email) INTO v_user_ids FROM users;
 
   -- ======================
   -- 1) APPOINTMENT SLOTS (56 slots — mỗi teacher 2-3 slots)

@@ -17,7 +17,7 @@ DECLARE
   v_school_cantho     uuid;
 
   -- Class holder
-  v_class uuid;
+  v_class text;
 BEGIN
   -- ======================
   -- 1) SCHOOLS (8 trường — 3 miền Bắc/Trung/Nam)

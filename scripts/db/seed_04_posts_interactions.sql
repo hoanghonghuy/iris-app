@@ -21,17 +21,17 @@ DECLARE
   i                int;
   j                int;
 BEGIN
-  SELECT array_agg(student_id) INTO v_student_ids FROM students ORDER BY full_name;
-  SELECT array_agg(class_id) INTO v_class_ids FROM classes ORDER BY school_id, name;
-  SELECT array_agg(school_id) INTO v_school_ids FROM schools ORDER BY name;
+  SELECT array_agg(student_id ORDER BY full_name) INTO v_student_ids FROM students;
+  SELECT array_agg(class_id ORDER BY school_id, name) INTO v_class_ids FROM classes;
+  SELECT array_agg(school_id ORDER BY name) INTO v_school_ids FROM schools;
 
-  SELECT array_agg(u.user_id) INTO v_teacher_users
+  SELECT array_agg(u.user_id ORDER BY u.email) INTO v_teacher_users
   FROM users u JOIN user_roles ur ON u.user_id = ur.user_id
-  JOIN roles r ON ur.role_id = r.role_id WHERE r.name = 'TEACHER' ORDER BY u.email;
+  JOIN roles r ON ur.role_id = r.role_id WHERE r.name = 'TEACHER';
 
-  SELECT array_agg(u.user_id) INTO v_parent_users
+  SELECT array_agg(u.user_id ORDER BY u.email) INTO v_parent_users
   FROM users u JOIN user_roles ur ON u.user_id = ur.user_id
-  JOIN roles r ON ur.role_id = r.role_id WHERE r.name = 'PARENT' ORDER BY u.email;
+  JOIN roles r ON ur.role_id = r.role_id WHERE r.name = 'PARENT';
 
   -- ======================
   -- 1) POSTS (56 posts — đủ scope_type × type)
