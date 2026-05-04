@@ -1,12 +1,6 @@
 import { httpClient } from './httpClient'
 import { teacherPostService } from './postService'
-
-function buildDateRangeParams(from, to) {
-  const params = {}
-  if (from) params.from = from
-  if (to) params.to = to
-  return params
-}
+import { buildDateRangeParams } from '../helpers/queryParams'
 
 export const teacherService = {
   async getAnalytics() {

@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { teacherService } from '../../services/teacherService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
-import { formatDateTime } from '../../helpers/appointmentConfig'
+import { formatDateTime } from '../../helpers/dateFormatter'
 
 export function useAppointmentSlotCreation(classes, fetchAllAppointments) {
   const showCreateForm = ref(false)

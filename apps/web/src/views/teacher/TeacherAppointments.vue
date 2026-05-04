@@ -11,13 +11,13 @@ import {
 } from 'lucide-vue-next'
 import { downloadCsv } from '../../helpers/csvExport'
 import { getDateInputValue } from '../../helpers/dateHelpers'
+import { formatDateTime } from '../../helpers/dateFormatter'
 import {
   APPOINTMENT_STATUS_CONFIG,
   APPOINTMENT_STATUS_OPTIONS,
   getCancelReasonText,
   getUtcOffsetLabel,
   formatDayHeading,
-  formatDateTime,
   getLocalDateKey,
 } from '../../helpers/appointmentConfig'
 import { useAppointmentsList, useAppointmentSlotCreation } from '../../composables/teacher'
