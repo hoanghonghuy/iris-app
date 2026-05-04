@@ -1,92 +1,71 @@
-import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { authService } from '../services/authService'
 import { tokenStorage } from '@/helpers/auth'
 
-export const useAuthStore = defineStore('auth', () => {
-  // State
-  const token = ref(tokenStorage.getToken() || null)
-  const currentUser = ref(null)
-  const currentUserRole = ref(tokenStorage.getRole() || null)
-  const isLoading = ref(false)
-  const errorMessage = ref(null)
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    token: tokenStorage.getToken() || null,
+    currentUser: null,
+    currentUserRole: tokenStorage.getRole() || null,
+    isLoading: false,
+    errorMessage: null,
+  }),
 
-  // Getters
-  const isAuthenticated = computed(() => !!token.value)
-  const isAdmin = computed(
-    () => currentUserRole.value === 'SUPER_ADMIN' || currentUserRole.value === 'SCHOOL_ADMIN',
-  )
-  const isTeacher = computed(() => currentUserRole.value === 'TEACHER')
-  const isParent = computed(() => currentUserRole.value === 'PARENT')
+  getters: {
+    isAuthenticated: (state) => !!state.token,
+    isAdmin: (state) =>
+      state.currentUserRole === 'SUPER_ADMIN' || state.currentUserRole === 'SCHOOL_ADMIN',
+    isTeacher: (state) => state.currentUserRole === 'TEACHER',
+    isParent: (state) => state.currentUserRole === 'PARENT',
+  },
 
-  // Actions
-  function setToken(newToken) {
-    token.value = newToken
-    tokenStorage.setToken(newToken)
-  }
+  actions: {
+    setToken(newToken) {
+      this.token = newToken
+      tokenStorage.setToken(newToken)
+    },
 
-  function setRole(role) {
-    currentUserRole.value = role
-    tokenStorage.setRole(role)
-  }
+    setRole(role) {
+      this.currentUserRole = role
+      tokenStorage.setRole(role)
+    },
 
-  function setUser(user) {
-    currentUser.value = user
-  }
+    setUser(user) {
+      this.currentUser = user
+    },
 
-  function clearAuth() {
-    token.value = null
-    currentUserRole.value = null
-    currentUser.value = null
-    tokenStorage.clear()
-  }
+    clearAuth() {
+      this.token = null
+      this.currentUserRole = null
+      this.currentUser = null
+      tokenStorage.clear()
+    },
 
-  async function fetchCurrentUser() {
-    if (!token.value) return null
+    async fetchCurrentUser() {
+      if (!this.token) return null
 
-    isLoading.value = true
-    errorMessage.value = null
-    try {
-      const user = await authService.getMe()
-      setUser(user)
-      
-      // Single role per user - lấy role đầu tiên (và duy nhất)
-      if (user && Array.isArray(user.roles) && user.roles.length > 0) {
-        setRole(user.roles[0])
-      } else if (user && user.role) {
-        setRole(user.role)
+      this.isLoading = true
+      this.errorMessage = null
+      try {
+        const user = await authService.getMe()
+        this.setUser(user)
+
+        // Single role per user - lấy role đầu tiên (và duy nhất)
+        if (user && Array.isArray(user.roles) && user.roles.length > 0) {
+          this.setRole(user.roles[0])
+        } else if (user && user.role) {
+          this.setRole(user.role)
+        }
+        return user
+      } catch (error) {
+        // Nếu lỗi 401, httpClient đã tự xử lý redirect
+        // Ở đây chỉ clear state nếu fetch lỗi
+        console.error('Failed to fetch user:', error)
+        this.clearAuth()
+        return null
+      } finally {
+        this.isLoading = false
       }
-      return user
-    } catch (error) {
-      // Nếu lỗi 401, httpClient đã tự xử lý redirect
-      // Ở đây chỉ clear state nếu fetch lỗi
-      console.error('Failed to fetch user:', error)
-      clearAuth()
-      return null
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  return {
-    // State
-    token,
-    currentUser,
-    currentUserRole,
-    isLoading,
-    errorMessage,
-
-    // Getters
-    isAuthenticated,
-    isAdmin,
-    isTeacher,
-    isParent,
-
-    // Actions
-    setToken,
-    setRole,
-    setUser,
-    clearAuth,
-    fetchCurrentUser,
-  }
+    },
+  },
 })
