@@ -10,24 +10,9 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/db"
 	httpapi "github.com/hoanghonghuy/iris-app/apps/api/internal/http"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
-	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
-
-	v1analyticshandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/analytics"
-	v1auditloghandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/audit_log"
-	v1authhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/auth"
 	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
-	v1classhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/class"
-	v1parenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent"
-	v1parentcodehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_code"
-	v1parentscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/parent_scope"
-	v1schoolhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/school"
-	v1schooladminhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/school_admin"
-	v1studenthandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/student"
-	v1teacherhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher"
-	v1teacherscopehandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/teacher_scope"
-	v1userhandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/user"
 	"github.com/joho/godotenv"
 )
 
@@ -49,28 +34,7 @@ func main() {
 	defer pool.Close()
 
 	// Repositories
-	// TODO: tách ra hàm helper initRepositories(pool) *repo.Repositories
-	repos := &repo.Repositories{
-		UserRepo:            repo.NewUserRepo(pool),
-		SchoolRepo:          repo.NewSchoolRepo(pool),
-		ClassRepo:           repo.NewClassRepo(pool),
-		StudentRepo:         repo.NewStudentRepo(pool),
-		StudentParentRepo:   repo.NewStudentParentRepo(pool),
-		ParentRepo:          repo.NewParentRepo(pool),
-		ParentCodeRepo:      repo.NewParentCodeRepo(pool),
-		TeacherRepo:         repo.NewTeacherRepo(pool),
-		TeacherClassRepo:    repo.NewTeacherClassRepo(pool),
-		TeacherScopeRepo:    repo.NewTeacherScopeRepo(pool),
-		HealthLogRepo:       repo.NewHealthLogRepo(pool),
-		ParentScopeRepo:     repo.NewParentScopeRepo(pool),
-		PostInteractionRepo: repo.NewPostInteractionRepo(pool),
-		AppointmentRepo:     repo.NewAppointmentRepo(pool),
-		AuditLogRepo:        repo.NewAuditLogRepo(pool),
-		SchoolAdminRepo:     repo.NewSchoolAdminRepo(pool),
-		ResetTokenRepo:      repo.NewResetTokenRepo(pool),
-		RefreshTokenRepo:    repo.NewRefreshTokenRepo(pool),
-		ChatRepo:            repo.NewChatRepo(pool),
-	}
+	repos := initRepositories(pool)
 
 	// Authenticator
 	jwtAuth := auth.NewAuthenticator(cfg.JWTSecret, cfg.JWTTTLMinutes)
@@ -98,53 +62,16 @@ func main() {
 	}
 
 	// Services
-	// TODO: tách ra hàm helper initServices(repos, jwtAuth) *Services
-	var (
-		authService = service.NewAuthService(repos.UserRepo, repos.SchoolAdminRepo, repos.RefreshTokenRepo, jwtAuth, service.AuthServiceOptions{
-			GoogleVerifier:  googleVerifier,
-			GoogleEnabled:   cfg.GoogleLoginEnabled,
-			GoogleHD:        cfg.GoogleHostedDomain,
-			RefreshTTLHours: cfg.JWTRefreshTTLHours,
-		})
-		schoolService       = service.NewSchoolService(repos.SchoolRepo)
-		classService        = service.NewClassService(repos.ClassRepo)
-		studentService      = service.NewStudentService(repos.StudentRepo, repos.ClassRepo)
-		userService         = service.NewUserService(repos.UserRepo, repos.ResetTokenRepo, jwtAuth, emailSender, frontendURL)
-		teacherService      = service.NewTeacherService(repos.TeacherRepo, repos.TeacherClassRepo, repos.ClassRepo)
-		teacherScopeService = service.NewTeacherScopeService(repos.TeacherScopeRepo, repos.HealthLogRepo, repos.TeacherRepo, repos.PostInteractionRepo)
-		appointmentService  = service.NewAppointmentService(repos.AppointmentRepo)
-		parentService       = service.NewParentService(repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo)
-		parentScopeService  = service.NewParentScopeService(repos.ParentScopeRepo, repos.PostInteractionRepo, repos.AppointmentRepo)
-		auditLogService     = service.NewAuditLogService(repos.AuditLogRepo)
-		parentCodeService   = service.NewParentCodeService(repos.ParentCodeRepo, repos.UserRepo, repos.ParentRepo, repos.StudentParentRepo, repos.StudentRepo, jwtAuth, googleVerifier, cfg.GoogleLoginEnabled, cfg.GoogleHostedDomain)
-		schoolAdminService  = service.NewSchoolAdminService(repos.SchoolAdminRepo, repos.UserRepo)
-		analyticsService    = service.NewAnalyticsService(repos)
-		chatService         = service.NewChatService(repos.ChatRepo)
-	)
+	services := initServices(repos, cfg, jwtAuth, googleVerifier, emailSender, frontendURL)
 
 	// Handlers
-	// TODO: tách ra hàm helper initHandlers(services) *Handlers
-	var (
-		authHandler         = v1authhandlers.NewAuthHandler(authService, userService)
-		schoolHandler       = v1schoolhandlers.NewSchoolHandler(schoolService)
-		classHandler        = v1classhandlers.NewClassHandler(classService)
-		studentHandler      = v1studenthandlers.NewStudentHandler(studentService)
-		userHandler         = v1userhandlers.NewUserHandler(userService)
-		teacherHandler      = v1teacherhandlers.NewTeacherHandler(teacherService)
-		teacherScopeHandler = v1teacherscopehandlers.NewTeacherScopeHandler(teacherScopeService, appointmentService)
-		parentHandler       = v1parenthandlers.NewParentHandler(parentService)
-		parentScopeHandler  = v1parentscopehandlers.NewParentScopeHandler(parentScopeService, appointmentService)
-		auditLogHandler     = v1auditloghandlers.NewAuditLogHandler(auditLogService)
-		parentCodeHandler   = v1parentcodehandlers.NewParentCodeHandler(parentCodeService)
-		schoolAdminHandler  = v1schooladminhandlers.NewSchoolAdminHandler(schoolAdminService)
-		analyticsHandler    = v1analyticshandlers.NewAnalyticsHandler(analyticsService)
-	)
+	handlers := initHandlers(services)
 
 	// WebSocket Hub (chạy goroutine background)
 	hub := ws.NewHub()
 	go hub.Run()
 
-	chatHandler := v1chathandlers.NewChatHandler(chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
+	chatHandler := v1chathandlers.NewChatHandler(services.chatService, hub, cfg.JWTSecret, cfg.AllowedOrigins)
 	// build các middleware rate limit xác thực từ config.
 	authRateLimitWindow := time.Duration(cfg.AuthRateLimitWindowSeconds) * time.Second
 	authLoginLimiter := middleware.NewIPFixedWindowRateLimitWithConfig(middleware.FixedWindowRateLimitConfig{
@@ -174,20 +101,20 @@ func main() {
 		authLoginLimiter,
 		authForgotLimiter,
 		authResetLimiter,
-		authHandler,
-		schoolHandler,
-		classHandler,
-		studentHandler,
-		userHandler,
-		teacherScopeHandler,
-		teacherHandler,
-		parentHandler,
-		parentScopeHandler,
-		parentCodeHandler,
-		schoolAdminHandler,
-		analyticsHandler,
-		auditLogHandler,
-		auditLogService,
+		handlers.authHandler,
+		handlers.schoolHandler,
+		handlers.classHandler,
+		handlers.studentHandler,
+		handlers.userHandler,
+		handlers.teacherScopeHandler,
+		handlers.teacherHandler,
+		handlers.parentHandler,
+		handlers.parentScopeHandler,
+		handlers.parentCodeHandler,
+		handlers.schoolAdminHandler,
+		handlers.analyticsHandler,
+		handlers.auditLogHandler,
+		services.auditLogService,
 		chatHandler,
 	)
 
