@@ -106,6 +106,7 @@ func NewRouter(
 		})
 		v1.POST("/auth/login", authLoginRateLimit, authHandler.Login)
 		v1.POST("/auth/login/google", authLoginRateLimit, authHandler.LoginWithGoogle)
+		v1.POST("/auth/refresh", authHandler.Refresh)
 		v1.POST("/auth/forgot-password", authForgotPasswordRateLimit, authHandler.ForgotPassword)
 		v1.POST("/auth/reset-password", authResetPasswordRateLimit, authHandler.ResetPassword)
 		v1.POST("/users/activate-token", userHandler.ActivateUserWithToken)

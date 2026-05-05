@@ -68,6 +68,7 @@ func main() {
 		AuditLogRepo:        repo.NewAuditLogRepo(pool),
 		SchoolAdminRepo:     repo.NewSchoolAdminRepo(pool),
 		ResetTokenRepo:      repo.NewResetTokenRepo(pool),
+		RefreshTokenRepo:    repo.NewRefreshTokenRepo(pool),
 		ChatRepo:            repo.NewChatRepo(pool),
 	}
 
@@ -99,7 +100,12 @@ func main() {
 	// Services
 	// TODO: tách ra hàm helper initServices(repos, jwtAuth) *Services
 	var (
-		authService         = service.NewAuthService(repos.UserRepo, repos.SchoolAdminRepo, jwtAuth, googleVerifier, cfg.GoogleLoginEnabled, cfg.GoogleHostedDomain)
+		authService = service.NewAuthService(repos.UserRepo, repos.SchoolAdminRepo, repos.RefreshTokenRepo, jwtAuth, service.AuthServiceOptions{
+			GoogleVerifier:  googleVerifier,
+			GoogleEnabled:   cfg.GoogleLoginEnabled,
+			GoogleHD:        cfg.GoogleHostedDomain,
+			RefreshTTLHours: cfg.JWTRefreshTTLHours,
+		})
 		schoolService       = service.NewSchoolService(repos.SchoolRepo)
 		classService        = service.NewClassService(repos.ClassRepo)
 		studentService      = service.NewStudentService(repos.StudentRepo, repos.ClassRepo)

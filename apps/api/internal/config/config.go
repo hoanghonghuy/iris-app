@@ -8,10 +8,11 @@ import (
 )
 
 type Config struct {
-	DatabaseURL   string
-	DBMaxConns    int32
-	JWTSecret     string
-	JWTTTLMinutes int
+	DatabaseURL        string
+	DBMaxConns         int32
+	JWTSecret          string
+	JWTTTLMinutes      int
+	JWTRefreshTTLHours int
 	// Cấu hình rate limit dạng fixed-window cho login/forgot-password xác thực.
 	AuthLoginRateLimit              int
 	AuthForgotRateLimit             int
@@ -46,6 +47,12 @@ func Load() (Config, error) {
 	if v := os.Getenv("JWT_TTL_MINUTES"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil && n > 0 {
 			ttl = n
+		}
+	}
+	refreshTTLHours := 24 * 7
+	if v := os.Getenv("JWT_REFRESH_TTL_HOURS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			refreshTTLHours = n
 		}
 	}
 
@@ -87,6 +94,7 @@ func Load() (Config, error) {
 		DBMaxConns:                      maxConns,
 		JWTSecret:                       jwtSecret,
 		JWTTTLMinutes:                   ttl,
+		JWTRefreshTTLHours:              refreshTTLHours,
 		AuthLoginRateLimit:              authLoginRateLimit,
 		AuthForgotRateLimit:             authForgotRateLimit,
 		AuthResetRateLimit:              authResetRateLimit,

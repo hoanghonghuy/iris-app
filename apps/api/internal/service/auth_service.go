@@ -2,7 +2,11 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
@@ -19,37 +23,53 @@ var (
 )
 
 type AuthService struct {
-	userRepo        *repo.UserRepo
-	schoolAdminRepo *repo.SchoolAdminRepo
-	jwtAuth         *auth.Authenticator
-	googleVerifier  auth.GoogleTokenVerifier
-	googleEnabled   bool
-	googleHD        string
+	userRepo         *repo.UserRepo
+	schoolAdminRepo  *repo.SchoolAdminRepo
+	refreshTokenRepo *repo.RefreshTokenRepo
+	jwtAuth          *auth.Authenticator
+	googleVerifier   auth.GoogleTokenVerifier
+	googleEnabled    bool
+	googleHD         string
+	refreshTTL       time.Duration
+}
+
+type AuthServiceOptions struct {
+	GoogleVerifier  auth.GoogleTokenVerifier
+	GoogleEnabled   bool
+	GoogleHD        string
+	RefreshTTLHours int
 }
 
 func NewAuthService(
 	userRepo *repo.UserRepo,
 	schoolAdminRepo *repo.SchoolAdminRepo,
+	refreshTokenRepo *repo.RefreshTokenRepo,
 	jwtAuth *auth.Authenticator,
-	googleVerifier auth.GoogleTokenVerifier,
-	googleEnabled bool,
-	googleHD string,
+	opts AuthServiceOptions,
 ) *AuthService {
+	refreshTTLHours := opts.RefreshTTLHours
+	if refreshTTLHours <= 0 {
+		refreshTTLHours = 24 * 7
+	}
 	return &AuthService{
-		userRepo:        userRepo,
-		schoolAdminRepo: schoolAdminRepo,
-		jwtAuth:         jwtAuth,
-		googleVerifier:  googleVerifier,
-		googleEnabled:   googleEnabled,
-		googleHD:        googleHD,
+		userRepo:         userRepo,
+		schoolAdminRepo:  schoolAdminRepo,
+		refreshTokenRepo: refreshTokenRepo,
+		jwtAuth:          jwtAuth,
+		googleVerifier:   opts.GoogleVerifier,
+		googleEnabled:    opts.GoogleEnabled,
+		googleHD:         opts.GoogleHD,
+		refreshTTL:       time.Duration(refreshTTLHours) * time.Hour,
 	}
 }
 
 // LoginResponse chứa thông tin trả về sau khi đăng nhập thành công
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	TokenType        string `json:"token_type"`
+	ExpiresIn        int    `json:"expires_in"`
+	RefreshExpiresIn int    `json:"refresh_expires_in"`
 }
 
 // Login xử lý logic đăng nhập
@@ -153,14 +173,78 @@ func (s *AuthService) buildLoginResponse(ctx context.Context, user *model.User) 
 		return nil, err
 	}
 
+	refreshToken, refreshTokenHash, err := generateOpaqueToken()
+	if err != nil {
+		return nil, err
+	}
+	refreshExpiresAt := time.Now().Add(s.refreshTTL)
+	if err := s.refreshTokenRepo.Create(ctx, user.UserID, refreshTokenHash, refreshExpiresAt); err != nil {
+		return nil, err
+	}
+
 	return &LoginResponse{
-		AccessToken: token,
-		TokenType:   "Bearer",
-		ExpiresIn:   s.jwtAuth.TTLSeconds,
+		AccessToken:      token,
+		RefreshToken:     refreshToken,
+		TokenType:        "Bearer",
+		ExpiresIn:        s.jwtAuth.TTLSeconds,
+		RefreshExpiresIn: int(s.refreshTTL.Seconds()),
 	}, nil
 }
 
 // GetUserInfo trả về thông tin user theo ID.
 func (s *AuthService) GetUserInfo(ctx context.Context, userID uuid.UUID) (*model.UserInfo, error) {
 	return s.userRepo.FindByID(ctx, userID)
+}
+
+// Refresh đổi refresh token hợp lệ lấy cặp access/refresh token mới.
+func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (*LoginResponse, error) {
+	if refreshToken == "" {
+		return nil, ErrRefreshTokenInvalid
+	}
+	refreshTokenHash := hashToken(refreshToken)
+	storedToken, err := s.refreshTokenRepo.FindActiveByTokenHash(ctx, refreshTokenHash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrRefreshTokenInvalid
+		}
+		return nil, err
+	}
+
+	userInfo, err := s.userRepo.FindByID(ctx, storedToken.UserID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrRefreshTokenInvalid
+		}
+		return nil, err
+	}
+	if userInfo.Status == "locked" {
+		return nil, auth.ErrUserLocked
+	}
+
+	if err := s.refreshTokenRepo.RevokeByID(ctx, storedToken.ID); err != nil {
+		if errors.Is(err, repo.ErrNoRowsUpdated) {
+			return nil, ErrRefreshTokenInvalid
+		}
+		return nil, err
+	}
+
+	return s.buildLoginResponse(ctx, &model.User{
+		UserID: userInfo.UserID,
+		Email:  userInfo.Email,
+		Status: userInfo.Status,
+	})
+}
+
+func generateOpaqueToken() (token string, tokenHash string, err error) {
+	buf := make([]byte, 32)
+	if _, err := rand.Read(buf); err != nil {
+		return "", "", err
+	}
+	token = hex.EncodeToString(buf)
+	return token, hashToken(token), nil
+}
+
+func hashToken(raw string) string {
+	sum := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(sum[:])
 }

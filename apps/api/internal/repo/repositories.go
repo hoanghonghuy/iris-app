@@ -18,5 +18,6 @@ type Repositories struct {
 	AuditLogRepo        *AuditLogRepo
 	SchoolAdminRepo     *SchoolAdminRepo
 	ResetTokenRepo      *ResetTokenRepo
+	RefreshTokenRepo    *RefreshTokenRepo
 	ChatRepo            *ChatRepo
 }

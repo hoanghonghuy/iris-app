@@ -38,6 +38,11 @@ var (
 	ErrFailedToSendEmail = errors.New("failed to send reset email")
 )
 
+// Refresh token errors
+var (
+	ErrRefreshTokenInvalid = errors.New("invalid or expired refresh token")
+)
+
 // Parent-related errors
 var (
 	ErrInvalidParentCode           = errors.New("invalid parent code")
