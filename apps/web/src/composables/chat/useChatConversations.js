@@ -76,6 +76,54 @@ export function useChatConversations() {
     return pickConversationAfterCreate(updated)
   }
 
+  /** Cập nhật sidebar khi có tin realtime (WebSocket); giữ hội thoại đang chọn đồng bộ. */
+  function handleIncomingWsMessage(payload, currentUserId) {
+    if (!payload?.conversation_id) return
+
+    const cid = String(payload.conversation_id)
+    const fromSelf = String(payload.sender_id) === String(currentUserId)
+    const selId = getSelectedConversationId()
+    const isSelected = selId && String(selId) === cid
+
+    const lastMessage = {
+      message_id: payload.message_id,
+      sender_id: payload.sender_id,
+      sender_email: payload.sender_email || '',
+      content: payload.content,
+      created_at: payload.created_at,
+    }
+
+    const idx = conversations.value.findIndex((c) => String(getConversationId(c)) === cid)
+    if (idx === -1) {
+      fetchConversations()
+      return
+    }
+
+    const row = { ...conversations.value[idx], last_message: lastMessage }
+    if (isSelected) {
+      row.unread_count = 0
+    } else if (!fromSelf) {
+      row.unread_count = (conversations.value[idx].unread_count || 0) + 1
+    }
+
+    const next = [...conversations.value]
+    next.splice(idx, 1)
+    next.unshift(row)
+    conversations.value = next
+
+    if (isSelected && selectedConversation.value) {
+      selectedConversation.value = {
+        ...selectedConversation.value,
+        last_message: lastMessage,
+        unread_count: 0,
+      }
+    }
+
+    if (isSelected && !fromSelf) {
+      chatService.markConversationRead(cid).catch(() => {})
+    }
+  }
+
   /** Sau khi xóa thành viên: nếu user hiện tại không còn trong danh sách hội thoại, trả null. */
   async function removeGroupParticipant(conversationId, userId) {
     const updated = await chatService.removeConversationParticipant(conversationId, userId)
@@ -92,6 +140,21 @@ export function useChatConversations() {
     return getConversationId(selectedConversation.value)
   }
 
+  /** Sau khi mở hội thoại và tải tin (GET messages đã mark read trên server). */
+  function syncUnreadAfterOpen(conversationId) {
+    if (!conversationId) return
+    const sid = String(conversationId)
+    conversations.value = conversations.value.map((c) =>
+      String(getConversationId(c)) === sid ? { ...c, unread_count: 0 } : c,
+    )
+    if (
+      selectedConversation.value &&
+      String(getConversationId(selectedConversation.value)) === sid
+    ) {
+      selectedConversation.value = { ...selectedConversation.value, unread_count: 0 }
+    }
+  }
+
   return {
     conversations,
     selectedConversation,
@@ -105,5 +168,7 @@ export function useChatConversations() {
     addGroupParticipants,
     removeGroupParticipant,
     getSelectedConversationId,
+    handleIncomingWsMessage,
+    syncUnreadAfterOpen,
   }
 }

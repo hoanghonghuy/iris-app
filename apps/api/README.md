@@ -98,11 +98,12 @@ All endpoints are prefixed with `/api/v1`.
 | `GET` | `/users/search` | Search users to start conversation |
 | `POST` | `/conversations/direct` | Create or return existing 1-on-1 conversation (`201` if newly created, `200` if already existed) |
 | `POST` | `/conversations/group` | Create group conversation (creator + `participant_user_ids`) |
-| `GET` | `/conversations` | List user's conversations |
+| `GET` | `/conversations` | List user's conversations (sorted by latest activity; each item may include `last_message`, `unread_count`) |
 | `PATCH` | `/conversations/:conversation_id/group` | Rename group (`{ "name": "..." }`, empty clears name) |
 | `POST` | `/conversations/:conversation_id/participants` | Add members (`{ "user_ids": ["uuid", ...] }`) |
 | `DELETE` | `/conversations/:conversation_id/participants/:user_id` | Remove a member (group must stay ≥ 2 members) |
-| `GET` | `/conversations/:conversation_id/messages` | Get messages in conversation |
+| `POST` | `/conversations/:conversation_id/read` | Mark conversation read up to latest message (sidebar unread) |
+| `GET` | `/conversations/:conversation_id/messages` | Get messages in conversation (also marks read up to latest message) |
 
 ### Teacher Scope (`/teacher/*`) — requires `TEACHER` role
 

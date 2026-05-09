@@ -1,9 +1,11 @@
 <script setup>
 import { ref, watch } from 'vue'
-import { Heart, MessageCircle, SendHorizontal } from 'lucide-vue-next'
+import { Heart, MessageCircle, Pencil, SendHorizontal, Trash2, X } from 'lucide-vue-next'
 import { POST_SCOPE_LABELS, POST_TYPE_META } from '../helpers/postConfig'
 import { formatDateTime } from '@/helpers/dateFormatter'
+import { extractErrorMessage } from '@/helpers/errorHandler'
 import { usePostInteractions } from '@/composables/usePostInteractions'
+import { teacherPostService } from '@/services/postService'
 
 const props = defineProps({
   post: {
@@ -26,9 +28,13 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  enableTeacherManage: {
+    type: Boolean,
+    default: false,
+  },
 })
 
-const emit = defineEmits(['patch-post'])
+const emit = defineEmits(['patch-post', 'delete-post'])
 
 // Post interaction composable
 const {
@@ -52,6 +58,10 @@ const comments = ref([])
 const commentsLoaded = ref(false)
 const commentDraft = ref('')
 const processingShare = ref(false)
+const editing = ref(false)
+const editDraft = ref('')
+const manageBusy = ref(false)
+const manageError = ref('')
 
 watch(
   () => props.post,
@@ -60,12 +70,62 @@ watch(
     likeCount.value = post.like_count || 0
     shareCount.value = post.share_count || 0
     commentCount.value = post.comment_count || 0
+    if (!editing.value) {
+      editDraft.value = post.content || ''
+    }
   },
   { deep: true },
 )
 
 function patchPost(patch) {
   emit('patch-post', props.post.post_id, patch)
+}
+
+function startEdit() {
+  manageError.value = ''
+  editDraft.value = props.post.content || ''
+  editing.value = true
+}
+
+function cancelEdit() {
+  editing.value = false
+  editDraft.value = props.post.content || ''
+  manageError.value = ''
+}
+
+async function saveEdit() {
+  if (!props.enableTeacherManage) return
+  const content = editDraft.value.trim()
+  if (!content) {
+    manageError.value = 'Nội dung không được để trống.'
+    return
+  }
+  manageBusy.value = true
+  manageError.value = ''
+  try {
+    await teacherPostService.updatePost(props.post.post_id, { content })
+    patchPost({ content })
+    editing.value = false
+  } catch (err) {
+    manageError.value = extractErrorMessage(err) || 'Không thể lưu bài.'
+  } finally {
+    manageBusy.value = false
+  }
+}
+
+async function requestDelete() {
+  if (!props.enableTeacherManage) return
+  if (!globalThis.confirm('Xóa bài đăng này?')) return
+  manageBusy.value = true
+  manageError.value = ''
+  try {
+    await teacherPostService.deletePost(props.post.post_id)
+    emit('delete-post', props.post.post_id)
+  } catch (err) {
+    manageError.value = extractErrorMessage(err) || 'Không thể xóa bài.'
+  } finally {
+    manageBusy.value = false
+  }
 }
 
 function initials(text) {
@@ -148,12 +208,54 @@ async function handleShare() {
             </p>
           </div>
         </div>
-        <span class="badge" :class="POST_TYPE_META[post.type]?.badgeClass || 'badge--outline'">
-          {{ POST_TYPE_META[post.type]?.label || post.type }}
-        </span>
+        <div class="post-card__header-actions">
+          <span class="badge" :class="POST_TYPE_META[post.type]?.badgeClass || 'badge--outline'">
+            {{ POST_TYPE_META[post.type]?.label || post.type }}
+          </span>
+          <div v-if="enableTeacherManage" class="post-card__manage">
+            <button
+              v-if="!editing"
+              type="button"
+              class="post-card__manage-btn"
+              :disabled="manageBusy"
+              title="Sửa bài"
+              @click="startEdit"
+            >
+              <Pencil :size="16" />
+            </button>
+            <button
+              v-if="!editing"
+              type="button"
+              class="post-card__manage-btn post-card__manage-btn--danger"
+              :disabled="manageBusy"
+              title="Xóa bài"
+              @click="requestDelete"
+            >
+              <Trash2 :size="16" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      <p class="post-card__content">{{ post.content }}</p>
+      <template v-if="editing">
+        <textarea
+          v-model="editDraft"
+          class="form-input post-card__edit-area"
+          rows="4"
+          aria-label="Sửa nội dung bài đăng"
+        />
+        <div class="post-card__edit-actions">
+          <button type="button" class="btn btn--sm btn--outline" :disabled="manageBusy" @click="cancelEdit">
+            <X :size="16" />
+            Hủy
+          </button>
+          <button type="button" class="btn btn--sm btn--primary" :disabled="manageBusy" @click="saveEdit">
+            Lưu
+          </button>
+        </div>
+      </template>
+      <p v-else class="post-card__content">{{ post.content }}</p>
+      <p v-if="manageError" class="form-error">{{ manageError }}</p>
 
       <template v-if="enableInteractions">
         <div class="post-card__actions">
@@ -240,6 +342,51 @@ async function handleShare() {
 .post-card__header {
   justify-content: space-between;
   gap: var(--spacing-3);
+}
+
+.post-card__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-shrink: 0;
+}
+
+.post-card__manage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.post-card__manage-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.post-card__manage-btn:hover:not(:disabled) {
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.post-card__manage-btn--danger:hover:not(:disabled) {
+  color: var(--color-danger, #b91c1c);
+}
+
+.post-card__edit-area {
+  width: 100%;
+  resize: vertical;
+  min-height: 6rem;
+}
+
+.post-card__edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
 }
 
 .post-card__author {

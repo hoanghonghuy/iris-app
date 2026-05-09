@@ -41,6 +41,11 @@ export const chatService = {
     return response?.data ?? response
   },
 
+  async markConversationRead(conversationId) {
+    const response = await httpClient.post(`/chat/conversations/${conversationId}/read`, {})
+    return response?.data ?? response
+  },
+
   async listMessages(conversationId, limit = 50, before) {
     const params = { limit }
     if (before) params.before = before

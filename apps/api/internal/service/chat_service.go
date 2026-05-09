@@ -132,14 +132,14 @@ func (s *ChatService) CreateGroupConversationAsRequester(ctx context.Context, re
 
 // ListConversations lấy danh sách cuộc hội thoại của user
 func (s *ChatService) ListConversations(ctx context.Context, userID uuid.UUID) ([]model.ConversationWithParticipants, error) {
-	convs, err := s.chatRepo.ListConversationsByUser(ctx, userID)
+	summaries, err := s.chatRepo.ListConversationSummariesForUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	conversationIDs := make([]uuid.UUID, 0, len(convs))
-	for _, c := range convs {
-		conversationIDs = append(conversationIDs, c.ConversationID)
+	conversationIDs := make([]uuid.UUID, 0, len(summaries))
+	for _, row := range summaries {
+		conversationIDs = append(conversationIDs, row.ConversationID)
 	}
 
 	participantsByConversation, err := s.chatRepo.ListParticipantsByConversationIDs(ctx, conversationIDs)
@@ -148,14 +148,28 @@ func (s *ChatService) ListConversations(ctx context.Context, userID uuid.UUID) (
 	}
 
 	var result []model.ConversationWithParticipants
-	for _, c := range convs {
-		parts := participantsByConversation[c.ConversationID]
+	for _, row := range summaries {
+		parts := participantsByConversation[row.ConversationID]
 		result = append(result, model.ConversationWithParticipants{
-			Conversation: c,
+			Conversation: row.Conversation,
 			Participants: parts,
+			LastMessage:  row.LastMessage,
+			UnreadCount:  row.UnreadCount,
 		})
 	}
 	return result, nil
+}
+
+// MarkConversationRead đánh dấu đã xem tới tin mới nhất (sidebar unread về 0 cho viewer).
+func (s *ChatService) MarkConversationRead(ctx context.Context, conversationID, userID uuid.UUID) error {
+	ok, err := s.chatRepo.IsParticipant(ctx, conversationID, userID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrChatNotParticipant
+	}
+	return s.chatRepo.MarkConversationRead(ctx, conversationID, userID)
 }
 
 // SendMessage gửi tin nhắn vào cuộc hội thoại (kiểm tra quyền truy cập)

@@ -140,6 +140,34 @@ func (h *ChatHandler) ListConversations(c *gin.Context) {
 	response.OK(c, convs)
 }
 
+// MarkConversationRead đánh dấu đã đọc tới tin mới nhất (dùng khi đang mở hội thoại qua WebSocket).
+func (h *ChatHandler) MarkConversationRead(c *gin.Context) {
+	userID, ok := shared.RequireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	conversationID, err := uuid.Parse(c.Param("conversation_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid conversation_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+
+	if err := h.chatService.MarkConversationRead(ctx, conversationID, userID); err != nil {
+		if errors.Is(err, service.ErrChatNotParticipant) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to mark conversation read")
+		return
+	}
+
+	response.OK(c, gin.H{"conversation_id": conversationID.String(), "ok": true})
+}
+
 // ListMessages lấy danh sách tin nhắn theo cursor.
 // Query params: ?before=<message_uuid>&limit=<int>
 // Response: { data, has_more, next_cursor }
@@ -189,6 +217,9 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 		response.Fail(c, http.StatusInternalServerError, "failed to list messages")
 		return
 	}
+
+	// Đã tải (một phần) lịch sử → coi như đã đọc tới tin mới nhất trong hội thoại.
+	_ = h.chatService.MarkConversationRead(ctx, conversationID, userID)
 
 	// next_cursor là message_id của tin nhắn cũ nhất trong batch (phần tử cuối, vì DESC)
 	// fe dùng giá trị này cho lần fetch tiếp theo khi user cuộn lên

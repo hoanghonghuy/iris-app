@@ -11,6 +11,7 @@ import {
   getConversationId,
   getInitials,
   getConversationName,
+  getConversationListSubtitle,
   isFirstInGroup,
   isLastInGroup,
   shouldShowSenderName,
@@ -35,6 +36,8 @@ const {
   addGroupParticipants,
   removeGroupParticipant,
   getSelectedConversationId,
+  handleIncomingWsMessage,
+  syncUnreadAfterOpen,
 } = useChatConversations()
 const {
   messages,
@@ -112,7 +115,9 @@ function handleKeydown(event) {
 
 async function handleLoadMessages(conversation) {
   selectConversation(conversation)
-  await loadMessages(getConversationId(conversation))
+  const cid = getConversationId(conversation)
+  await loadMessages(cid)
+  syncUnreadAfterOpen(cid)
   await nextTick()
   scrollToBottom('auto')
 }
@@ -290,6 +295,7 @@ onMounted(async () => {
 
   connect()
   onMessage((message) => {
+    handleIncomingWsMessage(message, currentUserId.value)
     if (message.conversation_id === selectedConversationId.value) {
       addMessage(message)
     }
@@ -451,12 +457,15 @@ onUnmounted(() => {
           </div>
           <div class="conversation-copy">
             <p>{{ getConversationName(conversation, currentUserId) }}</p>
-            <span>{{
-              conversation.type === 'direct'
-                ? 'Trò chuyện trực tiếp'
-                : `Nhóm ${conversation.participants?.length || 0} thành viên`
-            }}</span>
+            <span>{{ getConversationListSubtitle(conversation, currentUserId) }}</span>
           </div>
+          <span
+            v-if="(conversation.unread_count || 0) > 0"
+            class="conversation-unread"
+            :aria-label="`${conversation.unread_count} tin chưa đọc`"
+          >
+            {{ conversation.unread_count > 99 ? '99+' : conversation.unread_count }}
+          </span>
         </button>
       </div>
     </aside>
@@ -916,6 +925,23 @@ onUnmounted(() => {
 .conversation-item--active {
   background: var(--color-primary);
   color: var(--color-on-primary);
+}
+
+.conversation-unread {
+  flex-shrink: 0;
+  min-width: 1.25rem;
+  padding: 0.125rem 0.45rem;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.conversation-item--active .conversation-unread {
+  background: var(--color-on-primary);
+  color: var(--color-primary);
 }
 
 .conversation-copy {

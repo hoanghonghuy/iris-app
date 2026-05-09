@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -154,14 +155,31 @@ func (r *ChatRepo) FindDirectConversation(ctx context.Context, userA, userB uuid
 	return &conv, nil
 }
 
-// ListConversationsByUser lấy danh sách cuộc hội thoại mà user tham gia
-func (r *ChatRepo) ListConversationsByUser(ctx context.Context, userID uuid.UUID) ([]model.Conversation, error) {
+// ListConversationSummariesForUser lấy danh sách hội thoại: tin cuối, unread, sort theo hoạt động gần nhất.
+func (r *ChatRepo) ListConversationSummariesForUser(ctx context.Context, userID uuid.UUID) ([]model.ConversationListSummary, error) {
 	const q = `
-		SELECT c.conversation_id, c.type, c.name, c.created_at
+		SELECT
+			c.conversation_id, c.type, c.name, c.created_at,
+			lm.message_id, lm.sender_id, u_lm.email, lm.content, lm.created_at,
+			COALESCE((
+				SELECT COUNT(*)::int
+				FROM messages m2
+				WHERE m2.conversation_id = c.conversation_id
+				  AND m2.created_at > COALESCE(cp.last_read_at, cp.joined_at)
+				  AND m2.sender_id IS DISTINCT FROM $1::uuid
+			), 0) AS unread_count,
+			COALESCE(lm.created_at, c.updated_at, c.created_at) AS sort_ts
 		FROM conversations c
-		JOIN conversation_participants cp ON c.conversation_id = cp.conversation_id
-		WHERE cp.user_id = $1
-		ORDER BY c.created_at DESC;
+		JOIN conversation_participants cp ON cp.conversation_id = c.conversation_id AND cp.user_id = $1
+		LEFT JOIN LATERAL (
+			SELECT m.message_id, m.sender_id, m.content, m.created_at
+			FROM messages m
+			WHERE m.conversation_id = c.conversation_id
+			ORDER BY m.created_at DESC, m.message_id DESC
+			LIMIT 1
+		) lm ON true
+		LEFT JOIN users u_lm ON u_lm.user_id = lm.sender_id
+		ORDER BY sort_ts DESC;
 	`
 	rows, err := r.pool.Query(ctx, q, userID)
 	if err != nil {
@@ -169,15 +187,59 @@ func (r *ChatRepo) ListConversationsByUser(ctx context.Context, userID uuid.UUID
 	}
 	defer rows.Close()
 
-	var convs []model.Conversation
+	var out []model.ConversationListSummary
 	for rows.Next() {
 		var c model.Conversation
-		if err := rows.Scan(&c.ConversationID, &c.Type, &c.Name, &c.CreatedAt); err != nil {
+		var mid, sid pgtype.UUID
+		var email, content pgtype.Text
+		var msgAt pgtype.Timestamptz
+		var unread int32
+		var sortTs pgtype.Timestamptz // chỉ để đúng thứ tự cột; không dùng sau Scan
+
+		if err := rows.Scan(
+			&c.ConversationID, &c.Type, &c.Name, &c.CreatedAt,
+			&mid, &sid, &email, &content, &msgAt,
+			&unread,
+			&sortTs,
+		); err != nil {
 			return nil, err
 		}
-		convs = append(convs, c)
+
+		summary := model.ConversationListSummary{
+			Conversation: c,
+			UnreadCount:  int(unread),
+		}
+		if mid.Valid && msgAt.Valid {
+			lm := &model.LastMessagePreview{
+				MessageID: uuid.UUID(mid.Bytes),
+				Content:   content.String,
+				CreatedAt: msgAt.Time,
+			}
+			if sid.Valid {
+				lm.SenderID = uuid.UUID(sid.Bytes)
+			}
+			if email.Valid {
+				lm.SenderEmail = email.String
+			}
+			summary.LastMessage = lm
+		}
+		out = append(out, summary)
 	}
-	return convs, rows.Err()
+	return out, rows.Err()
+}
+
+// MarkConversationRead cập nhật last_read_at tới thời điểm tin mới nhất (hoặc now nếu chưa có tin).
+func (r *ChatRepo) MarkConversationRead(ctx context.Context, conversationID, userID uuid.UUID) error {
+	const q = `
+		UPDATE conversation_participants cp
+		SET last_read_at = COALESCE(
+			(SELECT MAX(m.created_at) FROM messages m WHERE m.conversation_id = cp.conversation_id),
+			now()
+		)
+		WHERE cp.conversation_id = $1 AND cp.user_id = $2;
+	`
+	_, err := r.pool.Exec(ctx, q, conversationID, userID)
+	return err
 }
 
 // GetParticipants lấy danh sách thành viên của cuộc hội thoại kèm full_name
@@ -369,6 +431,10 @@ func (r *ChatRepo) CreateMessage(ctx context.Context, conversationID, senderID u
 		&msg.MessageID, &msg.ConversationID, &msg.SenderID, &msg.Content, &msg.CreatedAt,
 	)
 	if err != nil {
+		return nil, err
+	}
+	const bump = `UPDATE conversations SET updated_at = now() WHERE conversation_id = $1`
+	if _, err := r.pool.Exec(ctx, bump, conversationID); err != nil {
 		return nil, err
 	}
 	return &msg, nil

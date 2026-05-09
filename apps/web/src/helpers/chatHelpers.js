@@ -22,6 +22,21 @@ export function getConversationName(conversation, currentUserId) {
   return other?.full_name || other?.email || 'Cuộc hội thoại'
 }
 
+/** Dòng phụ trong danh sách hội thoại: tin cuối (rút gọn) hoặc mô tả mặc định. */
+export function getConversationListSubtitle(conversation, currentUserId) {
+  const lm = conversation?.last_message
+  if (!lm?.content) {
+    return conversation?.type === 'direct'
+      ? 'Trò chuyện trực tiếp'
+      : `Nhóm ${conversation?.participants?.length || 0} thành viên`
+  }
+  const prefix = String(lm.sender_id) === String(currentUserId) ? 'Bạn: ' : ''
+  const text = String(lm.content).replace(/\s+/g, ' ').trim()
+  const max = 72
+  const short = text.length > max ? `${text.slice(0, max)}…` : text
+  return `${prefix}${short}`
+}
+
 export function isFirstInGroup(messages, index) {
   const previous = messages[index - 1]
   const current = messages[index]

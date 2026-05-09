@@ -40,10 +40,30 @@ type MessageWithSender struct {
 	CreatedAt      time.Time `json:"created_at"`
 }
 
+// LastMessagePreview tin nhắn mới nhất (sidebar / list conversations).
+type LastMessagePreview struct {
+	MessageID   uuid.UUID `json:"message_id"`
+	SenderID    uuid.UUID `json:"sender_id"`
+	SenderEmail string    `json:"sender_email"`
+	Content     string    `json:"content"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// ConversationListSummary một hàng từ DB trước khi gắn participants (internal/repo → service).
+type ConversationListSummary struct {
+	Conversation
+	LastMessage *LastMessagePreview
+	UnreadCount int
+}
+
 // ConversationWithParticipants chứa thông tin cuộc hội thoại kèm danh sách thành viên
 type ConversationWithParticipants struct {
 	Conversation
 	Participants []ParticipantInfo `json:"participants"`
+	// LastMessage nil nếu chưa có tin nhắn.
+	LastMessage *LastMessagePreview `json:"last_message,omitempty"`
+	// UnreadCount số tin từ người khác chưa đọc (theo last_read_at / joined_at).
+	UnreadCount int `json:"unread_count"`
 }
 
 // ParticipantInfo chứa thông tin cơ bản của thành viên trong cuộc hội thoại

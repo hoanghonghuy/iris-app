@@ -53,6 +53,14 @@ watch(selectedClassId, async () => {
 
 watch(currentPage, fetchPosts)
 
+function removePostFromList(postId) {
+  posts.value = posts.value.filter((p) => p.post_id !== postId)
+  pagination.value = {
+    ...pagination.value,
+    total: Math.max(0, (pagination.value.total || 0) - 1),
+  }
+}
+
 onMounted(fetchClasses)
 </script>
 
@@ -192,7 +200,9 @@ onMounted(fetchClasses)
           :post="post"
           audience="teacher"
           :enable-share="false"
+          :enable-teacher-manage="true"
           @patch-post="patchPostById"
+          @delete-post="removePostFromList"
         />
       </div>
 

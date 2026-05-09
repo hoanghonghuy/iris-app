@@ -54,7 +54,15 @@ export function createPostService(rolePrefix) {
 /**
  * Shared post service instance for teacher role
  */
-export const teacherPostService = createPostService('teacher')
+export const teacherPostService = {
+  ...createPostService('teacher'),
+  async updatePost(postId, data) {
+    return await httpClient.put(`/teacher/posts/${postId}`, data)
+  },
+  async deletePost(postId) {
+    return await httpClient.del(`/teacher/posts/${postId}`)
+  },
+}
 
 /**
  * Shared post service instance for parent role
