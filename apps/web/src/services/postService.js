@@ -54,13 +54,16 @@ export function createPostService(rolePrefix) {
 /**
  * Shared post service instance for teacher role
  */
+// TODO: double check
 export const teacherPostService = {
   ...createPostService('teacher'),
   async updatePost(postId, data) {
-    return await httpClient.put(`/teacher/posts/${postId}`, data)
+    const response = await httpClient.put(`/teacher/posts/${postId}`, data)
+    return response?.data ?? response
   },
   async deletePost(postId) {
-    return await httpClient.del(`/teacher/posts/${postId}`)
+    const response = await httpClient.del(`/teacher/posts/${postId}`)
+    return response?.data ?? response
   },
 }
 

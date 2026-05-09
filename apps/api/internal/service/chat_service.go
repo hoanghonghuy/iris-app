@@ -389,5 +389,9 @@ func (s *ChatService) RemoveGroupParticipant(ctx context.Context, actorID, convI
 	if rows == 0 {
 		return nil, ErrChatParticipantNotInGroup
 	}
+	// Nếu actor tự xóa chính mình, không trả conversation (actor đã mất quyền truy cập).
+	if actorID == targetUserID {
+		return nil, nil
+	}
 	return s.conversationWithParticipants(ctx, convID)
 }

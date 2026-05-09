@@ -106,17 +106,26 @@ func (r *ChatRepo) AddConversationParticipants(ctx context.Context, conversation
 	if len(userIDs) == 0 {
 		return nil
 	}
+	
+	// Bắt đầu transaction để đảm bảo atomic add
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+	
 	const q = `
 		INSERT INTO conversation_participants (conversation_id, user_id)
 		VALUES ($1, $2)
 		ON CONFLICT (conversation_id, user_id) DO NOTHING;
 	`
 	for _, uid := range userIDs {
-		if _, err := r.pool.Exec(ctx, q, conversationID, uid); err != nil {
+		if _, err := tx.Exec(ctx, q, conversationID, uid); err != nil {
 			return err
 		}
 	}
-	return nil
+	
+	return tx.Commit(ctx)
 }
 
 // RemoveConversationParticipant xóa một thành viên; trả số dòng đã xóa.

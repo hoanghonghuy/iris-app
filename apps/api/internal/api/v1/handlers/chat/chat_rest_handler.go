@@ -218,8 +218,11 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 		return
 	}
 
-	// Đã tải (một phần) lịch sử → coi như đã đọc tới tin mới nhất trong hội thoại.
-	_ = h.chatService.MarkConversationRead(ctx, conversationID, userID)
+	// Đã tải (một phần) lịch sử → mark read chỉ khi đây là lần fetch đầu tiên (before == nil).
+	// Nếu user đang phân trang tin cũ (before != nil), không reset unread.
+	if before == nil {
+		_ = h.chatService.MarkConversationRead(ctx, conversationID, userID)
+	}
 
 	// next_cursor là message_id của tin nhắn cũ nhất trong batch (phần tử cuối, vì DESC)
 	// fe dùng giá trị này cho lần fetch tiếp theo khi user cuộn lên
@@ -398,6 +401,12 @@ func (h *ChatHandler) RemoveGroupParticipant(c *gin.Context) {
 			return
 		}
 		response.Fail(c, http.StatusInternalServerError, "failed to remove participant")
+		return
+	}
+
+	// Nếu actor tự xóa chính mình, service trả nil (không còn quyền xem conversation).
+	if cw == nil {
+		response.OK(c, gin.H{"ok": true, "left_group": true})
 		return
 	}
 
