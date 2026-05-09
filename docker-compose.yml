@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iris-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-iris_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iris}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - iris_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: migrate/migrate:v4.18.3
+    container_name: iris-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/migrations:/migrations:ro
+    # Use DATABASE_URL_DOCKER for container-to-container connections.
+    # Falls back to postgres service at 5432 when not provided.
+    command: ["-path", "/migrations", "-database", "${DATABASE_URL_DOCKER:-postgres://postgres:iris@postgres:5432/iris_db?sslmode=disable}", "up"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iris-api
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      # Containers should connect to the postgres service by its service name.
+      # Use DATABASE_URL_DOCKER in .env to override for compose; otherwise fall back to internal postgres:5432.
+      DATABASE_URL: ${DATABASE_URL_DOCKER:-postgres://postgres:iris@postgres:5432/iris_db?sslmode=disable}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me}
+      JWT_TTL_MINUTES: ${JWT_TTL_MINUTES:-1440}
+      JWT_REFRESH_TTL_HOURS: ${JWT_REFRESH_TTL_HOURS:-168}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      DB_MAX_CONNS: ${DB_MAX_CONNS:-50}
+      GOOGLE_LOGIN_ENABLED: ${GOOGLE_LOGIN_ENABLED:-false}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_HOSTED_DOMAIN: ${GOOGLE_HOSTED_DOMAIN:-}
+      AUTH_LOGIN_RATE_LIMIT: ${AUTH_LOGIN_RATE_LIMIT:-10}
+      AUTH_FORGOT_PASSWORD_RATE_LIMIT: ${AUTH_FORGOT_PASSWORD_RATE_LIMIT:-5}
+      AUTH_RESET_PASSWORD_RATE_LIMIT: ${AUTH_RESET_PASSWORD_RATE_LIMIT:-5}
+      AUTH_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_RATE_LIMIT_WINDOW_SECONDS:-60}
+      AUTH_RATE_LIMIT_CLEANUP_EVERY: ${AUTH_RATE_LIMIT_CLEANUP_EVERY:-256}
+      AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER: ${AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER:-5}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/api/v1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    image: node:22-alpine
+    container_name: iris-web
+    working_dir: /app
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT:-8080}/api/v1
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      VITE_WS_URL: ${VITE_WS_URL:-}
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - ./apps/web:/app
+      - web_node_modules:/app/node_modules
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+
+volumes:
+  iris_pg_data:
+    name: docker_iris_pg_data
+  web_node_modules:

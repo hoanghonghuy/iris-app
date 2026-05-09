@@ -59,6 +59,11 @@ export const chatService = {
 }
 
 export function getChatWsUrl() {
+  // Prefer explicit VITE_WS_URL if set (for production flexibility)
+  if (import.meta.env.VITE_WS_URL) {
+    return import.meta.env.VITE_WS_URL
+  }
+  // Fallback: auto-derive from VITE_API_URL
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
   return `${apiBaseUrl.replace(/^http/, 'ws')}/chat/ws`
 }

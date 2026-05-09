@@ -15,14 +15,13 @@ RUN go mod download
 COPY . .
 
 # Build file thực thi của API
-# Lưu ý: file main nằm ở apps/api/cmd/api/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o iris-api ./apps/api/cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o iris-api ./apps/api/cmd/api
 
 # Stage 2: Run
 FROM alpine:latest
 
-# Thêm CA certificates để gọi được HTTPS
-RUN apk --no-cache add ca-certificates
+# Thêm CA certificates và curl để healthcheck gọi HTTP
+RUN apk --no-cache add ca-certificates curl
 
 WORKDIR /root/
 
