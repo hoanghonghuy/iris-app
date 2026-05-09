@@ -5,6 +5,51 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 - No changes yet.
 
+## [v0.4.0] - 2026-05-10
+
+### Features
+- **Frontend Migration:** Migrated web application from React/Next.js to Vue.js with improved component architecture and composables pattern.
+- **Group Chat:** Added group conversation creation with participant validation, group management endpoints (rename, add/remove members), and dedicated UI in ChatPage.
+- **Chat Enhancements:** Implemented unread message tracking with `last_read_at` timestamps, last message preview in conversation list, and mark-as-read functionality.
+- **Authentication:** Implemented refresh token flow with opaque tokens, automatic rotation, and secure token storage.
+- **Deployment:** Added Docker Compose configuration for full-stack local deployment (PostgreSQL, API, web frontend) with comprehensive environment variable documentation.
+- **Design System:** Redesigned UI with new typography (Fredoka and Nunito fonts), updated color palette, improved accessibility, and light/dark mode support.
+- **Audit Logging:** Added audit logging middleware for write operations with school-scoped coverage.
+- **Admin Features:** Enhanced admin flows for creating teacher profiles from existing users, improved people management components with reusable modals.
+- **Parent Features:** Added parent profile update functionality with validation, enhanced feed filtering by mode and child selection.
+- **Database:** Expanded seed scripts with comprehensive demo data across schools, classes, users, attendance, health logs, posts, appointments, and chat.
+
+### Fixes
+- Fixed chat unread badge incorrectly resetting during message pagination by only marking read on initial fetch.
+- Fixed group chat metadata leak when actor removes themselves from group conversation.
+- Fixed partial success issue in `AddConversationParticipants` by wrapping operations in transaction.
+- Fixed inconsistent response normalization in `teacherPostService` update/delete methods.
+- Fixed API healthcheck by switching from `wget` to `curl` and installing curl in runtime image.
+- Fixed CI backend build command to align with monorepo structure and Dockerfile.
+- Fixed role checking in `CreateUserWithoutPassword` to use `RolesOfUser` for existing user validation.
+
+### Refactoring
+- Extracted composables for better code reusability across admin, teacher, parent, and chat features.
+- Centralized auth token management with dedicated `tokenStorage` helper.
+- Extracted post interaction logic into reusable `usePostInteractions` composable.
+- Moved `useParentFeedPage` to `composables/parent/` for better organization.
+- Extracted admin people form configuration and shared management components.
+- Centralized date helper functions and query parameter builders.
+
+### Infrastructure
+- Added CI workflow triggers for `.env.example` and `docker-compose.yml` changes.
+- Updated frontend CI to build Vue app instead of Next.js.
+- Enhanced security scan workflow to handle base-head equality safely.
+
+### Breaking Changes
+- None identified from v0.3.0..HEAD. Backend API contracts remain backward-compatible.
+
+### Migration Notes
+- **Frontend:** If you have custom frontend integrations, note the migration from React/Next.js to Vue.js. API contracts are unchanged.
+- **Database:** Run migration `000016_refresh_tokens.up.sql` and `000017_chat_participant_last_read.up.sql` before deploying.
+- **Environment:** Review updated `.env.example` files for new variables (`REFRESH_TOKEN_SECRET`, `REFRESH_TOKEN_EXPIRY`, optional `VITE_WS_URL`).
+- **Docker:** Use `docker compose up -d` to start the full stack locally. Existing PostgreSQL data is preserved via volume `docker_iris_pg_data`.
+
 ## [v0.3.0] - 2026-04-16
 
 ### Features
@@ -53,7 +98,8 @@ Initial release.
 - Next.js web app for admin/teacher/parent workflows.
 
 ## Link References
-[Unreleased]: https://github.com/hoanghonghuy/iris-app/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/hoanghonghuy/iris-app/compare/v0.4.0...HEAD
+[v0.4.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/hoanghonghuy/iris-app/releases/tag/v0.1.0
