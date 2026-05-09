@@ -106,14 +106,14 @@ func (r *ChatRepo) AddConversationParticipants(ctx context.Context, conversation
 	if len(userIDs) == 0 {
 		return nil
 	}
-	
+
 	// Bắt đầu transaction để đảm bảo atomic add
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
-	
+
 	const q = `
 		INSERT INTO conversation_participants (conversation_id, user_id)
 		VALUES ($1, $2)
@@ -124,7 +124,7 @@ func (r *ChatRepo) AddConversationParticipants(ctx context.Context, conversation
 			return err
 		}
 	}
-	
+
 	return tx.Commit(ctx)
 }
 
