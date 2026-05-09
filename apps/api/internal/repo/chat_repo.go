@@ -112,7 +112,9 @@ func (r *ChatRepo) AddConversationParticipants(ctx context.Context, conversation
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	const q = `
 		INSERT INTO conversation_participants (conversation_id, user_id)

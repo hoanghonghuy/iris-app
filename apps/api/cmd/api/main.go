@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/auth"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/config"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/db"
@@ -12,7 +13,6 @@ import (
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/middleware"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/service"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/ws"
-	v1chathandlers "github.com/hoanghonghuy/iris-app/apps/api/internal/api/v1/handlers/chat"
 	"github.com/joho/godotenv"
 )
 
