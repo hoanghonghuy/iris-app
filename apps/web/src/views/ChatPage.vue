@@ -796,6 +796,7 @@ onUnmounted(() => {
 .group-name-input {
   width: 100%;
   box-sizing: border-box;
+  margin-top: var(--spacing-3);
   margin-bottom: var(--spacing-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
@@ -880,6 +881,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   border: 1px solid var(--color-border);
   color: var(--color-text-muted);
+  margin-bottom: var(--spacing-3);
 }
 
 .search-box input {

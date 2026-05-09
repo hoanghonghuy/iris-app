@@ -1,7 +1,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
-import { parentService } from '../../../services/parentService'
-import { normalizeListResponse } from '../../../helpers/collectionUtils'
-import { extractErrorMessage } from '../../../helpers/errorHandler'
+import { parentService } from '../../services/parentService'
+import { normalizeListResponse } from '../../helpers/collectionUtils'
+import { extractErrorMessage } from '../../helpers/errorHandler'
 
 const DEFAULT_LIMIT = 20
 
