@@ -28,15 +28,39 @@ export function useChatConversations() {
     selectedConversation.value = null
   }
 
+  /** Ưu tiên object từ list sau refresh để có participants đầy đủ cho UI */
+  function pickConversationAfterCreate(payload) {
+    const id = getConversationId(payload)
+    if (!id) return payload
+    return (
+      conversations.value.find((c) => String(getConversationId(c)) === String(id)) ?? payload
+    )
+  }
+
   async function createDirectConversation(userId) {
     if (!userId) return null
     try {
       const conversation = await chatService.createDirectConversation(userId)
       await fetchConversations()
-      return conversation
+      return pickConversationAfterCreate(conversation)
     } catch (error) {
       console.error('[chat] cannot start conversation', error)
-      return null
+      throw error
+    }
+  }
+
+  async function createGroupConversation(name, participantUserIds) {
+    if (!participantUserIds?.length) return null
+    try {
+      const conversation = await chatService.createGroupConversation({
+        name,
+        participantUserIds,
+      })
+      await fetchConversations()
+      return pickConversationAfterCreate(conversation)
+    } catch (error) {
+      console.error('[chat] cannot create group', error)
+      throw error
     }
   }
 
@@ -52,6 +76,7 @@ export function useChatConversations() {
     selectConversation,
     clearSelection,
     createDirectConversation,
+    createGroupConversation,
     getSelectedConversationId,
   }
 }

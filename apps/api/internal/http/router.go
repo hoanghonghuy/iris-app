@@ -215,6 +215,9 @@ func NewRouter(
 				// tạo cuộc hội thoại direct (1-1)
 				chat.POST("/conversations/direct", chatHandler.CreateDirectConversation)
 
+				// tạo cuộc hội thoại nhóm
+				chat.POST("/conversations/group", chatHandler.CreateGroupConversation)
+
 				// lấy danh sách cuộc hội thoại của user hiện tại
 				chat.GET("/conversations", chatHandler.ListConversations)
 

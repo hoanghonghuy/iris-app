@@ -8,6 +8,15 @@ export const chatService = {
     return response?.data ?? response
   },
 
+  async createGroupConversation(payload) {
+    const { name = '', participantUserIds } = payload
+    const response = await httpClient.post('/chat/conversations/group', {
+      name: name || '',
+      participant_user_ids: participantUserIds,
+    })
+    return response?.data ?? response
+  },
+
   async listConversations() {
     const response = await httpClient.get('/chat/conversations')
     return response?.data ?? response

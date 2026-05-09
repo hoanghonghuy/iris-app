@@ -18,6 +18,14 @@ export const parentService = {
     return await httpClient.get(`/parent/children/${studentId}/posts`, params)
   },
 
+  async getChildClassPosts(studentId, params) {
+    return await httpClient.get(`/parent/children/${studentId}/class-posts`, params)
+  },
+
+  async getChildStudentPosts(studentId, params) {
+    return await httpClient.get(`/parent/children/${studentId}/student-posts`, params)
+  },
+
   // Post interactions delegated to postService
   ...parentPostService,
 

@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
@@ -21,23 +23,26 @@ func NewChatService(chatRepo *repo.ChatRepo) *ChatService {
 }
 
 // GetOrCreateDirectConversation tìm hoặc tạo cuộc hội thoại direct giữa 2 user.
-// Nếu đã tồn tại, trả về cuộc hội thoại cũ. Nếu chưa, tạo mới.
-func (s *ChatService) GetOrCreateDirectConversation(ctx context.Context, userA, userB uuid.UUID) (*model.Conversation, error) {
+// Nếu đã tồn tại, trả về cuộc hội thoại cũ và created=false. Nếu chưa, tạo mới và created=true.
+func (s *ChatService) GetOrCreateDirectConversation(ctx context.Context, userA, userB uuid.UUID) (*model.Conversation, bool, error) {
 	if userA == userB {
-		return nil, ErrChatCannotMessageSelf
+		return nil, false, ErrChatCannotMessageSelf
 	}
 
-	// Tìm cuộc hội thoại direct đã tồn tại
 	conv, err := s.chatRepo.FindDirectConversation(ctx, userA, userB)
 	if err == nil {
-		return conv, nil
+		return conv, false, nil
 	}
 	if !errors.Is(err, pgx.ErrNoRows) {
-		return nil, err
+		return nil, false, err
 	}
 
 	// Chưa có → tạo mới
-	return s.chatRepo.CreateConversation(ctx, "direct", nil, []uuid.UUID{userA, userB})
+	conv, err = s.chatRepo.CreateConversation(ctx, "direct", nil, []uuid.UUID{userA, userB})
+	if err != nil {
+		return nil, false, err
+	}
+	return conv, true, nil
 }
 
 // CanCreateDirectConversation kiểm tra requester có được phép tạo direct conversation với target không.
@@ -72,12 +77,57 @@ func (s *ChatService) CanCreateDirectConversation(ctx context.Context, requester
 	return false, nil
 }
 
-// CreateGroupConversation tạo cuộc hội thoại nhóm mới
+const maxChatGroupParticipants = 50
+
+// CreateGroupConversation tạo cuộc hội thoại nhóm mới (internal; participantIDs gồm cả chủ phòng).
 func (s *ChatService) CreateGroupConversation(ctx context.Context, name string, participantIDs []uuid.UUID) (*model.Conversation, error) {
 	if len(participantIDs) < 2 {
 		return nil, ErrChatGroupNeedMembers
 	}
-	return s.chatRepo.CreateConversation(ctx, "group", &name, participantIDs)
+	if len(participantIDs) > maxChatGroupParticipants {
+		return nil, ErrChatGroupTooManyMembers
+	}
+	var namePtr *string
+	if t := strings.TrimSpace(name); t != "" {
+		if utf8.RuneCountInString(t) > 255 {
+			return nil, ErrChatGroupNameTooLong
+		}
+		namePtr = &t
+	}
+	return s.chatRepo.CreateConversation(ctx, "group", namePtr, participantIDs)
+}
+
+// CreateGroupConversationAsRequester tạo nhóm: luôn có requester trong danh sách; otherUserIDs là các user khác (ít nhất 1).
+// Mỗi thành viên khác phải thỏa cùng quy tắc nhắn direct với SearchUsers/CanCreateDirectConversation.
+func (s *ChatService) CreateGroupConversationAsRequester(ctx context.Context, requesterID uuid.UUID, roles []string, name string, otherUserIDs []uuid.UUID) (*model.Conversation, error) {
+	seen := map[uuid.UUID]struct{}{requesterID: {}}
+	var orderedOthers []uuid.UUID
+	for _, id := range otherUserIDs {
+		if id == requesterID {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		allowed, err := s.CanCreateDirectConversation(ctx, requesterID, roles, id)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, ErrChatTargetNotAllowed
+		}
+		seen[id] = struct{}{}
+		orderedOthers = append(orderedOthers, id)
+	}
+	if len(orderedOthers) < 1 {
+		return nil, ErrChatGroupNeedMembers
+	}
+
+	participants := make([]uuid.UUID, 0, 1+len(orderedOthers))
+	participants = append(participants, requesterID)
+	participants = append(participants, orderedOthers...)
+
+	return s.CreateGroupConversation(ctx, name, participants)
 }
 
 // ListConversations lấy danh sách cuộc hội thoại của user

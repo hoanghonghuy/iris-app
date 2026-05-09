@@ -7,12 +7,17 @@ import { useParentFeedPage } from './feed/useParentFeedPage'
 
 const {
   posts,
+  children,
+  selectedChildId,
+  feedMode,
   loading,
   errorMessage,
   currentPage,
   pagination,
   totalPages,
   fetchFeed,
+  setFeedMode,
+  setSelectedChild,
   patchPostById,
   handlePageChange,
 } = useParentFeedPage()
@@ -21,6 +26,38 @@ const {
 <template>
   <div class="parent-feed">
     <ParentFeedSummaryCard :total-posts="pagination.total || 0" />
+
+    <div class="card filter-card">
+      <div class="form-group mb-0">
+        <label class="form-label" for="feedMode">Nguồn dữ liệu</label>
+        <select id="feedMode" :value="feedMode" class="form-input" @change="setFeedMode($event.target.value)">
+          <option value="feed">Feed tổng hợp</option>
+          <option value="child_all">Theo từng con (tất cả bài)</option>
+          <option value="child_class">Theo từng con (bài lớp)</option>
+          <option value="child_student">Theo từng con (bài cá nhân)</option>
+        </select>
+      </div>
+
+      <div v-if="feedMode !== 'feed'" class="form-group mb-0">
+        <label class="form-label" for="childFilter">Chọn học sinh</label>
+        <select
+          id="childFilter"
+          :value="selectedChildId"
+          class="form-input"
+          :disabled="children.length === 0"
+          @change="setSelectedChild($event.target.value)"
+        >
+          <option v-if="children.length === 0" value="">Không có dữ liệu học sinh</option>
+          <option
+            v-for="child in children"
+            :key="child.student_id"
+            :value="child.student_id"
+          >
+            {{ child.full_name }}
+          </option>
+        </select>
+      </div>
+    </div>
 
     <div v-if="errorMessage" class="alert alert--error alert-row">
       <AlertCircle :size="16" />
@@ -77,6 +114,12 @@ const {
   flex-wrap: wrap;
 }
 
+.filter-card {
+  display: grid;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+}
+
 .loading-block {
   display: flex;
   justify-content: center;
@@ -111,6 +154,12 @@ const {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 640px) {
+  .filter-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>

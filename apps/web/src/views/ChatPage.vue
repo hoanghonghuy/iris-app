@@ -18,6 +18,7 @@ import {
   parseJwtPayload,
   getAuthToken,
 } from '../helpers/chatHelpers'
+import { extractErrorMessage } from '../helpers/errorHandler'
 
 const { isConnected, connect, sendMessage: wsSendMessage, onMessage } = useChatWebSocket()
 const {
@@ -27,6 +28,7 @@ const {
   fetchConversations,
   selectConversation,
   createDirectConversation,
+  createGroupConversation,
   getSelectedConversationId,
 } = useChatConversations()
 const {
@@ -41,6 +43,13 @@ const {
 const { searchQuery, searchResults, showNewConversation, toggleNewConversation, clearSearch } =
   useChatSearch()
 
+const newChatMode = ref('direct')
+const groupName = ref('')
+const groupMembers = ref([])
+const groupSubmitting = ref(false)
+const groupError = ref('')
+const directError = ref('')
+
 const input = ref('')
 const currentUserId = ref('')
 const messagesContainer = ref(null)
@@ -49,6 +58,12 @@ const messagesEnd = ref(null)
 const selectedConversationId = computed(() => getSelectedConversationId())
 const visibleConversations = computed(() => conversations.value.filter(Boolean))
 const visibleSearchResults = computed(() => searchResults.value.filter(Boolean))
+const composerDisabled = computed(() => !selectedConversationId.value || !isConnected.value)
+const composerHint = computed(() => {
+  if (!selectedConversationId.value) return 'Chọn một cuộc trò chuyện để bắt đầu nhắn tin.'
+  if (!isConnected.value) return 'Mất kết nối. Vui lòng chờ hệ thống tự kết nối lại.'
+  return ''
+})
 
 function scrollToBottom(behavior = 'smooth') {
   messagesEnd.value?.scrollIntoView({ behavior })
@@ -56,7 +71,7 @@ function scrollToBottom(behavior = 'smooth') {
 
 function handleSendMessage() {
   const content = input.value.trim()
-  if (!content || !selectedConversationId.value) return
+  if (!content || composerDisabled.value) return
 
   const sent = wsSendMessage(selectedConversationId.value, content)
   if (sent) {
@@ -79,10 +94,50 @@ async function handleLoadMessages(conversation) {
 }
 
 async function handleStartConversation(userId) {
-  const conversation = await createDirectConversation(userId)
-  if (conversation) {
-    clearSearch()
-    await handleLoadMessages(conversation)
+  directError.value = ''
+  try {
+    const conversation = await createDirectConversation(userId)
+    if (conversation) {
+      clearSearch()
+      if (showNewConversation.value) toggleNewConversation()
+      await handleLoadMessages(conversation)
+    }
+  } catch (err) {
+    directError.value = extractErrorMessage(err)
+  }
+}
+
+function addGroupMember(user) {
+  if (!user?.user_id || user.user_id === currentUserId.value) return
+  if (groupMembers.value.some((m) => m.user_id === user.user_id)) return
+  groupMembers.value = [...groupMembers.value, user]
+}
+
+function removeGroupMember(userId) {
+  groupMembers.value = groupMembers.value.filter((m) => m.user_id !== userId)
+}
+
+async function handleCreateGroup() {
+  groupError.value = ''
+  if (groupMembers.value.length < 1) {
+    groupError.value = 'Thêm ít nhất một thành viên để tạo nhóm.'
+    return
+  }
+  groupSubmitting.value = true
+  try {
+    const conv = await createGroupConversation(
+      groupName.value,
+      groupMembers.value.map((m) => m.user_id),
+    )
+    if (conv) {
+      clearSearch()
+      if (showNewConversation.value) toggleNewConversation()
+      await handleLoadMessages(conv)
+    }
+  } catch (err) {
+    groupError.value = extractErrorMessage(err)
+  } finally {
+    groupSubmitting.value = false
   }
 }
 
@@ -96,6 +151,22 @@ watch(messages, async () => {
   if (!container) return
   const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120
   if (isNearBottom) scrollToBottom()
+})
+
+watch(showNewConversation, (open) => {
+  if (!open) {
+    newChatMode.value = 'direct'
+    groupName.value = ''
+    groupMembers.value = []
+    groupError.value = ''
+    directError.value = ''
+    groupSubmitting.value = false
+  }
+})
+
+watch(newChatMode, () => {
+  groupError.value = ''
+  directError.value = ''
 })
 
 onMounted(async () => {
@@ -140,26 +211,101 @@ onMounted(async () => {
       </div>
 
       <div v-if="showNewConversation" class="new-conversation-panel">
+        <div class="new-chat-tabs" role="tablist">
+          <button
+            type="button"
+            class="new-chat-tab"
+            role="tab"
+            :aria-selected="newChatMode === 'direct'"
+            @click="newChatMode = 'direct'"
+          >
+            Trực tiếp
+          </button>
+          <button
+            type="button"
+            class="new-chat-tab"
+            role="tab"
+            :aria-selected="newChatMode === 'group'"
+            @click="newChatMode = 'group'"
+          >
+            Nhóm
+          </button>
+        </div>
+
         <div class="search-box">
           <Search :size="16" />
           <input v-model="searchQuery" placeholder="Tìm kiếm email hoặc tên..." />
         </div>
 
-        <div v-if="visibleSearchResults.length > 0" class="search-results">
+        <template v-if="newChatMode === 'direct'">
+          <p v-if="directError" class="group-inline-error">{{ directError }}</p>
+          <div v-if="visibleSearchResults.length > 0" class="search-results">
+            <button
+              v-for="user in visibleSearchResults"
+              :key="user.user_id"
+              type="button"
+              class="conversation-item"
+              @click="handleStartConversation(user.user_id)"
+            >
+              <div class="avatar">{{ getInitials(user.full_name || user.email) }}</div>
+              <div class="conversation-copy">
+                <p>{{ user.full_name || user.email }}</p>
+                <span>{{ user.email }}</span>
+              </div>
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
+          <input
+            v-model="groupName"
+            type="text"
+            class="group-name-input"
+            maxlength="255"
+            placeholder="Tên nhóm (tuỳ chọn)"
+            aria-label="Tên nhóm"
+          />
+          <div v-if="groupMembers.length > 0" class="member-chips">
+            <span v-for="m in groupMembers" :key="m.user_id" class="member-chip">
+              {{ m.full_name || m.email }}
+              <button type="button" class="chip-remove" @click="removeGroupMember(m.user_id)">
+                <X :size="14" />
+              </button>
+            </span>
+          </div>
+          <p v-if="groupError" class="group-inline-error">{{ groupError }}</p>
           <button
-            v-for="user in visibleSearchResults"
-            :key="user.user_id"
             type="button"
-            class="conversation-item"
-            @click="handleStartConversation(user.user_id)"
+            class="create-group-submit"
+            :disabled="groupSubmitting || groupMembers.length < 1"
+            @click="handleCreateGroup"
           >
-            <div class="avatar">{{ getInitials(user.full_name || user.email) }}</div>
-            <div class="conversation-copy">
-              <p>{{ user.full_name || user.email }}</p>
-              <span>{{ user.email }}</span>
-            </div>
+            <LoaderCircle v-if="groupSubmitting" class="spin" :size="18" />
+            <span>{{ groupSubmitting ? 'Đang tạo...' : 'Tạo nhóm' }}</span>
           </button>
-        </div>
+          <div v-if="visibleSearchResults.length > 0" class="search-results">
+            <button
+              v-for="user in visibleSearchResults"
+              :key="user.user_id"
+              type="button"
+              class="conversation-item"
+              :disabled="
+                groupMembers.some((m) => m.user_id === user.user_id) || user.user_id === currentUserId
+              "
+              @click="addGroupMember(user)"
+            >
+              <div class="avatar">{{ getInitials(user.full_name || user.email) }}</div>
+              <div class="conversation-copy">
+                <p>{{ user.full_name || user.email }}</p>
+                <span>{{
+                  groupMembers.some((m) => m.user_id === user.user_id)
+                    ? 'Đã thêm'
+                    : 'Chạm để thêm vào nhóm'
+                }}</span>
+              </div>
+            </button>
+          </div>
+        </template>
       </div>
 
       <div v-if="loading" class="chat-loading">
@@ -273,24 +419,26 @@ onMounted(async () => {
         </div>
 
         <footer class="composer">
-          <button type="button" class="attach-button">
+          <button type="button" class="attach-button" disabled title="Sắp hỗ trợ gửi tệp">
             <Plus :size="24" />
           </button>
           <textarea
             v-model="input"
             rows="1"
             placeholder="Nhắn tin..."
+            :disabled="composerDisabled"
             @keydown="handleKeydown"
           ></textarea>
           <button
             type="button"
             class="send-button"
-            :disabled="!input.trim()"
+            :disabled="!input.trim() || composerDisabled"
             @click="handleSendMessage"
           >
             <Send :size="20" />
           </button>
         </footer>
+        <p v-if="composerHint" class="composer-hint">{{ composerHint }}</p>
       </template>
 
       <div v-else class="chat-placeholder">
@@ -400,6 +548,109 @@ onMounted(async () => {
 .new-conversation-panel {
   padding: var(--spacing-3);
   border-bottom: 1px solid var(--color-border);
+}
+
+.new-chat-tabs {
+  display: flex;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.new-chat-tab {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.new-chat-tab[aria-selected='true'] {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+  border-color: transparent;
+}
+
+.group-name-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.member-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+}
+
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-full);
+  background: var(--color-background);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  padding: 0;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+}
+
+.chip-remove:hover {
+  color: var(--color-text);
+}
+
+.group-inline-error {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-danger);
+}
+
+.create-group-submit {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--spacing-3);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.create-group-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.conversation-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .search-box {
@@ -591,6 +842,13 @@ onMounted(async () => {
   background: var(--color-surface);
 }
 
+.composer-hint {
+  margin: 0;
+  padding: 0 var(--spacing-3) var(--spacing-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .composer textarea {
   min-height: 2.75rem;
   max-height: 7.5rem;
@@ -623,6 +881,11 @@ onMounted(async () => {
 .attach-button {
   background: transparent;
   color: var(--color-text-muted);
+}
+
+.attach-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .send-button {

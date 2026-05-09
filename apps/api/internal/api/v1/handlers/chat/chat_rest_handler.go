@@ -52,7 +52,7 @@ func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
 		return
 	}
 
-	conv, err := h.chatService.GetOrCreateDirectConversation(ctx, userID, req.TargetUserID)
+	conv, created, err := h.chatService.GetOrCreateDirectConversation(ctx, userID, req.TargetUserID)
 	if err != nil {
 		if errors.Is(err, service.ErrChatCannotMessageSelf) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
@@ -62,7 +62,63 @@ func (h *ChatHandler) CreateDirectConversation(c *gin.Context) {
 		return
 	}
 
+	if created {
+		response.Created(c, conv)
+		return
+	}
 	response.OK(c, conv)
+}
+
+// CreateGroupConversationRequest chứa thông tin tạo cuộc hội thoại nhóm.
+// participant_user_ids: danh sách user khác (không bắt buộc gửi chính mình); server luôn thêm requester.
+type CreateGroupConversationRequest struct {
+	Name               string      `json:"name"`
+	ParticipantUserIDs []uuid.UUID `json:"participant_user_ids" binding:"required"`
+}
+
+// CreateGroupConversation tạo cuộc hội thoại nhóm; requester luôn là thành viên.
+func (h *ChatHandler) CreateGroupConversation(c *gin.Context) {
+	userID, claims, ok := shared.RequireCurrentUser(c)
+	if !ok {
+		return
+	}
+
+	var req CreateGroupConversationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if len(req.ParticipantUserIDs) == 0 {
+		response.Fail(c, http.StatusBadRequest, service.ErrChatGroupNeedMembers.Error())
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	conv, err := h.chatService.CreateGroupConversationAsRequester(ctx, userID, claims.Roles, req.Name, req.ParticipantUserIDs)
+	if err != nil {
+		if errors.Is(err, service.ErrChatGroupNeedMembers) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatTargetNotAllowed) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatCannotMessageSelf) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatGroupNameTooLong) || errors.Is(err, service.ErrChatGroupTooManyMembers) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to create group conversation")
+		return
+	}
+
+	response.Created(c, conv)
 }
 
 // ListConversations lấy danh sách cuộc hội thoại của user hiện tại.

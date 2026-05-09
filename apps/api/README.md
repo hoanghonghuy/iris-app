@@ -96,7 +96,8 @@ All endpoints are prefixed with `/api/v1`.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/users/search` | Search users to start conversation |
-| `POST` | `/conversations/direct` | Create 1-on-1 conversation |
+| `POST` | `/conversations/direct` | Create or return existing 1-on-1 conversation (`201` if newly created, `200` if already existed) |
+| `POST` | `/conversations/group` | Create group conversation (creator + `participant_user_ids`) |
 | `GET` | `/conversations` | List user's conversations |
 | `GET` | `/conversations/:conversation_id/messages` | Get messages in conversation |
 
