@@ -64,6 +64,30 @@ export function useChatConversations() {
     }
   }
 
+  async function renameGroup(conversationId, name) {
+    const updated = await chatService.patchGroupConversation(conversationId, { name })
+    await fetchConversations()
+    return pickConversationAfterCreate(updated)
+  }
+
+  async function addGroupParticipants(conversationId, userIds) {
+    const updated = await chatService.addConversationParticipants(conversationId, userIds)
+    await fetchConversations()
+    return pickConversationAfterCreate(updated)
+  }
+
+  /** Sau khi xóa thành viên: nếu user hiện tại không còn trong danh sách hội thoại, trả null. */
+  async function removeGroupParticipant(conversationId, userId) {
+    const updated = await chatService.removeConversationParticipant(conversationId, userId)
+    await fetchConversations()
+    const id = getConversationId(updated)
+    const stillListed = conversations.value.some(
+      (c) => String(getConversationId(c)) === String(id),
+    )
+    if (!stillListed) return null
+    return pickConversationAfterCreate(updated)
+  }
+
   function getSelectedConversationId() {
     return getConversationId(selectedConversation.value)
   }
@@ -77,6 +101,9 @@ export function useChatConversations() {
     clearSelection,
     createDirectConversation,
     createGroupConversation,
+    renameGroup,
+    addGroupParticipants,
+    removeGroupParticipant,
     getSelectedConversationId,
   }
 }

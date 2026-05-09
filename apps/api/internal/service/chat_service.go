@@ -239,3 +239,141 @@ func (s *ChatService) SearchUsers(ctx context.Context, requesterID uuid.UUID, ro
 
 	return []model.ParticipantInfo{}, nil
 }
+
+func (s *ChatService) conversationWithParticipants(ctx context.Context, convID uuid.UUID) (*model.ConversationWithParticipants, error) {
+	conv, err := s.chatRepo.GetConversationByID(ctx, convID)
+	if err != nil {
+		return nil, err
+	}
+	parts, err := s.chatRepo.GetParticipants(ctx, convID)
+	if err != nil {
+		return nil, err
+	}
+	return &model.ConversationWithParticipants{
+		Conversation: *conv,
+		Participants: parts,
+	}, nil
+}
+
+func groupNamePtrFromInput(name string) (*string, error) {
+	t := strings.TrimSpace(name)
+	if t == "" {
+		return nil, nil
+	}
+	if utf8.RuneCountInString(t) > 255 {
+		return nil, ErrChatGroupNameTooLong
+	}
+	return &t, nil
+}
+
+// ensureGroupAndParticipant: actor thuộc cuộc hội thoại và cuộc là nhóm.
+func (s *ChatService) ensureGroupAndParticipant(ctx context.Context, convID, actorID uuid.UUID) (*model.Conversation, error) {
+	ok, err := s.chatRepo.IsParticipant(ctx, convID, actorID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrChatNotParticipant
+	}
+	conv, err := s.chatRepo.GetConversationByID(ctx, convID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrChatConversationNotFound
+		}
+		return nil, err
+	}
+	if conv.Type != "group" {
+		return nil, ErrChatNotGroup
+	}
+	return conv, nil
+}
+
+// RenameGroupConversation đổi tên nhóm (chuỗi rỗng sau trim → name NULL).
+func (s *ChatService) RenameGroupConversation(ctx context.Context, actorID, convID uuid.UUID, name string) (*model.ConversationWithParticipants, error) {
+	if _, err := s.ensureGroupAndParticipant(ctx, convID, actorID); err != nil {
+		return nil, err
+	}
+	namePtr, err := groupNamePtrFromInput(name)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.chatRepo.UpdateConversationName(ctx, convID, namePtr); err != nil {
+		return nil, err
+	}
+	return s.conversationWithParticipants(ctx, convID)
+}
+
+// AddGroupParticipants thêm thành viên; mỗi user mới phải thỏa CanCreateDirectConversation với actor.
+func (s *ChatService) AddGroupParticipants(ctx context.Context, actorID uuid.UUID, roles []string, convID uuid.UUID, newUserIDs []uuid.UUID) (*model.ConversationWithParticipants, error) {
+	if _, err := s.ensureGroupAndParticipant(ctx, convID, actorID); err != nil {
+		return nil, err
+	}
+	existing, err := s.chatRepo.GetParticipants(ctx, convID)
+	if err != nil {
+		return nil, err
+	}
+	existingSet := make(map[uuid.UUID]struct{}, len(existing))
+	for _, p := range existing {
+		existingSet[p.UserID] = struct{}{}
+	}
+	var toAdd []uuid.UUID
+	seen := make(map[uuid.UUID]struct{})
+	for _, id := range newUserIDs {
+		if _, ok := existingSet[id]; ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		toAdd = append(toAdd, id)
+	}
+	if len(toAdd) == 0 {
+		return s.conversationWithParticipants(ctx, convID)
+	}
+	if len(existing)+len(toAdd) > maxChatGroupParticipants {
+		return nil, ErrChatGroupTooManyMembers
+	}
+	for _, id := range toAdd {
+		allowed, err := s.CanCreateDirectConversation(ctx, actorID, roles, id)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, ErrChatTargetNotAllowed
+		}
+	}
+	if err := s.chatRepo.AddConversationParticipants(ctx, convID, toAdd); err != nil {
+		return nil, err
+	}
+	return s.conversationWithParticipants(ctx, convID)
+}
+
+// RemoveGroupParticipant gỡ thành viên; nhóm phải còn ít nhất 2 người sau khi gỡ.
+func (s *ChatService) RemoveGroupParticipant(ctx context.Context, actorID, convID, targetUserID uuid.UUID) (*model.ConversationWithParticipants, error) {
+	if _, err := s.ensureGroupAndParticipant(ctx, convID, actorID); err != nil {
+		return nil, err
+	}
+	ok, err := s.chatRepo.IsParticipant(ctx, convID, targetUserID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, ErrChatParticipantNotInGroup
+	}
+	n, err := s.chatRepo.CountParticipants(ctx, convID)
+	if err != nil {
+		return nil, err
+	}
+	if n <= 2 {
+		return nil, ErrChatCannotRemoveWouldDropBelowMin
+	}
+	rows, err := s.chatRepo.RemoveConversationParticipant(ctx, convID, targetUserID)
+	if err != nil {
+		return nil, err
+	}
+	if rows == 0 {
+		return nil, ErrChatParticipantNotInGroup
+	}
+	return s.conversationWithParticipants(ctx, convID)
+}

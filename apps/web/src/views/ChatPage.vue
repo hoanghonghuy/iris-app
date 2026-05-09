@@ -1,6 +1,6 @@
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { ArrowLeft, LoaderCircle, MessageSquare, Plus, Search, Send, X } from 'lucide-vue-next'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { ArrowLeft, LoaderCircle, MessageSquare, Plus, Search, Send, Users, X } from 'lucide-vue-next'
 import {
   useChatWebSocket,
   useChatConversations,
@@ -19,6 +19,8 @@ import {
   getAuthToken,
 } from '../helpers/chatHelpers'
 import { extractErrorMessage } from '../helpers/errorHandler'
+import { normalizeListResponse } from '../helpers/collectionUtils'
+import { chatService } from '../services/chatService'
 
 const { isConnected, connect, sendMessage: wsSendMessage, onMessage } = useChatWebSocket()
 const {
@@ -29,6 +31,9 @@ const {
   selectConversation,
   createDirectConversation,
   createGroupConversation,
+  renameGroup,
+  addGroupParticipants,
+  removeGroupParticipant,
   getSelectedConversationId,
 } = useChatConversations()
 const {
@@ -50,6 +55,14 @@ const groupSubmitting = ref(false)
 const groupError = ref('')
 const directError = ref('')
 
+const showGroupManage = ref(false)
+const groupRenameDraft = ref('')
+const groupManageError = ref('')
+const groupManageBusy = ref(false)
+const manageSearchQuery = ref('')
+const manageSearchResults = ref([])
+let manageSearchTimer = null
+
 const input = ref('')
 const currentUserId = ref('')
 const messagesContainer = ref(null)
@@ -63,6 +76,17 @@ const composerHint = computed(() => {
   if (!selectedConversationId.value) return 'Chọn một cuộc trò chuyện để bắt đầu nhắn tin.'
   if (!isConnected.value) return 'Mất kết nối. Vui lòng chờ hệ thống tự kết nối lại.'
   return ''
+})
+
+const canRemoveGroupMembers = computed(
+  () => (selectedConversation.value?.participants?.length || 0) > 2,
+)
+
+const visibleManageSearchResults = computed(() => {
+  const ids = new Set(
+    (selectedConversation.value?.participants || []).map((p) => p.user_id),
+  )
+  return manageSearchResults.value.filter((u) => u.user_id && !ids.has(u.user_id))
 })
 
 function scrollToBottom(behavior = 'smooth') {
@@ -117,6 +141,69 @@ function removeGroupMember(userId) {
   groupMembers.value = groupMembers.value.filter((m) => m.user_id !== userId)
 }
 
+function toggleGroupManage() {
+  if (selectedConversation.value?.type !== 'group') return
+  showGroupManage.value = !showGroupManage.value
+  if (showGroupManage.value) {
+    groupManageError.value = ''
+    manageSearchQuery.value = ''
+    manageSearchResults.value = []
+    groupRenameDraft.value = selectedConversation.value?.name ?? ''
+  }
+}
+
+async function saveGroupName() {
+  const id = selectedConversationId.value
+  if (!id || selectedConversation.value?.type !== 'group') return
+  groupManageError.value = ''
+  groupManageBusy.value = true
+  try {
+    const updated = await renameGroup(id, groupRenameDraft.value)
+    if (updated) selectConversation(updated)
+  } catch (err) {
+    groupManageError.value = extractErrorMessage(err)
+  } finally {
+    groupManageBusy.value = false
+  }
+}
+
+async function addMemberFromManage(user) {
+  const id = selectedConversationId.value
+  if (!id || !user?.user_id) return
+  groupManageError.value = ''
+  groupManageBusy.value = true
+  try {
+    const updated = await addGroupParticipants(id, [user.user_id])
+    if (updated) selectConversation(updated)
+    manageSearchQuery.value = ''
+    manageSearchResults.value = []
+  } catch (err) {
+    groupManageError.value = extractErrorMessage(err)
+  } finally {
+    groupManageBusy.value = false
+  }
+}
+
+async function removeMemberFromManage(userId) {
+  const id = selectedConversationId.value
+  if (!id || !userId) return
+  groupManageError.value = ''
+  groupManageBusy.value = true
+  try {
+    const updated = await removeGroupParticipant(id, userId)
+    if (updated) {
+      selectConversation(updated)
+    } else {
+      showGroupManage.value = false
+      selectConversation(null)
+    }
+  } catch (err) {
+    groupManageError.value = extractErrorMessage(err)
+  } finally {
+    groupManageBusy.value = false
+  }
+}
+
 async function handleCreateGroup() {
   groupError.value = ''
   if (groupMembers.value.length < 1) {
@@ -169,6 +256,33 @@ watch(newChatMode, () => {
   directError.value = ''
 })
 
+watch(manageSearchQuery, (q) => {
+  clearTimeout(manageSearchTimer)
+  if (!q?.trim()) {
+    manageSearchResults.value = []
+    return
+  }
+  manageSearchTimer = setTimeout(async () => {
+    try {
+      manageSearchResults.value = normalizeListResponse(
+        await chatService.searchUsers(q.trim()),
+      )
+    } catch {
+      manageSearchResults.value = []
+    }
+  }, 400)
+})
+
+watch(selectedConversation, (conv) => {
+  if (!conv || conv.type !== 'group') {
+    showGroupManage.value = false
+    return
+  }
+  if (showGroupManage.value) {
+    groupRenameDraft.value = conv.name ?? ''
+  }
+})
+
 onMounted(async () => {
   const token = getAuthToken()
   const payload = token ? parseJwtPayload(token) : null
@@ -182,6 +296,10 @@ onMounted(async () => {
   })
 
   await fetchConversations()
+})
+
+onUnmounted(() => {
+  clearTimeout(manageSearchTimer)
 })
 </script>
 
@@ -360,7 +478,99 @@ onMounted(async () => {
                 : `${selectedConversation.participants?.length || 0} thành viên`
             }}</span>
           </div>
+          <button
+            v-if="selectedConversation.type === 'group'"
+            type="button"
+            class="group-manage-toggle"
+            :class="{ 'group-manage-toggle--active': showGroupManage }"
+            title="Quản lý nhóm"
+            :aria-expanded="showGroupManage"
+            @click="toggleGroupManage"
+          >
+            <Users :size="22" />
+          </button>
         </header>
+
+        <div
+          v-if="showGroupManage && selectedConversation.type === 'group'"
+          class="group-manage-panel"
+        >
+          <div class="group-manage-panel__head">
+            <span class="group-manage-title">Quản lý nhóm</span>
+            <button type="button" class="group-manage-close" @click="showGroupManage = false">
+              <X :size="18" />
+            </button>
+          </div>
+
+          <label class="group-manage-label" for="groupRenameInput">Tên nhóm</label>
+          <div class="group-manage-row">
+            <input
+              id="groupRenameInput"
+              v-model="groupRenameDraft"
+              type="text"
+              class="group-manage-input"
+              maxlength="255"
+              placeholder="Đặt tên hoặc để trống"
+              :disabled="groupManageBusy"
+            />
+            <button
+              type="button"
+              class="btn-save-name"
+              :disabled="groupManageBusy"
+              @click="saveGroupName"
+            >
+              <LoaderCircle v-if="groupManageBusy" class="spin" :size="16" />
+              <span v-else>Lưu</span>
+            </button>
+          </div>
+
+          <p class="group-manage-hint">Để trống tên để hiển thị theo thành viên.</p>
+          <p v-if="groupManageError" class="group-inline-error">{{ groupManageError }}</p>
+
+          <p class="group-manage-section-title">Thành viên</p>
+          <ul class="group-member-list">
+            <li
+              v-for="p in selectedConversation.participants"
+              :key="p.user_id"
+              class="group-member-row"
+            >
+              <span class="group-member-name">{{ p.full_name || p.email }}</span>
+              <button
+                type="button"
+                class="group-member-remove"
+                :disabled="!canRemoveGroupMembers || groupManageBusy"
+                :title="
+                  canRemoveGroupMembers ? 'Xóa khỏi nhóm' : 'Nhóm cần ít nhất 2 người — không thể xóa'
+                "
+                @click="removeMemberFromManage(p.user_id)"
+              >
+                <X :size="16" />
+              </button>
+            </li>
+          </ul>
+
+          <p class="group-manage-section-title">Thêm thành viên</p>
+          <div class="search-box search-box--manage">
+            <Search :size="16" />
+            <input v-model="manageSearchQuery" placeholder="Tìm theo email hoặc tên..." />
+          </div>
+          <div v-if="visibleManageSearchResults.length > 0" class="search-results search-results--manage">
+            <button
+              v-for="user in visibleManageSearchResults"
+              :key="user.user_id"
+              type="button"
+              class="conversation-item"
+              :disabled="groupManageBusy"
+              @click="addMemberFromManage(user)"
+            >
+              <div class="avatar">{{ getInitials(user.full_name || user.email) }}</div>
+              <div class="conversation-copy">
+                <p>{{ user.full_name || user.email }}</p>
+                <span>{{ user.email }} · Chạm để thêm</span>
+              </div>
+            </button>
+          </div>
+        </div>
 
         <div ref="messagesContainer" class="message-list" @scroll="handleScroll">
           <div v-if="loadingMore" class="history-loading">
@@ -770,6 +980,190 @@ onMounted(async () => {
   border-bottom: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-background) 82%, transparent);
   backdrop-filter: blur(12px);
+}
+
+.chat-area__header .conversation-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.group-manage-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.group-manage-toggle--active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.group-manage-panel {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: var(--spacing-3) var(--spacing-4);
+  max-height: min(50vh, 22rem);
+  overflow-y: auto;
+}
+
+.group-manage-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-3);
+}
+
+.group-manage-title {
+  font-weight: 800;
+  font-size: var(--font-size-sm);
+}
+
+.group-manage-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--spacing-1);
+  border-radius: var(--radius-full);
+}
+
+.group-manage-close:hover {
+  color: var(--color-text);
+  background: var(--color-background);
+}
+
+.group-manage-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin-bottom: var(--spacing-1);
+  color: var(--color-text-muted);
+}
+
+.group-manage-row {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+  margin-bottom: var(--spacing-1);
+}
+
+.group-manage-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-sm);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.btn-save-name {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4rem;
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.btn-save-name:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.group-manage-hint {
+  margin: 0 0 var(--spacing-3);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.group-manage-section-title {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+}
+
+.group-member-list {
+  list-style: none;
+  margin: 0 0 var(--spacing-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.group-member-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  background: var(--color-background);
+  font-size: var(--font-size-sm);
+}
+
+.group-member-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-member-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--spacing-1);
+  border-radius: var(--radius-full);
+}
+
+.group-member-remove:hover:not(:disabled) {
+  color: var(--color-danger);
+  background: var(--color-danger-soft-bg, color-mix(in srgb, var(--color-danger) 12%, transparent));
+}
+
+.group-member-remove:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.search-box--manage {
+  margin-bottom: var(--spacing-2);
+}
+
+.search-results--manage {
+  margin-top: 0;
+  max-height: 10rem;
+  overflow-y: auto;
 }
 
 .back-button {

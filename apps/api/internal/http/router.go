@@ -221,6 +221,11 @@ func NewRouter(
 				// lấy danh sách cuộc hội thoại của user hiện tại
 				chat.GET("/conversations", chatHandler.ListConversations)
 
+				// quản lý nhóm (đổi tên, thêm / xóa thành viên)
+				chat.PATCH("/conversations/:conversation_id/group", chatHandler.PatchGroupConversation)
+				chat.POST("/conversations/:conversation_id/participants", chatHandler.AddGroupParticipants)
+				chat.DELETE("/conversations/:conversation_id/participants/:user_id", chatHandler.RemoveGroupParticipant)
+
 				// lấy danh sách tin nhắn của cuộc hội thoại
 				chat.GET("/conversations/:conversation_id/messages", chatHandler.ListMessages)
 			}

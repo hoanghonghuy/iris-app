@@ -17,6 +17,25 @@ export const chatService = {
     return response?.data ?? response
   },
 
+  async patchGroupConversation(conversationId, body) {
+    const response = await httpClient.patch(`/chat/conversations/${conversationId}/group`, body)
+    return response?.data ?? response
+  },
+
+  async addConversationParticipants(conversationId, userIds) {
+    const response = await httpClient.post(`/chat/conversations/${conversationId}/participants`, {
+      user_ids: userIds,
+    })
+    return response?.data ?? response
+  },
+
+  async removeConversationParticipant(conversationId, userId) {
+    const response = await httpClient.del(
+      `/chat/conversations/${conversationId}/participants/${userId}`,
+    )
+    return response?.data ?? response
+  },
+
   async listConversations() {
     const response = await httpClient.get('/chat/conversations')
     return response?.data ?? response

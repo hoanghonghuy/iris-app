@@ -210,6 +210,169 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 	})
 }
 
+// PatchGroupConversationRequest đổi tên nhóm (name rỗng → xóa tên hiển thị).
+type PatchGroupConversationRequest struct {
+	Name string `json:"name"`
+}
+
+// PatchGroupConversation cập nhật tên nhóm chat.
+func (h *ChatHandler) PatchGroupConversation(c *gin.Context) {
+	userID, ok := shared.RequireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	conversationID, err := uuid.Parse(c.Param("conversation_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid conversation_id format")
+		return
+	}
+
+	var req PatchGroupConversationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	cw, err := h.chatService.RenameGroupConversation(ctx, userID, conversationID, req.Name)
+	if err != nil {
+		if errors.Is(err, service.ErrChatNotParticipant) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatNotGroup) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatConversationNotFound) {
+			response.Fail(c, http.StatusNotFound, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatGroupNameTooLong) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to update group")
+		return
+	}
+
+	response.OK(c, cw)
+}
+
+// AddGroupParticipantsRequest thêm thành viên vào nhóm.
+type AddGroupParticipantsRequest struct {
+	UserIDs []uuid.UUID `json:"user_ids" binding:"required"`
+}
+
+// AddGroupParticipants POST thêm thành viên.
+func (h *ChatHandler) AddGroupParticipants(c *gin.Context) {
+	userID, claims, ok := shared.RequireCurrentUser(c)
+	if !ok {
+		return
+	}
+
+	conversationID, err := uuid.Parse(c.Param("conversation_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid conversation_id format")
+		return
+	}
+
+	var req AddGroupParticipantsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	if len(req.UserIDs) == 0 {
+		response.Fail(c, http.StatusBadRequest, "user_ids must not be empty")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	cw, err := h.chatService.AddGroupParticipants(ctx, userID, claims.Roles, conversationID, req.UserIDs)
+	if err != nil {
+		if errors.Is(err, service.ErrChatNotParticipant) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatNotGroup) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatConversationNotFound) {
+			response.Fail(c, http.StatusNotFound, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatTargetNotAllowed) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatGroupTooManyMembers) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to add participants")
+		return
+	}
+
+	response.OK(c, cw)
+}
+
+// RemoveGroupParticipant DELETE một thành viên khỏi nhóm.
+func (h *ChatHandler) RemoveGroupParticipant(c *gin.Context) {
+	userID, ok := shared.RequireCurrentUserID(c)
+	if !ok {
+		return
+	}
+
+	conversationID, err := uuid.Parse(c.Param("conversation_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid conversation_id format")
+		return
+	}
+
+	targetUserID, err := uuid.Parse(c.Param("user_id"))
+	if err != nil {
+		response.Fail(c, http.StatusBadRequest, "invalid user_id format")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+	defer cancel()
+
+	cw, err := h.chatService.RemoveGroupParticipant(ctx, userID, conversationID, targetUserID)
+	if err != nil {
+		if errors.Is(err, service.ErrChatNotParticipant) {
+			response.Fail(c, http.StatusForbidden, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatNotGroup) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatConversationNotFound) {
+			response.Fail(c, http.StatusNotFound, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatParticipantNotInGroup) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		if errors.Is(err, service.ErrChatCannotRemoveWouldDropBelowMin) {
+			response.Fail(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		response.Fail(c, http.StatusInternalServerError, "failed to remove participant")
+		return
+	}
+
+	response.OK(c, cw)
+}
+
 // SearchUsers tìm kiếm user qua query param "q".
 func (h *ChatHandler) SearchUsers(c *gin.Context) {
 	userID, claims, ok := shared.RequireCurrentUser(c)

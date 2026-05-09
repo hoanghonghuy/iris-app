@@ -62,6 +62,75 @@ func (r *ChatRepo) CreateConversation(ctx context.Context, convType string, name
 	return &conv, nil
 }
 
+// GetConversationByID lấy một cuộc hội thoại theo id.
+func (r *ChatRepo) GetConversationByID(ctx context.Context, id uuid.UUID) (*model.Conversation, error) {
+	const q = `
+		SELECT conversation_id, type, name, created_at
+		FROM conversations
+		WHERE conversation_id = $1;
+	`
+	var c model.Conversation
+	err := r.pool.QueryRow(ctx, q, id).Scan(&c.ConversationID, &c.Type, &c.Name, &c.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+// UpdateConversationName cập nhật tên nhóm (NULL để xóa tên hiển thị).
+func (r *ChatRepo) UpdateConversationName(ctx context.Context, id uuid.UUID, name *string) error {
+	const q = `
+		UPDATE conversations
+		SET name = $2, updated_at = now()
+		WHERE conversation_id = $1;
+	`
+	_, err := r.pool.Exec(ctx, q, id, name)
+	return err
+}
+
+// CountParticipants đếm số thành viên trong cuộc hội thoại.
+func (r *ChatRepo) CountParticipants(ctx context.Context, conversationID uuid.UUID) (int, error) {
+	const q = `
+		SELECT count(*)::int
+		FROM conversation_participants
+		WHERE conversation_id = $1;
+	`
+	var n int
+	err := r.pool.QueryRow(ctx, q, conversationID).Scan(&n)
+	return n, err
+}
+
+// AddConversationParticipants thêm thành viên (bỏ qua nếu đã tồn tại).
+func (r *ChatRepo) AddConversationParticipants(ctx context.Context, conversationID uuid.UUID, userIDs []uuid.UUID) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+	const q = `
+		INSERT INTO conversation_participants (conversation_id, user_id)
+		VALUES ($1, $2)
+		ON CONFLICT (conversation_id, user_id) DO NOTHING;
+	`
+	for _, uid := range userIDs {
+		if _, err := r.pool.Exec(ctx, q, conversationID, uid); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// RemoveConversationParticipant xóa một thành viên; trả số dòng đã xóa.
+func (r *ChatRepo) RemoveConversationParticipant(ctx context.Context, conversationID, userID uuid.UUID) (int64, error) {
+	const q = `
+		DELETE FROM conversation_participants
+		WHERE conversation_id = $1 AND user_id = $2;
+	`
+	cmd, err := r.pool.Exec(ctx, q, conversationID, userID)
+	if err != nil {
+		return 0, err
+	}
+	return cmd.RowsAffected(), nil
+}
+
 // FindDirectConversation tìm cuộc hội thoại direct giữa 2 user (nếu đã tồn tại)
 func (r *ChatRepo) FindDirectConversation(ctx context.Context, userA, userB uuid.UUID) (*model.Conversation, error) {
 	const q = `
