@@ -3,7 +3,30 @@
 All notable changes to this project are documented in this file.
 
 ## [Unreleased]
-- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.5.0...HEAD)
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.6.0...HEAD)
+
+## [v0.6.0] - 2026-05-10
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.5.0...v0.6.0)
+
+### Features
+- **Authentication:** Added refresh-token client flow with persistent `refresh_token` storage, automatic 401 refresh handling, and retry logic in HTTP client.
+- **Parent Profile:** Added parent self-service profile update flow (`PUT /api/v1/parent/profile`) with backend handler/service/repo wiring and frontend editable profile form.
+- **Dashboard UX:** Added tabbed overview/charts experience and consistent range filtering (`7d` / `14d` / `30d`) across Admin, Teacher, and Parent dashboards.
+
+### Fixes
+- **Analytics Labels:** Simplified analytics labels by removing parenthetical technical terms to improve readability.
+- **Admin Audit Logs:** Fixed mobile/raw-view behavior and visual styling issues in admin audit logs.
+- **Chart Summary Metrics:** Fixed stacked-series summary value calculation in timeseries panel.
+
+### Refactoring
+- **Typography:** Switched app typography to Inter for better Vietnamese text rendering and consistency.
+- **UI Consistency:** Reused shared `view-switch` pattern for dashboard tab interactions.
+
+### Docs
+- Updated root and API README to document refresh-token behavior and parent profile update endpoint.
+
+### Breaking Changes
+- None identified from v0.5.0..HEAD. Backend API contracts remain backward-compatible.
 
 ## [v0.5.0] - 2026-05-10
 - References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.4.0...v0.5.0)
