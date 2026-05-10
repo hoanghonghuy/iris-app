@@ -19,7 +19,6 @@ import { useAuditLogs } from '../../composables/admin'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
 import PaginationBar from '../../components/common/PaginationBar.vue'
-import '../../assets/css/view-switch.css'
 
 const authStore = useAuthStore()
 const isSuperAdmin = computed(() => authStore.currentUserRole === 'SUPER_ADMIN')
@@ -211,7 +210,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="mobile-list">
+        <div v-if="viewMode === 'friendly'" class="mobile-list">
           <article v-for="log in auditLogs" :key="log.audit_log_id" class="card audit-card">
             <div class="audit-card__head">
               <p class="audit-card__time">{{ formatDateTime(log.created_at) }}</p>
@@ -385,27 +384,6 @@ onMounted(() => {
 
 @media (min-width: 1200px) {
   .filters-grid {
-    .mobile-list {
-      display: none;
-    }
-
-    .raw-view {
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .raw-json {
-      margin: 0;
-      padding: var(--spacing-4);
-      background: var(--color-bg-code, #f6f8fa);
-      color: var(--color-text);
-      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      overflow-x: auto;
-      white-space: pre;
-    }
-
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
@@ -418,5 +396,25 @@ onMounted(() => {
   .mobile-list {
     display: flex;
   }
+}
+
+.raw-view {
+  padding: 0;
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+}
+
+.raw-json {
+  margin: 0;
+  padding: var(--spacing-4);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  outline: none;
 }
 </style>

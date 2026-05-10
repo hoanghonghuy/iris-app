@@ -46,11 +46,26 @@ const SERIES_LABEL_MAP = {
   health_alerts: 'Cảnh báo sức khỏe',
   appointments_by_status: 'Lịch hẹn theo trạng thái',
   attendance_marked: 'Lượt điểm danh đã ghi nhận',
+  attendance_marked_vs_pending: 'Điểm danh đã ghi nhận và chưa ghi nhận',
+  population_by_role: 'Phân bố theo vai trò',
+  present: 'Có mặt',
+  absent: 'Vắng mặt',
+  late: 'Đi muộn',
+  excused: 'Có phép',
+  pending: 'Chờ xác nhận',
+  confirmed: 'Đã xác nhận',
+  completed: 'Hoàn thành',
+  cancelled: 'Đã hủy',
+  no_show: 'Không đến',
+  marked: 'Đã điểm danh',
+  not_marked: 'Chưa điểm danh',
 }
 
 function prettifyKey(key) {
   if (!key) return ''
-  return key.replaceAll('_', ' ').replaceAll(/\b\w/g, (m) => m.toUpperCase())
+  // Fallback: chỉ capitalize chữ cái đầu tiên của cả chuỗi, không capitalize mỗi từ
+  const normalized = key.replaceAll('_', ' ')
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
 function normalizeSeriesLabel(labelOrId) {
@@ -60,6 +75,15 @@ function normalizeSeriesLabel(labelOrId) {
 function formatMetricValue(series) {
   if (!series?.points?.length) return '--'
   const lastPoint = series.points[series.points.length - 1]
+  
+  // Nếu series có components (stacked data), tính tổng
+  if (lastPoint?.components && typeof lastPoint.components === 'object') {
+    const total = Object.values(lastPoint.components).reduce((sum, val) => sum + (Number(val) || 0), 0)
+    if (series.unit === 'percent') return `${total.toFixed(1)}%`
+    return `${Math.round(total)}`
+  }
+  
+  // Series có value đơn giản
   const raw = Number(lastPoint?.value ?? 0)
   if (!Number.isFinite(raw)) return '--'
   if (series.unit === 'percent') return `${raw.toFixed(1)}%`
@@ -200,6 +224,12 @@ const summaryItems = computed(() => {
     }))
     .slice(0, 4)
 })
+
+function shouldSpanFull(index) {
+  const total = gridItems.value.length
+  // Nếu có số lẻ biểu đồ (3, 5, 7...) và đây là item cuối cùng, span full width
+  return total % 2 === 1 && index === total - 1
+}
 </script>
 
 <template>
@@ -219,7 +249,12 @@ const summaryItems = computed(() => {
       </div>
     </div>
     <div class="analytics-ts-panel__grid">
-      <div v-for="item in gridItems" :key="item.key" class="card analytics-ts-panel__card">
+      <div
+        v-for="(item, index) in gridItems"
+        :key="item.key"
+        class="card analytics-ts-panel__card"
+        :class="{ 'analytics-ts-panel__card--span-full': shouldSpanFull(index) }"
+      >
         <p class="analytics-ts-panel__chart-title">{{ item.title }}</p>
         <div class="analytics-ts-panel__chart-wrap">
           <Line
@@ -290,6 +325,10 @@ const summaryItems = computed(() => {
 @media (min-width: 900px) {
   .analytics-ts-panel__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-ts-panel__card--span-full {
+    grid-column: 1 / -1;
   }
 }
 

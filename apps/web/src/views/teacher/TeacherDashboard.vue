@@ -16,6 +16,7 @@ const timeseries = ref(null)
 const chartsLoading = ref(false)
 const chartsError = ref('')
 const selectedRange = ref('14d')
+const activeTab = ref('overview')
 const RANGE_OPTIONS = [
   { value: '7d', label: '7 ngày' },
   { value: '14d', label: '14 ngày' },
@@ -149,6 +150,25 @@ function changeRange(rangeValue) {
       </button>
     </div>
 
+    <div class="view-switch mb-6">
+      <button
+        type="button"
+        class="view-switch__btn"
+        :class="{ 'view-switch__btn--active': activeTab === 'overview' }"
+        @click="activeTab = 'overview'"
+      >
+        Tổng quan
+      </button>
+      <button
+        type="button"
+        class="view-switch__btn"
+        :class="{ 'view-switch__btn--active': activeTab === 'charts' }"
+        @click="activeTab = 'charts'"
+      >
+        Biểu đồ
+      </button>
+    </div>
+
     <LoadingSpinner v-if="isLoading" message="Đang tải dữ liệu tổng quan..." />
 
     <div
@@ -161,90 +181,95 @@ function changeRange(rangeValue) {
     </div>
 
     <div v-else class="dashboard-content">
-      <div class="stats-grid mb-6">
-        <RouterLink
-          v-for="card in primaryStats"
-          :key="card.to"
-          :to="card.to"
-          class="stat-card stat-card--link"
-        >
-          <span class="stat-label">{{ card.label }}</span>
-          <strong class="stat-value">{{ card.value }}</strong>
-        </RouterLink>
-        <div v-for="card in secondaryStats" :key="card.label" class="stat-card">
-          <span class="stat-label">{{ card.label }}</span>
-          <strong class="stat-value stat-value--small">{{ card.value }}</strong>
-        </div>
-      </div>
-
-      <div class="dashboard-columns">
-        <section class="quick-actions">
-          <h3>Hoạt động nhanh</h3>
-          <div class="quick-grid">
-            <RouterLink
-              v-for="action in quickActions"
-              :key="action.to"
-              :to="action.to"
-              class="quick-action"
-            >
-              {{ action.label }}
-            </RouterLink>
-          </div>
-        </section>
-
-        <section class="class-section">
-          <div class="section-header">
-            <h3>Lớp được phân công</h3>
-            <RouterLink to="/teacher/classes" class="section-link">Xem tất cả</RouterLink>
-          </div>
-
-          <div v-if="classes.length === 0" class="empty-card">
-            Bạn chưa được phân công lớp nào. Vui lòng liên hệ quản trị viên.
-          </div>
-
-          <div v-else class="class-grid">
-            <RouterLink
-              v-for="cls in classes"
-              :key="cls.class_id"
-              :to="`/teacher/classes/${cls.class_id}`"
-              class="class-card"
-            >
-              <span class="class-year">{{ cls.school_year || 'Năm học hiện tại' }}</span>
-              <h4>{{ cls.name }}</h4>
-              <p>Lớp phụ trách chính thức. Nhấn để quản lý học sinh và điểm danh.</p>
-            </RouterLink>
-          </div>
-        </section>
-      </div>
-
-      <section class="card range-filter mt-6">
-        <div class="range-filter__heading">
-          <h3>Khoảng thời gian biểu đồ</h3>
-          <span class="text-muted text-sm">Chọn nhanh theo nhu cầu theo dõi</span>
-        </div>
-        <div class="range-filter__actions">
-          <button
-            v-for="option in RANGE_OPTIONS"
-            :key="option.value"
-            type="button"
-            class="btn"
-            :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
-            :disabled="chartsLoading"
-            @click="changeRange(option.value)"
+      <!-- Tab Tổng quan -->
+      <div v-show="activeTab === 'overview'">
+        <div class="stats-grid mb-6">
+          <RouterLink
+            v-for="card in primaryStats"
+            :key="card.to"
+            :to="card.to"
+            class="stat-card stat-card--link"
           >
-            {{ option.label }}
-          </button>
+            <span class="stat-label">{{ card.label }}</span>
+            <strong class="stat-value">{{ card.value }}</strong>
+          </RouterLink>
+          <div v-for="card in secondaryStats" :key="card.label" class="stat-card">
+            <span class="stat-label">{{ card.label }}</span>
+            <strong class="stat-value stat-value--small">{{ card.value }}</strong>
+          </div>
         </div>
-      </section>
 
-      <div v-if="chartsLoading" class="mt-6 text-muted text-sm">Đang tải biểu đồ...</div>
-      <div v-else-if="chartsError" class="alert alert--error mt-6">{{ chartsError }}</div>
-      <AnalyticsTimeseriesPanel
-        v-else-if="teacherTimeseriesPayload"
-        class="mt-6"
-        :payload="teacherTimeseriesPayload"
-        :title="`Xu hướng lớp học ${selectedRange.replace('d', ' ngày')} gần nhất`"
-      />
+        <div class="dashboard-columns">
+          <section class="quick-actions">
+            <h3>Hoạt động nhanh</h3>
+            <div class="quick-grid">
+              <RouterLink
+                v-for="action in quickActions"
+                :key="action.to"
+                :to="action.to"
+                class="quick-action"
+              >
+                {{ action.label }}
+              </RouterLink>
+            </div>
+          </section>
+
+          <section class="class-section">
+            <div class="section-header">
+              <h3>Lớp được phân công</h3>
+              <RouterLink to="/teacher/classes" class="section-link">Xem tất cả</RouterLink>
+            </div>
+
+            <div v-if="classes.length === 0" class="empty-card">
+              Bạn chưa được phân công lớp nào. Vui lòng liên hệ quản trị viên.
+            </div>
+
+            <div v-else class="class-grid">
+              <RouterLink
+                v-for="cls in classes"
+                :key="cls.class_id"
+                :to="`/teacher/classes/${cls.class_id}`"
+                class="class-card"
+              >
+                <span class="class-year">{{ cls.school_year || 'Năm học hiện tại' }}</span>
+                <h4>{{ cls.name }}</h4>
+                <p>Lớp phụ trách chính thức. Nhấn để quản lý học sinh và điểm danh.</p>
+              </RouterLink>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Tab Biểu đồ -->
+      <div v-show="activeTab === 'charts'">
+        <section class="card range-filter mb-6">
+          <div class="range-filter__heading">
+            <h3>Khoảng thời gian biểu đồ</h3>
+            <span class="text-muted text-sm">Chọn nhanh theo nhu cầu theo dõi</span>
+          </div>
+          <div class="range-filter__actions">
+            <button
+              v-for="option in RANGE_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="btn"
+              :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
+              :disabled="chartsLoading"
+              @click="changeRange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </section>
+
+        <div v-if="chartsLoading" class="text-muted text-sm">Đang tải biểu đồ...</div>
+        <div v-else-if="chartsError" class="alert alert--error">{{ chartsError }}</div>
+        <AnalyticsTimeseriesPanel
+          v-else-if="teacherTimeseriesPayload"
+          :payload="teacherTimeseriesPayload"
+          :title="`Xu hướng lớp học ${selectedRange.replace('d', ' ngày')} gần nhất`"
+        />
+      </div>
     </div>
   </div>
 </template>

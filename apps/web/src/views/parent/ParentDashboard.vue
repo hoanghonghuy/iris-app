@@ -20,6 +20,7 @@ const timeseries = ref(null)
 const chartsLoading = ref(false)
 const chartsError = ref('')
 const selectedRange = ref('14d')
+const activeTab = ref('overview')
 const chartChildSelectId = 'parent-chart-child-select'
 const RANGE_OPTIONS = [
   { value: '7d', label: '7 ngày' },
@@ -148,6 +149,25 @@ function changeRange(rangeValue) {
       </button>
     </div>
 
+    <div class="view-switch mb-6">
+      <button
+        type="button"
+        class="view-switch__btn"
+        :class="{ 'view-switch__btn--active': activeTab === 'overview' }"
+        @click="activeTab = 'overview'"
+      >
+        Tổng quan
+      </button>
+      <button
+        type="button"
+        class="view-switch__btn"
+        :class="{ 'view-switch__btn--active': activeTab === 'charts' }"
+        @click="activeTab = 'charts'"
+      >
+        Biểu đồ
+      </button>
+    </div>
+
     <LoadingSpinner v-if="isLoading" message="Đang tải thông tin..." />
 
     <div
@@ -160,106 +180,111 @@ function changeRange(rangeValue) {
     </div>
 
     <div v-else class="dashboard-content">
-      <div class="stats-grid mb-6">
-        <div class="stat-card">
-          <span class="stat-label">Tổng số con</span>
-          <strong class="stat-value">{{ analyticsView.total_children }}</strong>
+      <!-- Tab Tổng quan -->
+      <div v-show="activeTab === 'overview'">
+        <div class="stats-grid mb-6">
+          <div class="stat-card">
+            <span class="stat-label">Tổng số con</span>
+            <strong class="stat-value">{{ analyticsView.total_children }}</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Cảnh báo sức khỏe 24h</span>
+            <strong class="stat-value">{{ analyticsView.recent_health_alerts_24h }}</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Con có mặt hôm nay</span>
+            <strong class="stat-value stat-value--small">{{
+              analyticsView.today_attendance_present_count
+            }}</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Con chưa điểm danh</span>
+            <strong class="stat-value stat-value--small">{{
+              analyticsView.today_attendance_pending_count
+            }}</strong>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Cảnh báo sức khỏe 24h</span>
-          <strong class="stat-value">{{ analyticsView.recent_health_alerts_24h }}</strong>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Con có mặt hôm nay</span>
-          <strong class="stat-value stat-value--small">{{
-            analyticsView.today_attendance_present_count
-          }}</strong>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Con chưa điểm danh</span>
-          <strong class="stat-value stat-value--small">{{
-            analyticsView.today_attendance_pending_count
-          }}</strong>
-        </div>
+
+        <section class="quick-actions mb-8">
+          <h3>Truy cập nhanh</h3>
+          <div class="quick-grid">
+            <RouterLink
+              v-for="action in quickActions"
+              :key="action.to"
+              :to="action.to"
+              class="quick-action"
+            >
+              {{ action.label }}
+            </RouterLink>
+          </div>
+        </section>
+
+        <section class="feed-section">
+          <div class="section-header">
+            <h3>Hoạt động mới nhất</h3>
+            <RouterLink to="/parent/posts" class="section-link">Xem tất cả</RouterLink>
+          </div>
+
+          <div v-if="posts.length === 0" class="empty-card">
+            Chưa có bài viết hay thông báo mới nào được đăng tải.
+          </div>
+
+          <div v-else class="feed-list">
+            <article v-for="post in posts" :key="post.post_id" class="feed-card">
+              <div class="feed-meta">
+                <span class="badge" :class="getPostMeta(post.type).badgeClass">
+                  {{ getPostMeta(post.type).label }}
+                </span>
+                <span class="feed-date">{{ formatDateTime(post.created_at) }}</span>
+              </div>
+              <p class="feed-content">{{ post.content }}</p>
+            </article>
+          </div>
+        </section>
       </div>
 
-      <div v-if="children.length > 1" class="card chart-child-filter mb-6">
-        <label :for="chartChildSelectId" class="form-label mb-1">Biểu đồ theo con</label>
-        <select :id="chartChildSelectId" v-model="chartStudentId" class="form-input" @change="fetchTimeseries">
-          <option v-for="c in children" :key="c.student_id" :value="c.student_id">
-            {{ c.full_name }}
-          </option>
-        </select>
+      <!-- Tab Biểu đồ -->
+      <div v-show="activeTab === 'charts'">
+        <div v-if="children.length > 1" class="card chart-child-filter mb-6">
+          <label :for="chartChildSelectId" class="form-label mb-1">Biểu đồ theo con</label>
+          <select :id="chartChildSelectId" v-model="chartStudentId" class="form-input" @change="fetchTimeseries">
+            <option v-for="c in children" :key="c.student_id" :value="c.student_id">
+              {{ c.full_name }}
+            </option>
+          </select>
+        </div>
+        <div v-else-if="children.length === 0" class="empty-card mb-6">
+          Chưa có học sinh liên kết với tài khoản này nên chưa hiển thị biểu đồ.
+        </div>
+
+        <section v-if="children.length > 0" class="card range-filter mb-6">
+          <div class="range-filter__heading">
+            <h3>Khoảng thời gian biểu đồ</h3>
+            <span class="text-muted text-sm">Theo dõi nhanh diễn biến gần đây</span>
+          </div>
+          <div class="range-filter__actions">
+            <button
+              v-for="option in RANGE_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="btn"
+              :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
+              :disabled="chartsLoading"
+              @click="changeRange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </section>
+
+        <div v-if="chartsLoading" class="text-muted text-sm">Đang tải biểu đồ...</div>
+        <div v-else-if="chartsError" class="alert alert--error">{{ chartsError }}</div>
+        <AnalyticsTimeseriesPanel
+          v-else-if="parentTimeseriesPayload && chartStudentId"
+          :payload="parentTimeseriesPayload"
+          :title="`Xu hướng của con trong ${selectedRange.replace('d', ' ngày')} gần nhất`"
+        />
       </div>
-      <div v-else-if="children.length === 0" class="empty-card mb-6">
-        Chưa có học sinh liên kết với tài khoản này nên chưa hiển thị biểu đồ.
-      </div>
-
-      <section v-if="children.length > 0" class="card range-filter mb-6">
-        <div class="range-filter__heading">
-          <h3>Khoảng thời gian biểu đồ</h3>
-          <span class="text-muted text-sm">Theo dõi nhanh diễn biến gần đây</span>
-        </div>
-        <div class="range-filter__actions">
-          <button
-            v-for="option in RANGE_OPTIONS"
-            :key="option.value"
-            type="button"
-            class="btn"
-            :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
-            :disabled="chartsLoading"
-            @click="changeRange(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </section>
-
-      <div v-if="chartsLoading" class="mb-6 text-muted text-sm">Đang tải biểu đồ...</div>
-      <div v-else-if="chartsError" class="alert alert--error mb-6">{{ chartsError }}</div>
-      <AnalyticsTimeseriesPanel
-        v-else-if="parentTimeseriesPayload && chartStudentId"
-        class="mb-8"
-        :payload="parentTimeseriesPayload"
-        :title="`Xu hướng của con trong ${selectedRange.replace('d', ' ngày')} gần nhất`"
-      />
-
-      <section class="quick-actions mb-8">
-        <h3>Truy cập nhanh</h3>
-        <div class="quick-grid">
-          <RouterLink
-            v-for="action in quickActions"
-            :key="action.to"
-            :to="action.to"
-            class="quick-action"
-          >
-            {{ action.label }}
-          </RouterLink>
-        </div>
-      </section>
-
-      <section class="feed-section">
-        <div class="section-header">
-          <h3>Hoạt động mới nhất</h3>
-          <RouterLink to="/parent/posts" class="section-link">Xem tất cả</RouterLink>
-        </div>
-
-        <div v-if="posts.length === 0" class="empty-card">
-          Chưa có bài viết hay thông báo mới nào được đăng tải.
-        </div>
-
-        <div v-else class="feed-list">
-          <article v-for="post in posts" :key="post.post_id" class="feed-card">
-            <div class="feed-meta">
-              <span class="badge" :class="getPostMeta(post.type).badgeClass">
-                {{ getPostMeta(post.type).label }}
-              </span>
-              <span class="feed-date">{{ formatDateTime(post.created_at) }}</span>
-            </div>
-            <p class="feed-content">{{ post.content }}</p>
-          </article>
-        </div>
-      </section>
     </div>
   </div>
 </template>

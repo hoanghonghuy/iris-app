@@ -22,7 +22,7 @@
 }
 
 .view-switch__btn--active {
-  background: var(--color-background);
-  color: var(--color-text);
+  background: var(--color-primary-soft-bg);
+  color: var(--color-primary-soft-text);
   box-shadow: var(--shadow-sm);
 }

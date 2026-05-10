@@ -15,6 +15,7 @@ const timeseries = ref(null)
 const chartsLoading = ref(false)
 const chartsError = ref('')
 const selectedRange = ref('14d')
+const activeTab = ref('overview')
 const RANGE_OPTIONS = [
   { value: '7d', label: '7 ngày' },
   { value: '14d', label: '14 ngày' },
@@ -127,6 +128,25 @@ onMounted(async () => {
       </button>
     </div>
 
+    <div class="view-switch mb-6">
+      <button
+        type="button"
+        class="view-switch__btn"
+        :class="{ 'view-switch__btn--active': activeTab === 'overview' }"
+        @click="activeTab = 'overview'"
+      >
+        Tổng quan
+      </button>
+      <button
+        type="button"
+        class="view-switch__btn"
+        :class="{ 'view-switch__btn--active': activeTab === 'charts' }"
+        @click="activeTab = 'charts'"
+      >
+        Biểu đồ
+      </button>
+    </div>
+
     <LoadingSpinner v-if="isLoading" message="Đang tải dữ liệu thống kê..." />
 
     <div v-else-if="errorMessage" class="alert alert--error">
@@ -138,75 +158,80 @@ onMounted(async () => {
     </div>
 
     <div v-else-if="analytics" class="dashboard-content">
-      <!-- Cards thống kê chính -->
-      <div class="grid-cards mb-8">
-        <RouterLink
-          v-for="card in statCards"
-          :key="card.to"
-          :to="card.to"
-          class="card stat-card p-4"
-        >
-          <p class="text-sm font-medium text-muted">{{ card.label }}</p>
-          <p class="text-2xl font-bold mt-1">{{ card.value }}</p>
-        </RouterLink>
-      </div>
-
-      <div class="grid-2-cols gap-6">
-        <div class="card p-4">
-          <p class="text-sm font-medium text-muted uppercase">Tỷ lệ điểm danh hôm nay</p>
-          <p class="text-3xl font-bold mt-2">
-            {{ analyticsView.today_attendance.attendance_rate.toFixed(1) }}%
-          </p>
-        </div>
-
-        <div class="card p-4">
-          <p class="text-sm font-medium text-muted uppercase">Cảnh báo sức khỏe 24h</p>
-          <p class="text-3xl font-bold mt-2">{{ analyticsView.recent_health_count }}</p>
-        </div>
-      </div>
-
-      <section class="quick-actions mt-8">
-        <h3>Quản lý nhanh</h3>
-        <div class="quick-grid">
+      <!-- Tab Tổng quan -->
+      <div v-show="activeTab === 'overview'">
+        <!-- Cards thống kê chính -->
+        <div class="grid-cards mb-8">
           <RouterLink
-            v-for="action in quickActions"
-            :key="action.to"
-            :to="action.to"
-            class="card quick-action"
+            v-for="card in statCards"
+            :key="card.to"
+            :to="card.to"
+            class="card stat-card p-4"
           >
-            {{ action.label }}
+            <p class="text-sm font-medium text-muted">{{ card.label }}</p>
+            <p class="text-2xl font-bold mt-1">{{ card.value }}</p>
           </RouterLink>
         </div>
-      </section>
 
-      <section class="card range-filter mt-8">
-        <div class="range-filter__heading">
-          <h3>Khoảng thời gian biểu đồ</h3>
-          <span class="text-muted text-sm">Xem nhanh theo 7, 14 hoặc 30 ngày gần nhất</span>
-        </div>
-        <div class="range-filter__actions">
-          <button
-            v-for="option in RANGE_OPTIONS"
-            :key="option.value"
-            type="button"
-            class="btn"
-            :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
-            :disabled="chartsLoading"
-            @click="changeRange(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </section>
+        <div class="grid-2-cols gap-6">
+          <div class="card p-4">
+            <p class="text-sm font-medium text-muted uppercase">Tỷ lệ điểm danh hôm nay</p>
+            <p class="text-3xl font-bold mt-2">
+              {{ analyticsView.today_attendance.attendance_rate.toFixed(1) }}%
+            </p>
+          </div>
 
-      <div v-if="chartsLoading" class="mt-8 text-muted text-sm">Đang tải biểu đồ...</div>
-      <div v-else-if="chartsError" class="alert alert--error mt-8">{{ chartsError }}</div>
-      <AnalyticsTimeseriesPanel
-        v-else-if="timeseries"
-        class="mt-8"
-        :payload="timeseries"
-        :title="`Biểu đồ xu hướng (${selectedRange.replace('d', ' ngày')})`"
-      />
+          <div class="card p-4">
+            <p class="text-sm font-medium text-muted uppercase">Cảnh báo sức khỏe 24h</p>
+            <p class="text-3xl font-bold mt-2">{{ analyticsView.recent_health_count }}</p>
+          </div>
+        </div>
+
+        <section class="quick-actions mt-8">
+          <h3>Quản lý nhanh</h3>
+          <div class="quick-grid">
+            <RouterLink
+              v-for="action in quickActions"
+              :key="action.to"
+              :to="action.to"
+              class="card quick-action"
+            >
+              {{ action.label }}
+            </RouterLink>
+          </div>
+        </section>
+      </div>
+
+      <!-- Tab Biểu đồ -->
+      <div v-show="activeTab === 'charts'">
+        <section class="card range-filter mb-6">
+          <div class="range-filter__heading">
+            <h3>Khoảng thời gian biểu đồ</h3>
+            <span class="text-muted text-sm">Xem nhanh theo 7, 14 hoặc 30 ngày gần nhất</span>
+          </div>
+          <div class="range-filter__actions">
+            <button
+              v-for="option in RANGE_OPTIONS"
+              :key="option.value"
+              type="button"
+              class="btn"
+              :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
+              :disabled="chartsLoading"
+              @click="changeRange(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </section>
+
+        <div v-if="chartsLoading" class="text-muted text-sm">Đang tải biểu đồ...</div>
+        <div v-else-if="chartsError" class="alert alert--error">{{ chartsError }}</div>
+        <AnalyticsTimeseriesPanel
+          v-else-if="timeseries"
+          :payload="timeseries"
+          :title="`Biểu đồ xu hướng (${selectedRange.replace('d', ' ngày')})`"
+        />
+      </div>
     </div>
   </div>
 </template>
