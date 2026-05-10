@@ -76,15 +76,6 @@ function normalizeText(value) {
   return String(value || '').trim()
 }
 
-function shortenId(value) {
-  const text = normalizeText(value)
-  if (!text) {
-    return ''
-  }
-
-  return text.length > 8 ? text.slice(0, 8) : text
-}
-
 function getEntityLabel(entityType) {
   const key = normalizeEntityKey(entityType)
   return ENTITY_LABELS[key] || entityType || 'Đối tượng khác'
@@ -376,11 +367,6 @@ export function getAuditDetailLines(log) {
   const ip = normalizeText(details.ip)
   if (ip) {
     lines.push(`Địa chỉ IP: ${ip}`)
-  }
-
-  const schoolId = shortenId(details.school_id || log.school_id)
-  if (schoolId) {
-    lines.push(`Trường áp dụng: ${schoolId}`)
   }
 
   return lines.length > 0 ? lines : ['Không có chi tiết bổ sung']
