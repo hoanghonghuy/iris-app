@@ -186,10 +186,10 @@ func NewRouter(
 				parentScope.GET("/children", parentScopeHandler.MyChildren)
 				parentScope.GET("/analytics", parentScopeHandler.GetMyAnalytics)
 				parentScope.GET("/analytics/timeseries", analyticsHandler.ParentAnalyticsTimeseries)
-				
+
 				// phụ huynh cập nhật hồ sơ cá nhân của mình
 				parentScope.PUT("/profile", parentScopeHandler.UpdateMyProfile)
-				
+
 				parentScope.GET("/appointments/slots", parentScopeHandler.ListAvailableAppointmentSlots)
 				parentScope.POST("/appointments", parentScopeHandler.CreateAppointment)
 				parentScope.GET("/appointments", parentScopeHandler.ListMyAppointments)

@@ -132,10 +132,10 @@ func (s *AnalyticsService) GetAdminAnalyticsTimeseries(ctx context.Context, scho
 	}
 
 	meta := model.AnalyticsTimeseriesMeta{
-		Range:           canonRange,
-		Interval:        "day",
-		BucketTimezone:  "UTC",
-		GeneratedAt:     time.Now().UTC(),
+		Range:          canonRange,
+		Interval:       "day",
+		BucketTimezone: "UTC",
+		GeneratedAt:    time.Now().UTC(),
 	}
 	if schoolID != nil {
 		s := schoolID.String()

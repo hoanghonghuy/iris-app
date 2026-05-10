@@ -3,7 +3,21 @@
 All notable changes to this project are documented in this file.
 
 ## [Unreleased]
-- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.6.0...HEAD)
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.6.1...HEAD)
+
+## [v0.6.1] - 2026-05-10
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.6.0...v0.6.1)
+
+### Fixes
+- **Admin Audit Logs:** Fixed detail column display to show HTTP method, duration, IP address, and request path from seed data. Previously showed "Không có chi tiết bổ sung" due to field name mismatch.
+- **Admin Audit Logs:** Removed school ID display from details (replaced with more useful request metadata).
+
+### Refactoring
+- **Auth Layout:** Improved login/register page styling with enhanced gradient backgrounds and better light mode support.
+- **Code Quality:** Removed unused `shortenId` helper function from audit log presentation.
+
+### Breaking Changes
+- None identified from v0.6.0..HEAD. Backend API contracts remain backward-compatible.
 
 ## [v0.6.0] - 2026-05-10
 - References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.5.0...v0.6.0)
