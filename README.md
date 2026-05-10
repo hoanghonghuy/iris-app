@@ -49,10 +49,11 @@ The platform supports role-based workflows for super admins, school admins, teac
 
 ```text
 iris-app/
+├── docker-compose.yml              # Root local stack (PostgreSQL + API + Web + migrate)
 ├── apps/
 │   ├── api/                        # Go API (cmd, internal, migrations)
 │   └── web/                        # Vue 3 + Vite frontend app
-├── infra/docker/                   # Docker Compose and deploy env example
+├── infra/docker/                   # Legacy compose and deploy env examples
 ├── scripts/db/                     # Seed and cleanup scripts
 ├── scripts/smoke/                  # API/UI smoke checks
 └── docs/                           # Audit notes and design docs
@@ -80,12 +81,14 @@ go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@lat
 
 ## Quick Start (Local)
 
-### 1) Start local PostgreSQL
+### 1) Start local stack (PostgreSQL + API + Web)
 
 ```bash
-cd infra/docker
-docker-compose up -d
+docker compose up -d
 ```
+
+> [!NOTE]
+> The recommended local flow uses the root `docker-compose.yml` and includes `migrate`, `api`, and `web` services. Legacy compose files are still available under `infra/docker/`.
 
 ### 2) Configure backend environment
 
@@ -128,10 +131,38 @@ Auth rate-limit values (defaults):
 - `AUTH_RATE_LIMIT_CLEANUP_EVERY=256`: number of requests between limiter map cleanup runs to avoid unbounded growth.
 - `AUTH_RATE_LIMIT_STALE_TTL_MULTIPLIER=5`: stale-key TTL multiplier; effective TTL = `multiplier * window`.
 
-### 3) Run migrations
+### 3) Run migrations (optional in root compose flow)
 
 ```bash
 migrate -path apps/api/migrations -database "postgres://postgres:iris@localhost:5433/iris_db?sslmode=disable" up
+```
+
+If you started services with `docker compose up -d`, migrations are already run by the `migrate` service.
+
+### Quick commands (root compose flow)
+
+```bash
+# Start all services in background
+docker compose up -d
+
+# Check service status
+docker compose ps
+
+# Follow logs (all services)
+docker compose logs -f
+
+# Follow logs (specific service)
+docker compose logs -f api
+docker compose logs -f web
+
+# Restart API only
+docker compose restart api
+
+# Stop and remove containers/network
+docker compose down
+
+# Stop and remove containers/network/volumes (DANGER: deletes DB data)
+docker compose down -v
 ```
 
 ### 4) (Optional) Seed demo data
@@ -140,7 +171,7 @@ migrate -path apps/api/migrations -database "postgres://postgres:iris@localhost:
 docker exec -i iris-postgres psql -U postgres -d iris_db < scripts/db/seed_demo.sql
 ```
 
-### 5) Run backend
+### 5) Run backend (optional, non-Docker mode)
 
 ```bash
 cd apps/api/cmd/api
@@ -158,7 +189,7 @@ VITE_API_URL=http://localhost:8080/api/v1
 VITE_GOOGLE_CLIENT_ID=
 ```
 
-### 7) Run frontend
+### 7) Run frontend (optional, non-Docker mode)
 
 ```bash
 cd apps/web
@@ -197,10 +228,10 @@ node scripts/smoke/ui-smoke.mjs
 
 ## API Summary
 
-- **Public**: health check, email/Google login, forgot/reset password, account activation, parent registration via invite codes
+- **Public**: health check, email/Google login, refresh token rotation, forgot/reset password, account activation, parent registration via invite codes
 - **Protected** (all roles): profile (`/me`), password change, account deletion, real-time chat (REST + WebSocket)
 - **Teacher scope**: class/student management, attendance + change-log audit, health logs, posts (CRUD + interactions), appointment slots
-- **Parent scope**: children overview, aggregated feed, appointment booking, child-specific posts
+- **Parent scope**: children overview, aggregated feed, appointment booking, child-specific posts, own profile update
 - **Admin scope**: full CRUD for schools, classes, students, users, teachers, parents; parent-code generation, school admin management, role assignment, audit-log querying
 
 > Detailed endpoint reference: [`apps/api/README.md`](apps/api/README.md)
@@ -217,7 +248,7 @@ node scripts/smoke/ui-smoke.mjs
 - The frontend uses Vue 3 Composition API with `<script setup>` syntax throughout.
 - State management is handled via Pinia stores with setup-function syntax.
 - Composables are organized by feature/domain under `src/composables/` with barrel exports.
-- API calls go through a centralized `httpClient.js` with automatic JWT token injection and request timeout.
+- API calls go through a centralized `httpClient.js` with automatic JWT token injection, refresh-token rotation on `401`, and request timeout.
 - The frontend uses domain-driven route sections (`admin`, `teacher`, `parent`) with lazy-loaded views.
 - Layouts (`AuthLayout`, `DashboardLayout`) wrap route groups for consistent UI structure.
 - Styling uses plain CSS with custom properties (no Tailwind or UI framework).
@@ -226,7 +257,7 @@ node scripts/smoke/ui-smoke.mjs
 ---
 
 If you are preparing a thesis demo, start with:
-1. `infra/docker/docker-compose.yml`
+1. `docker-compose.yml` (root)
 2. `apps/api/cmd/api/.env`
 3. `scripts/db/seed_demo.sql`
 4. `scripts/smoke/api-smoke.ps1` and `scripts/smoke/ui-smoke.mjs`
