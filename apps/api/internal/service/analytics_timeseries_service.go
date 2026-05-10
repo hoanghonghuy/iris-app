@@ -145,8 +145,8 @@ func (s *AnalyticsService) GetAdminAnalyticsTimeseries(ctx context.Context, scho
 	return &model.AnalyticsTimeseriesResponse{
 		Meta: meta,
 		Series: []model.AnalyticsTimeseriesSeries{
-			{ID: "attendance_rate", Label: "Tỷ lệ có mặt (present)", Unit: "percent", Points: ratePoints},
-			{ID: "health_alerts", Label: "Cảnh báo sức khỏe (watch/urgent)", Unit: "count", Points: healthPoints},
+			{ID: "attendance_rate", Label: "Tỷ lệ có mặt", Unit: "percent", Points: ratePoints},
+			{ID: "health_alerts", Label: "Cảnh báo sức khỏe", Unit: "count", Points: healthPoints},
 			{ID: "population_by_role", Label: "Quy mô (GV / PH / HS)", Unit: "count", Points: []model.TimeseriesPoint{popPoint}},
 		},
 	}, nil
