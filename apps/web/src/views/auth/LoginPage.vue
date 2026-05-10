@@ -88,11 +88,19 @@ async function handleLinkPassword() {
 function handleLoginSuccess(data) {
   // Backend trả về data.data.access_token
   const token = data?.data?.access_token || data?.access_token
+  const refreshToken = data?.data?.refresh_token || data?.refresh_token
+  
   if (!token) {
     errorMessage.value = 'Không nhận được token từ server'
     return
   }
+  
   authStore.setToken(token)
+  
+  // Lưu refresh token nếu có
+  if (refreshToken) {
+    authStore.setRefreshToken(refreshToken)
+  }
 
   // Gọi API lấy thông tin user để lưu role
   authStore.fetchCurrentUser().then((user) => {

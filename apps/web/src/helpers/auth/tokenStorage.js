@@ -4,6 +4,7 @@
  */
 
 const TOKEN_KEY = 'auth_token'
+const REFRESH_TOKEN_KEY = 'refresh_token'
 const ROLE_KEY = 'user_role'
 
 export const tokenStorage = {
@@ -24,6 +25,26 @@ export const tokenStorage = {
       sessionStorage.setItem(TOKEN_KEY, token)
     } else {
       sessionStorage.removeItem(TOKEN_KEY)
+    }
+  },
+
+  /**
+   * Get refresh token from session storage
+   * @returns {string|null} Refresh token string or null if not found
+   */
+  getRefreshToken() {
+    return sessionStorage.getItem(REFRESH_TOKEN_KEY)
+  },
+
+  /**
+   * Set refresh token in session storage
+   * @param {string|null} refreshToken - Refresh token to store, or null to remove
+   */
+  setRefreshToken(refreshToken) {
+    if (refreshToken) {
+      sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+    } else {
+      sessionStorage.removeItem(REFRESH_TOKEN_KEY)
     }
   },
 
@@ -52,6 +73,7 @@ export const tokenStorage = {
    */
   clear() {
     sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(ROLE_KEY)
   },
 }

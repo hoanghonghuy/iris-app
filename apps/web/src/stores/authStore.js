@@ -5,6 +5,7 @@ import { tokenStorage } from '@/helpers/auth'
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     token: tokenStorage.getToken() || null,
+    refreshToken: tokenStorage.getRefreshToken() || null,
     currentUser: null,
     currentUserRole: tokenStorage.getRole() || null,
     isLoading: false,
@@ -25,6 +26,11 @@ export const useAuthStore = defineStore('auth', {
       tokenStorage.setToken(newToken)
     },
 
+    setRefreshToken(newRefreshToken) {
+      this.refreshToken = newRefreshToken
+      tokenStorage.setRefreshToken(newRefreshToken)
+    },
+
     setRole(role) {
       this.currentUserRole = role
       tokenStorage.setRole(role)
@@ -36,6 +42,7 @@ export const useAuthStore = defineStore('auth', {
 
     clearAuth() {
       this.token = null
+      this.refreshToken = null
       this.currentUserRole = null
       this.currentUser = null
       tokenStorage.clear()

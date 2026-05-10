@@ -391,3 +391,36 @@ func (r *ParentScopeRepo) IsParentOfStudent(ctx context.Context, parentUserID, s
 	}
 	return exists, nil
 }
+
+// GetParentByUserID lấy thông tin parent theo user_id
+func (r *ParentScopeRepo) GetParentByUserID(ctx context.Context, userID uuid.UUID) (*model.Parent, error) {
+	const q = `
+		SELECT parent_id, user_id, school_id, full_name, COALESCE(phone, '') as phone
+		FROM parents
+		WHERE user_id = $1
+		LIMIT 1;
+	`
+	var p model.Parent
+	err := r.pool.QueryRow(ctx, q, userID).Scan(&p.ParentID, &p.UserID, &p.SchoolID, &p.FullName, &p.Phone)
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// UpdatePhone cập nhật số điện thoại của phụ huynh
+func (r *ParentScopeRepo) UpdatePhone(ctx context.Context, parentID uuid.UUID, phone string) error {
+	const q = `
+		UPDATE parents
+		SET phone = $2, updated_at = now()
+		WHERE parent_id = $1;
+	`
+	tag, err := r.pool.Exec(ctx, q, parentID, phone)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}

@@ -68,4 +68,10 @@ export const authService = {
   async updateMyPassword(password) {
     return await httpClient.put('/me/password', { password })
   },
+
+  // Làm mới access token bằng refresh token
+  // POST /api/v1/auth/refresh
+  async refresh(refreshToken) {
+    return await httpClient.post('/auth/refresh', { refresh_token: refreshToken })
+  },
 }

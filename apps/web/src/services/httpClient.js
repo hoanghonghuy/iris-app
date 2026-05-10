@@ -7,10 +7,14 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 // thời gian chờ tối đa cho mỗi request (30 giây)
 const REQUEST_TIMEOUT = 30000
 
+// flag để tránh refresh loop
+let isRefreshing = false
+let refreshPromise = null
+
 // hàm gọi API chung — tất cả service đều dùng hàm này
 async function request(method, path, body = null, options = {}) {
   const token = tokenStorage.getToken()
-  const { signal: externalSignal, timeout = REQUEST_TIMEOUT } = options
+  const { signal: externalSignal, timeout = REQUEST_TIMEOUT, skipRefresh = false } = options
 
   const headers = {
     'Content-Type': 'application/json',
@@ -70,11 +74,42 @@ async function request(method, path, body = null, options = {}) {
     }
   }
 
-  // xử lý 401 — token hết hạn → về trang login
-  if (response.status === 401) {
-    tokenStorage.clear()
-    if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/login'
+  // xử lý 401 — token hết hạn → thử refresh token
+  if (response.status === 401 && !skipRefresh) {
+    const refreshToken = tokenStorage.getRefreshToken()
+    
+    // Nếu có refresh token, thử làm mới access token
+    if (refreshToken && path !== '/auth/refresh') {
+      try {
+        // Nếu đang refresh, chờ promise hiện tại
+        if (isRefreshing && refreshPromise) {
+          await refreshPromise
+        } else {
+          // Bắt đầu refresh mới
+          isRefreshing = true
+          refreshPromise = refreshAccessToken(refreshToken)
+          await refreshPromise
+        }
+
+        // Sau khi refresh thành công, retry request ban đầu với token mới
+        return await request(method, path, body, { ...options, skipRefresh: true })
+      } catch (refreshError) {
+        // Refresh thất bại → clear tokens và redirect login
+        tokenStorage.clear()
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login'
+        }
+        throw refreshError
+      } finally {
+        isRefreshing = false
+        refreshPromise = null
+      }
+    } else {
+      // Không có refresh token hoặc đang gọi /auth/refresh → logout
+      tokenStorage.clear()
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
     }
   }
 
@@ -92,6 +127,35 @@ async function request(method, path, body = null, options = {}) {
     error.data = data
     throw error
   }
+
+  return data
+}
+
+// Hàm refresh access token
+async function refreshAccessToken(refreshToken) {
+  const response = await fetch(`${BASE_URL}/auth/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Refresh token failed')
+  }
+
+  const data = await response.json()
+  const newAccessToken = data?.data?.access_token || data?.access_token
+  const newRefreshToken = data?.data?.refresh_token || data?.refresh_token
+
+  if (!newAccessToken || !newRefreshToken) {
+    throw new Error('Invalid refresh response')
+  }
+
+  // Lưu tokens mới
+  tokenStorage.setToken(newAccessToken)
+  tokenStorage.setRefreshToken(newRefreshToken)
 
   return data
 }

@@ -50,4 +50,9 @@ export const parentService = {
       cancel_reason: cancelReason,
     })
   },
+
+  // Phụ huynh cập nhật hồ sơ cá nhân (chỉ phone)
+  async updateMyProfile(phone) {
+    return await httpClient.put('/parent/profile', { phone })
+  },
 }

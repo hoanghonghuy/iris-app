@@ -8,6 +8,7 @@ import './assets/css/variables.css'
 import './assets/css/base.css'
 import './assets/css/components.css'
 import './assets/css/utilities.css'
+import './assets/css/view-switch.css'
 
 const app = createApp(App)
 

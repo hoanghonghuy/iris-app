@@ -75,6 +75,7 @@ All endpoints are prefixed with `/api/v1`.
 | `GET` | `/health` | Service health check |
 | `POST` | `/auth/login` | Email/password login (rate-limited) |
 | `POST` | `/auth/login/google` | Google OAuth login (rate-limited) |
+| `POST` | `/auth/refresh` | Rotate refresh token and issue a new token pair |
 | `POST` | `/auth/forgot-password` | Request password reset email (rate-limited) |
 | `POST` | `/auth/reset-password` | Reset password with token (rate-limited) |
 | `POST` | `/users/activate-token` | Activate teacher account via token |
@@ -153,6 +154,7 @@ All endpoints are prefixed with `/api/v1`.
 | `PATCH` | `/appointments/:appointment_id/cancel` | Cancel appointment |
 | `GET` | `/analytics` | Dashboard stats |
 | `GET` | `/analytics/timeseries` | Dashboard chart series (`student_id` required, `range`, `interval=day`) |
+| `PUT` | `/profile` | Update own profile |
 
 ### Admin Scope (`/admin/*`) — requires `SUPER_ADMIN` or `SCHOOL_ADMIN`
 

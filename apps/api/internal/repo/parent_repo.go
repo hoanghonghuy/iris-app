@@ -137,3 +137,20 @@ func (r *ParentRepo) Update(ctx context.Context, parentID uuid.UUID, fullName, p
 	}
 	return nil
 }
+
+// UpdatePhone cập nhật số điện thoại của phụ huynh (parent self-update).
+func (r *ParentRepo) UpdatePhone(ctx context.Context, parentID uuid.UUID, phone string) error {
+	const q = `
+		UPDATE parents
+		SET phone = $2, updated_at = now()
+		WHERE parent_id = $1;
+	`
+	tag, err := r.pool.Exec(ctx, q, parentID, phone)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}

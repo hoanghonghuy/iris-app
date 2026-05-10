@@ -73,8 +73,17 @@ async function handleGoogleRegister(idToken) {
 
 function handleLoginSuccess(data) {
   const token = data?.data?.access_token || data?.access_token
+  const refreshToken = data?.data?.refresh_token || data?.refresh_token
+  
   if (!token) return
+  
   authStore.setToken(token)
+  
+  // Lưu refresh token nếu có
+  if (refreshToken) {
+    authStore.setRefreshToken(refreshToken)
+  }
+  
   authStore.fetchCurrentUser().then((user) => {
     if (!user) return
     router.push('/parent')

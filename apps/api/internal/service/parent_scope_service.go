@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/model"
 	"github.com/hoanghonghuy/iris-app/apps/api/internal/repo"
@@ -308,4 +310,29 @@ func (s *ParentScopeService) GetMyAnalytics(ctx context.Context, parentUserID uu
 		TodayAttendancePendingCount: todayPending,
 		RecentHealthAlerts24h:       recentHealthAlerts24h,
 	}, nil
+}
+
+// UpdateMyProfile updates parent's own profile (parent only - can only update phone)
+func (s *ParentScopeService) UpdateMyProfile(ctx context.Context, parentUserID uuid.UUID, phone string) error {
+	// Validate parentUserID
+	if parentUserID == uuid.Nil {
+		return ErrInvalidUserID
+	}
+
+	// Get parentID from parentUserID
+	parent, err := s.parentScopeRepo.GetParentByUserID(ctx, parentUserID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrParentNotFound
+		}
+		return fmt.Errorf("failed to get parent: %w", err)
+	}
+
+	// Parent can only update phone (cannot update school_id, parent_id, user_id)
+	err = s.parentScopeRepo.UpdatePhone(ctx, parent.ParentID, phone)
+	if err != nil {
+		return fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	return nil
 }
