@@ -3,9 +3,22 @@
 All notable changes to this project are documented in this file.
 
 ## [Unreleased]
-- No changes yet.
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.5.0...HEAD)
+
+## [v0.5.0] - 2026-05-10
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.4.0...v0.5.0)
+### Features
+- **Analytics API:** Added role-scoped `GET .../analytics/timeseries` endpoints (admin, teacher, parent) with daily UTC buckets for attendance, health alerts, appointments, and population snapshot.
+- **Dashboard Charts:** Integrated shared Chart.js timeseries panel on Admin, Teacher, and Parent home dashboards.
+- **Role-focused Experience:** Prioritized Teacher and Parent chart sets to the most relevant 2-3 series for faster scanning and clearer decision support.
+- **Range Filter:** Added in-dashboard range switching (`7d` / `14d` / `30d`) for Admin, Teacher, and Parent analytics views.
+- **Responsive UX:** Improved chart readability and dashboard behavior across mobile, tablet, and desktop, including clearer labels and parent empty states when no linked child is available.
+
+### Breaking Changes
+- None identified from v0.4.0..HEAD. Backend API contracts remain backward-compatible.
 
 ## [v0.4.0] - 2026-05-10
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.3.0...v0.4.0)
 
 ### Features
 - **Frontend Migration:** Migrated web application from React/Next.js to Vue.js with improved component architecture and composables pattern.
@@ -51,6 +64,7 @@ All notable changes to this project are documented in this file.
 - **Docker:** Use `docker compose up -d` to start the full stack locally. Existing PostgreSQL data is preserved via volume `docker_iris_pg_data`.
 
 ## [v0.3.0] - 2026-04-16
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.2.0...v0.3.0)
 
 ### Features
 - Added comprehensive dashboard analytics for admin, teacher, and parent roles with real-time metrics.
@@ -69,6 +83,7 @@ All notable changes to this project are documented in this file.
 - None identified from v0.2.0..HEAD.
 
 ## [v0.2.0] - 2026-04-03
+- References: [Compare changes](https://github.com/hoanghonghuy/iris-app/compare/v0.1.0...v0.2.0)
 
 ### Features
 - Strengthened authentication security with configurable fixed-window rate limiting and reset-password rate-limit flow, plus test coverage for middleware/config behavior.
@@ -88,6 +103,7 @@ All notable changes to this project are documented in this file.
 - None identified from v0.1.0..HEAD.
 
 ## [v0.1.0] - 2026-04-01
+- References: [Tag](https://github.com/hoanghonghuy/iris-app/tree/v0.1.0)
 
 Initial release.
 
@@ -97,9 +113,3 @@ Initial release.
 - Basic chat and parent-facing feed/dashboard capabilities.
 - Next.js web app for admin/teacher/parent workflows.
 
-## Link References
-[Unreleased]: https://github.com/hoanghonghuy/iris-app/compare/v0.4.0...HEAD
-[v0.4.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.3.0...v0.4.0
-[v0.3.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/hoanghonghuy/iris-app/compare/v0.1.0...v0.2.0
-[v0.1.0]: https://github.com/hoanghonghuy/iris-app/releases/tag/v0.1.0
