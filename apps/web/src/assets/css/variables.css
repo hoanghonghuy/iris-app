@@ -52,19 +52,23 @@
   --color-hero-glow: rgb(99 102 241 / 0.15);
   --color-hero-button-overlay: rgb(255 255 255 / 0.76);
   --color-hero-button-overlay-dark: rgb(15 17 23 / 0.66);
-  --color-auth-brand-bg: #0f1117;
-  --color-auth-brand-border: rgb(92 72 142 / 0.45);
-  --color-auth-pattern-line: rgb(196 181 253 / 0.2);
-  --color-auth-subtitle: #d4c7f7;
-  --color-auth-feature-text: #efe8ff;
-  --color-auth-feature-bg: rgb(255 255 255 / 0.06);
-  --color-auth-feature-border: rgb(196 181 253 / 0.32);
-  --color-auth-feature-blue: #93c5fd;
-  --color-auth-feature-green: #86efac;
-  --color-auth-feature-purple: #d8b4fe;
-  --color-auth-footer: #c6b8eb;
-  --color-auth-glow-top: rgb(124 58 237 / 0.26);
-  --color-auth-glow-bottom: rgb(249 115 22 / 0.12);
+  
+  /* Auth brand - Light mode (nền sáng xanh-tím nhạt) */
+  --color-auth-brand-bg: #f5f3ff;
+  --color-auth-brand-bg-start: #eef2ff;
+  --color-auth-brand-bg-end: #f5f3ff;
+  --color-auth-brand-border: rgb(199 210 254 / 0.6);
+  --color-auth-pattern-line: rgb(129 140 248 / 0.08);
+  --color-auth-subtitle: #6366f1;
+  --color-auth-feature-text: #4338ca;
+  --color-auth-feature-bg: rgb(255 255 255 / 0.85);
+  --color-auth-feature-border: rgb(199 210 254 / 0.5);
+  --color-auth-feature-blue: #3b82f6;
+  --color-auth-feature-green: #10b981;
+  --color-auth-feature-purple: #a855f7;
+  --color-auth-footer: #6b7280;
+  --color-auth-glow-top: rgb(99 102 241 / 0.12);
+  --color-auth-glow-bottom: rgb(168 85 247 / 0.08);
 
   /* font */
   --font-family-heading:
@@ -143,7 +147,21 @@
   --color-header-backdrop: rgb(15 17 23 / 0.85);
   --color-header-backdrop-dark: rgb(15 17 23 / 0.85);
   --color-hero-button-overlay-dark: rgb(15 17 23 / 0.7);
+  
+  /* Auth brand - Dark mode (nền tối gradient tím-đen) */
   --color-auth-brand-bg: #0a0b0f;
+  --color-auth-brand-bg-start: #0f1117;
+  --color-auth-brand-bg-end: #0a0b0f;
   --color-auth-brand-border: rgb(75 85 99 / 0.4);
   --color-auth-pattern-line: rgb(156 163 175 / 0.12);
+  --color-auth-subtitle: #d4c7f7;
+  --color-auth-feature-text: #efe8ff;
+  --color-auth-feature-bg: rgb(255 255 255 / 0.06);
+  --color-auth-feature-border: rgb(196 181 253 / 0.32);
+  --color-auth-feature-blue: #93c5fd;
+  --color-auth-feature-green: #86efac;
+  --color-auth-feature-purple: #d8b4fe;
+  --color-auth-footer: #c6b8eb;
+  --color-auth-glow-top: rgb(124 58 237 / 0.26);
+  --color-auth-glow-bottom: rgb(249 115 22 / 0.12);
 }

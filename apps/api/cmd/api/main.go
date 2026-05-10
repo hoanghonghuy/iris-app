@@ -17,10 +17,10 @@ import (
 )
 
 func main() {
-	// load config
-	if err := godotenv.Load(".env"); err != nil {
-		log.Println("Warning: No .env file found or error parsing it:", err)
-	}
+	// load config from .env file (optional, for local development)
+	// In production (e.g., Render), environment variables are injected directly
+	_ = godotenv.Load(".env") // ignore error if .env doesn't exist
+
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)

@@ -114,8 +114,8 @@ const goHome = () => router.push('/')
   display: none;
   flex-direction: column;
   justify-content: space-between;
-  background-color: var(--color-auth-brand-bg);
-  color: var(--color-on-primary);
+  background: linear-gradient(135deg, var(--color-auth-brand-bg-start) 0%, var(--color-auth-brand-bg-end) 100%);
+  color: var(--color-auth-feature-text);
   position: relative;
   overflow: hidden;
   border-right: 1px solid var(--color-auth-brand-border);
