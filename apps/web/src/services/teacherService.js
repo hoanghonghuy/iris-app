@@ -7,6 +7,10 @@ export const teacherService = {
     return await httpClient.get('/teacher/analytics')
   },
 
+  async getAnalyticsTimeseries(params) {
+    return await httpClient.get('/teacher/analytics/timeseries', params)
+  },
+
   async getMyClasses() {
     return await httpClient.get('/teacher/classes')
   },

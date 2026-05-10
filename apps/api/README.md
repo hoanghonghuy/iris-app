@@ -131,6 +131,7 @@ All endpoints are prefixed with `/api/v1`.
 | `GET` | `/appointments` | List own appointments |
 | `PATCH` | `/appointments/:appointment_id/status` | Update appointment status |
 | `GET` | `/analytics` | Dashboard stats |
+| `GET` | `/analytics/timeseries` | Dashboard chart series (`range`, `interval=day`) |
 | `PUT` | `/profile` | Update own profile |
 
 ### Parent Scope (`/parent/*`) — requires `PARENT` role
@@ -151,6 +152,7 @@ All endpoints are prefixed with `/api/v1`.
 | `GET` | `/appointments` | List own appointments |
 | `PATCH` | `/appointments/:appointment_id/cancel` | Cancel appointment |
 | `GET` | `/analytics` | Dashboard stats |
+| `GET` | `/analytics/timeseries` | Dashboard chart series (`student_id` required, `range`, `interval=day`) |
 
 ### Admin Scope (`/admin/*`) — requires `SUPER_ADMIN` or `SCHOOL_ADMIN`
 
@@ -158,6 +160,7 @@ All endpoints are prefixed with `/api/v1`.
 |--------|------|-------------|
 | `GET` | `/ping` | Admin health check |
 | `GET` | `/analytics` | Dashboard stats |
+| `GET` | `/analytics/timeseries` | Dashboard chart series (optional `school_id` for Super Admin, `range`, `interval=day`) |
 | `GET` | `/audit-logs` | Query audit logs (**Super Admin only**) |
 | `GET` | `/schools` | List schools |
 | `POST` | `/schools` | Create school (**Super Admin only**) |

@@ -5,11 +5,21 @@ import { adminService } from '../../services/adminService'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import { ADMIN_LOAD_ERROR_TITLE, ADMIN_RETRY_BUTTON_TEXT } from '../../helpers/adminConfig'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import AnalyticsTimeseriesPanel from '../../components/charts/AnalyticsTimeseriesPanel.vue'
 
 const authStore = useAuthStore()
 const analytics = ref(null)
 const isLoading = ref(true)
 const errorMessage = ref('')
+const timeseries = ref(null)
+const chartsLoading = ref(false)
+const chartsError = ref('')
+const selectedRange = ref('14d')
+const RANGE_OPTIONS = [
+  { value: '7d', label: '7 ngày' },
+  { value: '14d', label: '14 ngày' },
+  { value: '30d', label: '30 ngày' },
+]
 
 const displayName = computed(() => {
   const user = authStore.currentUser
@@ -71,11 +81,38 @@ const fetchAnalytics = async () => {
   }
 }
 
+const fetchTimeseries = async () => {
+  chartsLoading.value = true
+  chartsError.value = ''
+  try {
+    const res = await adminService.getAnalyticsTimeseries({
+      range: selectedRange.value,
+      interval: 'day',
+    })
+    timeseries.value = res?.data ?? res ?? null
+  } catch (error) {
+    chartsError.value = extractErrorMessage(error)
+    timeseries.value = null
+  } finally {
+    chartsLoading.value = false
+  }
+}
+
+const refreshAll = async () => {
+  await Promise.all([fetchAnalytics(), fetchTimeseries()])
+}
+
+const changeRange = async (rangeValue) => {
+  if (selectedRange.value === rangeValue || chartsLoading.value) return
+  selectedRange.value = rangeValue
+  await fetchTimeseries()
+}
+
 onMounted(async () => {
   if (!authStore.currentUser) {
     await authStore.fetchCurrentUser()
   }
-  fetchAnalytics()
+  await refreshAll()
 })
 </script>
 
@@ -85,7 +122,7 @@ onMounted(async () => {
       <div>
         <h2>Xin chào, {{ displayName }}</h2>
       </div>
-      <button class="btn btn--outline" type="button" @click="fetchAnalytics" :disabled="isLoading">
+      <button class="btn btn--outline" type="button" @click="refreshAll" :disabled="isLoading || chartsLoading">
         Làm mới
       </button>
     </div>
@@ -95,7 +132,7 @@ onMounted(async () => {
     <div v-else-if="errorMessage" class="alert alert--error">
       <p class="font-bold">{{ ADMIN_LOAD_ERROR_TITLE }}</p>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn--outline mt-2" type="button" @click="fetchAnalytics">
+      <button class="btn btn--outline mt-2" type="button" @click="refreshAll">
         {{ ADMIN_RETRY_BUTTON_TEXT }}
       </button>
     </div>
@@ -141,6 +178,35 @@ onMounted(async () => {
           </RouterLink>
         </div>
       </section>
+
+      <section class="card range-filter mt-8">
+        <div class="range-filter__heading">
+          <h3>Khoảng thời gian biểu đồ</h3>
+          <span class="text-muted text-sm">Xem nhanh theo 7, 14 hoặc 30 ngày gần nhất</span>
+        </div>
+        <div class="range-filter__actions">
+          <button
+            v-for="option in RANGE_OPTIONS"
+            :key="option.value"
+            type="button"
+            class="btn"
+            :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
+            :disabled="chartsLoading"
+            @click="changeRange(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </section>
+
+      <div v-if="chartsLoading" class="mt-8 text-muted text-sm">Đang tải biểu đồ...</div>
+      <div v-else-if="chartsError" class="alert alert--error mt-8">{{ chartsError }}</div>
+      <AnalyticsTimeseriesPanel
+        v-else-if="timeseries"
+        class="mt-8"
+        :payload="timeseries"
+        :title="`Biểu đồ xu hướng (${selectedRange.replace('d', ' ngày')})`"
+      />
     </div>
   </div>
 </template>
@@ -207,6 +273,30 @@ onMounted(async () => {
   margin-bottom: var(--spacing-3);
 }
 
+.range-filter {
+  padding: var(--spacing-3);
+}
+
+.range-filter__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.range-filter__heading h3 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.range-filter__actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
 .quick-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -243,10 +333,24 @@ onMounted(async () => {
 @media (max-width: 767px) {
   .dashboard-hero {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .range-filter__heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-hero .btn {
+    width: 100%;
   }
 
   .quick-grid {
     grid-template-columns: 1fr;
+  }
+
+  .range-filter__actions .btn {
+    flex: 1 1 100%;
   }
 }
 </style>

@@ -172,6 +172,7 @@ func NewRouter(
 
 				// teacher analytics
 				teacherScope.GET("/analytics", analyticsHandler.TeacherDashboardStats)
+				teacherScope.GET("/analytics/timeseries", analyticsHandler.TeacherAnalyticsTimeseries)
 				teacherScope.POST("/appointments/slots", teacherScopeHandler.CreateAppointmentSlot)
 				teacherScope.GET("/appointments", teacherScopeHandler.ListMyAppointments)
 				teacherScope.PATCH("/appointments/:appointment_id/status", teacherScopeHandler.UpdateAppointmentStatus)
@@ -184,6 +185,7 @@ func NewRouter(
 				// phụ huynh xem danh sách con của mình
 				parentScope.GET("/children", parentScopeHandler.MyChildren)
 				parentScope.GET("/analytics", parentScopeHandler.GetMyAnalytics)
+				parentScope.GET("/analytics/timeseries", analyticsHandler.ParentAnalyticsTimeseries)
 				parentScope.GET("/appointments/slots", parentScopeHandler.ListAvailableAppointmentSlots)
 				parentScope.POST("/appointments", parentScopeHandler.CreateAppointment)
 				parentScope.GET("/appointments", parentScopeHandler.ListMyAppointments)
@@ -246,6 +248,7 @@ func NewRouter(
 
 				// Admin analytics
 				admin.GET("/analytics", analyticsHandler.AdminDashboardStats)
+				admin.GET("/analytics/timeseries", analyticsHandler.AdminAnalyticsTimeseries)
 				admin.GET("/audit-logs", middleware.RequireRole("SUPER_ADMIN"), auditLogHandler.List)
 
 				// School routes (GET: cả 2 roles, POST: chỉ SUPER_ADMIN — đăng ký ở superOnly bên dưới)

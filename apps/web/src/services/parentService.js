@@ -6,6 +6,10 @@ export const parentService = {
     return await httpClient.get('/parent/analytics')
   },
 
+  async getAnalyticsTimeseries(params) {
+    return await httpClient.get('/parent/analytics/timeseries', params)
+  },
+
   async getMyChildren() {
     return await httpClient.get('/parent/children')
   },

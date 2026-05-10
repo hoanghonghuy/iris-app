@@ -5,12 +5,27 @@ import { teacherService } from '../../services/teacherService'
 import { normalizeListResponse } from '../../helpers/collectionUtils'
 import { extractErrorMessage } from '../../helpers/errorHandler'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import AnalyticsTimeseriesPanel from '../../components/charts/AnalyticsTimeseriesPanel.vue'
 
 const authStore = useAuthStore()
 const analytics = ref(null)
 const classes = ref([])
 const isLoading = ref(true)
 const errorMessage = ref('')
+const timeseries = ref(null)
+const chartsLoading = ref(false)
+const chartsError = ref('')
+const selectedRange = ref('14d')
+const RANGE_OPTIONS = [
+  { value: '7d', label: '7 ngày' },
+  { value: '14d', label: '14 ngày' },
+  { value: '30d', label: '30 ngày' },
+]
+const TEACHER_SERIES_ORDER = [
+  'attendance_marked_vs_pending',
+  'health_alerts',
+  'appointments_by_status',
+]
 
 const displayName = computed(() => {
   const user = authStore.currentUser
@@ -32,9 +47,9 @@ const analyticsView = computed(() => {
 })
 
 const primaryStats = computed(() => [
-  { label: 'Lớp', value: analyticsView.value.total_classes, to: '/teacher/classes' },
-  { label: 'Trẻ', value: analyticsView.value.total_students, to: '/teacher/classes' },
-  { label: 'Tin', value: analyticsView.value.total_posts, to: '/teacher/posts' },
+  { label: 'Số lớp phụ trách', value: analyticsView.value.total_classes, to: '/teacher/classes' },
+  { label: 'Tổng học sinh', value: analyticsView.value.total_students, to: '/teacher/classes' },
+  { label: 'Bài đăng đã tạo', value: analyticsView.value.total_posts, to: '/teacher/posts' },
 ])
 
 const secondaryStats = computed(() => [
@@ -50,6 +65,37 @@ const quickActions = [
   { label: 'Bảng tin', to: '/teacher/posts' },
 ]
 
+const teacherTimeseriesPayload = computed(() => {
+  const payload = timeseries.value
+  if (!payload?.series?.length) return null
+
+  const indexMap = new Map(payload.series.map((item) => [item.id, item]))
+  const series = TEACHER_SERIES_ORDER
+    .map((id) => indexMap.get(id))
+    .filter(Boolean)
+    .slice(0, 3)
+
+  if (!series.length) return null
+  return { ...payload, series }
+})
+
+async function fetchTimeseries() {
+  chartsLoading.value = true
+  chartsError.value = ''
+  try {
+    const res = await teacherService.getAnalyticsTimeseries({
+      range: selectedRange.value,
+      interval: 'day',
+    })
+    timeseries.value = res?.data ?? res ?? null
+  } catch (error) {
+    chartsError.value = extractErrorMessage(error)
+    timeseries.value = null
+  } finally {
+    chartsLoading.value = false
+  }
+}
+
 async function fetchDashboard() {
   isLoading.value = true
   errorMessage.value = ''
@@ -62,6 +108,7 @@ async function fetchDashboard() {
 
     analytics.value = analyticsRes?.data ?? analyticsRes ?? {}
     classes.value = normalizeListResponse(classesRes)
+    await fetchTimeseries()
   } catch (error) {
     errorMessage.value = extractErrorMessage(error)
   } finally {
@@ -75,6 +122,12 @@ onMounted(async () => {
   }
   fetchDashboard()
 })
+
+function changeRange(rangeValue) {
+  if (selectedRange.value === rangeValue || chartsLoading.value) return
+  selectedRange.value = rangeValue
+  fetchTimeseries()
+}
 </script>
 
 <template>
@@ -86,7 +139,12 @@ onMounted(async () => {
           Hôm nay bạn có {{ analyticsView.total_students }} học sinh cần theo dõi.
         </p>
       </div>
-      <button class="btn btn--outline" type="button" @click="fetchDashboard" :disabled="isLoading">
+      <button
+        class="btn btn--outline"
+        type="button"
+        @click="fetchDashboard"
+        :disabled="isLoading || chartsLoading"
+      >
         Làm mới
       </button>
     </div>
@@ -158,6 +216,35 @@ onMounted(async () => {
           </div>
         </section>
       </div>
+
+      <section class="card range-filter mt-6">
+        <div class="range-filter__heading">
+          <h3>Khoảng thời gian biểu đồ</h3>
+          <span class="text-muted text-sm">Chọn nhanh theo nhu cầu theo dõi</span>
+        </div>
+        <div class="range-filter__actions">
+          <button
+            v-for="option in RANGE_OPTIONS"
+            :key="option.value"
+            type="button"
+            class="btn"
+            :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
+            :disabled="chartsLoading"
+            @click="changeRange(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </section>
+
+      <div v-if="chartsLoading" class="mt-6 text-muted text-sm">Đang tải biểu đồ...</div>
+      <div v-else-if="chartsError" class="alert alert--error mt-6">{{ chartsError }}</div>
+      <AnalyticsTimeseriesPanel
+        v-else-if="teacherTimeseriesPayload"
+        class="mt-6"
+        :payload="teacherTimeseriesPayload"
+        :title="`Xu hướng lớp học ${selectedRange.replace('d', ' ngày')} gần nhất`"
+      />
     </div>
   </div>
 </template>
@@ -305,6 +392,30 @@ onMounted(async () => {
   text-decoration: none;
 }
 
+.range-filter {
+  padding: var(--spacing-3);
+}
+
+.range-filter__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.range-filter__heading h3 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.range-filter__actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
 .stat-card:focus-visible,
 .quick-action:focus-visible,
 .class-card:focus-visible,
@@ -387,12 +498,30 @@ onMounted(async () => {
 @media (max-width: 767px) {
   .dashboard-hero {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .range-filter__heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-hero .btn {
+    width: 100%;
   }
 }
 
 @media (max-width: 479px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
   .quick-grid {
     grid-template-columns: 1fr;
+  }
+
+  .range-filter__actions .btn {
+    flex: 1 1 100%;
   }
 }
 </style>

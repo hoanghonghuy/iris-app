@@ -6,6 +6,10 @@ export const adminService = {
     return await httpClient.get('/admin/analytics')
   },
 
+  async getAnalyticsTimeseries(params) {
+    return await httpClient.get('/admin/analytics/timeseries', params)
+  },
+
   async getAuditLogs(params) {
     return await httpClient.get('/admin/audit-logs', params)
   },

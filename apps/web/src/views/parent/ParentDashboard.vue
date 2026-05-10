@@ -7,12 +7,30 @@ import { extractErrorMessage } from '../../helpers/errorHandler'
 import { POST_TYPE_META } from '../../helpers/postConfig'
 import { formatDateTime } from '@/helpers/dateFormatter'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
+import AnalyticsTimeseriesPanel from '../../components/charts/AnalyticsTimeseriesPanel.vue'
 
 const authStore = useAuthStore()
 const analytics = ref(null)
 const posts = ref([])
+const children = ref([])
+const chartStudentId = ref('')
 const isLoading = ref(true)
 const errorMessage = ref('')
+const timeseries = ref(null)
+const chartsLoading = ref(false)
+const chartsError = ref('')
+const selectedRange = ref('14d')
+const chartChildSelectId = 'parent-chart-child-select'
+const RANGE_OPTIONS = [
+  { value: '7d', label: '7 ngày' },
+  { value: '14d', label: '14 ngày' },
+  { value: '30d', label: '30 ngày' },
+]
+const PARENT_SERIES_ORDER = [
+  'child_attendance',
+  'health_alerts',
+  'appointments_by_status',
+]
 
 const displayName = computed(() => {
   const user = authStore.currentUser
@@ -38,18 +56,60 @@ function getPostMeta(type) {
   return POST_TYPE_META[type] || { label: type || 'Bài đăng', badgeClass: 'badge--outline' }
 }
 
+const parentTimeseriesPayload = computed(() => {
+  const payload = timeseries.value
+  if (!payload?.series?.length) return null
+
+  const indexMap = new Map(payload.series.map((item) => [item.id, item]))
+  const series = PARENT_SERIES_ORDER
+    .map((id) => indexMap.get(id))
+    .filter(Boolean)
+    .slice(0, 3)
+
+  if (!series.length) return null
+  return { ...payload, series }
+})
+
+async function fetchTimeseries() {
+  if (!chartStudentId.value) {
+    timeseries.value = null
+    return
+  }
+  chartsLoading.value = true
+  chartsError.value = ''
+  try {
+    const res = await parentService.getAnalyticsTimeseries({
+      range: selectedRange.value,
+      interval: 'day',
+      student_id: chartStudentId.value,
+    })
+    timeseries.value = res?.data ?? res ?? null
+  } catch (error) {
+    chartsError.value = extractErrorMessage(error)
+    timeseries.value = null
+  } finally {
+    chartsLoading.value = false
+  }
+}
+
 async function fetchDashboard() {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    const [analyticsRes, feedRes] = await Promise.all([
+    const [analyticsRes, feedRes, childrenRes] = await Promise.all([
       parentService.getAnalytics(),
       parentService.getMyFeed({ limit: 5 }),
+      parentService.getMyChildren(),
     ])
 
     analytics.value = analyticsRes?.data ?? analyticsRes ?? {}
     posts.value = normalizeListResponse(feedRes)
+    children.value = normalizeListResponse(childrenRes)
+    if (!chartStudentId.value && children.value.length) {
+      chartStudentId.value = children.value[0].student_id
+    }
+    await fetchTimeseries()
   } catch (error) {
     errorMessage.value = extractErrorMessage(error)
   } finally {
@@ -63,6 +123,12 @@ onMounted(async () => {
   }
   fetchDashboard()
 })
+
+function changeRange(rangeValue) {
+  if (selectedRange.value === rangeValue || chartsLoading.value) return
+  selectedRange.value = rangeValue
+  fetchTimeseries()
+}
 </script>
 
 <template>
@@ -72,7 +138,12 @@ onMounted(async () => {
         <h2>Xin chào, {{ displayName }}</h2>
         <p class="hero-copy">Hôm nay con bạn có hoạt động gì mới?</p>
       </div>
-      <button class="btn btn--outline" type="button" @click="fetchDashboard" :disabled="isLoading">
+      <button
+        class="btn btn--outline"
+        type="button"
+        @click="fetchDashboard"
+        :disabled="isLoading || chartsLoading"
+      >
         Làm mới
       </button>
     </div>
@@ -111,6 +182,47 @@ onMounted(async () => {
           }}</strong>
         </div>
       </div>
+
+      <div v-if="children.length > 1" class="card chart-child-filter mb-6">
+        <label :for="chartChildSelectId" class="form-label mb-1">Biểu đồ theo con</label>
+        <select :id="chartChildSelectId" v-model="chartStudentId" class="form-input" @change="fetchTimeseries">
+          <option v-for="c in children" :key="c.student_id" :value="c.student_id">
+            {{ c.full_name }}
+          </option>
+        </select>
+      </div>
+      <div v-else-if="children.length === 0" class="empty-card mb-6">
+        Chưa có học sinh liên kết với tài khoản này nên chưa hiển thị biểu đồ.
+      </div>
+
+      <section v-if="children.length > 0" class="card range-filter mb-6">
+        <div class="range-filter__heading">
+          <h3>Khoảng thời gian biểu đồ</h3>
+          <span class="text-muted text-sm">Theo dõi nhanh diễn biến gần đây</span>
+        </div>
+        <div class="range-filter__actions">
+          <button
+            v-for="option in RANGE_OPTIONS"
+            :key="option.value"
+            type="button"
+            class="btn"
+            :class="selectedRange === option.value ? 'btn--primary' : 'btn--outline'"
+            :disabled="chartsLoading"
+            @click="changeRange(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </section>
+
+      <div v-if="chartsLoading" class="mb-6 text-muted text-sm">Đang tải biểu đồ...</div>
+      <div v-else-if="chartsError" class="alert alert--error mb-6">{{ chartsError }}</div>
+      <AnalyticsTimeseriesPanel
+        v-else-if="parentTimeseriesPayload && chartStudentId"
+        class="mb-8"
+        :payload="parentTimeseriesPayload"
+        :title="`Xu hướng của con trong ${selectedRange.replace('d', ' ngày')} gần nhất`"
+      />
 
       <section class="quick-actions mb-8">
         <h3>Truy cập nhanh</h3>
@@ -317,6 +429,34 @@ onMounted(async () => {
   color: var(--color-text-muted);
 }
 
+.chart-child-filter {
+  padding: var(--spacing-3);
+}
+
+.range-filter {
+  padding: var(--spacing-3);
+}
+
+.range-filter__heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+}
+
+.range-filter__heading h3 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.range-filter__actions {
+  display: flex;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
 @media (min-width: 768px) {
   .stats-grid {
     grid-template-columns: repeat(4, 1fr);
@@ -334,11 +474,28 @@ onMounted(async () => {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .range-filter__heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-hero .btn {
+    width: 100%;
+  }
 }
 
 @media (max-width: 479px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
   .quick-grid {
     grid-template-columns: 1fr;
+  }
+
+  .range-filter__actions .btn {
+    flex: 1 1 100%;
   }
 }
 </style>
