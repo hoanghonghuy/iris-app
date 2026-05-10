@@ -348,7 +348,7 @@ export function getAuditDetailLines(log) {
     lines.push(statusLine)
   }
 
-  const requestPath = normalizeText(details.request_path)
+  const requestPath = normalizeText(details.request_path || details.path)
   if (requestPath) {
     lines.push(`Đường dẫn: ${requestPath}`)
   } else {
@@ -363,7 +363,22 @@ export function getAuditDetailLines(log) {
     lines.push(`Tham số: ${queryText}`)
   }
 
-  const schoolId = shortenId(details.school_id)
+  const method = normalizeText(details.method)
+  if (method) {
+    lines.push(`Phương thức: ${method}`)
+  }
+
+  const durationMs = details.duration_ms
+  if (durationMs !== null && durationMs !== undefined) {
+    lines.push(`Thời gian xử lý: ${durationMs}ms`)
+  }
+
+  const ip = normalizeText(details.ip)
+  if (ip) {
+    lines.push(`Địa chỉ IP: ${ip}`)
+  }
+
+  const schoolId = shortenId(details.school_id || log.school_id)
   if (schoolId) {
     lines.push(`Trường áp dụng: ${schoolId}`)
   }
