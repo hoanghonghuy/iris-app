@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Link2, Pencil } from 'lucide-vue-next'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'

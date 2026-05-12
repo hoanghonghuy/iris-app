@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Laptop, Moon, Sun } from 'lucide-vue-next'
 

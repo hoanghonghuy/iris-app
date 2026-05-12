@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import ActionModal from '../../../components/ActionModal.vue'
 import { GENDER_OPTIONS } from './studentPresentation'
 

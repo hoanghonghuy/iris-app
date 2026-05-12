@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import LoadingSpinner from '../../../components/common/LoadingSpinner.vue'
 import EmptyState from '../../../components/common/EmptyState.vue'
 import PaginationBar from '../../../components/common/PaginationBar.vue'

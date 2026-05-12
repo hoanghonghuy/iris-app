@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import ConfirmDialog from '../../components/common/ConfirmDialog.vue'
 import ParentAppointmentBookingPanel from './appointments/ParentAppointmentBookingPanel.vue'

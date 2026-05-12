@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { AlertCircle, CheckCircle2, LoaderCircle, Plus, RefreshCw, X } from 'lucide-vue-next'
 import {

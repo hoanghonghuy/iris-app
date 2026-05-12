@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import { Heart, MessageCircle, Pencil, SendHorizontal, Trash2, X } from 'lucide-vue-next'
 import { POST_SCOPE_LABELS, POST_TYPE_META } from '../helpers/postConfig'

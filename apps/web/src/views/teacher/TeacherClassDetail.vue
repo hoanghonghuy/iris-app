@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { ArrowLeft, Calendar, GraduationCap, LoaderCircle, User } from 'lucide-vue-next'

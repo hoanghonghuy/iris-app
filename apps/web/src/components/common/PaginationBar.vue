@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
 const MAX_VISIBLE_PAGES = 5

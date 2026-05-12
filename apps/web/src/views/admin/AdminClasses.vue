@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '../../stores/authStore'
 import { adminService } from '../../services/adminService'

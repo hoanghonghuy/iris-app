@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { CheckCircle2, ArrowLeft, Loader2 } from 'lucide-vue-next'

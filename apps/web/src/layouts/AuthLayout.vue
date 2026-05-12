@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { RouterView, useRouter } from 'vue-router'
 import { GraduationCap, ShieldCheck, Zap, Activity } from 'lucide-vue-next'
 import ThemeToggle from '../components/ThemeToggle.vue'

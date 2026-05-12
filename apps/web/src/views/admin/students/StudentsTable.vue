@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { Check, Copy, KeyRound, LoaderCircle, Pencil, Trash2, X } from 'lucide-vue-next'
 import { formatDate } from '../../../helpers/dateFormatter'
 import { getCodeExpiryText, getGenderLabel } from './studentPresentation'

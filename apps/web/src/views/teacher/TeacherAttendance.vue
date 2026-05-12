@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { AlertCircle, Check, History, LoaderCircle } from 'lucide-vue-next'
 import { useRoute } from 'vue-router'

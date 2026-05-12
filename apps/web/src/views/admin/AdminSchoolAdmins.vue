@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { adminService } from '../../services/adminService'
 import { normalizeListResponse } from '../../helpers/collectionUtils'

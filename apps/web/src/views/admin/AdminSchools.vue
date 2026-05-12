@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import { adminService } from '../../services/adminService'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'

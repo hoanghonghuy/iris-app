@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { AlertCircle, LoaderCircle, MessageSquare, Plus, X } from 'lucide-vue-next'
 import { POST_SCOPE_LABELS, POST_TYPE_OPTIONS } from '../../helpers/postConfig'

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ArrowLeft, LoaderCircle, MessageSquare, Plus, Search, Send, Users, X } from 'lucide-vue-next'
 import {

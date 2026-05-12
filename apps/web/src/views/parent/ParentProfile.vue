@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { LoaderCircle } from 'lucide-vue-next'
 import { useAuthStore } from '../../stores/authStore'

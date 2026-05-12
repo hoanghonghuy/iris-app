@@ -1,4 +1,6 @@
-export function extractErrorMessage(error) {
+import type { ApiError } from '@/types'
+
+export function extractErrorMessage(error: ApiError | any): string {
   // Lỗi mạng hoặc lỗi hệ thống không có response data
   if (!error.data) {
     return error.message || 'Có lỗi xảy ra, vui lòng thử lại sau.'

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { AlertCircle, LoaderCircle, MessageSquare } from 'lucide-vue-next'
 import PostCard from '../../components/PostCard.vue'
 import PaginationBar from '../../components/common/PaginationBar.vue'

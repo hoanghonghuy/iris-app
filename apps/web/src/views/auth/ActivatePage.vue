@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { ShieldCheck, Loader2 } from 'lucide-vue-next'
 import { authService } from '../../services/authService'

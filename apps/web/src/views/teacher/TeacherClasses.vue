@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { GraduationCap, LoaderCircle, User, Calendar, ChevronDown } from 'lucide-vue-next'
 import { useTeacherClassSelection } from '../../composables/teacher'

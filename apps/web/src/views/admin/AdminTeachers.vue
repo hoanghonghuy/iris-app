@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onBeforeUnmount, ref } from 'vue'
 import { Link2, Pencil, Trash2, X } from 'lucide-vue-next'
 import { adminService } from '../../services/adminService'
