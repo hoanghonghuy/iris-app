@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Heart, MessageCircle, Pencil, SendHorizontal, Trash2, X } from 'lucide-vue-next'
-import { POST_SCOPE_LABELS, POST_TYPE_META } from '../helpers/postConfig'
+import { POST_SCOPE_LABELS, POST_TYPE_META, POST_TYPE_OPTIONS } from '../helpers/postConfig'
 import { formatDateTime } from '@/helpers/dateFormatter'
 import { extractErrorMessage } from '@/helpers/errorHandler'
 import { usePostInteractions } from '@/composables/usePostInteractions'
@@ -32,6 +32,14 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  editableClassId: {
+    type: String,
+    default: '',
+  },
+  editableStudents: {
+    type: Array,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['patch-post', 'delete-post'])
@@ -60,8 +68,26 @@ const commentDraft = ref('')
 const processingShare = ref(false)
 const editing = ref(false)
 const editDraft = ref('')
+const editScopeType = ref('class')
+const editPostType = ref('announcement')
+const editStudentId = ref('')
 const manageBusy = ref(false)
 const manageError = ref('')
+const EDIT_HINT = 'Ctrl+Enter để lưu, Esc để hủy'
+
+const normalizedOriginalContent = computed(() => (props.post.content || '').trim())
+const normalizedDraftContent = computed(() => editDraft.value.trim())
+const normalizedOriginalScopeType = computed(() => props.post.scope_type || 'class')
+const normalizedOriginalPostType = computed(() => props.post.type || 'announcement')
+const normalizedOriginalStudentId = computed(() => props.post.student_id || '')
+const hasDraftChanges = computed(
+  () =>
+    normalizedDraftContent.value !== normalizedOriginalContent.value ||
+    editScopeType.value !== normalizedOriginalScopeType.value ||
+    editPostType.value !== normalizedOriginalPostType.value ||
+    (editScopeType.value === 'student' && editStudentId.value !== normalizedOriginalStudentId.value),
+)
+const draftLength = computed(() => normalizedDraftContent.value.length)
 
 watch(
   () => props.post,
@@ -84,27 +110,70 @@ function patchPost(patch) {
 function startEdit() {
   manageError.value = ''
   editDraft.value = props.post.content || ''
+  editScopeType.value = props.post.scope_type || 'class'
+  editPostType.value = props.post.type || 'announcement'
+  editStudentId.value = props.post.student_id || props.editableStudents[0]?.student_id || ''
   editing.value = true
 }
 
 function cancelEdit() {
+  if (hasDraftChanges.value && !globalThis.confirm('Bạn có thay đổi chưa lưu. Hủy chỉnh sửa?')) {
+    return
+  }
   editing.value = false
   editDraft.value = props.post.content || ''
+  editScopeType.value = props.post.scope_type || 'class'
+  editPostType.value = props.post.type || 'announcement'
+  editStudentId.value = props.post.student_id || ''
   manageError.value = ''
 }
 
 async function saveEdit() {
   if (!props.enableTeacherManage) return
-  const content = editDraft.value.trim()
+  const content = normalizedDraftContent.value
   if (!content) {
     manageError.value = 'Nội dung không được để trống.'
+    return
+  }
+  if (editScopeType.value !== 'class' && editScopeType.value !== 'student') {
+    manageError.value = 'Phạm vi bài đăng không hợp lệ.'
+    return
+  }
+  if (!editPostType.value) {
+    manageError.value = 'Vui lòng chọn loại bài.'
+    return
+  }
+  if (editScopeType.value === 'student' && !editStudentId.value) {
+    manageError.value = 'Vui lòng chọn học sinh.'
+    return
+  }
+  if (!props.editableClassId) {
+    manageError.value = 'Không xác định được lớp đang chỉnh sửa.'
+    return
+  }
+  if (!hasDraftChanges.value) {
+    manageError.value = 'Bạn chưa thay đổi nội dung.'
     return
   }
   manageBusy.value = true
   manageError.value = ''
   try {
-    await teacherPostService.updatePost(props.post.post_id, { content })
-    patchPost({ content })
+    const payload = {
+      scope_type: editScopeType.value,
+      class_id: props.editableClassId,
+      student_id: editScopeType.value === 'student' ? editStudentId.value : undefined,
+      type: editPostType.value,
+      content,
+    }
+    await teacherPostService.updatePost(props.post.post_id, payload)
+    patchPost({
+      scope_type: payload.scope_type,
+      class_id: payload.class_id,
+      student_id: payload.student_id ?? null,
+      type: payload.type,
+      content,
+      updated_at: new Date().toISOString(),
+    })
     editing.value = false
   } catch (err) {
     manageError.value = extractErrorMessage(err) || 'Không thể lưu bài.'
@@ -192,6 +261,18 @@ async function handleShare() {
     processingShare.value = false
   }
 }
+
+function handleEditKeydown(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    cancelEdit()
+    return
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault()
+    void saveEdit()
+  }
+}
 </script>
 
 <template>
@@ -238,18 +319,61 @@ async function handleShare() {
       </div>
 
       <template v-if="editing">
+        <div class="post-card__edit-grid">
+          <div class="form-group mb-0">
+            <label class="form-label">Phạm vi</label>
+            <select v-model="editScopeType" class="form-input">
+              <option value="class">Cả lớp</option>
+              <option value="student">Từng HS</option>
+            </select>
+          </div>
+          <div class="form-group mb-0">
+            <label class="form-label">Loại bài</label>
+            <select v-model="editPostType" class="form-input">
+              <option
+                v-for="option in POST_TYPE_OPTIONS"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+          <div v-if="editScopeType === 'student'" class="form-group mb-0">
+            <label class="form-label">Học sinh</label>
+            <select v-model="editStudentId" class="form-input">
+              <option
+                v-for="student in editableStudents"
+                :key="student.student_id"
+                :value="student.student_id"
+              >
+                {{ student.full_name }}
+              </option>
+            </select>
+          </div>
+        </div>
         <textarea
           v-model="editDraft"
           class="form-input post-card__edit-area"
           rows="4"
           aria-label="Sửa nội dung bài đăng"
+          @keydown="handleEditKeydown"
         />
+        <div class="post-card__edit-meta">
+          <p class="post-card__edit-hint">{{ EDIT_HINT }}</p>
+          <p class="post-card__edit-count">{{ draftLength }} ký tự</p>
+        </div>
         <div class="post-card__edit-actions">
           <button type="button" class="btn btn--sm btn--outline" :disabled="manageBusy" @click="cancelEdit">
             <X :size="16" />
             Hủy
           </button>
-          <button type="button" class="btn btn--sm btn--primary" :disabled="manageBusy" @click="saveEdit">
+          <button
+            type="button"
+            class="btn btn--sm btn--primary"
+            :disabled="manageBusy || !hasDraftChanges"
+            @click="saveEdit"
+          >
             Lưu
           </button>
         </div>
@@ -383,10 +507,35 @@ async function handleShare() {
   min-height: 6rem;
 }
 
+.post-card__edit-grid {
+  display: grid;
+  gap: var(--spacing-3);
+}
+
 .post-card__edit-actions {
   display: flex;
   justify-content: flex-end;
   gap: var(--spacing-2);
+}
+
+.post-card__edit-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.post-card__edit-hint,
+.post-card__edit-count {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 640px) {
+  .post-card__edit-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .post-card__author {

@@ -428,8 +428,14 @@ func (s *TeacherScopeService) ListStudentPosts(ctx context.Context, teacherUserI
 	return posts, total, nil
 }
 
-// UpdatePost cập nhật nội dung bài đăng của chính giáo viên và lưu lịch sử trước/sau chỉnh sửa.
-func (s *TeacherScopeService) UpdatePost(ctx context.Context, teacherUserID, postID uuid.UUID, content string) error {
+// UpdatePost cập nhật scope/type/content bài đăng của chính giáo viên và lưu lịch sử trước/sau chỉnh sửa.
+func (s *TeacherScopeService) UpdatePost(
+	ctx context.Context,
+	teacherUserID, postID uuid.UUID,
+	scopeType string,
+	classID, studentID *uuid.UUID,
+	postType, content string,
+) error {
 	if teacherUserID == uuid.Nil {
 		return ErrInvalidUserID
 	}
@@ -438,12 +444,31 @@ func (s *TeacherScopeService) UpdatePost(ctx context.Context, teacherUserID, pos
 		return ErrInvalidValue
 	}
 
+	if scopeType != "class" && scopeType != "student" {
+		return fmt.Errorf("%w: scope_type must be class|student", ErrInvalidValue)
+	}
+
+	if !isValidPostType(postType) {
+		return fmt.Errorf("%w: type must be announcement|activity|daily_note|health_note", ErrInvalidValue)
+	}
+
+	switch scopeType {
+	case "class":
+		if classID == nil || *classID == uuid.Nil {
+			return fmt.Errorf("%w: class_id is required when scope_type=class", ErrInvalidValue)
+		}
+	case "student":
+		if studentID == nil || *studentID == uuid.Nil {
+			return fmt.Errorf("%w: student_id is required when scope_type=student", ErrInvalidValue)
+		}
+	}
+
 	trimmedContent := strings.TrimSpace(content)
 	if trimmedContent == "" {
 		return fmt.Errorf("%w: content cannot be empty", ErrInvalidValue)
 	}
 
-	err := s.teacherScopeRepo.UpdatePost(ctx, teacherUserID, postID, trimmedContent)
+	err := s.teacherScopeRepo.UpdatePost(ctx, teacherUserID, postID, scopeType, classID, studentID, postType, trimmedContent)
 	if err != nil {
 		if errors.Is(err, repo.ErrNoRowsUpdated) {
 			return ErrForbidden

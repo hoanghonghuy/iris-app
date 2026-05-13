@@ -87,7 +87,7 @@ func (h *TeacherScopeHandler) CreatePost(c *gin.Context) {
 	})
 }
 
-// UpdatePost cập nhật nội dung bài đăng của chính giáo viên.
+// UpdatePost cập nhật bài đăng của chính giáo viên (scope/type/content).
 func (h *TeacherScopeHandler) UpdatePost(c *gin.Context) {
 	postID, err := uuid.Parse(c.Param("post_id"))
 	if err != nil {
@@ -109,7 +109,29 @@ func (h *TeacherScopeHandler) UpdatePost(c *gin.Context) {
 		return
 	}
 
-	err = h.teacherScopeService.UpdatePost(ctx, userID, postID, req.Content)
+	var classID *uuid.UUID
+	var studentID *uuid.UUID
+	switch req.ScopeType {
+	case "class":
+		parsedClassID, parseErr := uuid.Parse(req.ClassID)
+		if parseErr != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid class_id")
+			return
+		}
+		classID = &parsedClassID
+	case "student":
+		parsedStudentID, parseErr := uuid.Parse(req.StudentID)
+		if parseErr != nil {
+			response.Fail(c, http.StatusBadRequest, "invalid student_id")
+			return
+		}
+		studentID = &parsedStudentID
+	default:
+		response.Fail(c, http.StatusBadRequest, "invalid scope_type (class|student)")
+		return
+	}
+
+	err = h.teacherScopeService.UpdatePost(ctx, userID, postID, req.ScopeType, classID, studentID, req.Type, req.Content)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidUserID) || errors.Is(err, service.ErrInvalidValue) {
 			response.Fail(c, http.StatusBadRequest, err.Error())
@@ -124,8 +146,10 @@ func (h *TeacherScopeHandler) UpdatePost(c *gin.Context) {
 	}
 
 	response.OK(c, gin.H{
-		"message": "post updated successfully",
-		"post_id": postID.String(),
+		"message":    "post updated successfully",
+		"post_id":    postID.String(),
+		"scope_type": req.ScopeType,
+		"type":       req.Type,
 	})
 }
 
