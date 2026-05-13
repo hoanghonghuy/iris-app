@@ -201,13 +201,13 @@ BEGIN
         END,
         CASE WHEN i % 4 = 0 THEN NULL ELSE v_scid END,
         CASE (i % 7)
-          WHEN 0 THEN 'users.login'
-          WHEN 1 THEN 'attendance.create'
-          WHEN 2 THEN 'posts.create'
-          WHEN 3 THEN 'appointments.book'
-          WHEN 4 THEN 'appointments.confirm'
-          WHEN 5 THEN 'audit_logs.list'
-          ELSE 'students.view'
+          WHEN 0 THEN 'POST /api/v1/auth/login'
+          WHEN 1 THEN 'POST /api/v1/teacher/attendance'
+          WHEN 2 THEN 'POST /api/v1/teacher/posts'
+          WHEN 3 THEN 'POST /api/v1/parent/appointments'
+          WHEN 4 THEN 'PUT /api/v1/teacher/appointments/:appointment_id'
+          WHEN 5 THEN 'GET /api/v1/admin/audit-logs'
+          ELSE 'GET /api/v1/teacher/students'
         END,
         CASE (i % 7)
           WHEN 0 THEN 'users'
@@ -220,10 +220,38 @@ BEGIN
         END,
         CASE WHEN i % 7 IN (1,2,3,4) THEN gen_random_uuid() ELSE NULL END,
         jsonb_build_object(
-          'seed_key', 'seed_audit_' || LPAD(i::text, 3, '0'),
-          'source', 'seed_05',
+          'status', CASE (i % 7)
+            WHEN 0 THEN 200
+            WHEN 1 THEN 201
+            WHEN 2 THEN 201
+            WHEN 3 THEN 201
+            WHEN 4 THEN 200
+            WHEN 5 THEN 200
+            ELSE 200
+          END,
+          'method', CASE (i % 7)
+            WHEN 0 THEN 'POST'
+            WHEN 1 THEN 'POST'
+            WHEN 2 THEN 'POST'
+            WHEN 3 THEN 'POST'
+            WHEN 4 THEN 'PUT'
+            WHEN 5 THEN 'GET'
+            ELSE 'GET'
+          END,
+          'path', CASE (i % 7)
+            WHEN 0 THEN '/api/v1/auth/login'
+            WHEN 1 THEN '/api/v1/teacher/attendance'
+            WHEN 2 THEN '/api/v1/teacher/posts'
+            WHEN 3 THEN '/api/v1/parent/appointments'
+            WHEN 4 THEN '/api/v1/teacher/appointments/' || gen_random_uuid()::text
+            WHEN 5 THEN '/api/v1/admin/audit-logs'
+            ELSE '/api/v1/teacher/students'
+          END,
+          'duration_ms', (i % 50 + 10),
           'ip', '192.168.1.' || (i % 254 + 1),
-          'user_agent', 'Mozilla/5.0 IrisApp'
+          'user_agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 IrisApp',
+          'timestamp', (NOW() - (i * INTERVAL '10 minutes'))::text,
+          'seed_key', 'seed_audit_' || LPAD(i::text, 3, '0')
         ),
         NOW() - (i * INTERVAL '10 minutes')
       )
