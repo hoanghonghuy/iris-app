@@ -12,6 +12,7 @@ node_modules
 dist
 dist-ssr
 coverage
+.next
 *.local
 
 # Editor directories and files
