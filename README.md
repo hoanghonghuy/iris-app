@@ -1,6 +1,6 @@
 # Iris School Management Platform
 
-![Go](https://img.shields.io/badge/Go-1.25.9-00ADD8?logo=go&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.25.10-00ADD8?logo=go&logoColor=white)
 ![Gin](https://img.shields.io/badge/Gin-1.11-009688?logo=gin&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.5-4FC08D?logo=vue.js&logoColor=white)
@@ -31,7 +31,7 @@ The platform supports role-based workflows for super admins, school admins, teac
 ## Tech Stack
 
 ### Backend
-- Go `1.25.9`
+- Go `1.25.10`
 - Gin
 - PostgreSQL + `pgx/v5`
 - JWT (`golang-jwt/jwt/v5`)
