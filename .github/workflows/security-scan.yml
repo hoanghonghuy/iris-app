@@ -1,4 +1,4 @@
-name: Security Scanning
+name: Security CI
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
             {
               echo "## govulncheck failed"
               echo ""
-              echo "Vulnerabilities were found in code paths reachable from \`apps/api\`."
+              echo "Vulnerabilities were found in code paths reachable from apps/api."
               echo "Full output is in the job log; last 80 lines:"
               echo ""
               echo '```text'
