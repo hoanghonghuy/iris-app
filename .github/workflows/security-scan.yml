@@ -170,6 +170,9 @@ jobs:
           path: ./
           base: ${{ steps.commit-range.outputs.base }}
           head: ${{ steps.commit-range.outputs.head }}
+          # Fail only on verified secrets. Example postgres:// URLs in .env.example,
+          # docker-compose, and CI test config are unverified and exit 183 otherwise.
+          extra_args: --results=verified
 
       - name: Skip message when no commit diff exists
         if: steps.commit-range.outputs.should_scan != 'true'
