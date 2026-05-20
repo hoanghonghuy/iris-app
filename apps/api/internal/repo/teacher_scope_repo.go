@@ -276,9 +276,15 @@ func (r *TeacherScopeRepo) CreateStudentPost(ctx context.Context, teacherUserID,
 	return id, nil
 }
 
-// UpdatePost cập nhật nội dung bài đăng nếu người dùng hiện tại là tác giả.
+// UpdatePost cập nhật scope/type/content bài đăng nếu người dùng hiện tại là tác giả.
 // Đồng thời ghi lịch sử trước/sau chỉnh sửa vào post_edit_history.
-func (r *TeacherScopeRepo) UpdatePost(ctx context.Context, authorUserID, postID uuid.UUID, newContent string) error {
+func (r *TeacherScopeRepo) UpdatePost(
+	ctx context.Context,
+	authorUserID, postID uuid.UUID,
+	scopeType string,
+	classID, studentID *uuid.UUID,
+	postType, newContent string,
+) error {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return err
@@ -301,18 +307,66 @@ func (r *TeacherScopeRepo) UpdatePost(ctx context.Context, authorUserID, postID 
 		return err
 	}
 
-	const qUpdate = `
-		UPDATE posts
-		SET content = $3,
+	const qUpdateClass = `
+		UPDATE posts p
+		SET scope_type = 'class',
+			class_id = $3,
+			student_id = NULL,
+			type = $4,
+			content = $5,
 			updated_at = now()
-		WHERE post_id = $1 AND author_user_id = $2;
+		WHERE p.post_id = $1
+			AND p.author_user_id = $2
+			AND EXISTS (
+				SELECT 1
+				FROM teacher_classes tc
+				JOIN teachers t ON t.teacher_id = tc.teacher_id
+				WHERE t.user_id = $2 AND tc.class_id = $3
+			);
+	`
+	const qUpdateStudent = `
+		UPDATE posts p
+		SET scope_type = 'student',
+			class_id = NULL,
+			student_id = $3,
+			type = $4,
+			content = $5,
+			updated_at = now()
+		WHERE p.post_id = $1
+			AND p.author_user_id = $2
+			AND EXISTS (
+				SELECT 1
+				FROM students s
+				JOIN teacher_classes tc ON tc.class_id = s.current_class_id
+				JOIN teachers t ON t.teacher_id = tc.teacher_id
+				WHERE t.user_id = $2 AND s.student_id = $3
+			);
 	`
 
-	tag, err := tx.Exec(ctx, qUpdate, postID, authorUserID, newContent)
-	if err != nil {
-		return err
+	var rowsAffected int64
+	switch scopeType {
+	case "class":
+		if classID == nil {
+			return ErrNoRowsUpdated
+		}
+		tag, execErr := tx.Exec(ctx, qUpdateClass, postID, authorUserID, *classID, postType, newContent)
+		if execErr != nil {
+			return execErr
+		}
+		rowsAffected = tag.RowsAffected()
+	case "student":
+		if studentID == nil {
+			return ErrNoRowsUpdated
+		}
+		tag, execErr := tx.Exec(ctx, qUpdateStudent, postID, authorUserID, *studentID, postType, newContent)
+		if execErr != nil {
+			return execErr
+		}
+		rowsAffected = tag.RowsAffected()
+	default:
+		return ErrNoRowsUpdated
 	}
-	if tag.RowsAffected() == 0 {
+	if rowsAffected == 0 {
 		return ErrNoRowsUpdated
 	}
 

@@ -41,7 +41,11 @@ type CreatePostRequest struct {
 }
 
 type UpdatePostRequest struct {
-	Content string `json:"content" binding:"required"`
+	ScopeType string `json:"scope_type" binding:"required"` // class|student
+	ClassID   string `json:"class_id"`                      // required if scope_type=class
+	StudentID string `json:"student_id"`                    // required if scope_type=student
+	Type      string `json:"type" binding:"required"`       // announcement|activity|daily_note|health_note
+	Content   string `json:"content" binding:"required"`
 }
 
 // UpdateMyProfileRequest input để giáo viên cập nhật thông tin cá nhân (chỉ phone)

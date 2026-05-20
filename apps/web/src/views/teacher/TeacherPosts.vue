@@ -201,6 +201,8 @@ onMounted(fetchClasses)
           audience="teacher"
           :enable-share="false"
           :enable-teacher-manage="true"
+          :editable-class-id="selectedClassId"
+          :editable-students="students"
           @patch-post="patchPostById"
           @delete-post="removePostFromList"
         />
