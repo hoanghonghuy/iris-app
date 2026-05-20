@@ -22,6 +22,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// appServices = tập hợp tất cả các dịch vụ trong ứng dụng.
+// Mỗi service chứa logic nghiệp vụ cho một domain (auth, school, student, v.v.).
 type appServices struct {
 	authService         *service.AuthService
 	schoolService       *service.SchoolService
@@ -40,6 +42,8 @@ type appServices struct {
 	chatService         *service.ChatService
 }
 
+// appHandlers = tập hợp tất cả các handler HTTP trong ứng dụng.
+// Mỗi handler nhận request từ route, gọi service, và trả về response.
 type appHandlers struct {
 	authHandler         *v1authhandlers.AuthHandler
 	schoolHandler       *v1schoolhandlers.SchoolHandler
@@ -56,6 +60,9 @@ type appHandlers struct {
 	analyticsHandler    *v1analyticshandlers.AnalyticsHandler
 }
 
+// initRepositories khởi tạo tất cả các repository (data access layer).
+// Repository này kết nối trực tiếp với database PostgreSQL thông qua connection pool.
+// Nhận vào pgxpool.Pool là connection pool được tạo sẵn từ main function.
 func initRepositories(pool *pgxpool.Pool) *repo.Repositories {
 	return &repo.Repositories{
 		UserRepo:                repo.NewUserRepo(pool),
@@ -81,6 +88,9 @@ func initRepositories(pool *pgxpool.Pool) *repo.Repositories {
 	}
 }
 
+// initServices khởi tạo tất cả các service (business logic layer).
+// Service này chứa logic nghiệp vụ và được inject với repositories để truy cập dữ liệu.
+// Nhận vào các dependencies cần thiết: repositories, config, authenticator, xác thực Google, email sender, frontend URL.
 func initServices(
 	repos *repo.Repositories,
 	cfg config.Config,
@@ -113,6 +123,9 @@ func initServices(
 	}
 }
 
+// initHandlers khởi tạo tất cả các handler HTTP (presentation layer).
+// Handler này nhận request từ router, gọi service, xử lý logic, rồi trả về response cho client.
+// Nhận vào các service được khởi tạo sẵn từ initServices function.
 func initHandlers(services *appServices) *appHandlers {
 	return &appHandlers{
 		authHandler:         v1authhandlers.NewAuthHandler(services.authService, services.userService),

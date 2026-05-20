@@ -16,6 +16,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.env.example'
+      - '.github/workflows/ci-backend.yml'
 
 permissions:
   contents: read
@@ -94,9 +95,9 @@ jobs:
 
       - name: Check code formatting
         run: |
-          if [ "$(gofmt -s -l . | grep -v 'vendor/' | wc -l)" -gt 0 ]; then
-            echo "Code formatting issues found. Run 'gofmt -s -w .'"
-            gofmt -s -l . | grep -v 'vendor/'
+          if [ "$(gofmt -s -l ./apps/api | wc -l)" -gt 0 ]; then
+            echo "Code formatting issues found. Run 'gofmt -s -w ./apps/api'"
+            gofmt -s -l ./apps/api
             exit 1
           fi
 

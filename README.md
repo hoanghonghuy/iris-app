@@ -1,6 +1,6 @@
 # Iris School Management Platform
 
-![Go](https://img.shields.io/badge/Go-1.25.9-00ADD8?logo=go&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.25.10-00ADD8?logo=go&logoColor=white)
 ![Gin](https://img.shields.io/badge/Gin-1.11-009688?logo=gin&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.5-4FC08D?logo=vue.js&logoColor=white)
@@ -23,7 +23,7 @@ The platform supports role-based workflows for super admins, school admins, teac
 - **Health logs** — teachers record student health observations with severity levels
 - **Posts & feed interactions** — class-scoped and student-scoped posts with like, comment, share; aggregated parent feed
 - **Appointments** — teacher-created time slots, parent booking with status workflow (pending → confirmed → completed/cancelled/no-show)
-- **Parent activation codes** — per-student codes with usage limits and expiration for secure parent registration
+- **Parent activation codes** — per-student codes with usage limits and expiration; parent sign-up via email/password or Google ID token + code
 - **Real-time chat** — WebSocket-based direct messaging between users
 - **Audit logs** — immutable activity trail for all protected operations, queryable by Super Admin
 - **Local dev stack** — Docker Compose, PostgreSQL migrations, seed scripts, and API/UI smoke tests
@@ -31,7 +31,7 @@ The platform supports role-based workflows for super admins, school admins, teac
 ## Tech Stack
 
 ### Backend
-- Go `1.25.9`
+- Go `1.25.10`
 - Gin
 - PostgreSQL + `pgx/v5`
 - JWT (`golang-jwt/jwt/v5`)
@@ -59,11 +59,12 @@ iris-app/
 └── docs/                           # Audit notes and design docs
 ```
 
-## Google Auth Status
+## Google Auth
 
-- Implemented (phase 1): Google login for existing users
-- Optional hosted-domain restriction is supported
-- Planned: parent Google sign-up flow (`/register/parent/google`)
+- **Existing users:** `POST /api/v1/auth/login/google` — verify Google ID token and issue JWT (+ refresh token)
+- **New parents:** `POST /api/v1/register/parent/google` — Google ID token + valid parent activation code; creates account, links to student, returns tokens (UI: enter code on register page, then use Google Sign-In)
+- **Email/password parents:** `POST /api/v1/register/parent` — same parent-code gate without Google
+- **Optional:** restrict sign-in/sign-up to a Google Workspace hosted domain via `GOOGLE_HOSTED_DOMAIN` (requires `GOOGLE_LOGIN_ENABLED=true` and `GOOGLE_CLIENT_ID`)
 
 ## Prerequisites
 
@@ -110,7 +111,7 @@ JWT_TTL_MINUTES=1440
 ALLOWED_ORIGINS=http://localhost:5173
 FRONTEND_URL=http://localhost:5173
 
-# Google login (phase 1)
+# Google login + parent Google registration
 GOOGLE_LOGIN_ENABLED=false
 GOOGLE_CLIENT_ID=
 GOOGLE_HOSTED_DOMAIN=
@@ -228,7 +229,7 @@ node scripts/smoke/ui-smoke.mjs
 
 ## API Summary
 
-- **Public**: health check, email/Google login, refresh token rotation, forgot/reset password, account activation, parent registration via invite codes
+- **Public**: health check, email/Google login, refresh token rotation, forgot/reset password, account activation, parent registration (email/password or Google + activation code)
 - **Protected** (all roles): profile (`/me`), password change, account deletion, real-time chat (REST + WebSocket)
 - **Teacher scope**: class/student management, attendance + change-log audit, health logs, posts (CRUD + interactions), appointment slots
 - **Parent scope**: children overview, aggregated feed, appointment booking, child-specific posts, own profile update

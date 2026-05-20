@@ -1,4 +1,4 @@
-name: Security Scanning
+name: Security CI
 
 on:
   push:
@@ -29,8 +29,27 @@ jobs:
 
       - name: Check for vulnerable Go dependencies
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./apps/api/...
+          set -o pipefail
+          go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
+          echo "Go version: $(go version)"
+          echo "Running: govulncheck ./apps/api/..."
+          if ! govulncheck ./apps/api/... 2>&1 | tee govulncheck.log; then
+            {
+              echo "## govulncheck failed"
+              echo ""
+              echo "Vulnerabilities were found in code paths reachable from apps/api."
+              echo "Full output is in the job log; last 80 lines:"
+              echo ""
+              echo '```text'
+              tail -n 80 govulncheck.log
+              echo '```'
+              echo ""
+              echo "Typical fix: upgrade the Go toolchain (go.mod / Docker builder image) to a patched release."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::govulncheck reported vulnerabilities. Expand this step log or open the job Summary tab."
+            exit 1
+          fi
+          echo "govulncheck: no vulnerabilities affecting ./apps/api/..."
 
   dependency-check-npm:
     name: Dependency Check - npm
@@ -54,6 +73,7 @@ jobs:
       - name: Check npm audit
         run: |
           cd apps/web
+          echo "Running: npm audit --audit-level=high"
           npm audit --audit-level=high
 
   trivy-filesystem-scan:
@@ -63,22 +83,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Trivy filesystem scan
+      # Table format prints CVEs to the job log. SARIF-only output hides failures in Actions UI.
+      - name: Run Trivy filesystem scan (log)
         uses: aquasecurity/trivy-action@v0.35.0
         with:
-          scan-type: 'fs'
+          scan-type: fs
           scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'HIGH,CRITICAL'
+          format: table
+          severity: HIGH,CRITICAL
           exit-code: '1'
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+      - name: Generate Trivy SARIF report
         if: always()
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
-          sarif_file: 'trivy-results.sarif'
-          category: 'trivy'
+          scan-type: fs
+          scan-ref: '.'
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: '0'
+
+      - name: Upload Trivy results to GitHub Security
+        id: upload-sarif
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+      - name: Explain SARIF upload result
+        if: always()
+        run: |
+          if [ "${{ steps.upload-sarif.outcome }}" = "success" ]; then
+            echo "Trivy SARIF uploaded to the Security tab."
+          else
+            echo "::warning::Trivy SARIF was not uploaded (private repos need GitHub Advanced Security, or the scan produced no SARIF file). The table scan above is the source of truth for CI failure."
+          fi
 
   secrets-scanning:
     name: Secrets Scanning
@@ -108,6 +150,8 @@ jobs:
             BASE="$(git rev-list --max-parents=0 HEAD)"
           fi
 
+          echo "event=${{ github.event_name }} base=$BASE head=$HEAD"
+
           if [[ "$BASE" == "$HEAD" ]]; then
             echo "should_scan=false" >> "$GITHUB_OUTPUT"
             echo "base=$BASE" >> "$GITHUB_OUTPUT"
@@ -126,8 +170,8 @@ jobs:
           path: ./
           base: ${{ steps.commit-range.outputs.base }}
           head: ${{ steps.commit-range.outputs.head }}
-          extra_args: --debug
 
       - name: Skip message when no commit diff exists
         if: steps.commit-range.outputs.should_scan != 'true'
-        run: echo "Skipping TruffleHog: BASE and HEAD are identical for this event."
+        run: |
+          echo "Skipping TruffleHog: BASE and HEAD are identical for this event."
